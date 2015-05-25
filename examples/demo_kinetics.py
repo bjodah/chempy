@@ -6,9 +6,10 @@ from __future__ import (absolute_import, division,
 
 from aqchem.kinetics import pseudo_irrev, pseudo_rev, binary_irrev, binary_rev
 
+import sympy
+
 funcs = (pseudo_irrev, pseudo_rev, binary_irrev, binary_rev)
 
-import sympy
 
 def main():
     t, kf, P0, t0, excess_C, limiting_C, eps_l, beta = sympy.symbols(

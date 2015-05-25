@@ -4,5 +4,5 @@ git:
 env:
   - PATH=$MINICONDA_PATH/bin:$PATH
 script:
-  - py.test-2.7
-  - py.test-3.4
+  - py.test --pep8
+

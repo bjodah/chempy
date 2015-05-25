@@ -4,6 +4,7 @@ from __future__ import division
 def dimerization_irrev(t, kf, P0, t0, initial_C):
     pass
 
+
 def pseudo_irrev(t, kf, P0, t0, excess_C, limiting_C, eps_l, exp=None):
     if exp is None:
         try:
@@ -37,7 +38,8 @@ def binary_irrev(t, kf, P0, t0, excess_C, limiting_C, eps_l, exp=None):
 binary_irrev.name = 'Second order irreversible'
 
 
-def binary_rev(t, kf, P0, t0, excess_C, limiting_C, eps_l, beta, exp=None, one=1):
+def binary_rev(t, kf, P0, t0, excess_C, limiting_C, eps_l, beta,
+               exp=None, one=1):
     if exp is None:
         try:
             from numpy import exp

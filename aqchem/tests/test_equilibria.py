@@ -34,5 +34,9 @@ def test_solve_equilibrium():
     c = np.array((13., 11, 17))
     stoich = np.array((-2, 3, -4))
     K = 3.14
-    f = lambda x: (13 - 2*x)**-2 * (11 + 3*x)**3 * (17 - 4*x)**-4 - K
-    assert np.allclose(solve_equilibrium(c, stoich, K), c + stoich*fsolve(f, 3.48))
+
+    def f(x):
+        return (13 - 2*x)**-2 * (
+            11 + 3*x)**3 * (17 - 4*x)**-4 - K
+    assert np.allclose(solve_equilibrium(c, stoich, K),
+                       c + stoich*fsolve(f, 3.48))

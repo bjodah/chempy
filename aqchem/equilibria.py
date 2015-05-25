@@ -54,7 +54,6 @@ def get_rc_interval(stoich, c0):
         return lower, upper
 
 
-
 def solve_equilibrium(c0, stoich, K, activity_product=None, delta_frac=1e-16):
     """
     Solve equilibrium concentrations by using scipy.optimize.brentq
