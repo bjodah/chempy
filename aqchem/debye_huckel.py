@@ -57,6 +57,7 @@ def A(eps_r, T, rho, b0=1, constants=None, units=None, one=1):
     A = F**3/(4*pi*NA)*(rho*b0/(2*(eps0*eps_r*kB*NA*T)**3))**(one/2)
     return A
 
+
 def B(eps_r, T, rho, b0=1, constants=None, units=None, one=1):
     """
     Extended Debye-Huckel parameter B
