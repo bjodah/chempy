@@ -23,6 +23,8 @@ def A(eps_r, T, rho, b0=1, constants=None, units=None, one=1):
         density (default: assume kg/m**3)
     b0: float with unit
         reference molality (default: assume mol/kg)
+    units: object (optional, default: None)
+        attributes accessed: meter, Kelvin and mol
     constants: object (optional, default: None)
         if None:
             T assumed to be in Kelvin and b0 = 1 mol/kg
@@ -55,7 +57,7 @@ def A(eps_r, T, rho, b0=1, constants=None, units=None, one=1):
     A = F**3/(4*pi*NA)*(rho*b0/(2*(eps0*eps_r*kB*NA*T)**3))**(one/2)
     return A
 
-def B(eps_r, T, rho, b0, constants=None, units=None, one=1):
+def B(eps_r, T, rho, b0=1, constants=None, units=None, one=1):
     """
     Extended Debye-Huckel parameter B
 
@@ -69,6 +71,8 @@ def B(eps_r, T, rho, b0, constants=None, units=None, one=1):
         density
     b0: float with unit
         reference molality
+    units: object (optional, default: None)
+        attributes accessed: meter, Kelvin and mol
     constants: object (optional, default: None)
         if None:
             T assumed to be in Kelvin, rho in kg/m**3 and b0 = 1 mol/kg
@@ -105,27 +109,27 @@ def extended_log_gamma(I, z, a, A, B, C=0, I0=1, one=1):
     return -A*z**2*(I/I0)**(one/2)/(1 + B*a*(I/I0)**(one/2)) + C*I/I0
 
 
-def limiting_activity_product(I, stoich, z, T, eps_r, exp=None):
+def limiting_activity_product(I, stoich, z, T, eps_r, rho, exp=None):
     if exp is None:
         try:
             from numpy import exp
         except ImportError:
             from math import exp
-    Aval = A(eps_r, T)
+    Aval = A(eps_r, T, rho)
     tot = 0
     for idx, nr in enumerate(stoich):
         tot += nr*limiting_log_gamma(I, z[idx], Aval)
     return exp(tot)
 
 
-def extended_activity_product(I, stoich, z, a, T, eps_r, C=0, exp=None):
+def extended_activity_product(I, stoich, z, a, T, eps_r, rho, C=0, exp=None):
     if exp is None:
         try:
             from numpy import exp
         except ImportError:
             from math import exp
-    Aval = A(eps_r, T)
-    Bval = B(eps_r, T)
+    Aval = A(eps_r, T, rho)
+    Bval = B(eps_r, T, rho)
     tot = 0
     for idx, nr in enumerate(stoich):
         tot += nr*extended_log_gamma(I, z[idx], a[idx], A, B, C)
