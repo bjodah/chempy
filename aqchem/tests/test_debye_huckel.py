@@ -15,4 +15,4 @@ def test_A():
 
 
 def test_B():
-    assert abs(B_dh(80.1, 293.15) - 0.3282) < 1e-3
+    assert abs(1e-10*B_dh(80.1, 293.15, 998.2071, 1) - 0.3282) < 1e-3

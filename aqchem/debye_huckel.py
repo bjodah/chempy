@@ -18,11 +18,11 @@ def A(eps_r, T, rho, b0=1, constants=None, units=None, one=1):
     eps_r: float
         relative permittivity
     T: float with unit
-        temperature
+        Temperature (default: assume Kelvin)
     rho: float with unit
-        density
+        density (default: assume kg/m**3)
     b0: float with unit
-        reference molality
+        reference molality (default: assume mol/kg)
     constants: object (optional, default: None)
         if None:
             T assumed to be in Kelvin and b0 = 1 mol/kg
@@ -55,17 +55,44 @@ def A(eps_r, T, rho, b0=1, constants=None, units=None, one=1):
     A = F**3/(4*pi*NA)*(rho*b0/(2*(eps0*eps_r*kB*NA*T)**3))**(one/2)
     return A
 
+def B(eps_r, T, rho, b0, constants=None, units=None, one=1):
+    """
+    Extended Debye-Huckel parameter B
 
-def B(eps_r, T, one=1, units=None):
-    # TODO: proper doc string., find original reference
-    param = 50.3
-    if units is not None:
-        try:
-            nm = units.nanometer
-        except AttributeError:
-            nm = 1e-3 * units.meter
-        param *= units.Kelvin**(one/2) / nm
-    return param*(eps_r*T)**(-one/2)
+    Parameters
+    ----------
+    eps_r: float
+        relative permittivity
+    T: float with unit
+        temperature
+    rho: float with unit
+        density
+    b0: float with unit
+        reference molality
+    constants: object (optional, default: None)
+        if None:
+            T assumed to be in Kelvin, rho in kg/m**3 and b0 = 1 mol/kg
+        else:
+            attributes accessed: molar_gas_constant, Faraday_constant
+            Tip: pass quantities.constants
+
+    Returns
+    -------
+    Debye Huckel B constant (default in m**-1)
+    """
+    if constants is None:
+        combined = 15903203868.740343
+        if units is not None:
+            m = units.meter
+            K = units.Kelvin
+            mol = units.mol
+            combined *= (m*K/mol)**(one/2)
+        return combined*(rho*b0/(T*eps_r))**0.5
+    F = constants.Faraday_constant
+    eps0 = constants.vacuum_permittivity
+    R = constants.molar_gas_constant
+    B = F*(2*rho*b0/(eps_r*eps0*R*T))**(one/2)
+    return B
 
 
 def limiting_log_gamma(I, z, A, I0=1, one=1):
@@ -84,7 +111,7 @@ def limiting_activity_product(I, stoich, z, T, eps_r, exp=None):
             from numpy import exp
         except ImportError:
             from math import exp
-    Aval = A(eps_r, T)/ln(10)
+    Aval = A(eps_r, T)
     tot = 0
     for idx, nr in enumerate(stoich):
         tot += nr*limiting_log_gamma(I, z[idx], Aval)
@@ -97,8 +124,6 @@ def extended_activity_product(I, stoich, z, a, T, eps_r, C=0, exp=None):
             from numpy import exp
         except ImportError:
             from math import exp
-    if ln is None:
-        from math import log as ln
     Aval = A(eps_r, T)
     Bval = B(eps_r, T)
     tot = 0
@@ -110,7 +135,8 @@ def extended_activity_product(I, stoich, z, a, T, eps_r, C=0, exp=None):
 class LimitingDebyeHuckelActivityProduct(ActivityProduct):
 
     def __call__(self, c):
-        I = ionic_strength(c, self.z)
+        z = self.args[0]
+        I = ionic_strength(c, z)
         return limiting_activity_product(I, self.stoich, *self.args)
 
 
