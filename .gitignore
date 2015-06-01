@@ -7,3 +7,7 @@
 */*/*/__pycache__
 
 examples/*.png
+.config/
+.cache/
+.ipython/
+.ipynb_checkpoints/

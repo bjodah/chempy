@@ -2,13 +2,12 @@ import warnings
 
 try:
     from numpy import exp
+    from numpy import log as ln
+    from numpy import any as _any
 except ImportError:
     from math import exp
-
-try:
-    from numpy import log as ln
-except ImportError:
     from math import log as ln
+    _any = any
 
 
 def water_permittivity(T=298.15, P=1, units=None, U=None,
@@ -65,15 +64,15 @@ def water_permittivity(T=298.15, P=1, units=None, U=None,
         return U
     T0 = 273.15*K
     if warn:
-        if T < T0 or T > T0 + 350*K:
+        if _any(T < T0) or _any(T > T0 + 350*K):
             warnings.warn("Outside temperature range (0-350 degC)")
         else:
-            if (T > T0 + 70*K):
-                if P > 2000*bar:
+            if _any(T > T0 + 70*K):
+                if _any(P > 2000*bar):
                     warnings.warn("Outside pressure range (2000 bar)")
-            else:
-                if P > 5000*bar:
-                    warnings.warn("Outside pressure range (5000 bar)")
+                else:
+                    if _any(P > 5000*bar):
+                        warnings.warn("Outside pressure range (5000 bar)")
     B = U[6] + U[7]/T + U[8]*T
     C = U[3] + U[4]/(U[5] + T)
     eps1000 = U[0]*exp(U[1]*T + U[2]*T**2)

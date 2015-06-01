@@ -2,6 +2,11 @@
 
 import warnings
 
+try:
+    from numpy import any as _any
+except ImportError:
+    _any = any
+
 
 def water_density(T=298.15, T0=None, units=None, a=None,
                   just_return_a=False, warn=True):
@@ -56,6 +61,6 @@ def water_density(T=298.15, T0=None, units=None, a=None,
     if T0 is None:
         T0 = 273.15*K  # K
     t = T - T0
-    if warn and (t < 0*K or t > 40*K):
+    if warn and (_any(t < 0*K) or _any(t > 40*K)):
         warnings.warn("Temperature is outside range (0-40 degC)")
     return a[4]*(1-((t + a[0])**2*(t + a[1]))/(a[2]*(t + a[3])))

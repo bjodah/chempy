@@ -23,5 +23,8 @@ def test_water_permittivity():
         assert np.allclose(water_permittivity(
             298.15*pq.K, 1*pq.bar,
             units=pq), 78.38436874203077)
+        assert np.allclose(water_permittivity(
+            np.linspace(297.5, 298.65)*pq.K, 1*pq.bar,
+            units=pq), 78, rtol=1e-2, atol=1e-2)
     except ImportError:
         pass
