@@ -77,3 +77,21 @@ def water_permittivity(T=298.15, P=1, units=None, U=None,
     C = U[3] + U[4]/(U[5] + T)
     eps1000 = U[0]*exp(U[1]*T + U[2]*T**2)
     return eps1000 + C*ln((B+P)/(B + 1000.0*bar))
+
+# generated at doi2bib.org:
+bibtex = """
+@article{Bradley1979,
+  doi = {10.1021/j100475a009},
+  url = {http://dx.doi.org/10.1021/j100475a009},
+  year  = {1979},
+  month = {jun},
+  publisher = {American Chemical Society ({ACS})},
+  volume = {83},
+  number = {12},
+  pages = {1599--1603},
+  author = {Daniel J. Bradley and Kenneth S. Pitzer},
+  title = {Thermodynamics of electrolytes. 12. Dielectric properties of water
+           and Debye-Hueckel parameters to 350.degree.C and 1 kbar},
+  journal = {J. Phys. Chem.}
+}
+"""
