@@ -1,17 +1,17 @@
 import warnings
 
 try:
-    from numpy import exp
+    from numpy import exp as _exp
     from numpy import log as ln
     from numpy import any as _any
 except ImportError:
-    from math import exp
+    from math import exp as _exp
     from math import log as ln
     _any = any
 
 
 def water_permittivity(T=298.15, P=1, units=None, U=None,
-                       just_return_U=False, warn=True):
+                       just_return_U=False, warn=True, exp=None):
     """
     Relative permittivity of water as function of temperature (K)
     and pressure (bar).
@@ -30,6 +30,8 @@ def water_permittivity(T=298.15, P=1, units=None, U=None,
         Do not compute relative permittivity, just return the parameters ``U``.
     warn: bool (default: True)
         Emit UserWarning when outside temperature/pressure range.
+    exp: callback (default: None)
+        Custom callback for evaluating the exponential function
 
     Returns
     -------
@@ -73,6 +75,8 @@ def water_permittivity(T=298.15, P=1, units=None, U=None,
                 else:
                     if _any(P > 5000*bar):
                         warnings.warn("Outside pressure range (5000 bar)")
+    if exp is None:
+        exp = _exp
     B = U[6] + U[7]/T + U[8]*T
     C = U[3] + U[4]/(U[5] + T)
     eps1000 = U[0]*exp(U[1]*T + U[2]*T**2)
