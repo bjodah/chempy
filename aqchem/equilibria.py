@@ -24,14 +24,13 @@ def equilibrium_residual(rc, c0, stoich, K, activity_product=None):
     K: float
         equilibrium constant
     activity_product: callable
-        callback for calculating the activity product. Signature:
-        rc, c0
+        callback for calculating the activity product taking
+        concentration as single parameter.
     """
     c = c0 + rc*stoich
     Q = equilibrium_quotient(c, stoich)
     if activity_product is not None:
         Q *= activity_product(c)
-    print(rc)
     return K - Q
 
 

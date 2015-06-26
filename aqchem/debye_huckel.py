@@ -101,13 +101,24 @@ def B(eps_r, T, rho, b0=1, constants=None, units=None, one=1):
 
 
 def limiting_log_gamma(I, z, A, I0=1, one=1):
+    """ Debye-Hyckel limiting formula """
     # `one` allows passing of e.g. one=sympy.S(1)
     return -A*z**2*(I/I0)**(one/2)
 
 
 def extended_log_gamma(I, z, a, A, B, C=0, I0=1, one=1):
+    """ Debye-Huckel extended formula """
     # `one` allows passing of e.g. one=sympy.S(1)
-    return -A*z**2*(I/I0)**(one/2)/(1 + B*a*(I/I0)**(one/2)) + C*I/I0
+    I_I0 = I/I0
+    sqrt_I_I0 = (I_I0)**(one/2)
+    return -A*z**2 * sqrt_I_I0/(1 + B*a*sqrt_I_I0) + C*I_I0
+
+
+def davies_log_gamma(I, z, A, C=-0.3, I0=1, one=1):
+    """ Davies formula """
+    I_I0 = I/I0
+    sqrt_I_I0 = (I_I0)**(one/2)
+    return -A * z**2 * (sqrt_I_I0/(1 + sqrt_I_I0) + C*I_I0)
 
 
 def limiting_activity_product(I, stoich, z, T, eps_r, rho, exp=None):
@@ -133,7 +144,20 @@ def extended_activity_product(I, stoich, z, a, T, eps_r, rho, C=0, exp=None):
     Bval = B(eps_r, T, rho)
     tot = 0
     for idx, nr in enumerate(stoich):
-        tot += nr*extended_log_gamma(I, z[idx], a[idx], A, B, C)
+        tot += nr*extended_log_gamma(I, z[idx], a[idx], Aval, Bval, C)
+    return exp(tot)
+
+
+def davies_activity_product(I, stoich, z, a, T, eps_r, rho, C=-0.3, exp=None):
+    if exp is None:
+        try:
+            from numpy import exp
+        except ImportError:
+            from math import exp
+    Aval = A(eps_r, T, rho)
+    tot = 0
+    for idx, nr in enumerate(stoich):
+        tot += nr*davies_log_gamma(I, z[idx], Aval, C)
     return exp(tot)
 
 
