@@ -36,6 +36,11 @@ def arrhenius_equation(A, Ea, T, constants=None, units=None, exp=None):
             attributes accessed: molar_gas_constant
             Tip: pass quantities.constants
     """
+    if exp is None:
+        try:
+            from numpy import exp
+        except ImportError:
+            from math import exp
     R = _get_R(constants, units)
     return A*exp(-Ea/(R*T))
 
