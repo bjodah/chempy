@@ -28,6 +28,7 @@ Units
 Use of quantities assumed, but only following attributes are accessed (parenthesis optional):
 
 - Kelvin
+- Joule
 - bar
 - meter
 - kilogram
