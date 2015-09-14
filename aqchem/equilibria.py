@@ -11,14 +11,14 @@ def equilibrium_quotient(c, stoich):
     return tot
 
 
-def equilibrium_residual(rc, c0, stoich, K, activity_product=None):
+def equilibrium_residual(rc, c, stoich, K, activity_product=None):
     """
     Parameters
     ---------
     rc: float
         Reaction coordinate
-    c0:
-        "intital" concentrations
+    c: array_like of reals
+        concentrations
     stoich: tuple
         per specie stoichiometry coefficient
     K: float
