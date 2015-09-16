@@ -58,6 +58,7 @@ class Substance(object):
     def __str__(self):
         return self.name
 
+
 class Solute(Substance):
 
     def __init__(self, *args, **kwargs):
@@ -90,7 +91,6 @@ class Reaction(object):
     def net_stoich(self, substances):
         return tuple(self.prod.get(k, 0) - self.reac.get(k, 0)
                      for k in substances)
-
 
     def latex(self):
         reac, prod = [[

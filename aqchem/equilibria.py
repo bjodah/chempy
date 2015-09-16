@@ -8,8 +8,10 @@ from scipy.optimize import brentq
 
 from .chemistry import Reaction, ReactionSystem
 
+
 def prodexp(factors, exponents):
-    return reduce(mul, [factor ** exponent for factor, exponent in zip(factors, exponents)])
+    return reduce(mul, [factor ** exponent for factor, exponent
+                        in zip(factors, exponents)])
 
 
 def equilibrium_quotient(c, stoich):
@@ -79,27 +81,19 @@ def solve_equilibrium(c0, stoich, K, activity_product=None, delta_frac=1e-16):
         to avoid division by zero the span of searched values for
         the reactions coordinate (rc) is shrunk by 2*delta_frac*span(rc)
     """
-    stoich = np.asarray(stoich)
-    c0 = np.asarray(c0)
-    mask = np.argwhere(stoich != 0)
+    stoich = np.array(stoich)
+    c0 = np.array(c0)
+    mask, = np.nonzero(stoich)
     stoich_m = stoich[mask]
     c0_m = c0[mask]
-    lower, upper = get_rc_interval(np.array(stoich_m), np.array(c0_m))
-    span = upper - lower
-    if True:
-        rc = brentq(
-            equilibrium_residual,
-            lower, # + delta_frac*span,
-            upper, # - delta_frac*span,
-            (c0_m, stoich_m, K, activity_product)
-        )
-    else:
-        rc = brentq(
-            equilibrium_residual,
-            lower + delta_frac*span,
-            upper - delta_frac*span,
-            (c0_m, stoich_m, K, activity_product)
-        )
+    lower, upper = get_rc_interval(stoich_m, c0_m)
+    # span = upper - lower
+    rc = brentq(
+        equilibrium_residual,
+        lower,  # + delta_frac*span,
+        upper,  # - delta_frac*span,
+        (c0_m, stoich_m, K, activity_product)
+    )
     return c0 + rc*stoich
 
 
@@ -109,7 +103,6 @@ class Equilibrium(Reaction):
     Extra attributes:
     - solubility_product: bool (default: False)
     """
-
 
     latex_arrow = '\\rightleftharpoons'
 
@@ -155,6 +148,7 @@ def atom_balance(substances, concs, atom_number):
     for s, c in zip(substances, concs):
         res += s.elemental_composition.get(atom_number, 0)*c
     return res
+
 
 def charge_balance(substances, concs):
     res = 0
@@ -211,8 +205,7 @@ class EqSystem(ReactionSystem):
         atom_vecs, atm_nrs = self.atom_balance_vectors()
         M = Matrix([self.charge_balance_vector()] + atom_vecs)
         rref, pivot = M.rref()
-        #indep_atm_nrs =
-        return rref.tolist()[:len(pivot)], pivot #indep_atm_nrs
+        return rref.tolist()[:len(pivot)], pivot
 
     def independent_atoms_from_pivot(self, pivot):
         """ atom number 0 represents charge """
@@ -235,55 +228,57 @@ class EqSystem(ReactionSystem):
             return self.qk(concs, scaling) + pres
         else:
             if reduced:
+                import sympy as sp
                 subs = []
                 for idx, p in zip(pivot, pres)[::-1]:
                     c = concs[idx]
                     subs.append((c, (c-p.subs(subs)).simplify()))
                 qk = [expr.subs(subs) for expr in self.qk(concs, scaling)]
-                return qk, pivot
+                reduced_cbs = [sp.lambdify(
+                    [y for idx, y in enumerate(concs) if idx not in pivot],
+                    expr) for c, expr in subs]
+                return qk, pivot, reduced_cbs
             else:
-                return self.qk(concs, scaling) + pres, None
+                return self.qk(concs, scaling) + pres, None, None
 
     def num_cb_factory(self, init_concs, jac=False, scaling=1.0, logC=False,
                        square=False, reduced=None):
         import sympy as sp
         y = sp.symarray('y', len(self.substances))
-        f, elim = self.f(y, init_concs, scaling, reduced=bool(reduced))
+        f, elim, red_cbs = self.f(y, init_concs,
+                                  scaling, reduced=bool(reduced))
         if reduced is not None:
             if reduced:
                 y = [y[idx] for idx in range(len(y)) if idx not in elim]
-                print(y)
         if square:
             f = [_.subs([(yi, yi*yi) for yi in y]) for _ in f]
-            print(f) ## DEBUG
         if logC:
             f = [_.subs([(yi, sp.exp(yi)) for yi in y]) for _ in f]
         f_lmbd = sp.lambdify(y, f, modules='numpy')
+
         def f_cb(arr):
-            print(arr) ## DEBUG
             return f_lmbd(*arr)
         j_cb = None
         if jac:
-            print(len(f), len(y))
             j = sp.Matrix(1, len(y), lambda _, q: f[q]).jacobian(y)
-            print(j) ## DEBUG
             j_lmbd = sp.lambdify(y, j, modules='numpy')
+
             def j_cb(arr):
                 return j_lmbd(*arr)
         if reduced is None:
             return f_cb, j_cb
         else:
-            return f_cb, j_cb, elim
+            return f_cb, j_cb, elim, red_cbs
 
     def root(self, init_concs, scaling=1.0, logC=False, square=False,
              delta=None, reduced=False, **kwargs):
         import numpy as np
         from scipy.optimize import root
         init_concs = np.asarray([init_concs[k] for k in self.substances] if
-                             isinstance(init_concs, dict) else init_concs)
-        f, j, elim = self.num_cb_factory(init_concs*scaling, jac=True,
-                                         scaling=scaling, logC=logC,
-                                         square=square, reduced=reduced)
+                                isinstance(init_concs, dict) else init_concs)
+        f, j, elim, red_cbs = self.num_cb_factory(
+            init_concs*scaling, jac=True, scaling=scaling, logC=logC,
+            square=square, reduced=reduced)
         if delta is None:
             delta = kwargs.get('tol', 1e-12)
         x0 = self.initial_guess(init_concs*scaling + delta)
@@ -295,23 +290,48 @@ class EqSystem(ReactionSystem):
             x0 = np.log(x0)
         result = root(f, x0, jac=j)
         if result.success:
-            # TODO: back-transform result
             x = result.x
             if logC:
                 x = np.exp(x)
             if square:
                 x *= x
+            if reduced:
+                idx_red = 0
+                idx_elm = 0
+                new_x = []
+                print('elim: ', elim)
+                for idx in range(len(init_concs)):
+                    if idx in elim:
+                        new_x.append(red_cbs[idx_elm](*x))
+                        idx_elm += 1
+                    else:
+                        new_x.append(x[idx_red])
+                        idx_red += 1
+                x = np.array(new_x)
             x /= scaling
-            print('Success: ', x)
-        if reduced:
-            return result # TODO: reintroduce eliminated...
+            return x, result
         else:
-            return result
+            return None, result
 
-    def initial_guess(self, init_concs, weights=range(1, 5)):
+    def initial_guess(self, init_concs, weights=range(1, 30)):
         for w in weights:
             for eq in self.rxns:
                 new_init_concs = solve_equilibrium(
                     init_concs, eq.net_stoich(self.substances), eq.params)
                 init_concs = (w*init_concs + new_init_concs)/(w+1)
         return init_concs
+
+    # def initial_guess(self, init_concs, weights=range(5, 1, -1)):
+    #     nr = len(self.rxns)
+    #     for w in weights:
+    #         new_init_concs = init_concs[:]
+    #         for idx, eq in enumerate(self.rxns):
+    #             suggestion = solve_equilibrium(
+    #                 new_init_concs, eq.net_stoich(self.substances),
+    #                 eq.params)
+    #             if idx == 0:
+    #                 new_init_concs = (suggestion*nr + new_init_concs)/(nr+1)
+    #             else:
+    #                 new_init_concs = (suggestion + idx*new_init_concs)/(nr+1)
+    #         init_concs = (w*new_init_concs + init_concs)/(w + 1)
+    #     return init_concs

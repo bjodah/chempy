@@ -41,15 +41,16 @@ def test_solve_equilibrium_1():
     assert np.allclose(solve_equilibrium(c, stoich, K),
                        c + stoich*fsolve(f, 3.48))
 
+
 def test_solve_equilibrium_2():
-    c = np.array([  1.7000e-03,   3.0000e+06,   3.0000e+06,   9.7000e+07,   5.5500e+09])
+    c = np.array([1.7e-03, 3.0e+06, 3.0e+06, 9.7e+07, 5.55e+09])
     stoich = (1, 1, 0, 0, -1)
-    K = 1e-14
+    K = 55*1e-6
 
     def f(x):
-        return prodexp(c, stoich) - K
-    assert np.allclose(solve_equilibrium(c, stoich, K),
-                       c + stoich*fsolve(f, 3.48))
+        return prodexp(c+x*stoich, stoich) - K
+    solution = solve_equilibrium(c, stoich, K)
+    assert np.allclose(solution, c + stoich*fsolve(f, 0.1))
 
 
 def test_EqSystem():
