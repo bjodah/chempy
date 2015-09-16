@@ -271,17 +271,18 @@ class EqSystem(ReactionSystem):
             return f_cb, j_cb, elim, red_cbs
 
     def root(self, init_concs, scaling=1.0, logC=False, square=False,
-             delta=None, reduced=False, **kwargs):
+             delta=None, reduced=False, init_iter=20, **kwargs):
         import numpy as np
         from scipy.optimize import root
-        init_concs = np.asarray([init_concs[k] for k in self.substances] if
-                                isinstance(init_concs, dict) else init_concs)
+        init_concs = np.array([init_concs[k] for k in self.substances] if
+                              isinstance(init_concs, dict) else init_concs)
         f, j, elim, red_cbs = self.num_cb_factory(
             init_concs*scaling, jac=True, scaling=scaling, logC=logC,
             square=square, reduced=reduced)
         if delta is None:
             delta = kwargs.get('tol', 1e-12)
-        x0 = self.initial_guess(init_concs*scaling + delta)
+        x0 = self.initial_guess(init_concs + delta, scaling=scaling,
+                                repetitions=init_iter)
         if reduced:
             x0 = np.array([x for idx, x in enumerate(x0) if idx not in elim])
         if square:
@@ -308,18 +309,70 @@ class EqSystem(ReactionSystem):
                         new_x.append(x[idx_red])
                         idx_red += 1
                 x = np.array(new_x)
+            if np.any(x < 0):
+                return None, result
             x /= scaling
             return x, result
         else:
             return None, result
 
-    def initial_guess(self, init_concs, weights=range(1, 30)):
-        for w in weights:
+    # def initial_guess(self, init_concs, weights=range(1, 30)):
+    #     for w in weights:
+    #         for eq in self.rxns:
+    #             new_init_concs = solve_equilibrium(
+    #                 init_concs, eq.net_stoich(self.substances), eq.params)
+    #             init_concs = (w*init_concs + new_init_concs)/(w+1)
+    #     return init_concs
+
+
+    def initial_guess(self, init_concs, scaling=1, repetitions=50, steffensens=0):
+        # Fixed point iteration
+        def f(x):
+            xnew = np.zeros_like(x)
             for eq in self.rxns:
-                new_init_concs = solve_equilibrium(
-                    init_concs, eq.net_stoich(self.substances), eq.params)
-                init_concs = (w*init_concs + new_init_concs)/(w+1)
+                xnew += solve_equilibrium(
+                    x, eq.net_stoich(self.substances), eq.params * scaling**eq.dimensionality())
+            return xnew/len(self.rxns)
+        init_concs *= scaling
+        for _ in range(repetitions):
+            init_concs = f(init_concs)
+
+        for _ in range(steffensens):
+            # Steffensen's method
+            f_x = f(init_concs)
+            f_xf = f(init_concs + f_x)
+            g = (f_xf - f_x)/f_x
+            f_over_g = f_x / g
+            factor = np.max(np.abs(f_over_g/init_concs))
+            if factor > 0.99:
+                init_concs = init_concs - f_over_g/(1.1*factor)
+            else:
+                init_concs = init_concs - f_over_g
+
         return init_concs
+
+
+    def plot(self, init_concs, varied, values, **kwargs):
+        import matplotlib.pyplot as plt
+        ny = len(self.substances)
+        nc = len(values)
+        x = np.empty((nc, ny))
+        success = []
+        x0 = init_concs.copy()
+        for idx in range(nc):
+            x0[varied] = values[idx]
+            resx, res = self.root(x0, **kwargs)
+            success.append(res.success)
+            x[idx, :] = resx
+        for idx_s in range(ny):
+            if idx_s == idx:
+                continue
+            plt.loglog(values, x[:, idx_s], label=self.substances[idx_s].name)
+        plt.legend(loc='best')
+        for i, s in enumerate(success):
+            if s is False:
+                plt.axvline(values[i], c='k', ls='--')
+        return success
 
     # def initial_guess(self, init_concs, weights=range(5, 1, -1)):
     #     nr = len(self.rxns)
