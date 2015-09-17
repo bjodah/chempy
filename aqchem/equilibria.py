@@ -278,10 +278,12 @@ class EqSystemBase(ReactionSystem):
         return x, init_concs, success
 
     def plot(self, init_concs, varied, values, ax=None, fail_vline=True,
-             plot_kwargs=None, **kwargs):
+             plot_kwargs=None, subplot_kwargs=None, **kwargs):
         if ax is None:
             import matplotlib.pyplot as plt
-            ax = plt.subplot(1, 1, 1, xscale='log', yscale='log')
+            if subplot_kwargs is None:
+                subplot_kwargs = dict(xscale='log', yscale='log')
+            ax = plt.subplot(1, 1, 1, **subplot_kwargs)
         if plot_kwargs is None:
             plot_kwargs = {}
         x, new_init_concs, success = self.multiple_root(
@@ -292,7 +294,13 @@ class EqSystemBase(ReactionSystem):
                 continue
             ax.plot(values[success], x[success, idx_s],
                     label=self.substances[idx_s].name, **plot_kwargs)
-        ax.legend(loc='best')
+
+        #ax.legend(loc='best')
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+        # Put a legend to the right of the current axis
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
         if fail_vline:
             for i, s in enumerate(success):
                 if not s:
@@ -402,7 +410,7 @@ class EqSystem(EqSystemBase):
             return f_lmbd(*arr)
         j_cb = None
         if jac:
-            j = sp.Matrix(1, len(y), lambda _, q: f[q]).jacobian(y)
+            j = sp.Matrix(1, len(f), lambda _, q: f[q]).jacobian(y)
             j_lmbd = sp.lambdify(y, j, modules='numpy')
 
             def j_cb(arr):
@@ -508,7 +516,7 @@ class REqSystem(EqSystem):
             return f_lmbd(*arr)
         j_cb = None
         if jac:
-            j = sp.Matrix(1, len(r), lambda _, q: f[q]).jacobian(r)
+            j = sp.Matrix(1, len(f), lambda _, q: f[q]).jacobian(r)
             j_lmbd = sp.lambdify(r, j, modules='numpy')
 
             def j_cb(arr):
