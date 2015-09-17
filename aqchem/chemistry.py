@@ -107,3 +107,11 @@ class ReactionSystem(object):
     def __init__(self, rxns, substances):
         self.rxns = rxns
         self.substances = substances
+
+    @property
+    def nr(self):
+        return len(self.rxns)
+
+    @property
+    def ns(self):
+        return len(self.substances)
