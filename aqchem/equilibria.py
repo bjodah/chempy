@@ -201,7 +201,7 @@ class EqSystemBase(ReactionSystem):
             self.substances, concs) for q, rxn in zip(
                 self.equilibrium_quotients(concs), self.rxns)]
 
-    def multiple_root(self, init_concs, varied, values, **kwargs):
+    def multiple_root(self, init_concs, varied, values, carry=False, **kwargs):
         nval = len(values)
         if isinstance(init_concs, dict):
             init_concs = np.array([init_concs[k] for k in self.substances])
@@ -209,7 +209,7 @@ class EqSystemBase(ReactionSystem):
             init_concs = np.asarray(init_concs)
 
         if init_concs.ndim == 1:
-            init_concs = np.tile(init_concs, (nval, 1))
+            pass
         elif init_concs.ndim == 2:
             if init_concs.shape[0] != nval:
                 raise ValueError("Illegal dimension of init_conc")
@@ -224,7 +224,13 @@ class EqSystemBase(ReactionSystem):
         x = np.empty((nval, self.ns))
         success = np.empty(nval, dtype=bool)
         for idx in range(nval):
-            x0 = init_concs[idx, :]
+            if init_concs.ndim == 2:
+                x0 = init_concs[idx, :]
+            else:
+                if idx == 0 or carry == False:
+                    x0 = init_concs[:]
+                else:
+                    x0 = x[idx-1, :]
             x0[varied] = values[idx]
             resx, res = self.root(x0, **kwargs)
             success[idx] = resx is not None

@@ -3,7 +3,7 @@ from scipy.optimize import fsolve
 
 from ..equilibria import (
     equilibrium_quotient, equilibrium_residual, get_rc_interval,
-    solve_equilibrium, EqSystem, prodexp
+    solve_equilibrium, EqSystem, prodexp, _solve_equilibrium_coord
 )
 
 
@@ -55,3 +55,9 @@ def test_solve_equilibrium_2():
 
 def test_EqSystem():
     pass
+
+def test__solve_equilibrium_coord():
+    c0 = np.array([ -1.2882e-14,   3.1156e-10,   3.2099e-10,   9.6790e-09,   5.5469e-07])
+    stoich = np.array([ 1,  1,  0,  0, -1])
+    K = 1.00000000000000e-22
+    _solve_equilibrium_coord(c0, stoich, K)
