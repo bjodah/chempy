@@ -4,7 +4,6 @@ from functools import reduce
 from operator import mul
 
 import numpy as np
-from scipy.optimize import brentq
 
 from .chemistry import Reaction, ReactionSystem
 
@@ -14,10 +13,14 @@ def prodexp(factors, exponents):
                         in zip(factors, exponents)])
 
 
-def equilibrium_quotient(c, stoich):
-    tot = 1
-    for idx, nr in enumerate(stoich):
-        tot *= c[idx]**nr
+def equilibrium_quotient(concs, stoich):
+    if not hasattr(concs, 'ndim') or concs.ndim == 1:
+        tot = 1
+    else:
+        tot = np.ones(concs.shape[0])
+        concs = concs.T
+    for nr, conc in zip(stoich, concs):
+        tot *= conc**nr
     return tot
 
 
@@ -64,6 +67,7 @@ def get_rc_interval(stoich, c0):
 
 
 def _solve_equilibrium_coord(c0, stoich, K, activity_product=None):
+    from scipy.optimize import brentq
     mask, = np.nonzero(stoich)
     stoich_m = stoich[mask]
     c0_m = c0[mask]
@@ -77,7 +81,8 @@ def _solve_equilibrium_coord(c0, stoich, K, activity_product=None):
     )
 
 
-def solve_equilibrium(c0, stoich, K, activity_product=None): #, delta_frac=1e-16):
+def solve_equilibrium(c0, stoich, K, activity_product=None):
+    # , delta_frac=1e-16):
     """
     Solve equilibrium concentrations by using scipy.optimize.brentq
 
@@ -155,7 +160,13 @@ def atom_balance(substances, concs, atom_number):
 
 
 def charge_balance(substances, concs):
-    res = 0
+    if not hasattr(concs, 'ndim') or concs.ndim == 1:
+        res = 0
+    elif concs.ndim == 2:
+        res = np.zeros(concs.shape[0])
+        concs = concs.T
+    else:
+        raise NotImplementedError
     for s, c in zip(substances, concs):
         res += s.charge*c
     return res
@@ -164,7 +175,24 @@ def charge_balance(substances, concs):
 def dot(iter_a, iter_b):
     return sum([a*b for a, b in zip(iter_a, iter_b)])
 
+
 class EqSystemBase(ReactionSystem):
+
+    def as_per_substance_array(self, cont):
+        if isinstance(cont, np.ndarray):
+            pass
+        elif isinstance(cont, dict):
+            cont = [cont[k] for k in self.substances]
+        cont = np.asarray(cont)
+        if cont.shape[-1] != self.ns:
+            raise ValueError("Incorrect size")
+        return cont
+
+    def as_substance_index(self, sbstnc):
+        if isinstance(sbstnc, int):
+            return sbstnc
+        else:
+            return self.substances.index(sbstnc)
 
     def __init__(self, *args, **kwargs):
         super(EqSystemBase, self).__init__(*args, **kwargs)
@@ -176,13 +204,16 @@ class EqSystemBase(ReactionSystem):
                 for ri in range(self.nr)]
 
     def charge_balance(self, concs):
-        return charge_balance(self.substances, concs)
+        return charge_balance(self.substances,
+                              self.as_per_substance_array(concs))
 
     def charge_balance_vector(self):
         return [s.charge for s in self.substances]
 
     def atom_balance(self, concs, atom_number):
-        return atom_balance(self.substances, concs, atom_number)
+        return atom_balance(self.substances,
+                            self.as_per_substance_array(concs),
+                            atom_number)
 
     def atom_balance_vectors(self):
         atom_numbers = set()
@@ -196,12 +227,23 @@ class EqSystemBase(ReactionSystem):
                             s in self.substances])
         return vectors, sorted_atom_numbers
 
+    def atom_conservation(self, concs, init_concs):
+        atom_vecs, atm_nrs = self.atom_balance_vectors()
+        A = np.array(atom_vecs)
+        return (atm_nrs,
+                np.dot(A, self.as_per_substance_array(concs).T),
+                np.dot(A, self.as_per_substance_array(init_concs).T))
+
     def qk(self, concs, scaling=1.0):
         return [q - scaling**rxn.dimensionality()*rxn.params*rxn.solid_factor(
             self.substances, concs) for q, rxn in zip(
                 self.equilibrium_quotients(concs), self.rxns)]
 
-    def multiple_root(self, init_concs, varied, values, carry=False, **kwargs):
+    def multiple_root(self, init_concs, varied=None, values=None, carry=False,
+                      init_guess=None, **kwargs):
+        if carry:
+            if init_guess is not None:
+                raise NotImplementedError
         nval = len(values)
         if isinstance(init_concs, dict):
             init_concs = np.array([init_concs[k] for k in self.substances])
@@ -209,33 +251,31 @@ class EqSystemBase(ReactionSystem):
             init_concs = np.asarray(init_concs)
 
         if init_concs.ndim == 1:
-            pass
+            init_concs = np.tile(init_concs, (nval, 1))
+            init_concs[:, self.as_substance_index(varied)] = values
         elif init_concs.ndim == 2:
             if init_concs.shape[0] != nval:
-                raise ValueError("Illegal dimension of init_conc")
+                raise ValueError("Illegal dimension of init_concs")
             if init_concs.shape[1] != self.ns:
-                raise ValueError("Illegal dimension of init_conc")
+                raise ValueError("Illegal dimension of init_concs")
         else:
-            raise ValueError("init_conc has too many dimensions")
-
-        if not isinstance(varied, int):
-            varied = self.substances.index(varied)
+            raise ValueError("init_concs has too many dimensions")
 
         x = np.empty((nval, self.ns))
         success = np.empty(nval, dtype=bool)
         for idx in range(nval):
-            if init_concs.ndim == 2:
-                x0 = init_concs[idx, :]
-            else:
-                if idx == 0 or carry == False:
-                    x0 = init_concs[:]
+            root_kw = kwargs.copy()
+            g0 = init_guess if init_guess is None else init_guess[idx, :]
+            if carry:
+                if idx == 0:
+                    root_kw['init_iter'] = kwargs.get('init_iter', 20)
                 else:
-                    x0 = x[idx-1, :]
-            x0[varied] = values[idx]
-            resx, res = self.root(x0, **kwargs)
+                    root_kw['init_iter'] = 0
+                    g0 = x[idx-1, :]
+            resx, res = self.root(init_concs[idx, :], init_guess=g0, **root_kw)
             success[idx] = resx is not None
             x[idx, :] = resx
-        return x, success
+        return x, init_concs, success
 
     def plot(self, init_concs, varied, values, ax=None, fail_vline=True,
              plot_kwargs=None, **kwargs):
@@ -244,11 +284,11 @@ class EqSystemBase(ReactionSystem):
             ax = plt.subplot(1, 1, 1, xscale='log', yscale='log')
         if plot_kwargs is None:
             plot_kwargs = {}
-        x, success = self.multiple_root(init_concs, varied, values, **kwargs)
-        if not isinstance(varied, int):
-            varied = self.substances.index(varied)
+        x, new_init_concs, success = self.multiple_root(
+            init_concs, varied, values, **kwargs)
+
         for idx_s in range(self.ns):
-            if idx_s == varied:
+            if idx_s == self.as_substance_index(varied):
                 continue
             ax.plot(values[success], x[success, idx_s],
                     label=self.substances[idx_s].name, **plot_kwargs)
@@ -257,7 +297,42 @@ class EqSystemBase(ReactionSystem):
             for i, s in enumerate(success):
                 if not s:
                     ax.axvline(values[i], c='k', ls='--')
-        return x, success
+        return x, new_init_concs, success
+
+    def plot_errors(self, concs, init_concs, varied, axes=None, charge=True,
+                    atoms=True, Q=True):
+        if axes is None:
+            import matplotlib.pyplot as plt
+            fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+
+        if charge:
+            q1 = self.charge_balance(concs)
+            q2 = self.charge_balance(init_concs)
+            axes[0].plot(concs[:, self.as_substance_index(varied)],
+                         q1-q2, label='Abs charge error')
+            axes[1].plot(concs[:, self.as_substance_index(varied)],
+                         (q1-q2)/np.abs(q2), label='Rel charge error')
+
+        if atoms:
+            atm_nrs, m1, m2 = self.atom_conservation(concs, init_concs)
+            for atm_nr, a1, a2 in zip(atm_nrs, m1, m2):
+                axes[0].plot(concs[:, self.as_substance_index(varied)],
+                             a1-a2, label='Abs ' + str(atm_nr))
+                axes[1].plot(concs[:, self.as_substance_index(varied)],
+                             (a1-a2)/np.abs(a2), label='Rel ' + str(atm_nr))
+
+        if Q:
+            qs = self.equilibrium_quotients(concs)
+            ks = [rxn.params*rxn.solid_factor(self.substances, concs) for
+                  rxn in self.rxns]
+            for idx, (q, k) in enumerate(zip(qs, ks)):
+                axes[0].plot(concs[:, self.as_substance_index(varied)],
+                             q-k, label='Abs R:' + str(idx))
+                axes[1].plot(concs[:, self.as_substance_index(varied)],
+                             (q-k)/k, label='Rel R:' + str(idx))
+
+        axes[0].legend(loc='best')
+        axes[1].legend(loc='best')
 
 
 class EqSystem(EqSystemBase):
@@ -338,17 +413,18 @@ class EqSystem(EqSystemBase):
             return f_cb, j_cb, elim, red_cbs
 
     def root(self, init_concs, scaling=1.0, logC=False, square=False,
-             delta=None, reduced=False, init_iter=20, **kwargs):
-        import numpy as np
+             delta=None, reduced=False, init_iter=20, init_guess=None,
+             **kwargs):
         from scipy.optimize import root
-        init_concs = np.array([init_concs[k] for k in self.substances] if
-                              isinstance(init_concs, dict) else init_concs)
+        init_concs = self.as_per_substance_array(init_concs)
         f, j, elim, red_cbs = self.num_cb_factory(
             init_concs, jac=True, scaling=scaling, logC=logC,
             square=square, reduced=reduced)
         if delta is None:
             delta = kwargs.get('tol', 1e-12)
-        x0 = self.initial_guess(init_concs + delta, scaling=scaling,
+        if init_guess is None:
+            init_guess = init_concs
+        x0 = self.initial_guess(init_guess + delta, scaling=scaling,
                                 repetitions=init_iter)
         if reduced:
             x0 = np.array([x for idx, x in enumerate(x0) if idx not in elim])
@@ -383,8 +459,8 @@ class EqSystem(EqSystemBase):
         else:
             return None, result
 
-
-    def initial_guess(self, init_concs, scaling=1, repetitions=50, steffensens=0):
+    def initial_guess(self, init_concs, scaling=1, repetitions=50,
+                      steffensens=0):
         # Fixed point iteration
         def f(x):
             xnew = np.zeros_like(x)
@@ -415,7 +491,8 @@ class EqSystem(EqSystemBase):
 class REqSystem(EqSystem):
 
     def _c(self, coords, init_concs, scaling):
-        return [scaling*ic + sum([coords[ri]*self.stoichs[cidx, ri] for ri in range(self.nr)])
+        return [scaling*ic + sum([coords[ri]*self.stoichs[cidx, ri]
+                                  for ri in range(self.nr)])
                 for cidx, ic in enumerate(init_concs)]
 
     def f(self, coords, init_concs, scaling=1):
@@ -426,12 +503,14 @@ class REqSystem(EqSystem):
         r = sp.symarray('r', self.nr)
         f = self.f(r, init_concs, scaling)
         f_lmbd = sp.lambdify(r, f, modules='numpy')
+
         def f_cb(arr):
             return f_lmbd(*arr)
         j_cb = None
         if jac:
             j = sp.Matrix(1, len(r), lambda _, q: f[q]).jacobian(r)
             j_lmbd = sp.lambdify(r, j, modules='numpy')
+
             def j_cb(arr):
                 return j_lmbd(*arr)
         return f_cb, j_cb
@@ -441,24 +520,25 @@ class REqSystem(EqSystem):
             c0 = init_concs[:]
             xnew = np.zeros_like(x)
             for ri, eq in enumerate(self.rxns):
-                xnew = _solve_equilibrium_coord(c0, self.stoichs[:, ri], eq.params)
+                xnew = _solve_equilibrium_coord(c0, self.stoichs[:, ri],
+                                                eq.params)
                 xnew = (x + xnew)/2
                 c0 = c0 + np.dot(self.stoichs, xnew)
             return xnew
         x0 = np.zeros(self.nr)
         for idx in range(repetitions):
-            print(x0) #DEBUG
             x0 = (idx*x0 + f(x0))/(idx + 1)
-        print(x0) #DEBUG
         return x0*0
 
-    def root(self, init_concs, scaling=1.0, **kwargs):
-        import numpy as np
+    def root(self, init_concs, scaling=1.0, init_iter=20,
+             init_guess=None, **kwargs):
         from scipy.optimize import root
-        init_concs = np.array([init_concs[k] for k in self.substances] if
-                              isinstance(init_concs, dict) else init_concs)
+        init_concs = self.as_per_substance_array(init_concs)
         f, j = self.num_cb_factory(init_concs, jac=True, scaling=scaling)
-        x0 = self.initial_guess(init_concs, scaling)
+        if init_guess is None:
+            x0 = self.initial_guess(init_concs, scaling, repetitions=init_iter)
+        else:
+            x0 = init_guess
         result = root(f, x0, jac=j, **kwargs)
         if result.success:
             x = result.x
