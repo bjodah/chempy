@@ -234,10 +234,17 @@ class EqSystemBase(ReactionSystem):
                 np.dot(A, self.as_per_substance_array(concs).T),
                 np.dot(A, self.as_per_substance_array(init_concs).T))
 
-    def qk(self, concs, scaling=1.0):
-        return [q - scaling**rxn.dimensionality()*rxn.params*rxn.solid_factor(
-            self.substances, concs) for q, rxn in zip(
-                self.equilibrium_quotients(concs), self.rxns)]
+    def qk(self, concs, scaling=1.0, norm=False):
+        vec = []
+        qs = self.equilibrium_quotients(concs)
+        for idx, rxn in enumerate(self.rxns):
+            k = scaling**rxn.dimensionality()*rxn.params*rxn.solid_factor(
+                self.substances, concs)
+            if norm:
+                vec.append(qs[idx]/k - 1)
+            else:
+                vec.append(qs[idx] - k)
+        return vec
 
     def multiple_root(self, init_concs, varied=None, values=None, carry=False,
                       init_guess=None, **kwargs):
@@ -261,18 +268,16 @@ class EqSystemBase(ReactionSystem):
         else:
             raise ValueError("init_concs has too many dimensions")
 
+        x0 = None
         x = np.empty((nval, self.ns))
         success = np.empty(nval, dtype=bool)
         for idx in range(nval):
             root_kw = kwargs.copy()
             g0 = init_guess if init_guess is None else init_guess[idx, :]
-            if carry:
-                if idx == 0:
-                    root_kw['init_iter'] = kwargs.get('init_iter', 20)
-                else:
-                    root_kw['init_iter'] = 0
-                    g0 = x[idx-1, :]
-            resx, res = self.root(init_concs[idx, :], init_guess=g0, **root_kw)
+            if carry and idx > 0 and res.success:
+                x0 = res.x
+            resx, res = self.root(init_concs[idx, :], init_guess=g0,
+                                  x0=x0, **root_kw)
             success[idx] = resx is not None
             x[idx, :] = resx
         return x, init_concs, success
@@ -372,10 +377,12 @@ class EqSystem(EqSystemBase):
         p0s = [dot(row, init_concs) for row in rref]
         return [dot(row, concs) - p0 for row, p0 in zip(rref, p0s)], pivot
 
-    def f(self, concs, init_concs, scaling=1, reduced=None):
+    def f(self, concs, init_concs, scaling=1, reduced=None, norm=False,
+          pres1st=False):
         pres, pivot = self.preserved(concs, init_concs*scaling)
         if reduced is None:
-            return self.qk(concs, scaling) + pres
+            qk = self.qk(concs, scaling, norm)
+            return (pres + qk) if pres1st else (qk + pres)
         else:
             if reduced:
                 import sympy as sp
@@ -383,27 +390,29 @@ class EqSystem(EqSystemBase):
                 for idx, p in zip(pivot, pres)[::-1]:
                     c = concs[idx]
                     subs.append((c, (c-p.subs(subs)).simplify()))
-                qk = [expr.subs(subs) for expr in self.qk(concs, scaling)]
+                qk = [expr.subs(subs) for expr in self.qk(concs, scaling, norm)]
                 reduced_cbs = [sp.lambdify(
                     [y for idx, y in enumerate(concs) if idx not in pivot],
                     expr) for c, expr in subs]
                 return qk, pivot, reduced_cbs
             else:
-                return self.qk(concs, scaling) + pres, None, None
+                qk = self.qk(concs, scaling, norm)
+                res = (pres + qk) if pres1st else (qk + pres)
+                return res, None, None
 
     def num_cb_factory(self, init_concs, jac=False, scaling=1.0, logC=False,
-                       square=False, reduced=None):
+                       square=False, reduced=None, norm=False, pres1st=False):
         import sympy as sp
         y = sp.symarray('y', self.ns)
         f, elim, red_cbs = self.f(y, init_concs, scaling,
-                                  reduced=bool(reduced))
+                                  reduced=bool(reduced), norm=norm, pres1st=pres1st)
         if reduced is not None:
             if reduced:
                 y = [y[idx] for idx in range(len(y)) if idx not in elim]
         if square:
-            f = [_.subs([(yi, yi*yi) for yi in y]) for _ in f]
+            f = [_.subs([(yi, yi**2) for yi in y]) for _ in f]
         if logC:
-            f = [_.subs([(yi, sp.exp(yi)) for yi in y]) for _ in f]
+            f = [_.subs([(yi, sp.exp(yi)) for yi in y]).powsimp() for _ in f]
         f_lmbd = sp.lambdify(y, f, modules='numpy')
 
         def f_cb(arr):
@@ -421,28 +430,33 @@ class EqSystem(EqSystemBase):
             return f_cb, j_cb, elim, red_cbs
 
     def root(self, init_concs, scaling=1.0, logC=False, square=False,
-             delta=None, reduced=False, init_iter=20, init_guess=None,
-             **kwargs):
+             delta=None, reduced=False, norm=False, init_iter=20,
+             init_guess=None, x0=None, pres1st=False, **kwargs):
         from scipy.optimize import root
         init_concs = self.as_per_substance_array(init_concs)
         f, j, elim, red_cbs = self.num_cb_factory(
             init_concs, jac=True, scaling=scaling, logC=logC,
-            square=square, reduced=reduced)
+            square=square, reduced=reduced, norm=norm, pres1st=pres1st)
         if delta is None:
             delta = kwargs.get('tol', 1e-12)
-        if init_guess is None:
-            init_guess = init_concs
-        x0 = self.initial_guess(init_guess + delta, scaling=scaling,
-                                repetitions=init_iter)
-        if reduced:
-            x0 = np.array([x for idx, x in enumerate(x0) if idx not in elim])
-        if square:
-            x0 = x0**0.5
-        if logC:
-            x0 = np.log(x0)
+        if x0 is None:
+            if init_guess is None:
+                init_guess = init_concs
+            x0 = self.initial_guess(init_guess + delta, scaling=scaling,
+                                    repetitions=init_iter)
+            if reduced:
+                x0 = np.array([x for idx, x in enumerate(x0) if
+                               idx not in elim])
+            if square:
+                x0 = x0**0.5
+            if logC:
+                x0 = np.log(x0)
+        else:
+            if init_guess is not None:
+                raise ValueError("x0 and init_guess passed")
         result = root(f, x0, jac=j, **kwargs)
         if result.success:
-            x = result.x
+            x = result.x.copy()
             if logC:
                 x = np.exp(x)
             if square:
@@ -539,11 +553,11 @@ class REqSystem(EqSystem):
         return x0*0
 
     def root(self, init_concs, scaling=1.0, init_iter=20,
-             init_guess=None, **kwargs):
+             init_guess=None, x0=None, **kwargs):
         from scipy.optimize import root
         init_concs = self.as_per_substance_array(init_concs)
         f, j = self.num_cb_factory(init_concs, jac=True, scaling=scaling)
-        if init_guess is None:
+        if x0 is None:
             x0 = self.initial_guess(init_concs, scaling, repetitions=init_iter)
         else:
             x0 = init_guess
