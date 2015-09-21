@@ -419,7 +419,7 @@ class EqSystem(EqSystemBase):
                     in zip(rref, p0s)], pivot
 
     def f(self, sc_concs, init_concs, scaling=1, reduced=False, norm=False,
-          pres1st=False, presw=1, const_indices=()):
+          pres_norm=False, pres1st=False, presw=1, const_indices=()):
         sc_concs = copy.copy(sc_concs)
         skip_atom_nrs=set()
         charge=True
@@ -429,11 +429,11 @@ class EqSystem(EqSystemBase):
             if self.substances[cidx].charge != 0:
                 charge=False
             sc_concs[cidx] = init_concs[cidx]*scaling
-        if norm and reduced:
+        if pres_norm and reduced:
             raise NotImplementedError
         pres, pivot = self.preserved(
             sc_concs, init_concs*scaling, charge=charge,
-            skip_atom_nrs=skip_atom_nrs, presw=presw, norm=norm)
+            skip_atom_nrs=skip_atom_nrs, presw=presw, norm=pres_norm)
         if reduced:
             import sympy as sp
             subs = []
@@ -452,12 +452,12 @@ class EqSystem(EqSystemBase):
 
     def num_cb_factory(self, init_concs, jac=False, scaling=1.0, logC=False,
                        square=False, reduced=False, norm=False, pres1st=False,
-                       presw=1, const_indices=(), tanh_b=None):
+                       pres_norm=False, presw=1, const_indices=(), tanh_b=None):
         import sympy as sp
         y = sp.symarray('y', self.ns)
         f, elim, red_cbs = self.f(
-            y, init_concs, scaling, reduced=reduced, norm=norm,
-            pres1st=pres1st, presw=presw, const_indices=const_indices)
+            y, init_concs, scaling, reduced=reduced, norm=norm, pres1st=pres1st,
+            pres_norm=pres_norm, presw=presw, const_indices=const_indices)
 
         if elim is not None:
             for eidx in elim:
@@ -497,7 +497,7 @@ class EqSystem(EqSystemBase):
 
     def root(self, init_concs, scaling=1.0, logC=False, square=False,
              tanh=False, delta=None, reduced=False, norm=False, init_iter=20,
-             init_guess=None, x0=None, pres1st=False, presw=1,
+             pres_norm=False, init_guess=None, x0=None, pres1st=False, presw=1,
              const=(), **kwargs):
         from scipy.optimize import root
         init_concs = self.as_per_substance_array(init_concs)
@@ -513,7 +513,7 @@ class EqSystem(EqSystemBase):
             tanh_b = None
         f, j, elim, red_cbs = self.num_cb_factory(
             init_concs, jac=True, scaling=scaling, logC=logC, square=square,
-            tanh_b=tanh_b, reduced=reduced, norm=norm,
+            tanh_b=tanh_b, reduced=reduced, norm=norm, pres_norm=pres_norm,
             pres1st=pres1st, presw=presw, const_indices=const_indices)
         if delta is None:
             delta = kwargs.get('tol', 1e-12)
