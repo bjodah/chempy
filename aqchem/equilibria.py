@@ -256,7 +256,7 @@ class EqSystemBase(ReactionSystem):
         vec = []
         qs = self.equilibrium_quotients(sc_concs)
         for idx, rxn in enumerate(self.rxns):
-            k = (scaling**rxn.dimensionality()*rxn.params*
+            k = (scaling**rxn.dimensionality()*rxn.params *
                  rxn.solid_factor(self.substances, sc_concs))
             if norm:
                 vec.append(qs[idx]/k - 1)
@@ -318,7 +318,7 @@ class EqSystemBase(ReactionSystem):
             ax.plot(values[success], x[success, idx_s],
                     label=self.substances[idx_s].name, **plot_kwargs)
 
-        #ax.legend(loc='best')
+        # ax.legend(loc='best')
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
         # Put a legend to the right of the current axis
@@ -398,42 +398,43 @@ class EqSystem(EqSystemBase):
         return [([0] + atm_nrs)[idx] for idx in pivot]
 
     def preserved(self, sc_concs, sc_init_concs, charge=True,
-                  skip_atom_nrs=(), presw=1, norm=False):
-        if norm:
-            res = []
+                  skip_atom_nrs=(), presw=1, norm=False, rref=True):
+        res = []
+        if rref:
+            vecs, pivot = self.rref(charge, skip_atom_nrs)
+        else:
             atom_vecs, atm_nrs = self.atom_balance_vectors()
             chg = [self.charge_balance_vector()] if charge else []
             vecs = chg + [v for v, n in zip(atom_vecs, atm_nrs)
                           if n not in skip_atom_nrs]
-            s0s = [dot(row, sc_init_concs) for row in vecs]
-            for row, s0 in zip(vecs, s0s):
-                if norm:
-                    res.append(presw*(dot(row, sc_concs)/s0 - 1))
-                else:
-                    res.append(presw*(dot(row, sc_concs) - s0))
-            return res, None
-        else:
-            rref, pivot = self.rref(charge, skip_atom_nrs)
-            p0s = [dot(row, sc_init_concs) for row in rref]
-            return [presw*(dot(row, sc_concs) - p0) for row, p0
-                    in zip(rref, p0s)], pivot
+            pivot = None
+        s0s = [dot(row, sc_init_concs) for row in vecs]
+        for row, s0 in zip(vecs, s0s):
+            if norm:
+                res.append(presw*(dot(row, sc_concs)/s0 - 1))
+            else:
+                res.append(presw*(dot(row, sc_concs) - s0))
+        return res, pivot
 
     def f(self, sc_concs, init_concs, scaling=1, reduced=False, norm=False,
-          pres_norm=False, pres1st=False, presw=1, const_indices=()):
+          pres_norm=False, pres1st=False, presw=1, const_indices=(),
+          rref=True, charge=None):
         sc_concs = copy.copy(sc_concs)
-        skip_atom_nrs=set()
-        charge=True
+        skip_atom_nrs = set()
+        if charge is None:
+            charge = True
         for cidx in const_indices:
             for k in self.substances[cidx].elemental_composition:
                 skip_atom_nrs.add(k)
             if self.substances[cidx].charge != 0:
-                charge=False
+                charge = False
             sc_concs[cidx] = init_concs[cidx]*scaling
         if pres_norm and reduced:
             raise NotImplementedError
         pres, pivot = self.preserved(
             sc_concs, init_concs*scaling, charge=charge,
-            skip_atom_nrs=skip_atom_nrs, presw=presw, norm=pres_norm)
+            skip_atom_nrs=skip_atom_nrs, presw=presw, norm=pres_norm,
+            rref=rref)
         if reduced:
             import sympy as sp
             subs = []
@@ -452,12 +453,14 @@ class EqSystem(EqSystemBase):
 
     def num_cb_factory(self, init_concs, jac=False, scaling=1.0, logC=False,
                        square=False, reduced=False, norm=False, pres1st=False,
-                       pres_norm=False, presw=1, const_indices=(), tanh_b=None):
+                       pres_norm=False, presw=1, const_indices=(), tanh_b=None,
+                       rref=True, charge=None):
         import sympy as sp
         y = sp.symarray('y', self.ns)
         f, elim, red_cbs = self.f(
-            y, init_concs, scaling, reduced=reduced, norm=norm, pres1st=pres1st,
-            pres_norm=pres_norm, presw=presw, const_indices=const_indices)
+            y, init_concs, scaling, reduced=reduced, norm=norm,
+            pres1st=pres1st, pres_norm=pres_norm, presw=presw,
+            const_indices=const_indices, rref=rref, charge=charge)
 
         if elim is not None:
             for eidx in elim:
@@ -498,13 +501,14 @@ class EqSystem(EqSystemBase):
     def root(self, init_concs, scaling=1.0, logC=False, square=False,
              tanh=False, delta=None, reduced=False, norm=False, init_iter=20,
              pres_norm=False, init_guess=None, x0=None, pres1st=False, presw=1,
-             const=(), **kwargs):
+             const=(), rref=True, charge=None, **kwargs):
         from scipy.optimize import root
         init_concs = self.as_per_substance_array(init_concs)
         const_indices = list(map(self.as_substance_index, const))
+        sc_upper_bounds = np.array(self.upper_conc_bounds(
+            init_concs*scaling))
         if tanh:
             factor = 0.5
-            sc_upper_bounds = np.array(self.upper_conc_bounds(init_concs*scaling))
             sc_lower_bounds = -factor*sc_upper_bounds
             sc_bounds_span = sc_upper_bounds - sc_lower_bounds
             sc_middle = sc_lower_bounds + 0.5*sc_bounds_span
@@ -514,7 +518,8 @@ class EqSystem(EqSystemBase):
         f, j, elim, red_cbs = self.num_cb_factory(
             init_concs, jac=True, scaling=scaling, logC=logC, square=square,
             tanh_b=tanh_b, reduced=reduced, norm=norm, pres_norm=pres_norm,
-            pres1st=pres1st, presw=presw, const_indices=const_indices)
+            pres1st=pres1st, presw=presw, const_indices=const_indices,
+            rref=rref, charge=charge)
         if delta is None:
             delta = kwargs.get('tol', 1e-12)
         if x0 is None:
@@ -563,7 +568,8 @@ class EqSystem(EqSystemBase):
                         new_x.append(x[idx_red])
                         idx_red += 1
                 x = np.array(new_x)
-            if np.any(x < 0):
+            # Sanity checks:
+            if np.any(x < 0) or np.any(x > sc_upper_bounds*(1 + 1e-12)):
                 return None, result
             x /= scaling
             return x, result

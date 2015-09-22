@@ -56,7 +56,7 @@ class Substance(object):
             #     pass
 
     def __repr__(self):
-        kw = ['name=' + self.anme + ', ...']  # Too verbose
+        kw = ['name=' + self.name + ', ...']  # Too verbose
         return "{}({})".format(self.__class__.__name__, ','.join(kw))
 
     def __str__(self):
