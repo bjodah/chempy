@@ -289,6 +289,7 @@ class EqSystemBase(ReactionSystem):
         x0 = None
         x = np.empty((nval, self.ns))
         success = np.empty(nval, dtype=bool)
+        res = None  # silence pyflakes
         for idx in range(nval):
             root_kw = kwargs.copy()
             g0 = init_guess if init_guess is None else init_guess[idx, :]
@@ -444,7 +445,7 @@ class EqSystem(EqSystemBase):
             qk = [expr.subs(subs) for expr in self.qk(sc_concs, scaling, norm)]
             reduced_cbs = [sp.lambdify(
                 [y for idx, y in enumerate(sc_concs) if idx not in pivot],
-                expr) for c, expr in subs]
+                expr) for _, expr in subs[::-1]]
             return qk, pivot, reduced_cbs
         else:
             qk = self.qk(sc_concs, scaling, norm)

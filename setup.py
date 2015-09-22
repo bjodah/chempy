@@ -32,7 +32,7 @@ classifiers = [
 
 setup_kwargs = {
     'name': pkg_name,
-    'version': __version__,
+    'version': eval('__version__'),  # silence pyflakes
     'description': (
         'Package useful for (physical) chemistry'
     ),

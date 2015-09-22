@@ -2,6 +2,10 @@ import pytest
 import numpy as np
 from scipy.optimize import fsolve
 
+from ..chemistry import (
+    Reaction, Substance
+)
+
 from ..equilibria import (
     equilibrium_quotient, equilibrium_residual, get_rc_interval,
     solve_equilibrium, EqSystem, prodexp, _solve_equilibrium_coord
@@ -55,7 +59,10 @@ def test_solve_equilibrium_2():
 
 
 def test_EqSystem():
-    pass
+    a, b = sbstncs = Substance('a'), Substance('b')
+    rxns = [Reaction({a: 1}, {b: 1})]
+    es = EqSystem(rxns, sbstncs)
+    assert es.stoichs.tolist() == [[-1], [1]]
 
 
 @pytest.mark.xfail

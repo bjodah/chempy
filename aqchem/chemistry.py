@@ -48,12 +48,9 @@ class Substance(object):
                 self.mass = formula.mass
             except AttributeError:
                 pass
-        if elemental_composition is None:
-            # try:
+        if elemental_composition is None and formula is not None:
             self.elemental_composition = {
                 k.number: v for k, v in elements(formula).items()}
-            # except AttributeError:
-            #     pass
 
     def __repr__(self):
         kw = ['name=' + self.name + ', ...']  # Too verbose
