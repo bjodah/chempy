@@ -586,7 +586,7 @@ class EqSystem(EqSystemBase):
                     x, self.stoichs[:, ri],
                     eq.params * scaling**eq.dimensionality())
             return xnew/self.nr
-        init_concs *= scaling
+        init_concs = init_concs*scaling
         for _ in range(repetitions):
             init_concs = f(init_concs)
 
@@ -634,18 +634,23 @@ class REqSystem(EqSystem):
 
     def initial_guess(self, init_concs, scaling, repetitions=10):
         def f(x):
-            c0 = init_concs[:]
+            c0 = init_concs*scaling + np.dot(self.stoichs, x)
             xnew = np.zeros_like(x)
             for ri, eq in enumerate(self.rxns):
-                xnew = _solve_equilibrium_coord(c0, self.stoichs[:, ri],
-                                                eq.params)
-                xnew = (x + xnew)/2
-                c0 = c0 + np.dot(self.stoichs, xnew)
-            return xnew
+                xnew += _solve_equilibrium_coord(c0, self.stoichs[:, ri],
+                                                 eq.params)
+                # xnew = (xnew + x)/2
+                # c0 = c0 + np.dot(self.stoichs, xnew)
+                # xnew = _solve_equilibrium_coord(c0, self.stoichs[:, ri],
+                #                                 eq.params)
+                # xnew = (xnew + x)/2
+                # c0 = c0 + np.dot(self.stoichs, xnew)
+            return xnew/(2*self.nr+1)
         x0 = np.zeros(self.nr)
         for idx in range(repetitions):
-            x0 = (idx*x0 + f(x0))/(idx + 1)
-        return x0*0
+            print(x0)
+            x0 = (x0 + f(x0))/2  # (idx*x0 + f(x0))/(idx + 1)
+        return x0
 
     def root(self, init_concs, scaling=1.0, init_iter=20,
              init_guess=None, x0=None, **kwargs):
@@ -658,6 +663,7 @@ class REqSystem(EqSystem):
                                         repetitions=init_iter)
             else:
                 x0 = init_guess
+        print(x0)
         result = root(f, x0, jac=j, **kwargs)
         if result.success:
             x = result.x
