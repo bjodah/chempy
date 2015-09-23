@@ -67,7 +67,13 @@ def test_EqSystem():
 
 @pytest.mark.xfail
 def test__solve_equilibrium_coord():
-    c0 = np.array([-1.2882e-14, 3.1156e-10, 3.2099e-10, 9.679e-09, 5.5469e-07])
+    c = np.array([-1.2882e-14, 3.1156e-10, 3.2099e-10, 9.679e-09, 5.5469e-07])
     stoich = np.array([1, 1, 0, 0, -1])
     K = 1e-22
-    _solve_equilibrium_coord(c0, stoich, K)
+    # K = (c[0] + r)*(c[1] + r)/(c[4] - r)
+    # Kc[4] - Kr = c[0]c[1] + r(c[0] + c[1]) + r**2
+    # {p = (c[0] + c[1] + K)/2}
+    # {q = c[0]c[1] - Kc[4]}
+    # r = p +/- sqrt(p*p/4 - q)
+    # ... scrap that, there's a neg. conc
+    _solve_equilibrium_coord(c, stoich, K)

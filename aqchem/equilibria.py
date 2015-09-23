@@ -42,7 +42,10 @@ def equilibrium_residual(rc, c0, stoich, K, activity_product=None):
         callback for calculating the activity product taking
         concentration as single parameter.
     """
-    c = c0 + rc*stoich
+    if not hasattr(stoich, 'ndim') or stoich.ndim == 1:
+        c = c0 + stoich*rc
+    else:
+        c = c0 + np.dot(stoich, rc)
     Q = equilibrium_quotient(c, stoich)
     if activity_product is not None:
         Q *= activity_product(c)
@@ -204,6 +207,8 @@ class EqSystemBase(ReactionSystem):
         return np.array([eq.net_stoich(self.substances)
                          for eq in self.rxns]).transpose()
 
+    def eq_constants(self, scaling=1):
+        return np.array([eq.params*scaling**eq.dimensionality() for eq in self.rxns])
 
     def upper_conc_bounds(self, init_concs):
         init_concs_arr = self.as_per_substance_array(init_concs)
@@ -565,7 +570,9 @@ class EqSystem(EqSystemBase):
         else:
             if init_guess is not None:
                 raise ValueError("x0 and init_guess passed")
+
         result = root(f, x0, jac=j, **kwargs)
+
         if result.success:
             x = result.x.copy()
             if logC:
@@ -637,13 +644,13 @@ class REqSystem(EqSystem):
                                   for ri in range(self.nr)])
                 for cidx, ic in enumerate(init_concs)]
 
-    def f(self, coords, init_concs, scaling=1):
-        return self.qk(self._c(coords, init_concs, scaling), scaling)
+    def f(self, coords, init_concs, scaling=1, norm=False):
+        return self.qk(self._c(coords, init_concs, scaling), scaling, norm)
 
-    def num_cb_factory(self, init_concs, jac=False, scaling=1.0):
+    def num_cb_factory(self, init_concs, jac=True, scaling=1.0, norm=False):
         import sympy as sp
         r = sp.symarray('r', self.nr)
-        f = self.f(r, init_concs, scaling)
+        f = self.f(r, init_concs, scaling, norm=norm)
         f_lmbd = sp.lambdify(r, f, modules='numpy')
 
         def f_cb(arr):
@@ -657,38 +664,54 @@ class REqSystem(EqSystem):
                 return j_lmbd(*arr)
         return f_cb, j_cb
 
-    def initial_guess(self, init_concs, scaling, repetitions=10):
+    # def initial_guess(self, init_concs, scaling, repetitions=5):
+    #     np.set_printoptions(precision=2) #DEBUG
+    #     def f(x):
+    #         c0 = init_concs*scaling + np.dot(self.stoichs, x)
+    #         print(c0) #DEBUG
+    #         print(equilibrium_residual(x, c0, self.stoichs, self.eq_constants))
+    #         xnew = np.zeros_like(x)
+    #         for ri, eq in enumerate(self.rxns):
+    #             xnew += _solve_equilibrium_coord(c0, self.stoichs[:, ri],
+    #                                              eq.params)
+    #         return xnew/(2*self.nr+1)
+    #     x0 = np.zeros(self.nr)
+    #     for idx in range(repetitions):
+    #         x0 = (x0 + f(x0))/2  # (idx*x0 + f(x0))/(idx + 1)
+    #     return x0
+
+    def initial_guess(self, init_concs, scaling, repetitions=3):
+        np.set_printoptions(precision=2) #DEBUG
         def f(x):
             c0 = init_concs*scaling + np.dot(self.stoichs, x)
+            QKres = equilibrium_residual(x, c0, self.stoichs, self.eq_constants(scaling))
             xnew = np.zeros_like(x)
+            weights = 0.1 + np.abs(QKres/self.eq_constants(scaling) - 1)
+            print(c0/scaling) #DEBUG
+            print(QKres) #DEBUG
+            print(weights) #DEBUG
             for ri, eq in enumerate(self.rxns):
-                xnew += _solve_equilibrium_coord(c0, self.stoichs[:, ri],
-                                                 eq.params)
-                # xnew = (xnew + x)/2
-                # c0 = c0 + np.dot(self.stoichs, xnew)
-                # xnew = _solve_equilibrium_coord(c0, self.stoichs[:, ri],
-                #                                 eq.params)
-                # xnew = (xnew + x)/2
-                # c0 = c0 + np.dot(self.stoichs, xnew)
-            return xnew/(2*self.nr+1)
+                xnew += weights[ri]*_solve_equilibrium_coord(c0, self.stoichs[:, ri],
+                                                             eq.params)
+            return xnew/sum(weights)
         x0 = np.zeros(self.nr)
         for idx in range(repetitions):
-            print(x0)
             x0 = (x0 + f(x0))/2  # (idx*x0 + f(x0))/(idx + 1)
         return x0
 
-    def root(self, init_concs, scaling=1.0, init_iter=20,
-             init_guess=None, x0=None, **kwargs):
+    def root(self, init_concs, scaling=1.0, init_iter=4,
+             init_guess=None, x0=None, norm=False, **kwargs):
         from scipy.optimize import root
         init_concs = self.as_per_substance_array(init_concs)
-        f, j = self.num_cb_factory(init_concs, jac=True, scaling=scaling)
+        f, j = self.num_cb_factory(init_concs, jac=True, scaling=scaling,
+                                   norm=norm)
         if x0 is None:
             if init_guess is None:
                 x0 = self.initial_guess(init_concs, scaling,
                                         repetitions=init_iter)
             else:
                 x0 = init_guess
-        print(x0)
+        print('x0', x0)
         result = root(f, x0, jac=j, **kwargs)
         if result.success:
             x = result.x
