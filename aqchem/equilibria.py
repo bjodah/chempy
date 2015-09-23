@@ -316,7 +316,7 @@ class EqSystemBase(ReactionSystem):
             plot_kwargs = {}
         x, new_init_concs, success = self.multiple_root(
             init_concs, varied, values, **kwargs)
-        ls, c = '- -- : ;'.split(), 'krgbcmy'
+        ls, c = '- -- : -.'.split(), 'krgbcmy'
         extra_kw = {}
         for idx_s in range(self.ns):
             if idx_s == self.as_substance_index(varied):
@@ -433,8 +433,9 @@ class EqSystem(EqSystemBase):
 
     def f(self, sc_concs, init_concs, scaling=1, reduced=False, norm=False,
           pres_norm=False, pres1st=False, presw=1, const_indices=(),
-          rref=True, charge=None):
+          rref=True, charge=None, extra_pres_sq=False):
         sc_concs = copy.copy(sc_concs)
+        sc_init_concs = scaling*init_concs
         skip_atom_nrs = set()
         if charge is None:
             charge = True
@@ -443,39 +444,46 @@ class EqSystem(EqSystemBase):
                 skip_atom_nrs.add(k)
             if self.substances[cidx].charge != 0:
                 charge = False
-            sc_concs[cidx] = init_concs[cidx]*scaling
+            sc_concs[cidx] = sc_init_concs[cidx]
+        qk = self.qk(sc_concs, scaling, norm)
         if pres_norm and reduced:
             raise NotImplementedError
         pres, pivot = self.preserved(
-            sc_concs, init_concs*scaling, charge=charge,
+            sc_concs, sc_init_concs, charge=charge,
             skip_atom_nrs=skip_atom_nrs, presw=presw, norm=pres_norm,
             rref=rref)
+        if extra_pres_sq:
+            pv, _ = self.preserved(sc_concs*sc_concs,
+                                   sc_init_concs*sc_init_concs,
+                                   charge=charge, skip_atom_nrs=skip_atom_nrs,
+                                   presw=presw, norm=pres_norm, rref=False)
+            qk += pv
         if reduced:
             import sympy as sp
             subs = []
             for idx, p in zip(pivot, pres)[::-1]:
                 c = sc_concs[idx]
                 subs.append((c, (c-p.subs(subs)).simplify()))
-            qk = [expr.subs(subs) for expr in self.qk(sc_concs, scaling, norm)]
+            res = [expr.subs(subs) for expr in qk]
             reduced_cbs = [sp.lambdify(
                 [y for idx, y in enumerate(sc_concs) if idx not in pivot],
                 expr) for _, expr in subs[::-1]]
-            return qk, pivot, reduced_cbs
         else:
-            qk = self.qk(sc_concs, scaling, norm)
             res = (pres + qk) if pres1st else (qk + pres)
-            return res, None, None
+            pivot, reduced_cbs = None, None
+        return res, pivot, reduced_cbs
 
     def num_cb_factory(self, init_concs, jac=False, scaling=1.0, logC=False,
                        square=False, reduced=False, norm=False, pres1st=False,
                        pres_norm=False, presw=1, const_indices=(), tanh_b=None,
-                       rref=True, charge=None):
+                       rref=True, charge=None, extra_pres_sq=False):
         import sympy as sp
         y = sp.symarray('y', self.ns)
         f, elim, red_cbs = self.f(
             y, init_concs, scaling, reduced=reduced, norm=norm,
             pres1st=pres1st, pres_norm=pres_norm, presw=presw,
-            const_indices=const_indices, rref=rref, charge=charge)
+            const_indices=const_indices, rref=rref, charge=charge,
+            extra_pres_sq=extra_pres_sq)
 
         if elim is not None:
             for eidx in elim:
@@ -516,7 +524,7 @@ class EqSystem(EqSystemBase):
     def root(self, init_concs, scaling=1.0, logC=False, square=False,
              tanh=False, delta=None, reduced=False, norm=False, init_iter=20,
              pres_norm=False, init_guess=None, x0=None, pres1st=False, presw=1,
-             const=(), rref=True, charge=None, **kwargs):
+             const=(), rref=True, charge=None, extra_pres_sq=False, **kwargs):
         from scipy.optimize import root
         init_concs = self.as_per_substance_array(init_concs)
         const_indices = list(map(self.as_substance_index, const))
@@ -534,7 +542,7 @@ class EqSystem(EqSystemBase):
             init_concs, jac=True, scaling=scaling, logC=logC, square=square,
             tanh_b=tanh_b, reduced=reduced, norm=norm, pres_norm=pres_norm,
             pres1st=pres1st, presw=presw, const_indices=const_indices,
-            rref=rref, charge=charge)
+            rref=rref, charge=charge, extra_pres_sq=extra_pres_sq)
         if delta is None:
             delta = kwargs.get('tol', 1e-12)
         if x0 is None:
