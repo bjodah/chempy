@@ -198,8 +198,12 @@ class EqSystemBase(ReactionSystem):
 
     def __init__(self, *args, **kwargs):
         super(EqSystemBase, self).__init__(*args, **kwargs)
-        self.stoichs = np.array([eq.net_stoich(self.substances)
-                                 for eq in self.rxns]).transpose()
+
+    @property
+    def stoichs(self):
+        return np.array([eq.net_stoich(self.substances)
+                         for eq in self.rxns]).transpose()
+
 
     def upper_conc_bounds(self, init_concs):
         init_concs_arr = self.as_per_substance_array(init_concs)
@@ -312,12 +316,22 @@ class EqSystemBase(ReactionSystem):
             plot_kwargs = {}
         x, new_init_concs, success = self.multiple_root(
             init_concs, varied, values, **kwargs)
-
+        ls, c = '- -- : ;'.split(), 'krgbcmy'
+        extra_kw = {}
         for idx_s in range(self.ns):
             if idx_s == self.as_substance_index(varied):
                 continue
+            if 'ls' not in plot_kwargs and 'linestyle' not in plot_kwargs:
+                extra_kw['ls'] = ls[idx_s % len(ls)]
+            if 'c' not in plot_kwargs and 'color' not in plot_kwargs:
+                extra_kw['c'] = c[idx_s % len(c)]
+            try:
+                lbl = '$' + self.substances[idx_s].latex_name + '$'
+            except TypeError:
+                lbl = self.substances[idx_s].name
+            extra_kw.update(plot_kwargs)
             ax.plot(values[success], x[success, idx_s],
-                    label=self.substances[idx_s].name, **plot_kwargs)
+                    label=lbl, **extra_kw)
 
         # ax.legend(loc='best')
         box = ax.get_position()
@@ -570,7 +584,9 @@ class EqSystem(EqSystemBase):
                         idx_red += 1
                 x = np.array(new_x)
             # Sanity checks:
-            if np.any(x < 0) or np.any(x > sc_upper_bounds*(1 + 1e-12)):
+            neg_conc, too_much = np.any(x < 0), np.any(x > sc_upper_bounds*(1 + 1e-12))
+            if neg_conc or too_much:
+                print("neg_conc, too_much", neg_conc, too_much) #DEBUG
                 return None, result
             x /= scaling
             return x, result
