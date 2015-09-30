@@ -8,7 +8,7 @@ from ..chemistry import (
 
 from ..equilibria import (
     equilibrium_quotient, equilibrium_residual, get_rc_interval,
-    solve_equilibrium, EqSystem, prodexp, _solve_equilibrium_coord
+    solve_equilibrium, EqSystem, prodpow, _solve_equilibrium_coord
 )
 
 
@@ -53,7 +53,7 @@ def test_solve_equilibrium_2():
     K = 55*1e-6
 
     def f(x):
-        return prodexp(c+x*stoich, stoich) - K
+        return prodpow(c+x*stoich, stoich) - K
     solution = solve_equilibrium(c, stoich, K)
     assert np.allclose(solution, c + stoich*fsolve(f, 0.1))
 

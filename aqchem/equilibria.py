@@ -1,18 +1,31 @@
 from __future__ import division, absolute_import
 
 import copy
+import math
 from collections import defaultdict
 from functools import reduce
-from operator import mul
+from operator import mul, add
 
 import numpy as np
 
 from .chemistry import Reaction, ReactionSystem
 
 
-def prodexp(factors, exponents):
-    return reduce(mul, [factor ** exponent for factor, exponent
-                        in zip(factors, exponents)])
+def reducemap(args, reduce_op, map_op):
+    return reduce(reduce_op, map(map_op, *args))
+
+
+def summul(bases, exponents):
+    # return np.add.reduce(bases**exponents)
+    return reducemap((bases, exponents), add, mul)
+
+
+def prodpow(bases, exponents):
+    return np.multiply.reduce(
+        bases**exponents, axis=-1)
+    # return reducemap((bases, exponents), mul, pow)
+    # return reduce(mul, [factor ** exponent for factor, exponent
+    #                     in zip(factors, exponents)])
 
 
 def equilibrium_quotient(concs, stoich):
@@ -203,7 +216,6 @@ class EqSystemBase(ReactionSystem):
     def stoichs(self):
         return np.array([eq.net_stoich(self.substances)
                          for eq in self.rxns]).transpose()
-
 
     def upper_conc_bounds(self, init_concs):
         init_concs_arr = self.as_per_substance_array(init_concs)
@@ -431,6 +443,17 @@ class EqSystem(EqSystemBase):
                 res.append(presw*(dot(row, sc_concs) - s0))
         return res, pivot
 
+    def f_logc(self, y, init_concs, ln=None, exp=None):
+        if ln is None:
+            ln = math.log
+        if exp is None:
+            exp = math.exp
+        f = []
+        for ri, rxn in enumerate(self.rxns):
+            f.append(summul(y, self.stoichs[:, ri]) - ln(rxn.params))
+        pres, pivot = self.preserved(map(exp, y), init_concs, rref=False)
+        return f + pres
+
     def f(self, sc_concs, init_concs, scaling=1, reduced=False, norm=False,
           pres_norm=False, pres1st=False, presw=1, const_indices=(),
           rref=True, charge=None, extra_pres_sq=False):
@@ -467,7 +490,7 @@ class EqSystem(EqSystemBase):
             res = [expr.subs(subs) for expr in qk]
             reduced_cbs = [sp.lambdify(
                 [y for idx, y in enumerate(sc_concs) if idx not in pivot],
-                expr) for _, expr in subs[::-1]]
+                expr) for _drop, expr in subs[::-1]]
         else:
             res = (pres + qk) if pres1st else (qk + pres)
             pivot, reduced_cbs = None, None
@@ -475,8 +498,9 @@ class EqSystem(EqSystemBase):
 
     def num_cb_factory(self, init_concs, jac=False, scaling=1.0, logC=False,
                        square=False, reduced=False, norm=False, pres1st=False,
-                       pres_norm=False, presw=1, const_indices=(), tanh_b=None,
-                       rref=True, charge=None, extra_pres_sq=False):
+                       pres_norm=False, presw=1, const_indices=(),
+                       tanh_b=None, rref=True, charge=None,
+                       extra_pres_sq=False):
         import sympy as sp
         y = sp.symarray('y', self.ns)
         f, elim, red_cbs = self.f(
@@ -592,9 +616,10 @@ class EqSystem(EqSystemBase):
                         idx_red += 1
                 x = np.array(new_x)
             # Sanity checks:
-            neg_conc, too_much = np.any(x < 0), np.any(x > sc_upper_bounds*(1 + 1e-12))
+            neg_conc, too_much = np.any(x < 0), np.any(
+                x > sc_upper_bounds*(1 + 1e-12))
             if neg_conc or too_much:
-                print("neg_conc, too_much", neg_conc, too_much) #DEBUG
+                print("neg_conc, too_much", neg_conc, too_much)  # DEBUG
                 return None, result
             x /= scaling
             return x, result
