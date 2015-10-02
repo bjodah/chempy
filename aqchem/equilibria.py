@@ -19,7 +19,6 @@ def summul(bases, exponents):
     # return np.add.reduce(bases**exponents)
     return reducemap((bases, exponents), add, mul)
 
-
 def prodpow(bases, exponents):
     return np.multiply.reduce(
         bases**exponents, axis=-1)
@@ -215,8 +214,8 @@ class EqSystemBase(ReactionSystem):
         else:
             return self.substances.index(sbstnc)
 
-    def __init__(self, *args, **kwargs):
-        super(EqSystemBase, self).__init__(*args, **kwargs)
+    # def __init__(self, *args, **kwargs):
+    #     super(EqSystemBase, self).__init__(*args, **kwargs)
 
     @property
     def stoichs(self):
@@ -277,18 +276,6 @@ class EqSystemBase(ReactionSystem):
         return (atm_nrs,
                 np.dot(A, self.as_per_substance_array(concs).T),
                 np.dot(A, self.as_per_substance_array(init_concs).T))
-
-    def qk(self, sc_concs, scaling=1.0, norm=False):
-        vec = []
-        qs = self.equilibrium_quotients(sc_concs)
-        for idx, rxn in enumerate(self.rxns):
-            k = (scaling**rxn.dimensionality()*rxn.params *
-                 rxn.solid_factor(self.substances, sc_concs))
-            if norm:
-                vec.append(qs[idx]/k - 1)
-            else:
-                vec.append(qs[idx] - k)
-        return vec
 
     def multiple_root(self, init_concs, varied=None, values=None, carry=False,
                       init_guess=None, **kwargs):
@@ -407,8 +394,35 @@ class EqSystemBase(ReactionSystem):
         axes[0].legend(loc='best')
         axes[1].legend(loc='best')
 
+class EqSystemLog(EqBase):
 
-class EqSystem(EqSystemBase):
+    def f(self, y, init_concs, ln=None, exp=None):
+        if ln is None:
+            ln = math.log
+        if exp is None:
+            exp = math.exp
+        f = []
+        for ri, K in enumerate(self.eq_constants()):
+            f.append(summul(y, self.stoichs[:, ri]) - ln(K))
+        pres, pivot = self.preserved(map(exp, y), init_concs, rref=False)
+        return f + pres
+
+class LinEqSystemBase(EqSystemBase):
+
+    def qk(self, sc_concs, scaling=1.0, norm=False):
+        vec = []
+        qs = self.equilibrium_quotients(sc_concs)
+        for idx, rxn in enumerate(self.rxns):
+            k = (scaling**rxn.dimensionality()*rxn.params *
+                 rxn.solid_factor(self.substances, sc_concs))
+            if norm:
+                vec.append(qs[idx]/k - 1)
+            else:
+                vec.append(qs[idx] - k)
+        return vec
+
+
+class EqSystem(LinEqSystemBase):
 
     def rref(self, charge=True, skip_atom_nrs=()):
         """
@@ -674,7 +688,7 @@ class EqSystem(EqSystemBase):
         return init_concs
 
 
-class REqSystem(EqSystem):
+class REqSystem(LinEqSystemBase):
 
     def _c(self, coords, init_concs, scaling):
         return [scaling*ic + sum([coords[ri]*self.stoichs[cidx, ri]
