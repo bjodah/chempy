@@ -37,7 +37,7 @@ def equilibrium_quotient(concs, stoich):
 
     # mask, = np.nonzero(stoich)
     # stoich_m = stoich[mask]
-    for nr, conc in zip(stoich, concs):  #, concs[..., mask]):
+    for nr, conc in zip(stoich, concs):  # , concs[..., mask]):
         tot *= conc**nr
     return tot
 
@@ -224,7 +224,8 @@ class EqSystemBase(ReactionSystem):
                          for eq in self.rxns]).transpose()
 
     def eq_constants(self, scaling=1):
-        return np.array([eq.params*scaling**eq.dimensionality() for eq in self.rxns])
+        return np.array([eq.params*scaling**eq.dimensionality()
+                         for eq in self.rxns])
 
     def upper_conc_bounds(self, init_concs):
         init_concs_arr = self.as_per_substance_array(init_concs)
@@ -705,7 +706,8 @@ class REqSystem(EqSystem):
     #     def f(x):
     #         c0 = init_concs*scaling + np.dot(self.stoichs, x)
     #         print(c0) #DEBUG
-    #         print(equilibrium_residual(x, c0, self.stoichs, self.eq_constants))
+    #         print(equilibrium_residual(x, c0, self.stoichs,
+    #                                    self.eq_constants))
     #         xnew = np.zeros_like(x)
     #         for ri, eq in enumerate(self.rxns):
     #             xnew += _solve_equilibrium_coord(c0, self.stoichs[:, ri],
@@ -717,18 +719,20 @@ class REqSystem(EqSystem):
     #     return x0
 
     def initial_guess(self, init_concs, scaling, repetitions=3):
-        np.set_printoptions(precision=2) #DEBUG
+        np.set_printoptions(precision=2)  # DEBUG
+
         def f(x):
             c0 = init_concs*scaling + np.dot(self.stoichs, x)
-            QKres = equilibrium_residual(x, c0, self.stoichs, self.eq_constants(scaling))
+            QKres = equilibrium_residual(x, c0, self.stoichs,
+                                         self.eq_constants(scaling))
             xnew = np.zeros_like(x)
             weights = 0.1 + np.abs(QKres/self.eq_constants(scaling) - 1)
-            print(c0/scaling) #DEBUG
-            print(QKres) #DEBUG
-            print(weights) #DEBUG
+            print(c0/scaling)  # DEBUG
+            print(QKres)  # DEBUG
+            print(weights)  # DEBUG
             for ri, eq in enumerate(self.rxns):
-                xnew += weights[ri]*_solve_equilibrium_coord(c0, self.stoichs[:, ri],
-                                                             eq.params)
+                xnew += weights[ri]*_solve_equilibrium_coord(
+                    c0, self.stoichs[:, ri], eq.params)
             return xnew/sum(weights)
         x0 = np.zeros(self.nr)
         for idx in range(repetitions):
