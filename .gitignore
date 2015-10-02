@@ -11,3 +11,5 @@ examples/*.png
 .cache/
 .ipython/
 .ipynb_checkpoints/
+examples/pyneqsys
+examples/pyodesys

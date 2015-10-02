@@ -4,7 +4,7 @@
 from distutils.core import setup
 
 pkg_name = "aqchem"
-exec(open(pkg_name + '/release.py').read())
+exec(open(pkg_name + '/_release.py').read())
 
 with open(pkg_name + '/__init__.py') as f:
     long_description = f.read().split('"""')[1]
@@ -32,7 +32,7 @@ classifiers = [
 
 setup_kwargs = {
     'name': pkg_name,
-    'version': __version__,
+    'version': eval('__version__'),  # silence pyflakes
     'description': (
         'Package useful for (physical) chemistry'
     ),

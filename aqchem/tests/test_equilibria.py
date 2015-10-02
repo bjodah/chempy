@@ -1,9 +1,14 @@
+import pytest
 import numpy as np
 from scipy.optimize import fsolve
 
+from ..chemistry import (
+    Reaction, Substance
+)
+
 from ..equilibria import (
     equilibrium_quotient, equilibrium_residual, get_rc_interval,
-    solve_equilibrium
+    solve_equilibrium, EqSystem, prodpow, _solve_equilibrium_coord
 )
 
 
@@ -30,7 +35,7 @@ def test_get_rc_interval():
     assert abs(limits[1] - upper) < 1e-14
 
 
-def test_solve_equilibrium():
+def test_solve_equilibrium_1():
     c = np.array((13., 11, 17))
     stoich = np.array((-2, 3, -4))
     K = 3.14
@@ -40,3 +45,35 @@ def test_solve_equilibrium():
             11 + 3*x)**3 * (17 - 4*x)**-4 - K
     assert np.allclose(solve_equilibrium(c, stoich, K),
                        c + stoich*fsolve(f, 3.48))
+
+
+def test_solve_equilibrium_2():
+    c = np.array([1.7e-03, 3.0e+06, 3.0e+06, 9.7e+07, 5.55e+09])
+    stoich = (1, 1, 0, 0, -1)
+    K = 55*1e-6
+
+    def f(x):
+        return prodpow(c+x*stoich, stoich) - K
+    solution = solve_equilibrium(c, stoich, K)
+    assert np.allclose(solution, c + stoich*fsolve(f, 0.1))
+
+
+def test_EqSystem():
+    a, b = sbstncs = Substance('a'), Substance('b')
+    rxns = [Reaction({a: 1}, {b: 1})]
+    es = EqSystem(rxns, sbstncs)
+    assert es.stoichs.tolist() == [[-1], [1]]
+
+
+@pytest.mark.xfail
+def test__solve_equilibrium_coord():
+    c = np.array([-1.2882e-14, 3.1156e-10, 3.2099e-10, 9.679e-09, 5.5469e-07])
+    stoich = np.array([1, 1, 0, 0, -1])
+    K = 1e-22
+    # K = (c[0] + r)*(c[1] + r)/(c[4] - r)
+    # Kc[4] - Kr = c[0]c[1] + r(c[0] + c[1]) + r**2
+    # {p = (c[0] + c[1] + K)/2}
+    # {q = c[0]c[1] - Kc[4]}
+    # r = p +/- sqrt(p*p/4 - q)
+    # ... scrap that, there's a neg. conc
+    _solve_equilibrium_coord(c, stoich, K)
