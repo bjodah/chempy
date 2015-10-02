@@ -34,7 +34,10 @@ def equilibrium_quotient(concs, stoich):
     else:
         tot = np.ones(concs.shape[0])
         concs = concs.T
-    for nr, conc in zip(stoich, concs):
+
+    # mask, = np.nonzero(stoich)
+    # stoich_m = stoich[mask]
+    for nr, conc in zip(stoich, concs):  #, concs[..., mask]):
         tot *= conc**nr
     return tot
 
@@ -506,14 +509,18 @@ class EqSystem(EqSystemBase):
                        square=False, reduced=False, norm=False, pres1st=False,
                        pres_norm=False, presw=1, const_indices=(),
                        tanh_b=None, rref=True, charge=None,
-                       extra_pres_sq=False):
+                       extra_pres_sq=False, logspace=False):
         import sympy as sp
         y = sp.symarray('y', self.ns)
-        f, elim, red_cbs = self.f(
-            y, init_concs, scaling, reduced=reduced, norm=norm,
-            pres1st=pres1st, pres_norm=pres_norm, presw=presw,
-            const_indices=const_indices, rref=rref, charge=charge,
-            extra_pres_sq=extra_pres_sq)
+        if logspace:
+            f = self.f_logc(y, init_concs, ln=sp.log, exp=sp.exp)
+            elim, red_cbs = None, None
+        else:
+            f, elim, red_cbs = self.f(
+                y, init_concs, scaling, reduced=reduced, norm=norm,
+                pres1st=pres1st, pres_norm=pres_norm, presw=presw,
+                const_indices=const_indices, rref=rref, charge=charge,
+                extra_pres_sq=extra_pres_sq)
 
         if elim is not None:
             for eidx in elim:
@@ -554,7 +561,8 @@ class EqSystem(EqSystemBase):
     def root(self, init_concs, scaling=1.0, logC=False, square=False,
              tanh=False, delta=None, reduced=False, norm=False, init_iter=20,
              pres_norm=False, init_guess=None, x0=None, pres1st=False, presw=1,
-             const=(), rref=True, charge=None, extra_pres_sq=False, **kwargs):
+             const=(), rref=True, charge=None, extra_pres_sq=False,
+             logspace=False, **kwargs):
         from scipy.optimize import root
         init_concs = self.as_per_substance_array(init_concs)
         const_indices = list(map(self.as_substance_index, const))
@@ -572,7 +580,8 @@ class EqSystem(EqSystemBase):
             init_concs, jac=True, scaling=scaling, logC=logC, square=square,
             tanh_b=tanh_b, reduced=reduced, norm=norm, pres_norm=pres_norm,
             pres1st=pres1st, presw=presw, const_indices=const_indices,
-            rref=rref, charge=charge, extra_pres_sq=extra_pres_sq)
+            rref=rref, charge=charge, extra_pres_sq=extra_pres_sq,
+            logspace=logspace)
         if delta is None:
             delta = kwargs.get('tol', 1e-12)
         if x0 is None:
@@ -590,7 +599,7 @@ class EqSystem(EqSystemBase):
                     (x0 - sc_middle)/sc_bounds_span)
             if square:
                 x0 = x0**0.5
-            if logC:
+            if logC or logspace:
                 x0 = np.log(x0)
         else:
             if init_guess is not None:
@@ -600,7 +609,8 @@ class EqSystem(EqSystemBase):
 
         if result.success:
             x = result.x.copy()
-            if logC:
+            print(x)
+            if logC or logspace:
                 x = np.exp(x)
             if square:
                 x *= x
