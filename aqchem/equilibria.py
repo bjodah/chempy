@@ -15,14 +15,17 @@ def reducemap(args, reduce_op, map_op):
     return reduce(reduce_op, map(map_op, *args))
 
 
-def summul(bases, exponents):
-    # return np.add.reduce(bases**exponents)
-    return reducemap((bases, exponents), add, mul)
+def summul(vec1, vec2):
+    # return np.dot(vec1, vec2)
+    # return np.add.reduce(np.multiply(vec1, vec2))
+    return reducemap((vec1, vec2), add, mul)
+
 
 def prodpow(bases, exponents):
-    return np.multiply.reduce(
-        bases**exponents, axis=-1)
-    # return reducemap((bases, exponents), mul, pow)
+    if isinstance(bases, np.ndarray):
+        return np.multiply.reduce(bases**exponents)
+    else:
+        return reducemap((bases, exponents), mul, pow)
     # return reduce(mul, [factor ** exponent for factor, exponent
     #                     in zip(factors, exponents)])
 
@@ -172,10 +175,10 @@ class Equilibrium(Reaction):
         return result
 
 
-def atom_balance(substances, concs, atom_number):
+def composition_balance(substances, concs, composition_number):
     res = 0
     for s, c in zip(substances, concs):
-        res += s.elemental_composition.get(atom_number, 0)*c
+        res += s.composition.get(composition_number, 0)*c
     return res
 
 
@@ -192,8 +195,12 @@ def charge_balance(substances, concs):
     return res
 
 
-def dot(iter_a, iter_b):
+def vec_dot_vec(iter_a, iter_b):  # pure python (slow)
     return sum([a*b for a, b in zip(iter_a, iter_b)])
+
+
+def mat_dot_vec(iter_mat, iter_vec):  # pure python (slow)
+    return [vec_dot_vec(row, iter_vec) for row in iter_mat]
 
 
 class EqSystemBase(ReactionSystem):
@@ -220,28 +227,42 @@ class EqSystemBase(ReactionSystem):
     @property
     def stoichs(self):
         return np.array([eq.net_stoich(self.substances)
-                         for eq in self.rxns]).transpose()
+                         for eq in self.rxns])
 
     def eq_constants(self, scaling=1):
         return np.array([eq.params*scaling**eq.dimensionality()
                          for eq in self.rxns])
 
+    def stoichs_constants(self, rref=False, Matrix=None, ln=None, exp=None):
+        if rref:
+            if Matrix is None:
+                from sympy import Matrix
+            ln = ln or math.log
+            exp = exp or math.exp
+            aug = Matrix([row + [v] for row, v in
+                          zip(self.stoichs, map(ln, self.eq_constants()))])
+            rA, pivot = aug.rref()
+            nindep = len(pivot)
+            return rA[:nindep, :-1], list(map(exp, rA[:nindep, -1]))
+        else:
+            return self.stoichs, self.eq_constants()
+
     def upper_conc_bounds(self, init_concs):
         init_concs_arr = self.as_per_substance_array(init_concs)
-        atom_conc = defaultdict(float)
+        composition_conc = defaultdict(float)
         for conc, subst in zip(init_concs_arr, self.substances):
-            for atm_nr, coeff in subst.elemental_composition.items():
-                atom_conc[atm_nr] += coeff*conc
+            for atm_nr, coeff in subst.composition.items():
+                composition_conc[atm_nr] += coeff*conc
         bounds = []
         for subst in self.substances:
             upper = float('inf')
-            for atm_nr, coeff in subst.elemental_composition.items():
-                upper = min(upper, atom_conc[atm_nr]/coeff)
+            for atm_nr, coeff in subst.composition.items():
+                upper = min(upper, composition_conc[atm_nr]/coeff)
             bounds.append(upper)
         return bounds
 
     def equilibrium_quotients(self, concs):
-        return [equilibrium_quotient(concs, self.stoichs[:, ri])
+        return [equilibrium_quotient(concs, self.stoichs[ri, :])
                 for ri in range(self.nr)]
 
     def charge_balance(self, concs):
@@ -251,31 +272,37 @@ class EqSystemBase(ReactionSystem):
     def charge_balance_vector(self):
         return [s.charge for s in self.substances]
 
-    def atom_balance(self, concs, atom_number):
-        return atom_balance(self.substances,
-                            self.as_per_substance_array(concs),
-                            atom_number)
+    def composition_balance(self, concs, composition_number):
+        return composition_balance(
+            self.substances, self.as_per_substance_array(concs),
+            composition_number)
 
-    def atom_balance_vectors(self, skip_atom_nrs=()):
-        atom_numbers = set()
+    def composition_balance_vectors(self, skip_composition_nrs=()):
+        composition_numbers = set()
         for s in self.substances:
-            for key in s.elemental_composition:
-                atom_numbers.add(key)
+            for key in s.composition:
+                composition_numbers.add(key)
         vectors = []
-        sorted_atom_numbers = sorted(atom_numbers)
-        for atm_nr in sorted_atom_numbers:
-            if atm_nr in skip_atom_nrs:
+        sorted_composition_numbers = sorted(composition_numbers)
+        for atm_nr in sorted_composition_numbers:
+            if atm_nr in skip_composition_nrs:
                 continue
-            vectors.append([s.elemental_composition.get(atm_nr, 0) for
+            vectors.append([s.composition.get(atm_nr, 0) for
                             s in self.substances])
-        return vectors, sorted_atom_numbers
+        return vectors, sorted_composition_numbers
 
-    def atom_conservation(self, concs, init_concs):
-        atom_vecs, atm_nrs = self.atom_balance_vectors()
-        A = np.array(atom_vecs)
+    def composition_conservation(self, concs, init_concs):
+        composition_vecs, atm_nrs = self.composition_balance_vectors()
+        A = np.array(composition_vecs)
         return (atm_nrs,
                 np.dot(A, self.as_per_substance_array(concs).T),
                 np.dot(A, self.as_per_substance_array(init_concs).T))
+
+    def balance(self, charge=True):
+        vecs = self.composition_balance_vectors()
+        if charge:
+            vecs += [self.charge_balance_vectors()]
+        return vecs
 
     def multiple_root(self, init_concs, varied=None, values=None, carry=False,
                       init_guess=None, **kwargs):
@@ -356,7 +383,7 @@ class EqSystemBase(ReactionSystem):
         return x, new_init_concs, success
 
     def plot_errors(self, concs, init_concs, varied, axes=None,
-                    charge=True, atoms=True, Q=True,
+                    charge=True, compositions=True, Q=True,
                     subplot_kwargs=None):
         if axes is None:
             import matplotlib.pyplot as plt
@@ -373,8 +400,8 @@ class EqSystemBase(ReactionSystem):
             axes[1].plot(concs[:, self.as_substance_index(varied)],
                          (q1-q2)/np.abs(q2), label='Rel charge error')
 
-        if atoms:
-            atm_nrs, m1, m2 = self.atom_conservation(concs, init_concs)
+        if compositions:
+            atm_nrs, m1, m2 = self.composition_conservation(concs, init_concs)
             for atm_nr, a1, a2 in zip(atm_nrs, m1, m2):
                 axes[0].plot(concs[:, self.as_substance_index(varied)],
                              a1-a2, label='Abs ' + str(atm_nr))
@@ -394,18 +421,45 @@ class EqSystemBase(ReactionSystem):
         axes[0].legend(loc='best')
         axes[1].legend(loc='best')
 
-class EqSystemLog(EqBase):
 
-    def f(self, y, init_concs, ln=None, exp=None):
+class EqSystemLog(EqSystemBase):
+
+    def f(self, y, init_concs, ln=None, exp=None,
+          rref_equil=False, rref_preserv=False, charge=True):
+        from pyneqsys.symbolic import linear_part
         if ln is None:
             ln = math.log
         if exp is None:
             exp = math.exp
-        f = []
-        for ri, K in enumerate(self.eq_constants()):
-            f.append(summul(y, self.stoichs[:, ri]) - ln(K))
-        pres, pivot = self.preserved(map(exp, y), init_concs, rref=False)
-        return f + pres
+        f1 = linear_part(y, self.stoichs, map(ln, self.eq_constants()),
+                         rref=rref_equil)
+        A = self.balance(charge)
+        f2 = linear_part(map(exp, y), A, mat_dot_vec(A, init_concs),
+                         rref=rref_preserv)
+        return f1 + f2
+
+    def root(self, init_concs):
+        from pyneqsys import SymbolicSys
+        ss = SymbolicSys.from_callback(self.f, self.ns, nparams=self.ns)
+        x, sol = ss.solve_scipy([0]*self.ns, init_concs)
+
+
+class EqSystemLin(EqSystemBase):
+
+    def f(self, y, init_concs, charge=True,
+          rref_equil=False, rref_preserv=False):
+        from pyneqsys.symbolic import linear_part
+        A, ks = self.stoichs_constants(rref_equil)
+        f1 = [q-k for q, k in zip(prodpow(y, A), ks)]
+        B = self.balance(charge)
+        f2 = linear_part(y, B, mat_dot_vec(B, init_concs))
+        return f1 + f2
+
+    def root(self, init_concs, x0):
+        from pyneqsys import SymbolicSys
+        ss = SymbolicSys.from_callback(self.f, self.ns, nparams=self.ns)
+        x, sol = ss.solve_scipy([0]*self.ns)
+
 
 class LinEqSystemBase(EqSystemBase):
 
@@ -424,10 +478,10 @@ class LinEqSystemBase(EqSystemBase):
 
 class EqSystem(LinEqSystemBase):
 
-    def rref(self, charge=True, skip_atom_nrs=()):
+    def rref(self, charge=True, skip_composition_nrs=()):
         """
         Calculates the Reduced Row Echelon Form of the linear equations
-        system for charge and atom balance.
+        system for charge and composition balance.
 
         Returns
         -------
@@ -436,35 +490,35 @@ class EqSystem(LinEqSystemBase):
            - pivot array
         """
         from sympy import Matrix
-        atom_vecs, atm_nrs = self.atom_balance_vectors()
+        composition_vecs, atm_nrs = self.composition_balance_vectors()
         chg = [self.charge_balance_vector()] if charge else []
-        M = Matrix(chg + [v for v, n in zip(atom_vecs, atm_nrs)
-                          if n not in skip_atom_nrs])
+        M = Matrix(chg + [v for v, n in zip(composition_vecs, atm_nrs)
+                          if n not in skip_composition_nrs])
         rref, pivot = M.rref()
         return rref.tolist()[:len(pivot)], pivot
 
-    def independent_atoms_from_pivot(self, pivot):
-        """ atom number 0 represents charge """
-        atom_vecs, atm_nrs = self.atom_balance_vectors()
+    def independent_compositions_from_pivot(self, pivot):
+        """ composition number 0 represents charge """
+        composition_vecs, atm_nrs = self.composition_balance_vectors()
         return [([0] + atm_nrs)[idx] for idx in pivot]
 
     def preserved(self, sc_concs, sc_init_concs, charge=True,
-                  skip_atom_nrs=(), presw=1, norm=False, rref=True):
+                  skip_composition_nrs=(), presw=1, norm=False, rref=True):
         res = []
         if rref:
-            vecs, pivot = self.rref(charge, skip_atom_nrs)
+            vecs, pivot = self.rref(charge, skip_composition_nrs)
         else:
-            atom_vecs, atm_nrs = self.atom_balance_vectors()
+            composition_vecs, atm_nrs = self.composition_balance_vectors()
             chg = [self.charge_balance_vector()] if charge else []
-            vecs = chg + [v for v, n in zip(atom_vecs, atm_nrs)
-                          if n not in skip_atom_nrs]
+            vecs = chg + [v for v, n in zip(composition_vecs, atm_nrs)
+                          if n not in skip_composition_nrs]
             pivot = None
-        s0s = [dot(row, sc_init_concs) for row in vecs]
+        s0s = mat_dot_vec(vecs, sc_init_concs)
         for row, s0 in zip(vecs, s0s):
             if norm:
-                res.append(presw*(dot(row, sc_concs)/s0 - 1))
+                res.append(presw*(vec_dot_vec(row, sc_concs)/s0 - 1))
             else:
-                res.append(presw*(dot(row, sc_concs) - s0))
+                res.append(presw*(vec_dot_vec(row, sc_concs) - s0))
         return res, pivot
 
     def f_logc(self, y, init_concs, ln=None, exp=None):
@@ -474,7 +528,7 @@ class EqSystem(LinEqSystemBase):
             exp = math.exp
         f = []
         for ri, rxn in enumerate(self.rxns):
-            f.append(summul(y, self.stoichs[:, ri]) - ln(rxn.params))
+            f.append(summul(y, self.stoichs[ri, :]) - ln(rxn.params))
         pres, pivot = self.preserved(map(exp, y), init_concs, rref=False)
         return f + pres
 
@@ -483,12 +537,12 @@ class EqSystem(LinEqSystemBase):
           rref=True, charge=None, extra_pres_sq=False):
         sc_concs = copy.copy(sc_concs)
         sc_init_concs = scaling*init_concs
-        skip_atom_nrs = set()
+        skip_composition_nrs = set()
         if charge is None:
             charge = True
         for cidx in const_indices:
-            for k in self.substances[cidx].elemental_composition:
-                skip_atom_nrs.add(k)
+            for k in self.substances[cidx].composition:
+                skip_composition_nrs.add(k)
             if self.substances[cidx].charge != 0:
                 charge = False
             sc_concs[cidx] = sc_init_concs[cidx]
@@ -497,13 +551,13 @@ class EqSystem(LinEqSystemBase):
             raise NotImplementedError
         pres, pivot = self.preserved(
             sc_concs, sc_init_concs, charge=charge,
-            skip_atom_nrs=skip_atom_nrs, presw=presw, norm=pres_norm,
-            rref=rref)
+            skip_composition_nrs=skip_composition_nrs, presw=presw,
+            norm=pres_norm, rref=rref)
         if extra_pres_sq:
-            pv, _ = self.preserved(sc_concs*sc_concs,
-                                   sc_init_concs*sc_init_concs,
-                                   charge=charge, skip_atom_nrs=skip_atom_nrs,
-                                   presw=presw, norm=pres_norm, rref=False)
+            pv, _ = self.preserved(
+                sc_concs*sc_concs, sc_init_concs*sc_init_concs, charge=charge,
+                skip_composition_nrs=skip_composition_nrs, presw=presw,
+                norm=pres_norm, rref=False)
             qk += pv
         if reduced:
             import sympy as sp
@@ -666,7 +720,7 @@ class EqSystem(LinEqSystemBase):
             xnew = np.zeros_like(x)
             for ri, eq in enumerate(self.rxns):
                 xnew += solve_equilibrium(
-                    x, self.stoichs[:, ri],
+                    x, self.stoichs[ri, :],
                     eq.params * scaling**eq.dimensionality())
             return xnew/self.nr
         init_concs = init_concs*scaling
@@ -691,7 +745,7 @@ class EqSystem(LinEqSystemBase):
 class REqSystem(LinEqSystemBase):
 
     def _c(self, coords, init_concs, scaling):
-        return [scaling*ic + sum([coords[ri]*self.stoichs[cidx, ri]
+        return [scaling*ic + sum([coords[ri]*self.stoichs[ri, cidx]
                                   for ri in range(self.nr)])
                 for cidx, ic in enumerate(init_concs)]
 
@@ -718,13 +772,13 @@ class REqSystem(LinEqSystemBase):
     # def initial_guess(self, init_concs, scaling, repetitions=5):
     #     np.set_printoptions(precision=2) #DEBUG
     #     def f(x):
-    #         c0 = init_concs*scaling + np.dot(self.stoichs, x)
+    #         c0 = init_concs*scaling + np.dot(self.stoichs.T, x)
     #         print(c0) #DEBUG
-    #         print(equilibrium_residual(x, c0, self.stoichs,
+    #         print(equilibrium_residual(x, c0, self.stoichs.T,
     #                                    self.eq_constants))
     #         xnew = np.zeros_like(x)
     #         for ri, eq in enumerate(self.rxns):
-    #             xnew += _solve_equilibrium_coord(c0, self.stoichs[:, ri],
+    #             xnew += _solve_equilibrium_coord(c0, self.stoichs[ri, :],
     #                                              eq.params)
     #         return xnew/(2*self.nr+1)
     #     x0 = np.zeros(self.nr)
@@ -736,8 +790,8 @@ class REqSystem(LinEqSystemBase):
         np.set_printoptions(precision=2)  # DEBUG
 
         def f(x):
-            c0 = init_concs*scaling + np.dot(self.stoichs, x)
-            QKres = equilibrium_residual(x, c0, self.stoichs,
+            c0 = init_concs*scaling + np.dot(self.stoichs.T, x)
+            QKres = equilibrium_residual(x, c0, self.stoichs.T,
                                          self.eq_constants(scaling))
             xnew = np.zeros_like(x)
             weights = 0.1 + np.abs(QKres/self.eq_constants(scaling) - 1)
@@ -746,7 +800,7 @@ class REqSystem(LinEqSystemBase):
             print(weights)  # DEBUG
             for ri, eq in enumerate(self.rxns):
                 xnew += weights[ri]*_solve_equilibrium_coord(
-                    c0, self.stoichs[:, ri], eq.params)
+                    c0, self.stoichs[ri, :], eq.params)
             return xnew/sum(weights)
         x0 = np.zeros(self.nr)
         for idx in range(repetitions):

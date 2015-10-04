@@ -62,7 +62,7 @@ def test_EqSystem():
     a, b = sbstncs = Substance('a'), Substance('b')
     rxns = [Reaction({a: 1}, {b: 1})]
     es = EqSystem(rxns, sbstncs)
-    assert es.stoichs.tolist() == [[-1], [1]]
+    assert es.stoichs.tolist() == [[-1, 1]]
 
 
 @pytest.mark.xfail

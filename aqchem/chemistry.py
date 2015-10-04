@@ -26,17 +26,17 @@ class Substance(object):
     mass: float
     latex_name: str
     formula: carries dict attribute "atoms"
-    elemental_composition: dict {atomic number: count}
+    composition: dict (int -> int) e.g. {atomic number: count}
     """
     def __init__(self, name=None, charge=None, mass=None,
                  latex_name=None, formula=None,
-                 elemental_composition=None):
+                 composition=None):
         self.name = name
         self.charge = charge
         self.mass = mass
         self.latex_name = latex_name
         self.formula = formula
-        self.elemental_composition = elemental_composition
+        self.composition = composition
 
         if charge is None:
             try:
@@ -48,8 +48,8 @@ class Substance(object):
                 self.mass = formula.mass
             except AttributeError:
                 pass
-        if elemental_composition is None and formula is not None:
-            self.elemental_composition = {
+        if composition is None and formula is not None:
+            self.composition = {
                 k.number: v for k, v in elements(formula).items()}
 
     def __repr__(self):
