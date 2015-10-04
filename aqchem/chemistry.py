@@ -79,6 +79,7 @@ class Reaction(object):
     inact_prod: dict (optional)
     """
 
+    str_arrow = '->'
     latex_arrow = '\\rightarrow'
 
     def __init__(self, reac, prod, params=None, inact_reac=None,
@@ -89,18 +90,24 @@ class Reaction(object):
         self.inact_reac = inact_reac
         self.inact_prod = inact_prod
 
+    def __repr__(self):
+        return self._get_str('name', 'str_arrow')
+
     def net_stoich(self, substances):
         return tuple(self.prod.get(k, 0) - self.reac.get(k, 0)
                      for k in substances)
 
-    def latex(self):
+    def _get_str(self, name_attr, arrow_attr):
         reac, prod = [[
-            ((str(v)+' ') if v > 1 else '') + getattr(k, 'latex_name')
+            ((str(v)+' ') if v > 1 else '') + getattr(k, name_attr)
             for k, v in filter(itemgetter(1), d.items())
         ] for d in (self.reac, self.prod)]
-        fmtstr = "{} " + self.latex_arrow + " {}"
+        fmtstr = "{} " + getattr(self, arrow_attr) + " {}"
         return fmtstr.format(" + ".join(reac),
                              " + ".join(prod))
+
+    def latex(self):
+        return self._get_str('latex_name', 'latex_arrow')
 
 
 class ReactionSystem(object):

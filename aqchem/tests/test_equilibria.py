@@ -3,12 +3,13 @@ import numpy as np
 from scipy.optimize import fsolve
 
 from ..chemistry import (
-    Reaction, Substance
+    Solute
 )
 
 from ..equilibria import (
     equilibrium_quotient, equilibrium_residual, get_rc_interval,
-    solve_equilibrium, EqSystem, prodpow, _solve_equilibrium_coord
+    solve_equilibrium, EqSystem, prodpow, _solve_equilibrium_coord,
+    Equilibrium
 )
 
 
@@ -63,6 +64,35 @@ def test_EqSystem():
     rxns = [Reaction({a: 1}, {b: 1})]
     es = EqSystem(rxns, sbstncs)
     assert es.stoichs.tolist() == [[-1, 1]]
+
+
+def _get_es1():
+    a, b = sbstncs = Solute('a'), Solute('b')
+    rxns = [Equilibrium({a: 1}, {b: 1}, 3)]
+    return EqSystem(rxns, sbstncs)
+
+def _get_es_water():
+    H2O = Solute('H2O', charge=0, composition={1: 2, 8: 1})
+    OHm = Solute('OH-', charge=-1, composition={1: 1, 8: 1})
+    Hp = Solute('H+', charge=1, composition={1: 1})
+    Kw = 1e-14/55.5
+    w_auto_p = Equilibrium({H2O: 1}, {Hp: 1, OHm: 1}, Kw)
+    return EqSystem([w_auto_p], [H2O, OHm, Hp])
+
+def test_EqSystem_1():
+    es = _get_es1()
+    assert es.stoichs.tolist() == [[-1, 1]]
+    assert es.eq_constants() == [3]
+
+
+def test_EqSystem_2():
+    wes = _get_es_water()
+    C = [55.5, 1e-7, 1e-7]
+    fval, elim, elim_cbs = wes.f(C, C, rref=False)
+    assert np.all(np.abs(fval) < 1e-16)
+    fval, elim, elim_cbs = wes.f(1000*np.array(C), C,
+                                 scaling=1000, rref=False)
+    assert np.all(np.abs(fval) < 1e-16)
 
 
 @pytest.mark.xfail

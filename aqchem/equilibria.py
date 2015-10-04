@@ -136,6 +136,7 @@ class Equilibrium(Reaction):
     - solubility_product: bool (default: False)
     """
 
+    str_arrow = '<->'
     latex_arrow = '\\rightleftharpoons'
 
     # def __init__(self, *args, **kwargs):
