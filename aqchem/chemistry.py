@@ -114,7 +114,11 @@ class Reaction(object):
         self.inact_prod = inact_prod
 
     def __repr__(self):
-        return self._get_str('name', 'str_arrow')
+        try:
+            s = ' K=%.2g' % self.params
+        except:
+            s = ''
+        return self._get_str('name', 'str_arrow') + s
 
     def __eq__(lhs, rhs):
         if not isinstance(lhs, Reaction) or not isinstance(rhs, Reaction):

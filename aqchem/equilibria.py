@@ -326,7 +326,7 @@ class EqSystemBase(ReactionSystem):
 
     def plot(self, x, init_concs, success, varied, values, ax=None,
              fail_vline=True, plot_kwargs=None, subplot_kwargs=None,
-             tex=True):
+             tex=True, conc_unit_str='M'):
         """ plots results from roots() """
         if ax is None:
             import matplotlib.pyplot as plt
@@ -354,8 +354,9 @@ class EqSystemBase(ReactionSystem):
                     label=lbl, **extra_kw)
 
         _outside_legend(ax)
-        ax.set_xlabel('$[' + varied.latex_name + ']$' if tex else str(varied))
-        ax.set_ylabel('Concentration')
+        xlbl = '$[' + varied.latex_name + ']$'  if tex else str(varied)
+        ax.set_xlabel(xlbl + ' / %s' % conc_unit_str)
+        ax.set_ylabel('Concentration / %s' % conc_unit_str)
         if fail_vline:
             for i, s in enumerate(success):
                 if not s:
@@ -370,13 +371,16 @@ class EqSystemBase(ReactionSystem):
             fig, axes = plt.subplots(1, 2, figsize=(10, 4),
                                      subplot_kw=subplot_kwargs)
 
+        ls, c = '- -- : -.'.split(), 'krgbcmy'
         if compositions:
-            atm_nrs, m1, m2 = self.composition_conservation(concs, init_concs)
-            for atm_nr, a1, a2 in zip(atm_nrs, m1, m2):
+            cmp_nrs, m1, m2 = self.composition_conservation(concs, init_concs)
+            for cidx, (cmp_nr, a1, a2) in enumerate(zip(cmp_nrs, m1, m2)):
                 axes[0].plot(concs[:, self.as_substance_index(varied)],
-                             a1-a2, label='Comp ' + str(atm_nr))
+                             a1-a2, label='Comp ' + str(cmp_nr),
+                             ls=ls[cidx % len(ls)], c=c[cidx % len(c)])
                 axes[1].plot(concs[:, self.as_substance_index(varied)],
-                             (a1-a2)/np.abs(a2), label='Comp ' + str(atm_nr))
+                             (a1-a2)/np.abs(a2), label='Comp ' + str(cmp_nr),
+                             ls=ls[cidx % len(ls)], c=c[cidx % len(c)])
 
         if Q:
             qs = self.equilibrium_quotients(concs)
@@ -384,9 +388,13 @@ class EqSystemBase(ReactionSystem):
                   rxn in self.rxns]
             for idx, (q, k) in enumerate(zip(qs, ks)):
                 axes[0].plot(concs[:, self.as_substance_index(varied)],
-                             q-k, label='K R:' + str(idx))
+                             q-k, label='K R:' + str(idx),
+                             ls=ls[(idx+cidx) % len(ls)],
+                             c=c[(idx+cidx) % len(c)])
                 axes[1].plot(concs[:, self.as_substance_index(varied)],
-                             (q-k)/k, label='K R:' + str(idx))
+                             (q-k)/k, label='K R:' + str(idx),
+                             ls=ls[(idx+cidx) % len(ls)],
+                             c=c[(idx+cidx) % len(c)])
 
         _outside_legend(axes[0])
         _outside_legend(axes[1])
