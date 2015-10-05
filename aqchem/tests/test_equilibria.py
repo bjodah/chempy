@@ -110,3 +110,11 @@ def test__solve_equilibrium_coord():
     # r = p +/- sqrt(p*p/4 - q)
     # ... scrap that, there's a neg. conc
     _solve_equilibrium_coord(c, stoich, K)
+
+
+def test_Equilibria_arithmetics():
+    es1 = _get_es1()
+    e, = es1.rxns
+    e2 = 2*e
+    sum2 = e + e
+    assert sum2 == e2
