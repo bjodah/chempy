@@ -354,7 +354,7 @@ class EqSystemBase(ReactionSystem):
                     label=lbl, **extra_kw)
 
         _outside_legend(ax)
-        xlbl = '$[' + varied.latex_name + ']$'  if tex else str(varied)
+        xlbl = '$[' + varied.latex_name + ']$' if tex else str(varied)
         ax.set_xlabel(xlbl + ' / %s' % conc_unit_str)
         ax.set_ylabel('Concentration / %s' % conc_unit_str)
         if fail_vline:
