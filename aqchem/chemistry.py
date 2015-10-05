@@ -116,6 +116,14 @@ class Reaction(object):
     def __repr__(self):
         return self._get_str('name', 'str_arrow')
 
+    def __eq__(lhs, rhs):
+        if not isinstance(lhs, Reaction) or not isinstance(rhs, Reaction):
+            return NotImplemented
+        for attr in ['reac', 'prod', 'params', 'inact_reac', 'inact_prod']:
+            if getattr(lhs, attr) != getattr(rhs, attr):
+                return False
+        return True
+
     def net_stoich(self, substances):
         return tuple(self.prod.get(k, 0) - self.reac.get(k, 0)
                      for k in substances)

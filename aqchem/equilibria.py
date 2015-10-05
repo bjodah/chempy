@@ -1,6 +1,7 @@
 from __future__ import division, absolute_import
 
 import math
+from itertools import chain
 from collections import defaultdict
 from functools import reduce, partial
 from operator import mul, add
@@ -8,6 +9,7 @@ from operator import mul, add
 import numpy as np
 
 from .chemistry import Reaction, ReactionSystem
+from .util.arithmeticdict import ArithmeticDict
 
 
 def _outside_legend(ax):
@@ -146,6 +148,11 @@ class Equilibrium(Reaction):
     str_arrow = '<->'
     latex_arrow = '\\rightleftharpoons'
 
+    def __init__(self, reac, prod, params, *args):
+        if not all(arg == None for arg in args):
+            raise NotImplementedError("Inactive reac/prod not implemented")
+        return super(Equilibrium, self).__init__(reac, prod, params)
+
     def K(self, T=None):
         if callable(self.params):
             if T is None:
@@ -177,6 +184,33 @@ class Equilibrium(Reaction):
                 continue
             result += n
         return result
+
+    def __rmul__(lhs, rhs):  # This works on both Py2 and Py3
+        if not isinstance(rhs, int) or not isinstance(lhs, Equilibrium):
+            return NotImplemented
+        return Equilibrium(dict(rhs*ArithmeticDict(int, lhs.reac)),
+                           dict(rhs*ArithmeticDict(int, lhs.prod)),
+                           lhs.params**rhs)
+
+    def __add__(lhs, rhs):
+        keys = set()
+        for key in chain(lhs.reac.keys(), lhs.prod.keys(),
+                         rhs.reac.keys(), rhs.prod.keys()):
+            keys.add(key)
+        reac, prod = {}, {}
+        for key in keys:
+            n = (lhs.prod.get(key, 0) - lhs.reac.get(key, 0) +
+                 rhs.prod.get(key, 0) - rhs.reac.get(key, 0))
+            if n < 0:
+                reac[key] = n
+            elif n > 0:
+                prod[key] = n
+            else:
+                pass  # n == 0
+        return Equilibrium(reac, prod, lhs.params * rhs.params)
+
+    def __sub__(lhs, rhs):
+        return lhs + -1*rhs
 
 
 def composition_balance(substances, concs, composition_number):
