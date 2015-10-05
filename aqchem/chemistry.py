@@ -2,11 +2,21 @@
 
 from __future__ import division
 
+import numpy as np
+
 from operator import itemgetter
 from collections import defaultdict
 
 
 def elements(formula):
+    """
+    Returns a dict mapping {periodictable.core.Element: int}
+
+    Parameters
+    ----------
+    formula: periodictable.formulas.Formula
+
+    """
     # see https://github.com/pkienzle/periodictable/issues/14
     d = defaultdict(int)
     for atm, n in formula.atoms.items():
@@ -26,34 +36,47 @@ class Substance(object):
     mass: float
     latex_name: str
     formula: carries dict attribute "atoms"
-    composition: dict (int -> int) e.g. {atomic number: count}
+    composition: dict or None (default)
+        dict (int -> int) e.g. {atomic number: count}
+    excess_electrons: bool (default: True)
+        when this is set to True and composition is None:
+        composition[0] will be number of excess electrons
+        (-1 for H+ for example).
     """
     def __init__(self, name=None, charge=None, mass=None,
                  latex_name=None, formula=None,
-                 composition=None):
+                 composition=None, excess_electrons=True):
         self.name = name
-        self.charge = charge
-        self.mass = mass
         self.latex_name = latex_name
-        self.formula = formula
-        self.composition = composition
 
+        if isinstance(formula, str):
+            import periodictable
+            formula = periodictable.formula(formula)
+        self.formula = formula
+
+        self.charge = charge
         if charge is None:
             try:
                 self.charge = formula.charge
             except AttributeError:
                 pass
+
+        self.mass = mass
         if mass is None:
             try:
                 self.mass = formula.mass
             except AttributeError:
                 pass
+
+        self.composition = composition
         if composition is None and formula is not None:
             self.composition = {
                 k.number: v for k, v in elements(formula).items()}
+            if excess_electrons:
+                self.composition[0] = -self.charge
 
     def __repr__(self):
-        kw = ['name=' + self.name + ', ...']  # Too verbose
+        kw = ['name=' + self.name + ', ...']  # Too verbose to print all
         return "{}({})".format(self.__class__.__name__, ','.join(kw))
 
     def __str__(self):
@@ -123,3 +146,26 @@ class ReactionSystem(object):
     @property
     def ns(self):
         return len(self.substances)
+
+    def as_per_substance_array(self, cont):
+        """ Turns e.g. a dict into an ordered array """
+        if isinstance(cont, np.ndarray):
+            pass
+        elif isinstance(cont, dict):
+            cont = [cont[k] for k in self.substances]
+        cont = np.asarray(cont)
+        if cont.shape[-1] != self.ns:
+            raise ValueError("Incorrect size")
+        return cont
+
+    def as_substance_index(self, sbstnc):
+        """ Returns the index of a Substance in the system"""
+        if isinstance(sbstnc, int):
+            return sbstnc
+        else:
+            return self.substances.index(sbstnc)
+
+    @property
+    def stoichs(self):
+        return np.array([eq.net_stoich(self.substances)
+                         for eq in self.rxns])
