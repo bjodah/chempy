@@ -10,6 +10,13 @@ import numpy as np
 from .chemistry import Reaction, ReactionSystem
 
 
+def _outside_legend(ax):
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    # Put a legend to the right of the current axis
+    ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
+
+
 def reducemap(args, reduce_op, map_op):
     return reduce(reduce_op, map(map_op, *args))
 
@@ -24,7 +31,7 @@ def prodpow(bases, exponents):
     if not hasattr(exponents, 'ndim') or exponents.ndim == 1:
         return reducemap((bases, exponents), mul, pow)
     else:
-        return np.multiply.reduce(bases**exponents)
+        return np.multiply.reduce(bases**exponents, axis=-1)
     # return reduce(mul, [factor ** exponent for factor, exponent
     #                     in zip(factors, exponents)])
 
@@ -272,7 +279,6 @@ class EqSystemBase(ReactionSystem):
             if carry and idx > 0 and res.success:
                 x0 = res.x
             resx, res = self.root(init_concs[idx, :], x0=x0, **root_kw)
-            print(res.nfev)  # debug
             success[idx] = resx is not None
             x[idx, :] = resx
         return x, init_concs, success
@@ -285,7 +291,8 @@ class EqSystemBase(ReactionSystem):
         return x, new_init_concs, success
 
     def plot(self, x, init_concs, success, varied, values, ax=None,
-             fail_vline=True, plot_kwargs=None, subplot_kwargs=None):
+             fail_vline=True, plot_kwargs=None, subplot_kwargs=None,
+             tex=True):
         """ plots results from roots() """
         if ax is None:
             import matplotlib.pyplot as plt
@@ -312,12 +319,8 @@ class EqSystemBase(ReactionSystem):
             ax.plot(values[success], x[success, idx_s],
                     label=lbl, **extra_kw)
 
-        box = ax.get_position()
-        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-
-        # Put a legend to the right of the current axis
-        ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
-        ax.set_xlabel(str(varied))
+        _outside_legend(ax)
+        ax.set_xlabel('$[' + varied.latex_name + ']$' if tex else str(varied))
         ax.set_ylabel('Concentration')
         if fail_vline:
             for i, s in enumerate(success):
@@ -337,9 +340,9 @@ class EqSystemBase(ReactionSystem):
             atm_nrs, m1, m2 = self.composition_conservation(concs, init_concs)
             for atm_nr, a1, a2 in zip(atm_nrs, m1, m2):
                 axes[0].plot(concs[:, self.as_substance_index(varied)],
-                             a1-a2, label='Abs ' + str(atm_nr))
+                             a1-a2, label='Comp ' + str(atm_nr))
                 axes[1].plot(concs[:, self.as_substance_index(varied)],
-                             (a1-a2)/np.abs(a2), label='Rel ' + str(atm_nr))
+                             (a1-a2)/np.abs(a2), label='Comp ' + str(atm_nr))
 
         if Q:
             qs = self.equilibrium_quotients(concs)
@@ -347,12 +350,14 @@ class EqSystemBase(ReactionSystem):
                   rxn in self.rxns]
             for idx, (q, k) in enumerate(zip(qs, ks)):
                 axes[0].plot(concs[:, self.as_substance_index(varied)],
-                             q-k, label='Abs R:' + str(idx))
+                             q-k, label='K R:' + str(idx))
                 axes[1].plot(concs[:, self.as_substance_index(varied)],
-                             (q-k)/k, label='Rel R:' + str(idx))
+                             (q-k)/k, label='K R:' + str(idx))
 
-        axes[0].legend(loc='best')
-        axes[1].legend(loc='best')
+        _outside_legend(axes[0])
+        _outside_legend(axes[1])
+        axes[0].set_title("Absolute errors")
+        axes[1].set_title("Relative errors")
 
     def root(self, init_concs, scaling=1, **kwargs):
         init_concs = self.as_per_substance_array(init_concs)
@@ -370,19 +375,22 @@ class EqSystemBase(ReactionSystem):
             return None, sol
         return x, sol
 
-    def solve(self, init_concs, x0=None):
+    def solve(self, init_concs, x0=None, rref_equil=False, rref_preserv=False,
+              **kwargs):
         import sympy as sp
         from pyneqsys import SymbolicSys
-        f = partial(self.f, ln=sp.log, exp=sp.exp)
+        f = partial(self.f, ln=sp.log, exp=sp.exp, rref_equil=rref_equil,
+                    rref_preserv=rref_preserv)
         ss = SymbolicSys.from_callback(f, self.ns, nparams=self.ns,
                                        expand_params=True)
-        ss._post_processor = np.exp
+        ss._post_processor = self.post_processor
         x0 = [0]*self.ns if x0 is None else x0
-        print('x0=', x0)
-        return ss.solve_scipy(x0, init_concs)
+        return ss.solve_scipy(x0, init_concs, **kwargs)
 
 
 class EqSystemLog(EqSystemBase):
+
+    post_processor = np.exp
 
     def f(self, y, init_concs, rref_equil=False, rref_preserv=False,
           ln=None, exp=None):
@@ -401,11 +409,13 @@ class EqSystemLog(EqSystemBase):
 
 class EqSystemLin(EqSystemBase):
 
+    post_processor = None
+
     def f(self, y, init_concs, rref_equil=False, rref_preserv=False,
           ln=None, exp=None):
         from pyneqsys.symbolic import linear_exprs
         A, ks = self.stoichs_constants(rref_equil, ln=ln, exp=exp)
-        f1 = [q-k for q, k in zip(prodpow(y, A), ks)]
+        f1 = [q/k-1 for q, k in zip(prodpow(y, A), ks)]
         B, comp_nrs = self.composition_balance_vectors()
         f2 = linear_exprs(y, B, mat_dot_vec(B, init_concs))
         return f1 + f2
