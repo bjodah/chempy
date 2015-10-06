@@ -14,3 +14,5 @@ examples/*.png
 examples/pyneqsys
 examples/pyodesys
 doc/
+MANIFEST
+dist
