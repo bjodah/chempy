@@ -18,6 +18,7 @@ requirements:
         - scipy
         - matplotlib
         - periodictable
+        - quantities
         - pyneqsys
 
 test:
