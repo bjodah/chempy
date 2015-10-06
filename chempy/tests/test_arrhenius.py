@@ -2,7 +2,7 @@
 
 from __future__ import (absolute_import, division, print_function)
 
-from aqchem.arrhenius import arrhenius_equation
+from ..arrhenius import arrhenius_equation
 
 
 def test_arrhenius_equation():
