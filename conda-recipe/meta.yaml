@@ -1,0 +1,31 @@
+package:
+    name: chempy
+    version: 0.1.0.git
+
+source:
+    path: ../
+
+build:
+    number: 0
+
+requirements:
+    build:
+        - python
+    run:
+        - python
+        - numpy
+        - sympy
+        - scipy
+        - matplotlib
+        - periodictable
+        - pyneqsys
+
+test:
+    imports:
+        - chempy
+    requires:
+        - pytest
+
+about:
+    home: https://github.com/bjodah/chempy
+    license: BSD
