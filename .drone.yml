@@ -8,7 +8,8 @@ script:
   - PYTHONPATH=$(pwd) ./scripts/run_tests.sh --cov chempy --cov-report html
   - python2 setup.py sdist
   - ./scripts/generate_docs.sh
-  - scp -r doc/_build/html/ dist/* htmlcov/ chempy@hera.physchem.kth.se:~/public_html/
+  - ssh chempy@hera.physchem.kth.se "mkdir -p ~/public_html/$DRONE_BRANCH"
+  - scp -r doc/_build/html/ dist/* htmlcov/ chempy@hera.physchem.kth.se:~/public_html/$DRONE_BRANCH
   - touch doc/_build/html/.nojekyll
   - git config --global user.name "drone"
   - git config --global user.email "drone@hera.physchem.kth.se"
