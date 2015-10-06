@@ -12,6 +12,8 @@ from ..equilibria import (
     Equilibrium, EqSystemLin
 )
 
+from .ammonical_cupric_solution import get_ammonical_cupric_eqsys
+
 
 def test_equilibrium_quotient():
     assert abs(equilibrium_quotient([2.3, 3.7, 5.1], (-1, -1, 1)) -
@@ -118,3 +120,9 @@ def test_Equilibria_arithmetics():
     e2 = 2*e
     sum2 = e + e
     assert sum2 == e2
+
+
+def test_Equilibria_root():
+    eqsys, c0 = get_ammonical_cupric_eqsys()
+    x, sol = eqsys.root(c0)
+    assert sol.success
