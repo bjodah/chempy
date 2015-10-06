@@ -29,7 +29,7 @@
     // If missing or the empty string, the tool will be automatically
     // determined by looking for tools on the PATH environment
     // variable.
-    "environment_type": "virtualenv",
+    "environment_type": "conda",
 
     // the base URL to show a commit for the project.
     "show_commit_url": "http://github.com/bjodah/chempy/commit/",

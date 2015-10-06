@@ -32,7 +32,8 @@ with open(pkg_name + '/__init__.py') as f:
     long_description = f.read().split('"""')[1]
 
 submodules = [
-    'chempy.kinetics'
+    'chempy.kinetics',
+    'chempy.util',
 ]
 
 tests = [
