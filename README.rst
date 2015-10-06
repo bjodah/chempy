@@ -5,11 +5,11 @@ ChemPy
 .. image:: http://hera.physchem.kth.se:8080/github.com/bjodah/chempy/status.svg?branch=master
    :target: http://hera.physchem.kth.se:8080/github.com/bjodah/chempy
    :alt: Build status on hera
-.. image:: https://img.shields.io/pypi/v/pyneqsys.svg
-   :target: https://pypi.python.org/pypi/pyneqsys
+.. image:: https://img.shields.io/pypi/v/chempy.svg
+   :target: https://pypi.python.org/pypi/chempy
    :alt: PyPI version
-.. image:: https://img.shields.io/pypi/l/pyneqsys.svg
-   :target: https://github.com/bjodah/pyneqsys/blob/master/LICENSE
+.. image:: https://img.shields.io/pypi/l/chempy.svg
+   :target: https://github.com/bjodah/chempy/blob/master/LICENSE
    :alt: License
 .. image:: http://img.shields.io/badge/benchmarked%20by-asv-green.svg?style=flat
    :target: http://hera.physchem.kth.se/~chempy/benchmarks
