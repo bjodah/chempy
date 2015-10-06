@@ -1,5 +1,5 @@
 ======
-chempy
+ChemPy
 ======
 
 .. image:: http://hera.physchem.kth.se:8080/github.com/bjodah/chempy/status.svg?branch=master
@@ -10,9 +10,13 @@ Python package useful for (physical) chemistry. Currently includes:
 
 - water density
 - water permittivity
-- Debye-H\"uckel expressions
+- Debye-Hückel expressions
 - Solver for equilibria
 - Integrated rate expressions (and convenience fitting routines)
+
+Examples
+========
+See `examples/ <examples/>`_.
 
 Optional dependencies
 =====================
@@ -25,7 +29,8 @@ Optional dependencies
 
 Units
 =====
-Use of quantities assumed, but only following attributes are accessed (parenthesis optional):
+Use of ``quantities`` is assumed, but only following attributes are actually
+accessed (parenthesis optional):
 
 - Kelvin
 - bar
