@@ -1,5 +1,6 @@
 """
-chempy is a Python package useful for (physical) chemistry.
+ChemPy is a Python package which aims to be useful in solving chemistry
+related problems.
 """
 
 from ._release import __version__
