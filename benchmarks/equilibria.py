@@ -1,5 +1,5 @@
 import numpy as np
-from aqchem.tests.ammonical_cupric_solution import get_ammonical_cupric_eqsys
+from chempy.tests.ammonical_cupric_solution import get_ammonical_cupric_eqsys
 
 
 class TimeEqsys:

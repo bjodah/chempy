@@ -2,8 +2,8 @@
 
 from __future__ import (absolute_import, division, print_function)
 
-from aqchem.chemistry import Solute
-from aqchem.equilibria import Equilibrium, EqSystemLog
+from chempy.chemistry import Solute
+from chempy.equilibria import Equilibrium, EqSystemLog
 import periodictable
 
 

@@ -3,19 +3,19 @@
 
 from distutils.core import setup
 
-pkg_name = "aqchem"
+pkg_name = "chempy"
 exec(open(pkg_name + '/_release.py').read())
 
 with open(pkg_name + '/__init__.py') as f:
     long_description = f.read().split('"""')[1]
 
 submodules = [
-    'aqchem.kinetics'
+    'chempy.kinetics'
 ]
 
 tests = [
-    'aqchem.tests',
-    'aqchem.kinetics.tests',
+    'chempy.tests',
+    'chempy.kinetics.tests',
 ]
 
 classifiers = [

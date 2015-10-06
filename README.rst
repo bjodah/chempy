@@ -1,9 +1,9 @@
 ======
-aqchem
+chempy
 ======
 
-.. image:: http://hera.physchem.kth.se:8080/github.com/bjodah/aqchem/status.svg?branch=master
-   :target: http://hera.physchem.kth.se:8080/github.com/bjodah/aqchem
+.. image:: http://hera.physchem.kth.se:8080/github.com/bjodah/chempy/status.svg?branch=master
+   :target: http://hera.physchem.kth.se:8080/github.com/bjodah/chempy
    :alt: Build status on hera
 
 Python package useful for (physical) chemistry. Currently includes:
@@ -42,7 +42,7 @@ License
 =======
 The source code is Open Source and is released under the very permissive
 "simplified (2-clause) BSD license". See ``LICENSE.txt`` for further details.
-Contributors are welcome to suggest improvements at https://github.com/bjodah/aqchem
+Contributors are welcome to suggest improvements at https://github.com/bjodah/chempy
 
 Author
 ======
