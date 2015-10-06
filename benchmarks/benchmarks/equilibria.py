@@ -12,3 +12,9 @@ class TimeEqsys:
         x, new_inits, success = self.eqsys.roots(self.c0, self.species['NH3'],
                                                  np.logspace(-3, 0, 50))
         assert all(success)
+
+    def time_roots_carry(self):
+        x, new_inits, success = self.eqsys.roots(self.c0, self.species['NH3'],
+                                                 np.logspace(-3, 0, 50),
+                                                 carry=True)
+        assert all(success)
