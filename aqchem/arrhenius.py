@@ -2,6 +2,7 @@
 
 from __future__ import (absolute_import, division, print_function)
 
+
 def _get_R(constants=None, units=None):
     if constants is None:
         R = 8.314472
