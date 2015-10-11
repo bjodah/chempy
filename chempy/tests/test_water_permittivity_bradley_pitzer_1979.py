@@ -2,6 +2,8 @@ import warnings
 
 from ..water_permittivity_bradley_pitzer_1979 import water_permittivity
 
+from ..units import allclose
+
 
 def test_water_permittivity():
     warnings.filterwarnings("error")
@@ -20,10 +22,10 @@ def test_water_permittivity():
     try:
         import quantities as pq
         import numpy as np
-        assert np.allclose(water_permittivity(
+        assert allclose(water_permittivity(
             298.15*pq.K, 1*pq.bar,
             units=pq), 78.38436874203077)
-        assert np.allclose(water_permittivity(
+        assert allclose(water_permittivity(
             np.linspace(297.5, 298.65)*pq.K, 1*pq.bar,
             units=pq), 78, rtol=1e-2, atol=1e-2)
     except ImportError:

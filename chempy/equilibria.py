@@ -286,6 +286,34 @@ class EqSystemBase(ReactionSystem):
                 np.dot(A, self.as_per_substance_array(concs).T),
                 np.dot(A, self.as_per_substance_array(init_concs).T))
 
+    def get_neqsys(self, rref_equil=False, rref_preserv=False, **kwargs):
+        import sympy as sp
+        from pyneqsys import SymbolicSys
+        f = partial(self.f, ln=sp.log, exp=sp.exp, rref_equil=rref_equil,
+                    rref_preserv=rref_preserv)
+        neqsys = SymbolicSys.from_callback(
+            f, self.ns, nparams=self.ns, expand_params=True, **kwargs)
+        neqsys._post_processor = self.post_processor
+        return neqsys
+
+    def root(self, init_concs, scaling=1, x0=None, neqsys=None, **kwargs):
+        init_concs = self.as_per_substance_array(init_concs)
+        x0 = [0]*self.ns if x0 is None else x0
+        neqsys = neqsys or self.get_neqsys()
+        x, sol = neqsys.solve_scipy(x0, init_concs, **kwargs)
+        # Sanity checks:
+        sc_upper_bounds = np.array(self.upper_conc_bounds(
+            init_concs*scaling))
+        neg_conc, too_much = np.any(x < 0), np.any(
+            x > sc_upper_bounds*(1 + 1e-12))
+        if neg_conc or too_much:
+            print("neg_conc, too_much", neg_conc, too_much)  # DEBUG
+            print(x)
+            print(sc_upper_bounds)
+            print(x - sc_upper_bounds*(1 + 1e-12))
+            return None, sol
+        return x, sol
+
     def roots(self, init_concs, varied=None, values=None, carry=False,
               x0=None, **kwargs):
         if carry:
@@ -308,21 +336,16 @@ class EqSystemBase(ReactionSystem):
         x = np.empty((nval, self.ns))
         success = np.empty(nval, dtype=bool)
         res = None  # silence pyflakes
+        neqsys = self.get_neqsys()
         for idx in range(nval):
             root_kw = kwargs.copy()
             if carry and idx > 0 and res.success:
                 x0 = res.x
-            resx, res = self.root(init_concs[idx, :], x0=x0, **root_kw)
+            resx, res = self.root(init_concs[idx, :], x0=x0,
+                                  neqsys=neqsys, **root_kw)
             success[idx] = resx is not None
             x[idx, :] = resx
         return x, init_concs, success
-
-    def solve_and_plot(self, init_concs, varied, values, roots_kwargs=None,
-                       **kwargs):
-        x, new_init_concs, success = self.roots(
-            init_concs, varied, values, **(roots_kwargs or {}))
-        self.plot(x, new_init_concs, success, varied, values, **kwargs)
-        return x, new_init_concs, success
 
     def plot(self, x, init_concs, success, varied, values, ax=None,
              fail_vline=True, plot_kwargs=None, subplot_kwargs=None,
@@ -362,6 +385,13 @@ class EqSystemBase(ReactionSystem):
                 if not s:
                     ax.axvline(values[i], c='k', ls='--')
 
+    def solve_and_plot(self, init_concs, varied, values, roots_kwargs=None,
+                       **kwargs):
+        x, new_init_concs, success = self.roots(
+            init_concs, varied, values, **(roots_kwargs or {}))
+        self.plot(x, new_init_concs, success, varied, values, **kwargs)
+        return x, new_init_concs, success
+
     def plot_errors(self, concs, init_concs, varied, axes=None,
                     compositions=True, Q=True, subplot_kwargs=None):
         if axes is None:
@@ -400,34 +430,6 @@ class EqSystemBase(ReactionSystem):
         _outside_legend(axes[1])
         axes[0].set_title("Absolute errors")
         axes[1].set_title("Relative errors")
-
-    def root(self, init_concs, scaling=1, **kwargs):
-        init_concs = self.as_per_substance_array(init_concs)
-        x, sol = self.solve(init_concs, **kwargs)
-        # Sanity checks:
-        sc_upper_bounds = np.array(self.upper_conc_bounds(
-            init_concs*scaling))
-        neg_conc, too_much = np.any(x < 0), np.any(
-            x > sc_upper_bounds*(1 + 1e-12))
-        if neg_conc or too_much:
-            print("neg_conc, too_much", neg_conc, too_much)  # DEBUG
-            print(x)
-            print(sc_upper_bounds)
-            print(x - sc_upper_bounds*(1 + 1e-12))
-            return None, sol
-        return x, sol
-
-    def solve(self, init_concs, x0=None, rref_equil=False, rref_preserv=False,
-              **kwargs):
-        import sympy as sp
-        from pyneqsys import SymbolicSys
-        f = partial(self.f, ln=sp.log, exp=sp.exp, rref_equil=rref_equil,
-                    rref_preserv=rref_preserv)
-        ss = SymbolicSys.from_callback(f, self.ns, nparams=self.ns,
-                                       expand_params=True)
-        ss._post_processor = self.post_processor
-        x0 = [0]*self.ns if x0 is None else x0
-        return ss.solve_scipy(x0, init_concs, **kwargs)
 
 
 class EqSystemLog(EqSystemBase):

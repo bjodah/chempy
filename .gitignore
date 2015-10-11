@@ -14,5 +14,9 @@ examples/*.png
 examples/pyneqsys
 examples/pyodesys
 doc/
+dist/
+benchmarks/chempy
+benchmarks/env
+benchmarks/results
 MANIFEST
-dist
+benchmarks/symengine/
