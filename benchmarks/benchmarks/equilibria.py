@@ -26,3 +26,16 @@ class TimeEqsys:
                                                  np.logspace(-3, 0, 50),
                                                  carry=True)
         assert all(success)
+
+if __name__ == '__main__':
+    import time
+    te = TimeEqsys()
+    te.setup()
+
+    # t1 = time.time()
+    # te.time_roots_symengine()
+    # print(time.time()-t1)
+
+    t1 = time.time()
+    te.time_roots()
+    print(time.time()-t1)

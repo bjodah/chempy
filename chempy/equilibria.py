@@ -423,9 +423,10 @@ class EqSystemBase(ReactionSystem):
         from pyneqsys import SymbolicSys
         f = partial(self.f, ln=sp.log, exp=sp.exp, rref_equil=rref_equil,
                     rref_preserv=rref_preserv)
-        ss = SymbolicSys.from_callback(f, self.ns, nparams=self.ns,
-                                       expand_params=True,
-                                       lambdify=kwargs.pop('lambdify', None))
+        ss = SymbolicSys.from_callback(
+            f, self.ns, nparams=self.ns, expand_params=True,
+            lambdify=kwargs.pop('lambdify', None),
+            lambdify_unpack=kwargs.pop('lambdify_unpack', True))
         ss._post_processor = self.post_processor
         x0 = [0]*self.ns if x0 is None else x0
         return ss.solve_scipy(x0, init_concs, **kwargs)

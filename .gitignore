@@ -19,3 +19,4 @@ benchmarks/chempy
 benchmarks/env
 benchmarks/results
 MANIFEST
+benchmarks/symengine/
