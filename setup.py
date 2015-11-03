@@ -53,6 +53,7 @@ classifiers = [
     'Programming Language :: Python :: 3.4',
 ]
 
+
 setup_kwargs = {
     'name': pkg_name,
     'version': eval('__version__'),  # silence pyflakes

@@ -99,19 +99,16 @@ class Reaction(object):
     params: float or callable
 
     inact_reac: dict (optional)
-    inact_prod: dict (optional)
     """
 
     str_arrow = '->'
     latex_arrow = '\\rightarrow'
 
-    def __init__(self, reac, prod, params=None, inact_reac=None,
-                 inact_prod=None):
+    def __init__(self, reac, prod, params=None, inact_reac=None):
         self.reac = reac
         self.prod = prod
         self.params = params
         self.inact_reac = inact_reac
-        self.inact_prod = inact_prod
 
     def __repr__(self):
         try:
@@ -123,14 +120,15 @@ class Reaction(object):
     def __eq__(lhs, rhs):
         if not isinstance(lhs, Reaction) or not isinstance(rhs, Reaction):
             return NotImplemented
-        for attr in ['reac', 'prod', 'params', 'inact_reac', 'inact_prod']:
+        for attr in ['reac', 'prod', 'params', 'inact_reac']:
             if getattr(lhs, attr) != getattr(rhs, attr):
                 return False
         return True
 
     def net_stoich(self, substances):
-        return tuple(self.prod.get(k, 0) - self.reac.get(k, 0)
-                     for k in substances)
+        return tuple(self.prod.get(k, 0) - self.reac.get(k, 0) - (
+            0 if self.inact_reac is None else self.inact_reac.get(k, 0)
+        ) for k in substances)
 
     def _get_str(self, name_attr, arrow_attr):
         reac, prod = [[
@@ -180,4 +178,4 @@ class ReactionSystem(object):
     @property
     def stoichs(self):
         return np.array([eq.net_stoich(self.substances)
-                         for eq in self.rxns])
+                         for eq in self.rxns], dtype=np.int)

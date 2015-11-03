@@ -7,9 +7,13 @@ script:
   - pip3 install --user -r requirements.txt
   - PYTHONPATH=$(pwd) ./scripts/run_tests.sh --cov chempy --cov-report html
   - python2 setup.py sdist
+  - pip install --user dist/*.tar.gz
+  - pip install --user -r optional_requirements.txt
+  - ipython nbconvert --to=html --ExecutePreprocessor.enabled=True examples/*.ipynb
   - ./scripts/generate_docs.sh
+  - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
   - ssh chempy@hera.physchem.kth.se "mkdir -p ~/public_html/$DRONE_BRANCH"
-  - scp -r doc/_build/html/ dist/* htmlcov/ chempy@hera.physchem.kth.se:~/public_html/$DRONE_BRANCH
+  - scp -r doc/_build/html/ dist/* htmlcov/ examples/ chempy@hera.physchem.kth.se:~/public_html/$DRONE_BRANCH
   - touch doc/_build/html/.nojekyll
   - git config --global user.name "drone"
   - git config --global user.email "drone@hera.physchem.kth.se"

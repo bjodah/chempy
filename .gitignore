@@ -7,6 +7,7 @@
 */*/*/__pycache__
 
 examples/*.png
+examples/*.html
 .config/
 .cache/
 .ipython/

@@ -4,6 +4,5 @@ related problems.
 """
 
 from ._release import __version__
-__url__ = "https://github.com/bjodah/chempy"
-
 assert __version__  # silence pyflakes
+__url__ = "https://github.com/bjodah/chempy"
