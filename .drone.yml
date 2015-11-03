@@ -9,7 +9,7 @@ script:
   - python2 setup.py sdist
   - pip install --user dist/*.tar.gz
   - pip install --user -r optional_requirements.txt
-  - ipython nbconvert --to=html --ExecutePreprocessor.enabled=True examples/*.ipynb
+  - ipython nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 examples/*.ipynb
   - ./scripts/generate_docs.sh
   - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
   - ssh chempy@hera.physchem.kth.se "mkdir -p ~/public_html/$DRONE_BRANCH"
