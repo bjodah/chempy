@@ -19,12 +19,15 @@ ChemPy
 
 `ChemPy <https://github.com/bjodah/chempy>`_ is a python package useful for (physical) chemistry. Currently it includes:
 
-- water density
-- water permittivity
+- Solver for equilibria (including multiphase systems)
 - Debye-Hückel expressions
-- Solver for equilibria
-- Integrated rate expressions (and convenience fitting routines)
 - Numerical integration routines for chemical kinetics (ODE solver frontend)
+- Integrated rate expressions (and convenience fitting routines)
+- Properties
+
+  - water density
+  - water permittivity
+
 
 Documentation
 -------------
@@ -38,12 +41,13 @@ See `examples/ <https://github.com/bjodah/chempy/tree/master/examples>`_, and re
 
 Optional dependencies
 ---------------------
-
 - numpy
 - scipy
 - quantities
 - matplotlib
 - sympy
+- pyodesys
+- pyneqsys
 
 Units
 -----

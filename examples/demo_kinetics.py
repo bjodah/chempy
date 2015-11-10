@@ -15,7 +15,7 @@ funcs = (pseudo_irrev, pseudo_rev, binary_irrev, binary_rev)
 
 def main():
     t, kf, P0, t0, excess_C, limiting_C, eps_l, beta = sympy.symbols(
-        't k_f P0 t0 Y Z epsilon beta', positive=True)
+        't k_f P0 t0 Y Z epsilon beta', negative=False)
     for f in funcs:
         args = t, kf, P0, t0, excess_C, limiting_C, eps_l
         kwargs = {'exp': sympy.exp}

@@ -9,7 +9,7 @@ from ..chemistry import (
 from ..equilibria import (
     equilibrium_quotient, equilibrium_residual, get_rc_interval,
     solve_equilibrium, EqSystemBase, prodpow, _solve_equilibrium_coord,
-    Equilibrium, EqSystemLin
+    Equilibrium, EqSystemLin, EqSystemLog
 )
 
 from .ammonical_cupric_solution import get_ammonical_cupric_eqsys
@@ -65,7 +65,7 @@ def test_EqSystemBase():
     a, b = sbstncs = Substance('a'), Substance('b')
     rxns = [Reaction({a: 1}, {b: 1})]
     es = EqSystemBase(rxns, sbstncs)
-    assert es.stoichs.tolist() == [[-1, 1]]
+    assert es.net_stoichs().tolist() == [[-1, 1]]
 
 
 def _get_es1():
@@ -85,33 +85,8 @@ def _get_es_water(EqSys=EqSystemBase):
 
 def test_EqSystemBase_1():
     es = _get_es1()
-    assert es.stoichs.tolist() == [[-1, 1]]
+    assert es.stoichs().tolist() == [[-1, 1]]
     assert es.eq_constants() == [3]
-
-
-@pytest.mark.xfail  # look into this later
-def test_EqSystemLin_2():
-    wes = _get_es_water(EqSystemLin)
-    C = [55.5, 1e-7, 1e-7]
-    fval, elim, elim_cbs = wes.f(C, C, rref=False)
-    assert np.all(np.abs(fval) < 1e-16)
-    fval, elim, elim_cbs = wes.f(1000*np.array(C), C,
-                                 scaling=1000, rref=False)
-    assert np.all(np.abs(fval) < 1e-16)
-
-
-@pytest.mark.xfail
-def test__solve_equilibrium_coord():
-    c = np.array([-1.2882e-14, 3.1156e-10, 3.2099e-10, 9.679e-09, 5.5469e-07])
-    stoich = np.array([1, 1, 0, 0, -1])
-    K = 1e-22
-    # K = (c[0] + r)*(c[1] + r)/(c[4] - r)
-    # Kc[4] - Kr = c[0]c[1] + r(c[0] + c[1]) + r**2
-    # {p = (c[0] + c[1] + K)/2}
-    # {q = c[0]c[1] - Kc[4]}
-    # r = p +/- sqrt(p*p/4 - q)
-    # ... scrap that, there's a neg. conc
-    _solve_equilibrium_coord(c, stoich, K)
 
 
 def test_Equilibria_arithmetics():
@@ -126,3 +101,29 @@ def test_Equilibria_root():
     eqsys, c0 = get_ammonical_cupric_eqsys()
     x, sol = eqsys.root(c0)
     assert sol.success
+
+
+@pytest.mark.parametrize('EqSys', [EqSystemLin])
+def test_solid(EqSys):
+    Na_p, Cl_m, NaCl = sbstncs = (
+        Solute('Na+', 1, composition={11: 1}),
+        Solute('Cl-', -1, composition={17: 1}),
+        Solute('NaCl', composition={11: 1, 17: 1}, solid=True)
+    )
+    sp = Equilibrium({NaCl: 1}, {Na_p: 1, Cl_m: 1}, 4.0)
+    eqsys = EqSys([sp], sbstncs)
+
+    x, sol = eqsys.root({Na_p: 1.0, Cl_m: 1.0, NaCl: 0.0})
+    assert np.allclose(x, [1, 1, 0])
+
+    x, sol = eqsys.root({Na_p: 0, Cl_m: 0, NaCl: 7.0})
+    assert np.allclose(x, [2, 2, 5])
+
+    x, sol = eqsys.root({Na_p: 0.5, Cl_m: 0.5, NaCl: 0.5})
+    assert np.allclose(x, [1, 1, 0])
+
+    x, sol = eqsys.root({Na_p: 0, Cl_m: 0, NaCl: 1.0})
+    assert np.allclose(x, [1, 1, 0])
+
+    # x, sol = eqsys.root({Na_p: 0, Cl_m: 0, NaCl: 3.5})
+    # assert np.allclose(x, [2.5, 2.5, 1])

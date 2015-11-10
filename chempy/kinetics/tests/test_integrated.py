@@ -7,7 +7,7 @@ import sympy
 one = sympy.S(1)
 
 t, kf, P0, t0, excess_C, limiting_C, eps_l, beta = sympy.symbols(
-    't k_f P0 t0 Y Z epsilon beta', positive=True)  # t0 => -t0
+    't k_f P0 t0 Y Z epsilon beta', negative=False)  # t0 => -t0
 
 subsd = {t: one*2, kf: one*3, P0: one*5, t0: one*7, excess_C: one*11,
          limiting_C: one*13, eps_l: one*17, beta: one*23}
