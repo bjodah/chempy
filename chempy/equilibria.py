@@ -362,7 +362,7 @@ class EqSystemBase(ReactionSystem):
              solver='scipy', **kwargs):
         init_concs = self.as_per_substance_array(init_concs)
         if x0 is None:
-            #x0 = [0]*self.ns
+            # x0 = [0]*self.ns
             x0 = init_concs
         neqsys = neqsys or self.get_neqsys(
             rref_equil=kwargs.pop('rref_equil', False),
@@ -517,7 +517,8 @@ class EqSystemLin(EqSystemBase):
         from pyneqsys.symbolic import linear_exprs
         A, ks = self.stoichs_constants(rref_equil, ln=ln, exp=exp,
                                        precipitates=precipitates)
-        f1 = [q/k-1 if k != 0 else q for q, k in zip(prodpow(y, A), ks)]  # y == C
+        # y == C
+        f1 = [q/k-1 if k != 0 else q for q, k in zip(prodpow(y, A), ks)]
         B, comp_nrs = self.composition_balance_vectors()
         f2 = linear_exprs(B, y, mat_dot_vec(B, init_concs))
         return f1 + f2
