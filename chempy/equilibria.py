@@ -1,6 +1,7 @@
 from __future__ import division, absolute_import
 
 import math
+import os
 import warnings
 from itertools import chain
 from collections import defaultdict
@@ -233,9 +234,11 @@ def composition_balance(substances, concs, composition_number):
 
 class EqSystemBase(ReactionSystem):
 
-    def eq_constants(self, non_precip_rxn_idxs=()):
-        return np.array([0 if idx in non_precip_rxn_idxs else eq.params for
-                         idx, eq in enumerate(self.rxns)])
+    def eq_constants(self, non_precip_rids=(), eq_params=None):
+        if eq_params is None:
+            eq_params = [eq.params for eq in self.rxns]
+        return np.array([self.small if idx in non_precip_rids else
+                         eq_params[idx] for idx, eq in enumerate(eq_params)])
 
     def upper_conc_bounds(self, init_concs):
         init_concs_arr = self.as_per_substance_array(init_concs)
@@ -260,21 +263,19 @@ class EqSystemBase(ReactionSystem):
         return [equilibrium_quotient(concs, stoichs[ri, :])
                 for ri in range(self.nr)]
 
-    def stoichs_constants(self, rref=False, Matrix=None, ln=None, exp=None,
-                          precipitates=()):
-        non_precip_rids = [idx for idx, precip in zip(
-            self.solid_rxn_idxs, precipitates) if not precip]
+    def stoichs_constants(self, eq_params, rref=False, Matrix=None,
+                          ln=None, exp=None, non_precip_rids=()):
         if rref:
             from pyneqsys.symbolic import linear_rref
             ln = ln or math.log
             rA, rb = linear_rref(self.stoichs(non_precip_rids),
-                                 map(ln, self.eq_constants(non_precip_rids)),
+                                 map(ln, eq_params),
                                  Matrix)
             exp = exp or math.exp
-            return rA, list(map(exp, rb))
+            return rA.tolist(), list(map(exp, rb))
         else:
             return (self.stoichs(non_precip_rids),
-                    self.eq_constants(non_precip_rids))
+                    eq_params)
 
     def composition_balance_vectors(self):
         composition_keys = set()
@@ -302,10 +303,11 @@ class EqSystemBase(ReactionSystem):
     def solid_rxn_idxs(self):
         return [idx for idx, rxn in enumerate(self.rxns) if rxn.has_solids()]
 
-    def fw_switch_factory(self, ri):
+    def fw_cond_factory(self, ri):
+        """ """
         rxn = self.rxns[ri]
 
-        def switch(x, p):
+        def fw_cond(x, p):
             solid_stoich_coeff = rxn.solid_stoich(self.substances)[1]
             q = rxn.Q(self.substances, x)
             k = rxn.K()
@@ -316,59 +318,75 @@ class EqSystemBase(ReactionSystem):
                 return QoverK > 1
             else:
                 raise NotImplementedError
-        return switch
+        return fw_cond
 
-    def bw_switch_factory(self, ri, small):
+    def bw_cond_factory(self, ri, small):
         rxn = self.rxns[ri]
 
-        def switch(x, p):
+        def bw_cond(x, p):
             solid_idx = rxn.solid_stoich(self.substances)[2]
             if x[solid_idx] < small:
-                return True
-            else:
                 return False
-        return switch
+            else:
+                return True
+        return bw_cond
 
     def get_neqsys(self, rref_equil=False, rref_preserv=False, **kwargs):
         import sympy as sp
         from pyneqsys import SymbolicSys
-        kwargs['pre_processor'] = self.pre_processor
-        kwargs['post_processor'] = self.post_processor
+        if self.pre_processor is not None:
+            kwargs['pre_processors'] = [self.pre_processor]
+        if self.post_processor is not None:
+            kwargs['post_processors'] = [self.post_processor]
         if len(self.solid_rxn_idxs) == 0:
             f = partial(self.f, ln=sp.log, exp=sp.exp,
                         rref_equil=rref_equil,
                         rref_preserv=rref_preserv)
             neqsys = SymbolicSys.from_callback(
-                f, self.ns, nparams=self.ns, **kwargs)
+                f, self.ns, nparams=self.ns+self.nr, **kwargs)
         else:
             # we have multiple equation systems corresponding
             # to the permutations of presence of each solid phase
             from pyneqsys import ConditionalNeqSys
-            neqsys = ConditionalNeqSys(
-                [(self.fw_switch_factory(ri),
-                  self.bw_switch_factory(ri, self.small)) for
-                 ri in self.solid_rxn_idxs],
-                lambda conds: SymbolicSys.from_callback(
+
+            # This factory function could benefit from an LRU cache
+            def factory(conds):
+                return SymbolicSys.from_callback(
                     partial(self.f, ln=sp.log, exp=sp.exp,
                             rref_equil=rref_equil,
                             rref_preserv=rref_preserv,
                             precipitates=conds),
-                    self.ns, nparams=self.ns, **kwargs
+                    self.ns, nparams=self.ns+self.nr, **kwargs
                 )
-            )
+
+            conds = [(self.fw_cond_factory(ri),
+                      self.bw_cond_factory(ri, self.small)) for
+                     ri in self.solid_rxn_idxs]
+            neqsys = ConditionalNeqSys(conds, factory)
         return neqsys
 
+    def non_precip_rids(self, precipitates):
+        return [idx for idx, precip in zip(
+            self.solid_rxn_idxs, precipitates) if not precip]
+
+    def x0(self, init_concs):
+        return init_concs
+
     def root(self, init_concs, x0=None, neqsys=None,
-             solver='scipy', **kwargs):
+             solver=None, **kwargs):
+        if solver is None:
+            solver = os.environ.get('PYNEQSYS_SOLVER', 'scipy')  # also 'nleq2'
         init_concs = self.as_per_substance_array(init_concs)
         if x0 is None:
-            # x0 = [0]*self.ns
-            x0 = init_concs
+            x0 = self.x0(init_concs)  # x0 = [0]*self.ns
         neqsys = neqsys or self.get_neqsys(
             rref_equil=kwargs.pop('rref_equil', False),
             rref_preserv=kwargs.pop('rref_preserv', False)
         )
-        x, sol = neqsys.solve(solver, x0, init_concs, **kwargs)
+        if 'method' not in kwargs:
+            kwargs['method'] = 'lm'  # Levenberg-Marquardt often more robust
+        params = np.concatenate((init_concs, self.eq_constants()))
+        x, sol = neqsys.solve(solver, x0, params, **kwargs)
         # Sanity checks:
         sc_upper_bounds = np.array(self.upper_conc_bounds(init_concs))
         neg_conc, too_much = np.any(x < 0), np.any(
@@ -378,10 +396,6 @@ class EqSystemBase(ReactionSystem):
                 warnings.warn("Negative concentration")
             if too_much:
                 warnings.warn("Too much of at least one component")
-            # print("neg_conc, too_much", neg_conc, too_much)  # DEBUG
-            # print(x)
-            # print(sc_upper_bounds)
-            # print(x - sc_upper_bounds*(1 + 1e-12))
             return None, sol
         return x, sol
 
@@ -508,15 +522,19 @@ class EqSystemBase(ReactionSystem):
 
 class EqSystemLin(EqSystemBase):
 
-    small = 1e-15  # arbitrary: roughly machine epsilon * 10
+    small = 0  # precipitation limit
     pre_processor = None
     post_processor = None
 
-    def f(self, y, init_concs, rref_equil=False, rref_preserv=False,
+    def f(self, y, params, rref_equil=False, rref_preserv=False,
           ln=None, exp=None, precipitates=()):
         from pyneqsys.symbolic import linear_exprs
-        A, ks = self.stoichs_constants(rref_equil, ln=ln, exp=exp,
-                                       precipitates=precipitates)
+        init_concs, eq_params = params[:self.ns], params[self.ns:]
+        non_precip_rids = self.non_precip_rids(precipitates)
+        A, ks = self.stoichs_constants(
+            self.eq_constants(non_precip_rids, eq_params),
+            rref_equil, ln=ln, exp=exp,
+            non_precip_rids=non_precip_rids)
         # y == C
         f1 = [q/k-1 if k != 0 else q for q, k in zip(prodpow(y, A), ks)]
         B, comp_nrs = self.composition_balance_vectors()
@@ -526,22 +544,36 @@ class EqSystemLin(EqSystemBase):
 
 class EqSystemLog(EqSystemBase):
 
-    small = -60  # aribtrary: exp(-60), small but well within domain
+    small = math.exp(-60)  # anything less than `small` is insignificant
 
-    pre_processor = np.log
-    post_processor = np.exp
+    @staticmethod
+    def pre_processor(x, params):
+        return (np.log(np.asarray(x) + EqSystemLog.small)/10,  # 10: damping
+                params)  # zero conc. ~= exp(small)
 
-    def f(self, y, init_concs, rref_equil=False, rref_preserv=False,
+    @staticmethod
+    def post_processor(x, params):
+        return np.exp(x), params
+
+    def x0(self, init_concs):
+        return [1]*len(init_concs)
+
+    def f(self, y, params, rref_equil=False, rref_preserv=False,
           ln=None, exp=None, precipitates=()):
         from pyneqsys.symbolic import linear_exprs
         if ln is None:
             ln = math.log
         if exp is None:
             exp = math.exp
-        A, ks = self.stoichs_constants(rref_equil, ln=ln, exp=exp,
-                                       precipitates=precipitates)
-        f1 = mat_dot_vec(A, y, ks)  # y == ln(C)
+        init_concs, eq_params = params[:self.ns], params[self.ns:]
+        non_precip_rids = self.non_precip_rids(precipitates)
+        A, ks = self.stoichs_constants(
+            self.eq_constants(non_precip_rids, eq_params),
+            rref_equil, ln=ln, exp=exp,
+            non_precip_rids=non_precip_rids)
+        f1 = mat_dot_vec(A, y, [-ln(k) for k in ks])  # y == ln(C)
         B, comp_nrs = self.composition_balance_vectors()
-        f2 = linear_exprs(B, map(exp, y), mat_dot_vec(B, init_concs),
+        f2 = linear_exprs(B, list(map(exp, y)),
+                          mat_dot_vec(B, init_concs),
                           rref=rref_preserv)
         return f1 + f2

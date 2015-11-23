@@ -139,6 +139,7 @@ class Reaction(object):
             )) for k in substances)
 
     def solid_stoich(self, substances):
+        """ Only stoichiometry of solids """
         net = self._xsolid_stoich(substances, True)
         found1 = -1
         for idx in range(len(net)):
@@ -150,6 +151,7 @@ class Reaction(object):
         return net, net[idx], idx
 
     def non_solid_stoich(self, substances):
+        """ Only stoichiometry of non-solids """
         return self._xsolid_stoich(substances, False)
 
     def has_solids(self):
@@ -208,9 +210,9 @@ class ReactionSystem(object):
         return np.array([(eq.net_stoich(self.substances)) for
                          idx, eq in enumerate(self.rxns)], dtype=np.int)
 
-    def stoichs(self, non_precip_rxn_idxs=()):
+    def stoichs(self, non_precip_rids=()):
         return np.array([(
             -np.array(eq.solid_stoich(self.substances)[0]) if idx
-            in non_precip_rxn_idxs else
+            in non_precip_rids else
             eq.non_solid_stoich(self.substances)
         ) for idx, eq in enumerate(self.rxns)], dtype=np.int)
