@@ -8,6 +8,19 @@ from collections import defaultdict
 from functools import reduce, partial
 from operator import mul, add
 
+try:
+    from fastcache import clru_cache
+except ImportError:
+    warnings.warn("Could not import fastcache, "
+                  "solving of heterogenous systems may be slower.")
+
+    class clru_cache:
+        def __init__(*args, **kwargs):
+            pass
+
+        def __call__(self, fun):
+            return fun
+
 import numpy as np
 
 from .chemistry import Reaction, ReactionSystem
@@ -350,6 +363,7 @@ class EqSystemBase(ReactionSystem):
             from pyneqsys import ConditionalNeqSys
 
             # This factory function could benefit from an LRU cache
+            @clru_cache(256)
             def factory(conds):
                 return SymbolicSys.from_callback(
                     partial(self.f, ln=sp.log, exp=sp.exp,
@@ -383,8 +397,6 @@ class EqSystemBase(ReactionSystem):
             rref_equil=kwargs.pop('rref_equil', False),
             rref_preserv=kwargs.pop('rref_preserv', False)
         )
-        if 'method' not in kwargs:
-            kwargs['method'] = 'lm'  # Levenberg-Marquardt often more robust
         params = np.concatenate((init_concs, self.eq_constants()))
         x, sol = neqsys.solve(solver, x0, params, **kwargs)
         # Sanity checks:
@@ -502,7 +514,7 @@ class EqSystemBase(ReactionSystem):
 
         if Q:
             qs = self.equilibrium_quotients(concs)
-            ks = [rxn.params*self.solid_factor(self.substances, concs)
+            ks = [rxn.params*rxn.solid_factor(self.substances, concs)
                   for rxn in self.rxns]
             for idx, (q, k) in enumerate(zip(qs, ks)):
                 axes[0].plot(concs[:, self.as_substance_index(varied)],

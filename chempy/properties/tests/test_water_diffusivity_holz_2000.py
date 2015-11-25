@@ -1,6 +1,6 @@
 import warnings
 
-from ..units import allclose
+from chempy.units import allclose
 from ..water_diffusivity_holz_2000 import water_self_diffusion_coefficient as \
     w_sd
 

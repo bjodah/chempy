@@ -1,6 +1,6 @@
 import warnings
 
-from ..units import allclose
+from chempy.units import allclose
 from ..water_density_tanaka_2001 import water_density
 
 

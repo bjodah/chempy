@@ -112,9 +112,9 @@ def test_Equilibria_root_simple():
     solutes = water, hydronium, hydroxide, ammonium, ammonia = (
         Solute('H2O', 0, composition={1: 2, 8: 1}),
         Solute('H+', 1, composition={1: 1}),
-        Solute('OH-', -1, composition={1: 1}),
-        Solute('NH4+', 1, composition={1: 4, 14: 1}),
-        Solute('NH3', 0, composition={1: 4, 14: 1})
+        Solute('OH-', -1, composition={1: 1, 8: 1}),
+        Solute('NH4+', 1, composition={1: 4, 7: 1}),
+        Solute('NH3', 0, composition={1: 3, 7: 1})
     )
 
     water_auto_protolysis = Equilibrium(
@@ -122,19 +122,20 @@ def test_Equilibria_root_simple():
     ammonia_protolysis = Equilibrium(
         {ammonium: 1}, {hydronium: 1, ammonia: 1}, 10**-9.26/55.5
     )
-    eqsys_log, eqsys_lin = [EqSys([water_auto_protolysis, ammonia_protolysis], solutes)
+    eqsys_log, eqsys_lin = [EqSys([water_auto_protolysis,
+                                   ammonia_protolysis], solutes)
                             for EqSys in (EqSystemLog, EqSystemLin)]
     init_concs = collections.defaultdict(float, {water: 55.5, ammonia: 1e-3})
     x, sol1 = eqsys_log.root(init_concs)
     x, sol2 = eqsys_lin.root(init_concs, x)
     ref = eqsys_lin.as_per_substance_array({
         water: 55.5,
-        ammonia: 1e-3 - 1.26e-4,
-        ammonium: 1.26e-4,
-        hydronium: 10**-10.1,
-        hydroxide: 1.26e-4
+        ammonia: 1e-3 - 6.2e-4,
+        ammonium: 6.2e-4,
+        hydronium: 1.6e-11,
+        hydroxide: 6.2e-4
     })
-    assert np.allclose(x, ref)
+    assert np.allclose(x, ref, rtol=0.02, atol=1e-16)
 
 
 def _get_NaCl(EqSys):
@@ -166,6 +167,6 @@ def test_solid(EqSys):
     eqsys, species, cases = _get_NaCl(EqSys)
 
     for init, final in cases:
-        x, sol = eqsys.root(dict(zip(species, init)))
+        x, sol = eqsys.root(dict(zip(species, init)), method='lm')
         assert x is not None
         assert np.allclose(x, np.asarray(final))
