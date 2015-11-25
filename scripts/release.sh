@@ -3,6 +3,7 @@
 #
 #    $ ./scripts/release.sh v1.2.3
 #
+
 if [[ $1 != v* ]]; then
     echo "Argument does not start with 'v'"
     exit 1
@@ -14,12 +15,9 @@ PKG=$(find . -maxdepth 2 -name __init__.py -print0 | xargs -0 -n1 dirname | xarg
 PKG_UPPER=$(echo $PKG | tr '[:lower:]' '[:upper:]')
 ./scripts/run_tests.sh
 env ${PKG_UPPER}_RELEASE_VERSION=$1 python setup.py sdist
-
-# Build conda recipe:
 ./scripts/build_conda_recipe.sh $1
 
 # All went well
-
 git tag -a $1 -m $1
 git push
 git push --tags

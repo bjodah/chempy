@@ -27,6 +27,7 @@ ChemPy
 
   - water density
   - water permittivity
+  - water diffusivity
 
 
 Documentation

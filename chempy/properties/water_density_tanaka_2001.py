@@ -18,7 +18,7 @@ def water_density(T=298.15, T0=None, units=None, a=None,
     Parameters
     ----------
     T: float
-        Temperature (default: in Kelvin)
+        Temperature (in Kelvin) (default: 298.15)
     T0: float
         Value of T for freezing point of water (default: 273.15)
     units: object (optional)
@@ -32,14 +32,21 @@ def water_density(T=298.15, T0=None, units=None, a=None,
 
     Returns
     -------
-    Density of water (float if T is float and units is None)
+    Density of water (float of kg/m3 if T is float and units is None)
+
+    Examples
+    --------
+    >>> print('%.2f' % water_density(277.13))
+    999.97
 
     References
     ----------
     TANAKA M., GIRARD G., DAVIS R., PEUTO A. and BIGNELL N.,
         "Recommanded table for the density of water between 0 °C and 40 °C
         based on recent experimental reports",
-        Metrologia, 2001, 38, 301-309. doi:10.1088/0026-1394/38/4/3
+        Metrologia, 2001, 38, 301-309.
+        http://iopscience.iop.org/article/10.1088/0026-1394/38/4/3
+        doi:10.1088/0026-1394/38/4/3
     """
     if units is None:
         K = 1
