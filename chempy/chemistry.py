@@ -4,6 +4,7 @@ from __future__ import division
 
 import numpy as np
 
+from itertools import chain
 from operator import itemgetter
 from collections import defaultdict
 
@@ -130,6 +131,36 @@ class Reaction(object):
             0 if self.inact_reac is None else self.inact_reac.get(k, 0)
         ) for k in substances)
 
+    def _xsolid_stoich(self, substances, xor):
+        return tuple((
+            0 if xor ^ k.solid else
+            self.prod.get(k, 0) - self.reac.get(k, 0) - (
+                0 if self.inact_reac is None else self.inact_reac.get(k, 0)
+            )) for k in substances)
+
+    def solid_stoich(self, substances):
+        """ Only stoichiometry of solids """
+        net = self._xsolid_stoich(substances, True)
+        found1 = -1
+        for idx in range(len(net)):
+            if net[idx] != 0:
+                if found1 == -1:
+                    found1 = idx
+                else:
+                    raise NotImplementedError("Only one solid assumed.")
+        return net, net[idx], idx
+
+    def non_solid_stoich(self, substances):
+        """ Only stoichiometry of non-solids """
+        return self._xsolid_stoich(substances, False)
+
+    def has_solids(self):
+        for subst in chain(self.reac.keys(), self.prod.keys(),
+                           (self.inact_reac or {}).keys()):
+            if subst.solid:
+                return True
+        return False
+
     def _get_str(self, name_attr, arrow_attr):
         reac, prod = [[
             ((str(v)+' ') if v > 1 else '') + getattr(k, name_attr)
@@ -175,7 +206,13 @@ class ReactionSystem(object):
         else:
             return self.substances.index(sbstnc)
 
-    @property
-    def stoichs(self):
-        return np.array([eq.net_stoich(self.substances)
-                         for eq in self.rxns], dtype=np.int)
+    def net_stoichs(self):
+        return np.array([(eq.net_stoich(self.substances)) for
+                         idx, eq in enumerate(self.rxns)], dtype=np.int)
+
+    def stoichs(self, non_precip_rids=()):
+        return np.array([(
+            -np.array(eq.solid_stoich(self.substances)[0]) if idx
+            in non_precip_rids else
+            eq.non_solid_stoich(self.substances)
+        ) for idx, eq in enumerate(self.rxns)], dtype=np.int)

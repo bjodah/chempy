@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+from __future__ import (absolute_import, division, print_function)
+
+import collections
+
 import pytest
 import numpy as np
 from scipy.optimize import fsolve
@@ -8,8 +13,8 @@ from ..chemistry import (
 
 from ..equilibria import (
     equilibrium_quotient, equilibrium_residual, get_rc_interval,
-    solve_equilibrium, EqSystemBase, prodpow, _solve_equilibrium_coord,
-    Equilibrium, EqSystemLin
+    solve_equilibrium, EqSystemBase, prodpow,
+    Equilibrium, EqSystemLin, EqSystemLog
 )
 
 from .ammonical_cupric_solution import get_ammonical_cupric_eqsys
@@ -65,7 +70,7 @@ def test_EqSystemBase():
     a, b = sbstncs = Substance('a'), Substance('b')
     rxns = [Reaction({a: 1}, {b: 1})]
     es = EqSystemBase(rxns, sbstncs)
-    assert es.stoichs.tolist() == [[-1, 1]]
+    assert es.net_stoichs().tolist() == [[-1, 1]]
 
 
 def _get_es1():
@@ -85,33 +90,8 @@ def _get_es_water(EqSys=EqSystemBase):
 
 def test_EqSystemBase_1():
     es = _get_es1()
-    assert es.stoichs.tolist() == [[-1, 1]]
+    assert es.stoichs().tolist() == [[-1, 1]]
     assert es.eq_constants() == [3]
-
-
-@pytest.mark.xfail  # look into this later
-def test_EqSystemLin_2():
-    wes = _get_es_water(EqSystemLin)
-    C = [55.5, 1e-7, 1e-7]
-    fval, elim, elim_cbs = wes.f(C, C, rref=False)
-    assert np.all(np.abs(fval) < 1e-16)
-    fval, elim, elim_cbs = wes.f(1000*np.array(C), C,
-                                 scaling=1000, rref=False)
-    assert np.all(np.abs(fval) < 1e-16)
-
-
-@pytest.mark.xfail
-def test__solve_equilibrium_coord():
-    c = np.array([-1.2882e-14, 3.1156e-10, 3.2099e-10, 9.679e-09, 5.5469e-07])
-    stoich = np.array([1, 1, 0, 0, -1])
-    K = 1e-22
-    # K = (c[0] + r)*(c[1] + r)/(c[4] - r)
-    # Kc[4] - Kr = c[0]c[1] + r(c[0] + c[1]) + r**2
-    # {p = (c[0] + c[1] + K)/2}
-    # {q = c[0]c[1] - Kc[4]}
-    # r = p +/- sqrt(p*p/4 - q)
-    # ... scrap that, there's a neg. conc
-    _solve_equilibrium_coord(c, stoich, K)
 
 
 def test_Equilibria_arithmetics():
@@ -126,3 +106,67 @@ def test_Equilibria_root():
     eqsys, c0 = get_ammonical_cupric_eqsys()
     x, sol = eqsys.root(c0)
     assert sol.success
+
+
+def test_Equilibria_root_simple():
+    solutes = water, hydronium, hydroxide, ammonium, ammonia = (
+        Solute('H2O', 0, composition={1: 2, 8: 1}),
+        Solute('H+', 1, composition={1: 1}),
+        Solute('OH-', -1, composition={1: 1, 8: 1}),
+        Solute('NH4+', 1, composition={1: 4, 7: 1}),
+        Solute('NH3', 0, composition={1: 3, 7: 1})
+    )
+
+    water_auto_protolysis = Equilibrium(
+        {water: 1}, {hydronium: 1, hydroxide: 1}, 1e-14/55.5)
+    ammonia_protolysis = Equilibrium(
+        {ammonium: 1}, {hydronium: 1, ammonia: 1}, 10**-9.26/55.5
+    )
+    eqsys_log, eqsys_lin = [EqSys([water_auto_protolysis,
+                                   ammonia_protolysis], solutes)
+                            for EqSys in (EqSystemLog, EqSystemLin)]
+    init_concs = collections.defaultdict(float, {water: 55.5, ammonia: 1e-3})
+    x, sol1 = eqsys_log.root(init_concs)
+    x, sol2 = eqsys_lin.root(init_concs, x)
+    ref = eqsys_lin.as_per_substance_array({
+        water: 55.5,
+        ammonia: 1e-3 - 6.2e-4,
+        ammonium: 6.2e-4,
+        hydronium: 1.6e-11,
+        hydroxide: 6.2e-4
+    })
+    assert np.allclose(x, ref, rtol=0.02, atol=1e-16)
+
+
+def _get_NaCl(EqSys):
+    Na_p, Cl_m, NaCl = sbstncs = (
+        Solute('Na+', 1, composition={11: 1}),
+        Solute('Cl-', -1, composition={17: 1}),
+        Solute('NaCl', composition={11: 1, 17: 1}, solid=True)
+    )
+    sp = Equilibrium({NaCl: 1}, {Na_p: 1, Cl_m: 1}, 4.0)
+    eqsys = EqSys([sp], sbstncs)
+    cases = [
+        [(.5, .5, .4), (.9, .9, 0)],
+        [(0, 0, .1), (.1, .1, 0)],
+        [(1, 1, 1), (2, 2, 0)],
+        [(0, 0, 2), (2, 2, 0)],
+        [(0, 0, 3), (2, 2, 1)],
+        [(3, 3, 3), (2, 2, 4)],
+        [(3, 3, 0), (2, 2, 1)]
+    ]
+    return eqsys, (Na_p, Cl_m, NaCl), cases
+
+
+def test_EqSystemLog():
+    pass
+
+
+@pytest.mark.parametrize('EqSys', [EqSystemLin, EqSystemLog])
+def test_solid(EqSys):
+    eqsys, species, cases = _get_NaCl(EqSys)
+
+    for init, final in cases:
+        x, sol = eqsys.root(dict(zip(species, init)), method='lm')
+        assert x is not None
+        assert np.allclose(x, np.asarray(final))

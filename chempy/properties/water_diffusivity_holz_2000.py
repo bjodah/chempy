@@ -44,6 +44,7 @@ def water_self_diffusion_coefficient(T=298.15, units=None, warn=True,
         molecular liquids for calibration in accurate 1H NMR PFG measurements
         Manfred Holz, Stefan R. Heila, Antonio Saccob;
         Phys. Chem. Chem. Phys., 2000,2, 4740-4742
+        http://pubs.rsc.org/en/Content/ArticleLanding/2000/CP/b005319h
         DOI: 10.1039/B005319H
     """
     if units is None:

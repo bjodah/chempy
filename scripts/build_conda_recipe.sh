@@ -11,5 +11,5 @@ fi
 echo ${1#v}>__conda_version__.txt
 trap "rm __conda_version__.txt" EXIT SIGINT SIGTERM
 for CPY in {27,34}; do
-    CONDA_PY=$CPY conda build conda-recipe
+    PYTHONNOUSERSITE=1 CONDA_PY=$CPY conda build conda-recipe
 done

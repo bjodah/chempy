@@ -7,5 +7,5 @@ matplotlib>=1.3.1
 sympy>=0.7.6.1
 periodictable>=1.4.1
 quantities>=0.10.1
-pyneqsys>=0.1.3
+pyneqsys>=0.2.0
 pyodesys>=0.3.0

@@ -1,12 +1,8 @@
-v0.1.2
+v0.2.0
 ======
-- added util.check_transforms
-
-v0.1.1
-======
-- Variable transformations supported
-- Only require sympy, numpy and scipy in requirements.txt
+- Support for solid phases in equilibria
+- Submodules for water properties moved to chempy.properties
 
 v0.1
 ====
-- support for scipy, pyodeint, pygslodeiv2, pycvodes
+- Initial release

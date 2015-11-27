@@ -12,9 +12,10 @@ def law_of_mass_action_rates(y, rsys):
 
 def dCdt(rsys, rates):
     f = [0]*rsys.ns
+    net_stoichs = rsys.net_stoichs()
     for idx_s, sbstnc in enumerate(rsys.substances):
         for idx_r, rxn in enumerate(rsys.rxns):
-            f[idx_s] += rsys.stoichs[idx_r, idx_s]*rates[idx_r]
+            f[idx_s] += net_stoichs[idx_r, idx_s]*rates[idx_r]
     return f
 
 

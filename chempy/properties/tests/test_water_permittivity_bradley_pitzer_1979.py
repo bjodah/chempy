@@ -1,8 +1,8 @@
 import warnings
 
-from ..water_permittivity_bradley_pitzer_1979 import water_permittivity
+from chempy.units import allclose
 
-from ..units import allclose
+from ..water_permittivity_bradley_pitzer_1979 import water_permittivity
 
 
 def test_water_permittivity():

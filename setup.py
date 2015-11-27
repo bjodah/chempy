@@ -33,12 +33,15 @@ with open(pkg_name + '/__init__.py') as f:
 
 submodules = [
     'chempy.kinetics',
+    'chempy.properties',
     'chempy.util',
 ]
 
 tests = [
     'chempy.tests',
     'chempy.kinetics.tests',
+    'chempy.properties.tests',
+    'chempy.util.tests',
 ]
 
 classifiers = [
@@ -64,7 +67,7 @@ setup_kwargs = {
     'author': 'Björn Dahlgren',
     'author_email': 'bjodah@DELETEMEgmail.com',
     'license': 'BSD',
-    'keywords': ("chemistry", "water properties"),
+    'keywords': ("chemistry", "water properties", "physical chemistry"),
     'url': 'https://github.com/bjodah/' + pkg_name,
     'packages': [pkg_name] + submodules + tests,
     'classifiers': classifiers,
