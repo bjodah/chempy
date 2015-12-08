@@ -3,7 +3,6 @@ from __future__ import division, absolute_import
 import math
 import os
 import warnings
-from itertools import chain
 from collections import defaultdict
 from functools import reduce, partial
 from operator import mul, add
@@ -23,8 +22,7 @@ except ImportError:
 
 import numpy as np
 
-from .chemistry import Reaction, ReactionSystem
-from .util.arithmeticdict import ArithmeticDict
+from .chemistry import ReactionSystem, equilibrium_quotient
 from .util.plotting import mpl_outside_legend
 
 
@@ -54,18 +52,6 @@ def mat_dot_vec(iter_mat, iter_vec, iter_term=None):  # pure python (slow)
         # daxpy
         return [vec_dot_vec(row, iter_vec) + term for row, term
                 in zip(iter_mat, iter_term)]
-
-
-def equilibrium_quotient(concs, stoich):
-    if not hasattr(concs, 'ndim') or concs.ndim == 1:
-        tot = 1
-    else:
-        tot = np.ones(concs.shape[0])
-        concs = concs.T
-
-    for nr, conc in zip(stoich, concs):
-        tot *= conc**nr
-    return tot
 
 
 def equilibrium_residual(rc, c0, stoich, K, activity_product=None):
@@ -150,86 +136,6 @@ def solve_equilibrium(c0, stoich, K, activity_product=None):
     c0 = np.array(c0)
     rc = _solve_equilibrium_coord(c0, stoich, K, activity_product)
     return c0 + rc*stoich
-
-
-class Equilibrium(Reaction):
-    """
-    Represents equilibrium reaction
-
-    See :py:class:`Reaction` for parameters
-    """
-
-    str_arrow = '<->'
-    latex_arrow = '\\rightleftharpoons'
-
-    def __init__(self, reac, prod, params, *args):
-        if not all(arg is None for arg in args):
-            raise NotImplementedError("Inactive reac/prod not implemented")
-        return super(Equilibrium, self).__init__(reac, prod, params)
-
-    def K(self, state=None):
-        """ Return equilibrium quotient (possibly state dependent) """
-        if callable(self.params):
-            if state is None:
-                raise ValueError("No state provided")
-            return self.params(state)
-        else:
-            if state is not None:
-                raise ValueError("state provided but params not callable")
-            return self.params
-
-    def Q(self, substances, concs):
-        stoich = self.non_solid_stoich(substances)
-        return equilibrium_quotient(concs, stoich)
-
-    def solid_factor(self, substances, sc_concs):
-        factor = 1
-        for r, n in self.reac.items():
-            if r.solid:
-                factor *= sc_concs[substances.index(r)]**-n
-        for p, n in self.prod.items():
-            if p.solid:
-                factor *= sc_concs[substances.index(p)]**n
-        return factor
-
-    def dimensionality(self):
-        result = 0
-        for r, n in self.reac.items():
-            if r.solid:
-                continue
-            result -= n
-        for p, n in self.prod.items():
-            if p.solid:
-                continue
-            result += n
-        return result
-
-    def __rmul__(lhs, rhs):  # This works on both Py2 and Py3
-        if not isinstance(rhs, int) or not isinstance(lhs, Equilibrium):
-            return NotImplemented
-        return Equilibrium(dict(rhs*ArithmeticDict(int, lhs.reac)),
-                           dict(rhs*ArithmeticDict(int, lhs.prod)),
-                           lhs.params**rhs)
-
-    def __add__(lhs, rhs):
-        keys = set()
-        for key in chain(lhs.reac.keys(), lhs.prod.keys(),
-                         rhs.reac.keys(), rhs.prod.keys()):
-            keys.add(key)
-        reac, prod = {}, {}
-        for key in keys:
-            n = (lhs.prod.get(key, 0) - lhs.reac.get(key, 0) +
-                 rhs.prod.get(key, 0) - rhs.reac.get(key, 0))
-            if n < 0:
-                reac[key] = -n
-            elif n > 0:
-                prod[key] = n
-            else:
-                pass  # n == 0
-        return Equilibrium(reac, prod, lhs.params * rhs.params)
-
-    def __sub__(lhs, rhs):
-        return lhs + -1*rhs
 
 
 def composition_balance(substances, concs, composition_number):

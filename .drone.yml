@@ -1,26 +1,41 @@
-image: bjodah/bjodahimg:latest
-git:
-    path: github.com/bjodah/chempy
-env:
-  - MY_SERVER=chempy@hera.physchem.kth.se
-script:
-  - if [[ "$DRONE_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then export CHEMPY_RELEASE_VERSION=$DRONE_BRANCH; echo ${CHEMPY_RELEASE_VERSION} | tail -c +2 > __conda_version__.txt; fi
-  - pip install --user -r requirements.txt
-  - pip3 install --user -r requirements.txt
-  - PYTHONPATH=$(pwd) ./scripts/run_tests.sh --cov chempy --cov-report html
-  - python2 setup.py sdist
-  - pip install dist/*.tar.gz
-  - pip install --user -r optional_requirements.txt
-  - (cd examples/; ipython2 nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
-  - (cd examples/; ../scripts/render_index.sh *.html)
-  - ./scripts/generate_docs.sh
-  - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
-  - ssh "${MY_SERVER}" "mkdir -p ~/public_html/$DRONE_BRANCH"
-  - scp -r doc/_build/html dist/* htmlcov/ examples/ ${MY_SERVER}:~/public_html/$DRONE_BRANCH
-  - touch doc/_build/html/.nojekyll
-  - cp LICENSE doc/_build/html/.nojekyll
-  - git config --global user.name "drone"
-  - git config --global user.email ${MY_SERVER}
-  - if [[ "$DRONE_BRANCH" == "master" ]]; then ./scripts/github_upload.sh doc/_build/html bjodah pysym gh-pages; fi
-  - if [[ "$DRONE_BRANCH" == "master" ]]; then scp -r benchmarks/* ${MY_SERVER}:~; fi
-  - if [[ "$DRONE_BRANCH" == "master" ]]; then ssh ${MY_SERVER} 'source /etc/profile; asv run -k -e >asv-run.log; asv publish>asv-publish.log'; fi
+build:
+  image: bjodah/bjodahimg:latest
+  commands:
+    - if bash -c '[[ "$DRONE_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]'; then export CHEMPY_RELEASE_VERSION=$DRONE_BRANCH; echo ${CHEMPY_RELEASE_VERSION} | tail -c +2 > __conda_version__.txt; fi
+    - pip install --user -r requirements.txt
+    - pip3 install --user -r requirements.txt
+    - PYTHONPATH=$(pwd) ./scripts/run_tests.sh --cov chempy --cov-report html
+    - python2 setup.py sdist
+    - pip install dist/*.tar.gz
+    - pip install --user -r optional_requirements.txt
+    - (cd examples/; ipython2 nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
+    - (cd examples/; ../scripts/render_index.sh *.html)
+    - ./scripts/generate_docs.sh
+    - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
+    - touch doc/_build/html/.nojekyll
+    - cp LICENSE doc/_build/html/.nojekyll
+    - git config --global user.name "drone"
+    - git config --global user.email "drone@nohost.com"
+    - mkdir -p deploy/public_html/$$BRANCH
+    - cp -r dist/* htmlcov/ examples/ doc/_build/html/ deploy/public_html/$$BRANCH/
+    - if bash -c '[[ "$DRONE_BRANCH" == "master" ]]'; then cp -r benchmarks/ deploy/; mkdir -p deploy/gh-pages; ./scripts/dir_to_branch.sh doc/_build/html bjodah chempy gh-pages deploy/gh-pages; fi
+
+deploy:
+
+  rsync:
+    host: hera.physchem.kth.se
+    user: chempy
+    port: 22
+    source: deploy/
+    target: ~
+    recursive: true
+    delete: false
+
+  ssh:
+    when:
+      branch: master
+    host: hera.physchem.kth.se
+    user: chempy
+    port: 22
+    commands:
+      - source /etc/profile; asv run -k -e >asv-run.log; asv publish>asv-publish.log
