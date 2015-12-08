@@ -8,13 +8,13 @@ import numpy as np
 from scipy.optimize import fsolve
 
 from ..chemistry import (
-    Solute, Substance, Reaction
+    Solute, Substance, Reaction, Equilibrium
 )
 
 from ..equilibria import (
     equilibrium_quotient, equilibrium_residual, get_rc_interval,
     solve_equilibrium, EqSystemBase, prodpow,
-    Equilibrium, EqSystemLin, EqSystemLog
+    EqSystemLin, EqSystemLog
 )
 
 from .ammonical_cupric_solution import get_ammonical_cupric_eqsys

@@ -1,6 +1,6 @@
 package:
     name: chempy
-    version: 0.1.0.git
+    version: 0.2.0.dev0
 
 source:
     path: ../
@@ -31,3 +31,4 @@ test:
 about:
     home: https://github.com/bjodah/chempy
     license: BSD
+    summary: Python package useful for (physical) chemistry
