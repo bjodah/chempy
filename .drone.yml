@@ -16,8 +16,9 @@ build:
     - cp LICENSE doc/_build/html/.nojekyll
     - git config --global user.name "drone"
     - git config --global user.email "drone@nohost.com"
-    - mkdir -p deploy/public_html/$$BRANCH
-    - cp -r dist/* htmlcov/ examples/ doc/_build/html/ deploy/public_html/$$BRANCH/
+    - mkdir -p deploy/public_html/branches/$$BRANCH deploy/script_queue
+    - cp -r dist/* htmlcov/ examples/ doc/_build/html/ deploy/public_html/branches/$$BRANCH/
+    - if bash -c '[[ "$DRONE_BRANCH" == "master" ]]'; then echo 'source /etc/profile; cd ~/benchmarks/; asv run -k -e >asv-run.log; asv publish>asv-publish.log'>deploy/script_queue/run_benchmark.sh; chmod +x deploy/script_queue/run_benchmark.sh; fi
     - if bash -c '[[ "$DRONE_BRANCH" == "master" ]]'; then cp -r benchmarks/ deploy/; mkdir -p deploy/gh-pages; ./scripts/dir_to_branch.sh doc/_build/html bjodah chempy gh-pages deploy/gh-pages; fi
 
 deploy:
@@ -30,11 +31,3 @@ deploy:
     target: ~
     recursive: true
     delete: false
-
-  ssh:
-    when:
-      branch: master
-    host: hera.physchem.kth.se
-    user: chempy
-    commands:
-      - source /etc/profile; asv run -k -e >asv-run.log; asv publish>asv-publish.log
