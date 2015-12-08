@@ -36,6 +36,5 @@ deploy:
       branch: master
     host: hera.physchem.kth.se
     user: chempy
-    port: 22
     commands:
       - source /etc/profile; asv run -k -e >asv-run.log; asv publish>asv-publish.log

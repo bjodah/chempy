@@ -1,9 +1,9 @@
 ChemPy
 ======
 
-.. image:: http://hera.physchem.kth.se:8080/github.com/bjodah/chempy/status.svg?branch=master
-   :target: http://hera.physchem.kth.se:8080/github.com/bjodah/chempy
-   :alt: Build status on hera
+.. image:: http://hera.physchem.kth.se:9090/api/badges/bjodah/chempy/status.svg
+   :target: http://hera.physchem.kth.se:9090/bjodah/chempy
+   :alt: Build status
 .. image:: https://img.shields.io/pypi/v/chempy.svg
    :target: https://pypi.python.org/pypi/chempy
    :alt: PyPI version
