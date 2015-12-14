@@ -1,9 +1,12 @@
 from __future__ import (absolute_import, division, print_function)
 
 
-def law_of_mass_action_rates(y, rsys):
-    for rxn in rsys.rxns:
-        rate = rxn.params
+def law_of_mass_action_rates(y, rsys, k=None):
+    for idx, rxn in enumerate(rsys.rxns):
+        if k is None:
+            rate = rxn.param
+        else:
+            rate = k[idx]
         for substance, coeff in rxn.reac.items():
             idx = rsys.as_substance_index(substance)
             rate *= y[idx]**coeff
@@ -19,16 +22,14 @@ def dCdt(rsys, rates):
     return f
 
 
-def get_odesys(rsys, SymbolicSys=None):
+def get_odesys(rsys, include_params=False, SymbolicSys=None):
     if SymbolicSys is None:
         from pyodesys.symbolic import SymbolicSys
-    y = SymbolicSys.symarray('y', rsys.ns)
-    t = SymbolicSys.Symbol('t')
-    rates = list(law_of_mass_action_rates(y, rsys))
-    return SymbolicSys(zip(y, dCdt(rsys, rates)), t,
-                       names=[s.name for s in rsys.substances])
 
+    def dydt(t, y, p):
+        rates = list(law_of_mass_action_rates(
+            y, rsys, rsys.params() if include_params else p))
+        return dCdt(rsys, rates)
 
-def plot():
-    """ Convenience function for ploting results from OdeSys.integrate() """
-    pass
+    return SymbolicSys.from_callback(dydt, rsys.ns,
+                                     0 if include_params else rsys.nr)

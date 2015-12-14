@@ -21,6 +21,26 @@ candela = default_units.candela
 molar = mole / dm**3
 
 
+def test_default_units():
+    # In addition to the above, we guarantee that theses are available
+    default_units.joule
+    default_units.gray
+    default_units.eV
+    default_units.MeV
+    default_units.metre
+    default_units.decimetre
+    default_units.centimetre
+    default_units.micrometre
+    default_units.nanometre
+    default_units.gram
+    default_units.molar
+    default_units.hour
+    default_units.perMolar_perSecond
+    default_units.per100eV
+    default_units.umol
+    default_units.umol_per_J
+
+
 def test_allclose():
     a = np.linspace(2, 3)*second
     b = np.linspace(2/3600., 3/3600.)*hour

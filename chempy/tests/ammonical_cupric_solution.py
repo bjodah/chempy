@@ -3,7 +3,7 @@
 from __future__ import (absolute_import, division, print_function)
 
 from chempy.chemistry import Solute, Equilibrium
-from chempy.equilibria import EqSystemLog
+from chempy.equilibria import EqSystem
 import periodictable
 
 
@@ -52,4 +52,4 @@ def get_ammonical_cupric_eqsys():
     simpl_subs = substances[:-skip_subs]
     simpl_eq = equilibria[:-skip_eq] + new_eqs
     simpl_c0 = {k: init_conc[k] for k in simpl_subs}
-    return EqSystemLog(simpl_eq, simpl_subs), simpl_c0
+    return EqSystem(simpl_eq, simpl_subs), simpl_c0

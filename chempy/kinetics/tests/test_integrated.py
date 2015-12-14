@@ -51,4 +51,4 @@ def test_binary_rev():
     num_dfdt = dfdt.subs(subsd)
     ans = kf*(limiting_C - f)*(excess_C - f) - kf/beta*f
     # symbolic susbsitution fails:
-    assert abs(float(num_dfdt) - float(ans.subs(subsd))) < 1e-15
+    assert abs(float(num_dfdt) - float(ans.subs(subsd))) < 2e-14

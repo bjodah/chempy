@@ -51,7 +51,13 @@ else:
         u_symbol='(100eV)**-1')
     default_units.micromole = pq.UnitQuantity(
         'micromole',  pq.mole/1e6,  u_symbol=u'μmol')
-
+    default_units.perMolar_perSecond = 1/default_units.molar/pq.s
+    default_units.per100eV = pq.UnitQuantity(
+        'per_100_eV', 1/(100*pq.eV*pq.constants.Avogadro_constant),
+        u_symbol='(100eV)**-1')
+    default_units.umol = pq.UnitQuantity('micromole',  pq.mole/1e6,
+                                         u_symbol=u'μmol')
+    default_units.umol_per_J = default_units.umol / pq.joule
 
 # unit registry data and logic:
 

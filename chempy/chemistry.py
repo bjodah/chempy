@@ -7,6 +7,7 @@ import numpy as np
 from itertools import chain
 from operator import itemgetter
 from collections import defaultdict
+import warnings
 
 from .util.arithmeticdict import ArithmeticDict
 
@@ -19,6 +20,10 @@ def elements(formula):
     ----------
     formula: periodictable.formulas.Formula
 
+    Returns
+    -------
+    defaultdict(int) with atom numbers as keys and respective number
+        of occuring atoms in formula.
     """
     # see https://github.com/pkienzle/periodictable/issues/14
     d = defaultdict(int)
@@ -42,13 +47,22 @@ class Substance(object):
     composition: dict or None (default)
         dict (int -> int) e.g. {atomic number: count}
     excess_electrons: bool (default: True)
-        when this is set to True and composition is None:
+        when this is set to True and composition is ``None`` and formula
+        is not ``None``:
         composition[0] will be number of excess electrons
         (-1 for H+ for example).
+    other_properties: dict
+        free form dictionary. Could be simple such as ``{'mp': 0, 'bp': 100}``
+        or considerably more involved, e.g.: ``{'diffusion_coefficient': {
+            'water': lambda T: 2.1*m**2/s/K*(T - 273.15*K)}}``
     """
+    attrs = ('name', 'charge', 'mass', 'latex_name', 'formula', 'composition',
+             'excess_electrons', 'other_properties')
+
     def __init__(self, name=None, charge=None, mass=None,
                  latex_name=None, formula=None,
-                 composition=None, excess_electrons=True):
+                 composition=None, excess_electrons=True,
+                 other_properties=None):
         self.name = name
         self.latex_name = latex_name
 
@@ -78,6 +92,8 @@ class Substance(object):
             if excess_electrons:
                 self.composition[0] = -self.charge
 
+        self.other_properties = other_properties
+
     def __repr__(self):
         kw = ['name=' + self.name + ', ...']  # Too verbose to print all
         return "{}({})".format(self.__class__.__name__, ','.join(kw))
@@ -99,26 +115,33 @@ class Reaction(object):
     ----------
     reac: dict
     prod: dict
-    params: float or callable
+    param: float or callable
     inact_reac: dict (optional)
     name: str (optional)
+    k: deprecated (alias for param)
     """
 
     str_arrow = '->'
     latex_arrow = '\\rightarrow'
     param_char = 'k'  # convention
 
-    def __init__(self, reac, prod, params=None, inact_reac=None, name=None):
+    def __init__(self, reac, prod, param=None, inact_reac=None, name=None,
+                 k=None):
         self.reac = reac
         self.prod = prod
-        self.params = params
+        if k is not None:
+            if param is not None:
+                raise ValueError("Got both param and k")
+            param = k
+            warnings.warn("Use param instead", DeprecationWarning)
+        self.param = param
         self.inact_reac = inact_reac
         self.name = name
 
     def __eq__(lhs, rhs):
         if not isinstance(lhs, Reaction) or not isinstance(rhs, Reaction):
             return NotImplemented
-        for attr in ['reac', 'prod', 'params', 'inact_reac']:
+        for attr in ['reac', 'prod', 'param', 'inact_reac']:
             if getattr(lhs, attr) != getattr(rhs, attr):
                 return False
         return True
@@ -160,7 +183,7 @@ class Reaction(object):
 
     def __str__(self):
         try:
-            s = ' %s=%.2g' % (self.param_char, self.params)
+            s = ' %s=%.2g' % (self.param_char, self.param)
         except:
             s = ''
         return self._get_str('name', 'str_arrow') + s
@@ -176,6 +199,18 @@ class Reaction(object):
 
     def latex(self):
         return self._get_str('latex_name', 'latex_arrow')
+
+    def mass_balance_violation(self, substances):
+        net_mass = 0.0
+        for subst, coeff in zip(substances, self.net_stoich(substances)):
+            net_mass += subst.mass * coeff
+        return net_mass
+
+    def charge_neutrality_violation(self, substances):
+        net_charge = 0.0
+        for subst, coeff in zip(substances, self.net_stoich(substances)):
+            net_charge += subst.charge * coeff
+        return net_charge
 
 
 def equilibrium_quotient(concs, stoich):
@@ -201,21 +236,21 @@ class Equilibrium(Reaction):
     latex_arrow = '\\rightleftharpoons'
     param_char = 'k'  # convention
 
-    def __init__(self, reac, prod, params, *args):
+    def __init__(self, reac, prod, param, *args):
         if not all(arg is None for arg in args):
             raise NotImplementedError("Inactive reac/prod not implemented")
-        return super(Equilibrium, self).__init__(reac, prod, params)
+        return super(Equilibrium, self).__init__(reac, prod, param)
 
     def K(self, state=None):
         """ Return equilibrium quotient (possibly state dependent) """
-        if callable(self.params):
+        if callable(self.param):
             if state is None:
                 raise ValueError("No state provided")
-            return self.params(state)
+            return self.param(state)
         else:
             if state is not None:
-                raise ValueError("state provided but params not callable")
-            return self.params
+                raise ValueError("state provided but param not callable")
+            return self.param
 
     def Q(self, substances, concs):
         stoich = self.non_solid_stoich(substances)
@@ -248,7 +283,7 @@ class Equilibrium(Reaction):
             return NotImplemented
         return Equilibrium(dict(rhs*ArithmeticDict(int, lhs.reac)),
                            dict(rhs*ArithmeticDict(int, lhs.prod)),
-                           lhs.params**rhs)
+                           lhs.param**rhs)
 
     def __add__(lhs, rhs):
         keys = set()
@@ -265,17 +300,45 @@ class Equilibrium(Reaction):
                 prod[key] = n
             else:
                 pass  # n == 0
-        return Equilibrium(reac, prod, lhs.params * rhs.params)
+        return Equilibrium(reac, prod, lhs.param * rhs.param)
 
     def __sub__(lhs, rhs):
         return lhs + -1*rhs
 
 
 class ReactionSystem(object):
+    """
+    Collection of reactions forming a system (model).
 
-    def __init__(self, rxns, substances):
+    Parameters
+    ----------
+    rxns: sequence
+         sequence of :py:class:`Reaction` instances
+    substances: sequence (optional)
+         Sequence of Substance instances, will be used in doing
+         a sanity check and as default in method :meth:`to_ReactionDiffusion`
+    name: string (optional)
+         Name of ReactionSystem (e.g. model name / citation key)
+
+    Attributes
+    ----------
+    rxns : list of objects
+        sequence of :class:`Reaction` instances
+    species_names : set of strings
+        names of occurring species
+    k : list of floats (possibly with units)
+        rates for rxns
+    ns : int
+        number of species
+    nr : int
+        number of reactions
+
+    """
+
+    def __init__(self, rxns, substances, name=None):
         self.rxns = rxns
         self.substances = substances
+        self.name = name
 
     @property
     def nr(self):
@@ -284,6 +347,9 @@ class ReactionSystem(object):
     @property
     def ns(self):
         return len(self.substances)
+
+    def params(self):
+        return [rxn.param for rxn in self.rxns]
 
     def as_per_substance_array(self, cont):
         """ Turns e.g. a dict into an ordered array """
@@ -313,3 +379,17 @@ class ReactionSystem(object):
             in non_precip_rids else
             eq.non_solid_stoich(self.substances)
         ) for idx, eq in enumerate(self.rxns)], dtype=np.int)
+
+    def obeys_mass_balance(self):
+        """ Returns True if all reactions obeys mass balance, else False. """
+        for rxn in self.rxns:
+            if rxn.mass_balance_violation(self.substances) != 0:
+                return False
+        return True
+
+    def obeys_charge_neutrality(self):
+        """ Returns False if any reaction violate charge neutrality. """
+        for rxn in self.rxns:
+            if rxn.charge_neutrality_violation(self.substances) != 0:
+                return False
+        return True
