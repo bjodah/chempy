@@ -7,23 +7,10 @@ from collections import defaultdict
 from functools import reduce, partial
 from operator import mul, add
 
-try:
-    from fastcache import clru_cache
-except ImportError:
-    warnings.warn("Could not import 'fastcache' (look in PyPI), "
-                  "solving of heterogeneous systems may be slower.")
-
-    class clru_cache:
-        def __init__(*args, **kwargs):
-            pass
-
-        def __call__(self, fun):
-            return fun
 
 import numpy as np
 
 from .chemistry import ReactionSystem, equilibrium_quotient
-from .util.plotting import mpl_outside_legend
 
 
 def reducemap(args, reduce_op, map_op):
@@ -326,9 +313,15 @@ class EqSystem(ReactionSystem):
 
         if len(NumSys) > 1:
             from pyneqsys import ChainedNeqSys
-            neqsys_x0_pairs = [self.get_neqsys_x0(init_concs, rref_equil, rref_preserv, (_NS,), **kwargs)
-                               for _NS in NumSys]
-            return ChainedNeqSys(zip(*neqsys_x0_pairs)[0]), neqsys_x0_pairs[0][1]
+            neqsys_x0_pairs = [
+                self.get_neqsys_x0(init_concs, rref_equil,
+                                   rref_preserv, (_NS,), **kwargs)
+                for _NS in NumSys
+            ]
+            return (
+                ChainedNeqSys(zip(*neqsys_x0_pairs)[0]),
+                neqsys_x0_pairs[0][1]
+            )
 
         import sympy as sp
 
@@ -357,7 +350,6 @@ class EqSystem(ReactionSystem):
             # to the permutations of presence of each solid phase
             from pyneqsys import ConditionalNeqSys
 
-            @clru_cache(256)
             def factory(conds):
                 numsys, new_kw = _get_numsys_kwargs(conds)
                 return SymbolicSys.from_callback(
@@ -371,6 +363,18 @@ class EqSystem(ReactionSystem):
     def non_precip_rids(self, precipitates):
         return [idx for idx, precip in zip(
             self.solid_rxn_idxs, precipitates) if not precip]
+
+    def _result_is_sane(self, init_concs, x):
+        sc_upper_bounds = np.array(self.upper_conc_bounds(init_concs))
+        neg_conc, too_much = np.any(x < 0), np.any(
+            x > sc_upper_bounds*(1 + 1e-12))
+        if neg_conc or too_much:
+            if neg_conc:
+                warnings.warn("Negative concentration")
+            if too_much:
+                warnings.warn("Too much of at least one component")
+            return False
+        return True
 
     def root(self, init_concs, x0=None, neqsys=None,
              solver=None, NumSys=(NumSysLin,), **kwargs):
@@ -386,101 +390,73 @@ class EqSystem(ReactionSystem):
                 x0 = x0_
         params = np.concatenate((init_concs, self.eq_constants()))
         x, sol = neqsys.solve(solver, x0, params, **kwargs)
-        # Sanity checks:
-        sc_upper_bounds = np.array(self.upper_conc_bounds(init_concs))
-        neg_conc, too_much = np.any(x < 0), np.any(
-            x > sc_upper_bounds*(1 + 1e-12))
-        if neg_conc or too_much:
-            if neg_conc:
-                warnings.warn("Negative concentration")
-            if too_much:
-                warnings.warn("Too much of at least one component")
-            return None, sol
-        return x, sol
+        sane = self._result_is_sane(init_concs, x)
+        return x, sol, sane
 
-    def roots(self, init_concs, varied=None, values=None, carry=False,
-              x0=None, NumSys=(NumSysLin,), **kwargs):
-        nval = len(values)
+    def roots(self, init_concs, varied, varied_data, x0=None, solver=None,
+              NumSys=(NumSysLin,), plot=False, plot_kwargs=None,
+              latex_names=False, conc_unit_str='M', **kwargs):
+        new_kwargs = kwargs.copy()
         init_concs = self.as_per_substance_array(init_concs)
-        if init_concs.ndim == 1:
-            init_concs = np.tile(init_concs, (nval, 1))
-            init_concs[:, self.as_substance_index(varied)] = values
-        elif init_concs.ndim == 2:
-            if init_concs.shape[0] != nval:
-                raise ValueError("Illegal dimension of init_concs")
-            if init_concs.shape[1] != self.ns:
-                raise ValueError("Illegal dimension of init_concs")
-        else:
-            raise ValueError("init_concs has too many dimensions")
-
-        x = np.empty((nval, self.ns))
-        success = np.empty(nval, dtype=bool)
-        res = None  # silence pyflakes
         neqsys, x0_ = self.get_neqsys_x0(
-            init_concs[0, :],
-            rref_equil=kwargs.pop('rref_equil', False),
-            rref_preserv=kwargs.pop('rref_preserv', False),
+            init_concs,
+            rref_equil=new_kwargs.pop('rref_equil', False),
+            rref_preserv=new_kwargs.pop('rref_preserv', False),
             NumSys=NumSys
         )
         if x0 is None:
             x0 = x0_
-        for idx in range(nval):
-            root_kw = kwargs.copy()
-            if carry and idx > 0 and res.success:
-                x0 = res.x
-            resx, res = self.root(init_concs[idx, :], x0=x0,
-                                  neqsys=neqsys, **root_kw)
-            # print(idx, res.success, resx)##DEBUG
-            success[idx] = resx is not None
-            x[idx, :] = resx
-        return x, init_concs, success
 
-    def plot(self, x, init_concs, success, varied, values, ax=None,
-             fail_vline=True, plot_kwargs=None, subplot_kwargs=None,
-             tex=False, conc_unit_str='M'):
+        if plot:
+            cb = neqsys.solve_and_plot_series
+            if 'plot_series_kwargs' not in new_kwargs:
+                new_kwargs['plot_series_kwargs'] = {}
+            if 'labels' not in new_kwargs['plot_series_kwargs']:
+                new_kwargs['plot_series_kwargs']['labels'] = (
+                    self.substance_names(latex_names))
+        else:
+            cb = neqsys.solve_series
+
+        params = np.concatenate((init_concs, self.eq_constants()))
+        xvecs, sols = cb(solver,
+                         x0, params, varied_data,
+                         self.as_substance_index(varied), **new_kwargs)
+        sanity = [self._result_is_sane(init_concs, x) for x in xvecs]
+
+        if plot:
+            import matplotlib.pyplot as plt
+            from pyneqsys.plotting import mpl_outside_legend
+            mpl_outside_legend(plt.gca())
+            xlbl = ('$[' + varied.latex_name + ']$' if latex_names
+                    else str(varied))
+            plt.gca().set_xlabel(xlbl + ' / %s' % conc_unit_str)
+            plt.gca().set_ylabel('Concentration / %s' % conc_unit_str)
+
+        return xvecs, sols, sanity
+
+    def substance_names(self, latex=False):
+        if latex:
+            return [s.latex_name for s in self.substances]
+        else:
+            return [s.name for s in self.substances]
+
+    def plot(self, xres, varied_data, conc_unit_str='M', subplot_kwargs=None,
+             latex_names=False, ax=None, **kwargs):
         """ plots results from roots() """
         if ax is None:
             import matplotlib.pyplot as plt
             if subplot_kwargs is None:
                 subplot_kwargs = dict(xscale='log', yscale='log')
             ax = plt.subplot(1, 1, 1, **subplot_kwargs)
-        if plot_kwargs is None:
-            plot_kwargs = {}
-
-        ls, c = '- -- : -.'.split(), 'krgbcmy'
-        extra_kw = {}
-        for idx_s in range(self.ns):
-            if idx_s == self.as_substance_index(varied):
-                continue
-            if 'ls' not in plot_kwargs and 'linestyle' not in plot_kwargs:
-                extra_kw['ls'] = ls[idx_s % len(ls)]
-            if 'c' not in plot_kwargs and 'color' not in plot_kwargs:
-                extra_kw['c'] = c[idx_s % len(c)]
-            try:
-                lbl = '$' + self.substances[idx_s].latex_name + '$'
-            except TypeError:
-                lbl = self.substances[idx_s].name
-            extra_kw.update(plot_kwargs)
-            ax.plot(values[success], x[success, idx_s],
-                    label=lbl, **extra_kw)
-
+        from pyneqsys.plotting import plot_series, mpl_outside_legend
+        plot_series(xres, varied_data, labels=self.substance_names(
+            latex_names), ax=ax, **kwargs)
         mpl_outside_legend(ax)
-        xlbl = '$[' + varied.latex_name + ']$' if tex else str(varied)
+        xlbl = '$[' + varied.latex_name + ']$' if latex_names else str(varied)
         ax.set_xlabel(xlbl + ' / %s' % conc_unit_str)
         ax.set_ylabel('Concentration / %s' % conc_unit_str)
-        if fail_vline:
-            for i, s in enumerate(success):
-                if not s:
-                    ax.axvline(values[i], c='k', ls='--')
 
-    def solve_and_plot(self, init_concs, varied, values, roots_kwargs=None,
-                       **kwargs):
-        x, new_init_concs, success = self.roots(
-            init_concs, varied, values, **(roots_kwargs or {}))
-        self.plot(x, new_init_concs, success, varied, values, **kwargs)
-        return x, new_init_concs, success
-
-    def plot_errors(self, concs, init_concs, varied, axes=None,
+    def plot_errors(self, concs, init_concs, varied_data, varied, axes=None,
                     compositions=True, Q=True, subplot_kwargs=None):
         if axes is None:
             import matplotlib.pyplot as plt
@@ -488,15 +464,17 @@ class EqSystem(ReactionSystem):
                 subplot_kwargs = dict(xscale='log')
             fig, axes = plt.subplots(1, 2, figsize=(10, 4),
                                      subplot_kw=subplot_kwargs)
-
+        varied_idx = self.as_substance_index(varied)
         ls, c = '- -- : -.'.split(), 'krgbcmy'
+        # all_params = np.tile(init_concs, (len(varied_data), 1))
+        # all_params[:, varied_idx] = varied_data
         if compositions:
             cmp_nrs, m1, m2 = self.composition_conservation(concs, init_concs)
             for cidx, (cmp_nr, a1, a2) in enumerate(zip(cmp_nrs, m1, m2)):
-                axes[0].plot(concs[:, self.as_substance_index(varied)],
+                axes[0].plot(concs[:, varied_idx],
                              a1-a2, label='Comp ' + str(cmp_nr),
                              ls=ls[cidx % len(ls)], c=c[cidx % len(c)])
-                axes[1].plot(concs[:, self.as_substance_index(varied)],
+                axes[1].plot(concs[:, varied_idx],
                              (a1-a2)/np.abs(a2), label='Comp ' + str(cmp_nr),
                              ls=ls[cidx % len(ls)], c=c[cidx % len(c)])
 
@@ -505,15 +483,16 @@ class EqSystem(ReactionSystem):
             ks = [rxn.param*rxn.solid_factor(self.substances, concs)
                   for rxn in self.rxns]
             for idx, (q, k) in enumerate(zip(qs, ks)):
-                axes[0].plot(concs[:, self.as_substance_index(varied)],
+                axes[0].plot(concs[:, varied_idx],
                              q-k, label='K R:' + str(idx),
                              ls=ls[(idx+cidx) % len(ls)],
                              c=c[(idx+cidx) % len(c)])
-                axes[1].plot(concs[:, self.as_substance_index(varied)],
+                axes[1].plot(concs[:, varied_idx],
                              (q-k)/k, label='K R:' + str(idx),
                              ls=ls[(idx+cidx) % len(ls)],
                              c=c[(idx+cidx) % len(c)])
 
+        from pyneqsys.plotting import mpl_outside_legend
         mpl_outside_legend(axes[0])
         mpl_outside_legend(axes[1])
         axes[0].set_title("Absolute errors")
