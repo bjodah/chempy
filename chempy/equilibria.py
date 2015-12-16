@@ -390,12 +390,50 @@ class EqSystem(ReactionSystem):
                 x0 = x0_
         params = np.concatenate((init_concs, self.eq_constants()))
         x, sol = neqsys.solve(solver, x0, params, **kwargs)
+        if not sol['success']:
+            warnings.warn("Root finding indicated as failed by solver.")
         sane = self._result_is_sane(init_concs, x)
         return x, sol, sane
 
+    @staticmethod
+    def _get_default_plot_ax(subplot_kwargs=None):
+        import matplotlib.pyplot as plt
+        if subplot_kwargs is None:
+            subplot_kwargs = dict(xscale='log', yscale='log')
+        return plt.subplot(1, 1, 1, **subplot_kwargs)
+
+    def substance_names(self, latex=False):
+        print('substance_names', latex)
+        if latex:
+            result = ['$' + s.latex_name + '$' for s in self.substances]
+            return result
+        else:
+            return [s.name for s in self.substances]
+
+    def plot(self, xres, varied_data, conc_unit_str='M', subplot_kwargs=None,
+             latex_names=False, ax=None, **kwargs):
+        """ plots results from roots() """
+        if ax is None:
+            ax = self._get_default_plot_ax(subplot_kwargs)
+        from pyneqsys.plotting import plot_series, mpl_outside_legend
+        plot_series(xres, varied_data, labels=self.substance_names(
+            latex_names), ax=ax, **kwargs)
+        mpl_outside_legend(ax)
+        xlbl = '$[' + varied.latex_name + ']$' if latex_names else str(varied)
+        ax.set_xlabel(xlbl + ' / %s' % conc_unit_str)
+        ax.set_ylabel('Concentration / %s' % conc_unit_str)
+
     def roots(self, init_concs, varied, varied_data, x0=None, solver=None,
-              NumSys=(NumSysLin,), plot=False, plot_kwargs=None,
-              latex_names=False, conc_unit_str='M', **kwargs):
+              NumSys=(NumSysLin,), plot_kwargs=None, **kwargs):
+        plot = plot_kwargs is not None
+        if plot:
+            if plot_kwargs is True:
+                plot_kwargs = {}
+            latex_names = plot_kwargs.pop('latex_names', False)
+            conc_unit_str = plot_kwargs.pop('conc_unit_str', 'M')
+            if 'ax' not in plot_kwargs:
+                plot_kwargs['ax'] = self._get_default_plot_ax()
+
         new_kwargs = kwargs.copy()
         init_concs = self.as_per_substance_array(init_concs)
         neqsys, x0_ = self.get_neqsys_x0(
@@ -409,11 +447,16 @@ class EqSystem(ReactionSystem):
 
         if plot:
             cb = neqsys.solve_and_plot_series
+            if 'plot_series_ax' not in new_kwargs:
+                new_kwargs['plot_series_ax'] = plot_kwargs.pop('ax', None)
             if 'plot_series_kwargs' not in new_kwargs:
                 new_kwargs['plot_series_kwargs'] = {}
             if 'labels' not in new_kwargs['plot_series_kwargs']:
                 new_kwargs['plot_series_kwargs']['labels'] = (
-                    self.substance_names(latex_names))
+                    self.substance_names(plot_kwargs.pop(latex_names, False)))
+            if len(plot_kwargs) > 0:
+                raise KeyError("Unhandled kwarg keys: %s" % str(
+                    plot_kwargs.keys()))
         else:
             cb = neqsys.solve_series
 
@@ -434,28 +477,6 @@ class EqSystem(ReactionSystem):
 
         return xvecs, sols, sanity
 
-    def substance_names(self, latex=False):
-        if latex:
-            return [s.latex_name for s in self.substances]
-        else:
-            return [s.name for s in self.substances]
-
-    def plot(self, xres, varied_data, conc_unit_str='M', subplot_kwargs=None,
-             latex_names=False, ax=None, **kwargs):
-        """ plots results from roots() """
-        if ax is None:
-            import matplotlib.pyplot as plt
-            if subplot_kwargs is None:
-                subplot_kwargs = dict(xscale='log', yscale='log')
-            ax = plt.subplot(1, 1, 1, **subplot_kwargs)
-        from pyneqsys.plotting import plot_series, mpl_outside_legend
-        plot_series(xres, varied_data, labels=self.substance_names(
-            latex_names), ax=ax, **kwargs)
-        mpl_outside_legend(ax)
-        xlbl = '$[' + varied.latex_name + ']$' if latex_names else str(varied)
-        ax.set_xlabel(xlbl + ' / %s' % conc_unit_str)
-        ax.set_ylabel('Concentration / %s' % conc_unit_str)
-
     def plot_errors(self, concs, init_concs, varied_data, varied, axes=None,
                     compositions=True, Q=True, subplot_kwargs=None):
         if axes is None:
@@ -466,10 +487,11 @@ class EqSystem(ReactionSystem):
                                      subplot_kw=subplot_kwargs)
         varied_idx = self.as_substance_index(varied)
         ls, c = '- -- : -.'.split(), 'krgbcmy'
-        # all_params = np.tile(init_concs, (len(varied_data), 1))
-        # all_params[:, varied_idx] = varied_data
+        all_inits = np.tile(self.as_per_substance_array(init_concs),
+                            (len(varied_data), 1))
+        all_inits[:, varied_idx] = varied_data
         if compositions:
-            cmp_nrs, m1, m2 = self.composition_conservation(concs, init_concs)
+            cmp_nrs, m1, m2 = self.composition_conservation(concs, all_inits)
             for cidx, (cmp_nr, a1, a2) in enumerate(zip(cmp_nrs, m1, m2)):
                 axes[0].plot(concs[:, varied_idx],
                              a1-a2, label='Comp ' + str(cmp_nr),
