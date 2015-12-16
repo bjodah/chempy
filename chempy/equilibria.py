@@ -156,10 +156,10 @@ class _NumSys(object):
 
 class NumSysLin(_NumSys):
 
-    def x0(self, init_concs):
+    def internal_x0(self, init_concs):
         return init_concs
 
-    def f(self, y, params):
+    def f(self, yvec, params):
         from pyneqsys.symbolic import linear_exprs
         init_concs, eq_params = params[:self.eqsys.ns], params[self.eqsys.ns:]
         non_precip_rids = self.eqsys.non_precip_rids(self.precipitates)
@@ -167,14 +167,33 @@ class NumSysLin(_NumSys):
             self.eqsys.eq_constants(non_precip_rids, eq_params, self.small),
             self.rref_equil, ln=self.ln, exp=self.exp,
             non_precip_rids=non_precip_rids)
-        # y == C
-        f1 = [q/k-1 if k != 0 else q for q, k in zip(prodpow(y, A), ks)]
+        # yvec == C
+        f1 = [q/k-1 if k != 0 else q for q, k in zip(prodpow(yvec, A), ks)]
         B, comp_nrs = self.eqsys.composition_balance_vectors()
-        f2 = linear_exprs(B, y, mat_dot_vec(B, init_concs))
+        f2 = linear_exprs(B, yvec, mat_dot_vec(B, init_concs))
         # import sympy as sp
-        # f3 = [sp.Piecewise((yi**2, yi < 0), (0, True)) for yi in y]
-        # f3 = [sp.ITE(yi < 0, yi**2, 0) for yi in y]
+        # f3 = [sp.Piecewise((yi**2, yi < 0), (0, True)) for yi in yvec]
+        # f3 = [sp.ITE(yi < 0, yi**2, 0) for yi in yvec]
         return f1 + f2  # + f3
+
+class NumSysSquare(NumSysLin):
+
+    small = 1e-30
+
+    @staticmethod
+    def pre_processor(x, params):
+        return (np.sqrt(np.abs(x)), params)  # zero conc. ~= exp(small)
+
+    @staticmethod
+    def post_processor(x, params):
+        return x**2, params
+
+    def internal_x0(self, init_concs):
+        return np.sqrt(np.abs(init_concs))
+
+    def f(self, yvec, params):
+        ysq = [yi*yi for yi in yvec]
+        return NumSysLin.f(self, ysq, params)
 
 
 class NumSysLog(_NumSys):
@@ -190,10 +209,12 @@ class NumSysLog(_NumSys):
     def post_processor(x, params):
         return np.exp(x), params
 
-    def x0(self, init_concs):
+    def internal_x0(self, init_concs):
         return [1]*len(init_concs)
+        # return [0]*len(init_concs)
+        # np.log(np.abs(init_concs))/10 # [0]*len(init_concs)
 
-    def f(self, y, params):
+    def f(self, yvec, params):
         from pyneqsys.symbolic import linear_exprs
         init_concs, eq_params = params[:self.eqsys.ns], params[self.eqsys.ns:]
         non_precip_rids = self.eqsys.non_precip_rids(self.precipitates)
@@ -201,9 +222,9 @@ class NumSysLog(_NumSys):
             self.eqsys.eq_constants(non_precip_rids, eq_params, self.small),
             self.rref_equil, ln=self.ln, exp=self.exp,
             non_precip_rids=non_precip_rids)
-        f1 = mat_dot_vec(A, y, [-self.ln(k) for k in ks])  # y == ln(C)
+        f1 = mat_dot_vec(A, yvec, [-self.ln(k) for k in ks])  # yvec == ln(C)
         B, comp_nrs = self.eqsys.composition_balance_vectors()
-        f2 = linear_exprs(B, list(map(self.exp, y)),
+        f2 = linear_exprs(B, list(map(self.exp, yvec)),
                           mat_dot_vec(B, init_concs),
                           rref=self.rref_preserv)
         return f1 + f2
@@ -343,7 +364,7 @@ class EqSystem(ReactionSystem):
             return (
                 SymbolicSys.from_callback(
                     numsys.f, self.ns, nparams=self.ns+self.nr, **new_kw),
-                numsys.x0(init_concs)
+                numsys.internal_x0(init_concs)
             )
         else:
             # we have multiple equation systems corresponding
@@ -358,7 +379,7 @@ class EqSystem(ReactionSystem):
                          self.bw_cond_factory(ri, NumSys[0].small)) for
                         ri in self.solid_rxn_idxs]
             return (ConditionalNeqSys(cond_cbs, factory),
-                    _get_numsys_kwargs(())[0].x0(init_concs))
+                    _get_numsys_kwargs(())[0].internal_x0(init_concs))
 
     def non_precip_rids(self, precipitates):
         return [idx for idx, precip in zip(
@@ -379,17 +400,18 @@ class EqSystem(ReactionSystem):
     def root(self, init_concs, x0=None, neqsys=None,
              solver=None, NumSys=(NumSysLin,), **kwargs):
         init_concs = self.as_per_substance_array(init_concs)
+        params = np.concatenate((init_concs, self.eq_constants()))
+        internal_x0 = None
         if neqsys is None:
-            neqsys, x0_ = self.get_neqsys_x0(
+            neqsys, internal_x0 = self.get_neqsys_x0(
                 init_concs,
                 rref_equil=kwargs.pop('rref_equil', False),
                 rref_preserv=kwargs.pop('rref_preserv', False),
                 NumSys=NumSys
             )
             if x0 is None:
-                x0 = x0_
-        params = np.concatenate((init_concs, self.eq_constants()))
-        x, sol = neqsys.solve(solver, x0, params, **kwargs)
+                x0, _ = neqsys.post_process(internal_x0, params)
+        x, sol = neqsys.solve(solver, x0, params, internal_x0, **kwargs)
         if not sol['success']:
             warnings.warn("Root finding indicated as failed by solver.")
         sane = self._result_is_sane(init_concs, x)
@@ -403,7 +425,6 @@ class EqSystem(ReactionSystem):
         return plt.subplot(1, 1, 1, **subplot_kwargs)
 
     def substance_names(self, latex=False):
-        print('substance_names', latex)
         if latex:
             result = ['$' + s.latex_name + '$' for s in self.substances]
             return result
@@ -453,7 +474,7 @@ class EqSystem(ReactionSystem):
                 new_kwargs['plot_series_kwargs'] = {}
             if 'labels' not in new_kwargs['plot_series_kwargs']:
                 new_kwargs['plot_series_kwargs']['labels'] = (
-                    self.substance_names(plot_kwargs.pop(latex_names, False)))
+                    self.substance_names(latex_names))
             if len(plot_kwargs) > 0:
                 raise KeyError("Unhandled kwarg keys: %s" % str(
                     plot_kwargs.keys()))
