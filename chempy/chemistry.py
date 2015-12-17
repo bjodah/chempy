@@ -6,7 +6,7 @@ import numpy as np
 
 from itertools import chain
 from operator import itemgetter
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import warnings
 
 from .util.arithmeticdict import ArithmeticDict
@@ -40,29 +40,33 @@ class Substance(object):
     Parameters
     ----------
     name: str
-    charge: int
-    mass: float
+    charge: int (optional, default: None)
+        will be stored in composition[0].
     latex_name: str
     formula: carries dict attribute "atoms"
     composition: dict or None (default)
-        dict (int -> int) e.g. {atomic number: count}
-    excess_electrons: bool (default: True)
-        when this is set to True and composition is ``None`` and formula
-        is not ``None``:
-        composition[0] will be number of excess electrons
-        (-1 for H+ for example).
+        dict (int -> number) e.g. {atomic number: count}, zero has special meaning (net charge)
     other_properties: dict
         free form dictionary. Could be simple such as ``{'mp': 0, 'bp': 100}``
         or considerably more involved, e.g.: ``{'diffusion_coefficient': {
             'water': lambda T: 2.1*m**2/s/K*(T - 273.15*K)}}``
     """
-    attrs = ('name', 'charge', 'mass', 'latex_name', 'formula', 'composition',
-             'excess_electrons', 'other_properties')
+    attrs = ('name', 'mass', 'latex_name', 'formula', 'composition',
+             'other_properties')
 
-    def __init__(self, name=None, charge=None, mass=None,
-                 latex_name=None, formula=None,
-                 composition=None, excess_electrons=True,
-                 other_properties=None):
+    @property
+    def charge(self):
+        return self.composition[0]  # electron deficiency
+
+    @property
+    def mass(self):
+        try:
+            return self.formula.mass
+        except:
+            return None  # we could use atomic masses here
+
+    def __init__(self, name=None, charge=None, latex_name=None, formula=None,
+                 composition=None, other_properties=None):
         self.name = name
         self.latex_name = latex_name
 
@@ -71,35 +75,38 @@ class Substance(object):
             formula = periodictable.formula(formula)
         self.formula = formula
 
-        self.charge = charge
-        if charge is None:
-            try:
-                self.charge = formula.charge
-            except AttributeError:
-                pass
-
-        self.mass = mass
-        if mass is None:
-            try:
-                self.mass = formula.mass
-            except AttributeError:
-                pass
-
-        self.composition = composition
         if composition is None and formula is not None:
-            self.composition = {
+            composition = {
                 k.number: v for k, v in elements(formula).items()}
-            if excess_electrons:
-                self.composition[0] = -self.charge
+        self.composition = composition or {}
 
+        if 0 in self.composition:
+            if charge is not None:
+                raise KeyError("Cannot give both charge and composition[0]")
+        else:
+            if charge is None:
+                try:
+                    charge = self.formula.charge
+                except AttributeError:
+                    pass
+            if charge is not None:
+                self.composition[0] = charge
         self.other_properties = other_properties
 
     def __repr__(self):
         kw = ['name=' + self.name + ', ...']  # Too verbose to print all
-        return "{}({})".format(self.__class__.__name__, ','.join(kw))
+        return "<{}({})>".format(self.__class__.__name__, ','.join(kw))
 
     def __str__(self):
         return str(self.name)
+
+    @staticmethod
+    def composition_keys(substance_iter):
+        keys = set()
+        for s in substance_iter:
+            for k in s.composition.keys():
+                keys.add(k)
+        return sorted(keys)
 
 
 class Solute(Substance):
@@ -113,8 +120,8 @@ class Reaction(object):
     """
     Parameters
     ----------
-    reac: dict
-    prod: dict
+    reac: dict (str -> int)
+    prod: dict (str -> int)
     param: float or callable
     inact_reac: dict (optional)
     name: str (optional)
@@ -153,10 +160,10 @@ class Reaction(object):
 
     def _xsolid_stoich(self, substances, xor):
         return tuple((
-            0 if xor ^ k.solid else
+            0 if xor ^ v.solid else
             self.prod.get(k, 0) - self.reac.get(k, 0) - (
                 0 if self.inact_reac is None else self.inact_reac.get(k, 0)
-            )) for k in substances)
+            )) for k, v in substances.items())
 
     def solid_stoich(self, substances):
         """ Only stoichiometry of solids """
@@ -186,31 +193,42 @@ class Reaction(object):
             s = ' %s=%.2g' % (self.param_char, self.param)
         except:
             s = ''
-        return self._get_str('name', 'str_arrow') + s
+        return self._get_str('name', 'str_arrow', {
+            k: k for k in self.reac.keys() + self.prod.keys()}) + s
 
-    def _get_str(self, name_attr, arrow_attr):
+    def _get_str(self, name_attr, arrow_attr, substances):
         reac, prod = [[
-            ((str(v)+' ') if v > 1 else '') + getattr(k, name_attr)
+            ((str(v)+' ') if v > 1 else '') + getattr(substances[k], name_attr)
             for k, v in filter(itemgetter(1), d.items())
         ] for d in (self.reac, self.prod)]
         fmtstr = "{} " + getattr(self, arrow_attr) + " {}"
         return fmtstr.format(" + ".join(reac),
                              " + ".join(prod))
 
-    def latex(self):
-        return self._get_str('latex_name', 'latex_arrow')
+    def latex(self, substances):
+        return self._get_str('latex_name', 'latex_arrow', substances)
+
+    def _violation(self, substances, attr):
+        net = 0.0
+        for substance, coeff in zip(substances.values(), self.net_stoich(substances.keys())):
+            net += getattr(substance, attr) * coeff
+        return net
 
     def mass_balance_violation(self, substances):
-        net_mass = 0.0
-        for subst, coeff in zip(substances, self.net_stoich(substances)):
-            net_mass += subst.mass * coeff
-        return net_mass
+        return self._violation(substances, 'mass')
 
     def charge_neutrality_violation(self, substances):
-        net_charge = 0.0
-        for subst, coeff in zip(substances, self.net_stoich(substances)):
-            net_charge += subst.charge * coeff
-        return net_charge
+        return self._violation(substances, 'charge')
+
+    def composition_violation(self, substances, composition_keys=None):
+        if composition_keys is None:
+            composition_keys = Substance.composition_keys(substances.values())
+        net = [0]*len(composition_keys)
+        for substance, coeff in zip(substances.values(), self.net_stoich(substances.keys())):
+            for idx, key in enumerate(composition_keys):
+                net[idx] += substance.composition.get(key, 0) * coeff
+        return net
+
 
 
 def equilibrium_quotient(concs, stoich):
@@ -314,38 +332,45 @@ class ReactionSystem(object):
     ----------
     rxns: sequence
          sequence of :py:class:`Reaction` instances
-    substances: sequence (optional)
-         Sequence of Substance instances, will be used in doing
-         a sanity check and as default in method :meth:`to_ReactionDiffusion`
+    substances: OrderedDict
+
+    substance_names: iterable of strings (optional)
+        if not provided substacens.keys() will be used.
     name: string (optional)
          Name of ReactionSystem (e.g. model name / citation key)
 
     Attributes
     ----------
-    rxns : list of objects
+    rxns: list of objects
         sequence of :class:`Reaction` instances
-    species_names : set of strings
+    species_names: set of strings
         names of occurring species
-    k : list of floats (possibly with units)
-        rates for rxns
-    ns : int
+    ns: int
         number of species
-    nr : int
+    nr: int
         number of reactions
 
     """
 
     def __init__(self, rxns, substances, name=None):
         self.rxns = rxns
-        self.substances = substances
+        if isinstance(substances, OrderedDict):
+            self.substances = substances
+        else:
+            try:
+                self.substances = OrderedDict(substances)
+            except:
+                self.substances = OrderedDict([(s.name, s) for s in substances])
         self.name = name
 
     @property
     def nr(self):
+        """ Number of reactions """
         return len(self.rxns)
 
     @property
     def ns(self):
+        """ Number of substances """
         return len(self.substances)
 
     def params(self):
@@ -356,7 +381,7 @@ class ReactionSystem(object):
         if isinstance(cont, np.ndarray):
             pass
         elif isinstance(cont, dict):
-            cont = [cont[k] for k in self.substances]
+            cont = [cont[k] for k in self.substances.keys()]
         cont = np.asarray(cont)
         if cont.shape[-1] != self.ns:
             raise ValueError("Incorrect size")
@@ -367,10 +392,10 @@ class ReactionSystem(object):
         if isinstance(sbstnc, int):
             return sbstnc
         else:
-            return self.substances.index(sbstnc)
+            return self.substances.keys().index(sbstnc)
 
     def net_stoichs(self):
-        return np.array([(eq.net_stoich(self.substances)) for
+        return np.array([(eq.net_stoich(self.substances.keys())) for
                          idx, eq in enumerate(self.rxns)], dtype=np.int)
 
     def stoichs(self, non_precip_rids=()):

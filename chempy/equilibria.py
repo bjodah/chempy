@@ -176,13 +176,14 @@ class NumSysLin(_NumSys):
         # f3 = [sp.ITE(yi < 0, yi**2, 0) for yi in yvec]
         return f1 + f2  # + f3
 
+
 class NumSysSquare(NumSysLin):
 
     small = 1e-30
 
     @staticmethod
     def pre_processor(x, params):
-        return (np.sqrt(np.abs(x)), params)  # zero conc. ~= exp(small)
+        return (np.sqrt(np.abs(x)), params)
 
     @staticmethod
     def post_processor(x, params):
@@ -203,7 +204,7 @@ class NumSysLog(_NumSys):
     @staticmethod
     def pre_processor(x, params):
         return (np.log(np.asarray(x) + NumSysLog.small)/10,  # 10: damping
-                params)  # zero conc. ~= exp(small)
+                params)  # zero conc. ~= small
 
     @staticmethod
     def post_processor(x, params):
@@ -424,7 +425,7 @@ class EqSystem(ReactionSystem):
             subplot_kwargs = dict(xscale='log', yscale='log')
         return plt.subplot(1, 1, 1, **subplot_kwargs)
 
-    def substance_names(self, latex=False):
+    def substance_labels(self, latex=False):
         if latex:
             result = ['$' + s.latex_name + '$' for s in self.substances]
             return result
@@ -437,7 +438,7 @@ class EqSystem(ReactionSystem):
         if ax is None:
             ax = self._get_default_plot_ax(subplot_kwargs)
         from pyneqsys.plotting import plot_series, mpl_outside_legend
-        plot_series(xres, varied_data, labels=self.substance_names(
+        plot_series(xres, varied_data, labels=self.substance_labels(
             latex_names), ax=ax, **kwargs)
         mpl_outside_legend(ax)
         xlbl = '$[' + varied.latex_name + ']$' if latex_names else str(varied)
@@ -474,7 +475,7 @@ class EqSystem(ReactionSystem):
                 new_kwargs['plot_series_kwargs'] = {}
             if 'labels' not in new_kwargs['plot_series_kwargs']:
                 new_kwargs['plot_series_kwargs']['labels'] = (
-                    self.substance_names(latex_names))
+                    self.substance_labels(latex_names))
             if len(plot_kwargs) > 0:
                 raise KeyError("Unhandled kwarg keys: %s" % str(
                     plot_kwargs.keys()))
@@ -522,9 +523,8 @@ class EqSystem(ReactionSystem):
                              ls=ls[cidx % len(ls)], c=c[cidx % len(c)])
 
         if Q:
-            qs = self.equilibrium_quotients(concs)
-            ks = [rxn.param*rxn.solid_factor(self.substances, concs)
-                  for rxn in self.rxns]
+            qs = self.equilibrium_quotients(concs)  # TODO: handle solid phases
+            ks = [rxn.param for rxn in self.rxns]
             for idx, (q, k) in enumerate(zip(qs, ks)):
                 axes[0].plot(concs[:, varied_idx],
                              q-k, label='K R:' + str(idx),

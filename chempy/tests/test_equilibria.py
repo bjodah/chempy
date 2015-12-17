@@ -67,14 +67,14 @@ def test_solve_equilibrium_2():
 
 def test_EqSystem():
     a, b = sbstncs = Substance('a'), Substance('b')
-    rxns = [Reaction({a: 1}, {b: 1})]
-    es = EqSystem(rxns, sbstncs)
+    rxns = [Reaction({'a': 1}, {'b': 1})]
+    es = EqSystem(rxns, [(s.name, s) for s in sbstncs])
     assert es.net_stoichs().tolist() == [[-1, 1]]
 
 
 def _get_es1():
     a, b = sbstncs = Solute('a'), Solute('b')
-    rxns = [Equilibrium({a: 1}, {b: 1}, 3)]
+    rxns = [Equilibrium({'a': 1}, {'b': 1}, 3)]
     return EqSystem(rxns, sbstncs)
 
 
@@ -83,7 +83,7 @@ def _get_es_water(EqSys=EqSystem):
     OHm = Solute('OH-', charge=-1, composition={1: 1, 8: 1})
     Hp = Solute('H+', charge=1, composition={1: 1})
     Kw = 1e-14/55.5
-    w_auto_p = Equilibrium({H2O: 1}, {Hp: 1, OHm: 1}, Kw)
+    w_auto_p = Equilibrium({'H2O': 1}, {'Hp': 1, 'OHm': 1}, Kw)
     return EqSys([w_auto_p], [H2O, OHm, Hp])
 
 
