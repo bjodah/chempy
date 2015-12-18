@@ -181,10 +181,10 @@ class Reaction(object):
         """ Only stoichiometry of non-solids """
         return self._xsolid_stoich(substances, False)
 
-    def has_solids(self):
-        for subst in chain(self.reac.keys(), self.prod.keys(),
+    def has_solids(self, substances):
+        for s_name in chain(self.reac.keys(), self.prod.keys(),
                            (self.inact_reac or {}).keys()):
-            if subst.solid:
+            if substances[s_name].solid:
                 return True
         return False
 
@@ -198,7 +198,7 @@ class Reaction(object):
 
     def _get_str(self, name_attr, arrow_attr, substances):
         reac, prod = [[
-            ((str(v)+' ') if v > 1 else '') + getattr(substances[k], name_attr)
+            ((str(v)+' ') if v > 1 else '') + getattr(substances[k], name_attr, k)
             for k, v in filter(itemgetter(1), d.items())
         ] for d in (self.reac, self.prod)]
         fmtstr = "{} " + getattr(self, arrow_attr) + " {}"

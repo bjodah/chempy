@@ -54,5 +54,5 @@ def get_ammonical_cupric_eqsys():
     skip_subs, skip_eq = (1, 3)
     simpl_subs = substances[:-skip_subs]
     simpl_eq = equilibria[:-skip_eq] + new_eqs
-    simpl_c0 = {k: init_conc[k.name] for k in substances[:-skip_subs]}
+    simpl_c0 = {k.name: init_conc[k.name] for k in substances[:-skip_subs]}
     return EqSystem(simpl_eq, simpl_subs), simpl_c0

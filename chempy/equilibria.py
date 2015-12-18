@@ -211,8 +211,8 @@ class NumSysLog(_NumSys):
         return np.exp(x), params
 
     def internal_x0(self, init_concs):
-        return [1]*len(init_concs)
-        # return [0]*len(init_concs)
+        #return [1]*len(init_concs)
+        return [0.1]*len(init_concs)
         # np.log(np.abs(init_concs))/10 # [0]*len(init_concs)
 
     def f(self, yvec, params):
@@ -242,15 +242,15 @@ class EqSystem(ReactionSystem):
     def upper_conc_bounds(self, init_concs):
         init_concs_arr = self.as_per_substance_array(init_concs)
         composition_conc = defaultdict(float)
-        for conc, subst in zip(init_concs_arr, self.substances):
-            for comp_nr, coeff in subst.composition.items():
+        for conc, s_obj in zip(init_concs_arr, self.substances.values()):
+            for comp_nr, coeff in s_obj.composition.items():
                 if comp_nr == 0:
                     continue
                 composition_conc[comp_nr] += coeff*conc
         bounds = []
-        for subst in self.substances:
+        for s_obj in self.substances.values():
             upper = float('inf')
-            for comp_nr, coeff in subst.composition.items():
+            for comp_nr, coeff in s_obj.composition.items():
                 if comp_nr == 0:
                     continue
                 upper = min(upper, composition_conc[comp_nr]/coeff)
@@ -278,13 +278,13 @@ class EqSystem(ReactionSystem):
 
     def composition_balance_vectors(self):
         composition_keys = set()
-        for s in self.substances:
+        for s in self.substances.values():
             for key in s.composition:
                 composition_keys.add(key)
         vs = []
         sorted_composition_keys = sorted(composition_keys)
         for key in sorted_composition_keys:
-            vs.append([s.composition.get(key, 0) for s in self.substances])
+            vs.append([s.composition.get(key, 0) for s in self.substances.values()])
         return vs, sorted_composition_keys
 
     def composition_conservation(self, concs, init_concs):
@@ -296,11 +296,12 @@ class EqSystem(ReactionSystem):
 
     @property
     def solid_substance_idxs(self):
-        return [idx for idx, s in enumerate(self.substances) if s.solid]
+        return [idx for idx, s in enumerate(self.substances.values()) if s.solid]
 
     @property
     def solid_rxn_idxs(self):
-        return [idx for idx, rxn in enumerate(self.rxns) if rxn.has_solids()]
+        return [idx for idx, rxn in enumerate(self.rxns)
+                if rxn.has_solids(self.substances)]
 
     def fw_cond_factory(self, ri):
         """ """
@@ -382,6 +383,20 @@ class EqSystem(ReactionSystem):
             return (ConditionalNeqSys(cond_cbs, factory),
                     _get_numsys_kwargs(())[0].internal_x0(init_concs))
 
+    def get_neqsys(self, init_concs, rref_equil=False, rref_preserv=False,
+                   NumSys=(NumSysLin,), **kwargs):
+        from pyneqsys import ConditionalNeqSys, ChainedNeqSys
+
+        def factory(conds):
+            numsys, new_kw = _get_numsys_kwargs(conds)
+            return ChainedNeqSys.from_callback(NumSys,
+                numsys.f, self.ns, nparams=self.ns+self.nr, **new_kw)
+        cond_cbs = [(self.fw_cond_factory(ri),
+                     self.bw_cond_factory(ri, NumSys[0].small)) for
+                    ri in self.solid_rxn_idxs]
+        return ConditionalNeqSys(cond_cbs, factory)
+
+
     def non_precip_rids(self, precipitates):
         return [idx for idx, precip in zip(
             self.solid_rxn_idxs, precipitates) if not precip]
@@ -427,10 +442,10 @@ class EqSystem(ReactionSystem):
 
     def substance_labels(self, latex=False):
         if latex:
-            result = ['$' + s.latex_name + '$' for s in self.substances]
+            result = ['$' + s.latex_name + '$' for s in self.substances.values()]
             return result
         else:
-            return [s.name for s in self.substances]
+            return [s.name for s in self.substances.values()]
 
     def plot(self, xres, varied_data, conc_unit_str='M', subplot_kwargs=None,
              latex_names=False, ax=None, **kwargs):
@@ -492,8 +507,9 @@ class EqSystem(ReactionSystem):
             import matplotlib.pyplot as plt
             from pyneqsys.plotting import mpl_outside_legend
             mpl_outside_legend(plt.gca())
-            xlbl = ('$[' + varied.latex_name + ']$' if latex_names
-                    else str(varied))
+            varied_subst = self.substances[varied]
+            xlbl = ('$[' + varied_subst.latex_name + ']$' if latex_names
+                    else str(varied_subst))
             plt.gca().set_xlabel(xlbl + ' / %s' % conc_unit_str)
             plt.gca().set_ylabel('Concentration / %s' % conc_unit_str)
 
