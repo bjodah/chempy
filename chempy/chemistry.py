@@ -194,7 +194,7 @@ class Reaction(object):
         except:
             s = ''
         return self._get_str('name', 'str_arrow', {
-            k: k for k in self.reac.keys() + self.prod.keys()}) + s
+            k: k for k in chain(self.reac.keys(), self.prod.keys())}) + s
 
     def _get_str(self, name_attr, arrow_attr, substances):
         reac, prod = [[
@@ -392,7 +392,7 @@ class ReactionSystem(object):
         if isinstance(sbstnc, int):
             return sbstnc
         else:
-            return self.substances.keys().index(sbstnc)
+            return list(self.substances.keys()).index(sbstnc)
 
     def net_stoichs(self):
         return np.array([(eq.net_stoich(self.substances.keys())) for

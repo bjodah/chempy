@@ -267,8 +267,9 @@ class EqSystem(ReactionSystem):
         if rref:
             from pyneqsys.symbolic import linear_rref
             ln = ln or math.log
+            print('self.stoichs(non_precip_rids)', self.stoichs(non_precip_rids)) ##DEBUG, DO-NOT-MERGE!
             rA, rb = linear_rref(self.stoichs(non_precip_rids),
-                                 map(ln, eq_params),
+                                 list(map(ln, eq_params)),
                                  Matrix)
             exp = exp or math.exp
             return rA.tolist(), list(map(exp, rb))
@@ -342,7 +343,7 @@ class EqSystem(ReactionSystem):
                 for _NS in NumSys
             ]
             return (
-                ChainedNeqSys(zip(*neqsys_x0_pairs)[0]),
+                ChainedNeqSys(next(zip(*neqsys_x0_pairs))),
                 neqsys_x0_pairs[0][1]
             )
 
