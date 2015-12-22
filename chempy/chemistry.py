@@ -396,14 +396,16 @@ class ReactionSystem(object):
 
     def net_stoichs(self):
         return np.array([(eq.net_stoich(self.substances.keys())) for
-                         idx, eq in enumerate(self.rxns)], dtype=np.int)
+                         idx, eq in enumerate(self.rxns)],
+                        dtype=object)  # dtype: see https://github.com/sympy/sympy/issues/10295
 
     def stoichs(self, non_precip_rids=()):
         return np.array([(
             -np.array(eq.solid_stoich(self.substances)[0]) if idx
             in non_precip_rids else
             eq.non_solid_stoich(self.substances)
-        ) for idx, eq in enumerate(self.rxns)], dtype=np.int)
+        ) for idx, eq in enumerate(self.rxns)],
+                        dtype=object)  # dtype: see https://github.com/sympy/sympy/issues/10295
 
     def obeys_mass_balance(self):
         """ Returns True if all reactions obeys mass balance, else False. """

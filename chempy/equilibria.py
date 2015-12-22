@@ -168,25 +168,25 @@ class NumSysLin(_NumSys):
             self.rref_equil, ln=self.ln, exp=self.exp,
             non_precip_rids=non_precip_rids)
         # yvec == C
-        f1 = [q/k-1 if k != 0 else q for q, k in zip(prodpow(yvec, A), ks)]
+        f_equil = [q/k - 1 if k != 0 else q for q, k
+                   in zip(prodpow(yvec, A), ks)]
         B, comp_nrs = self.eqsys.composition_balance_vectors()
-        f2 = linear_exprs(B, yvec, mat_dot_vec(B, init_concs))
+        f_preserv = linear_exprs(B, yvec, mat_dot_vec(B, init_concs),
+                                 rref=self.rref_preserv)
         # import sympy as sp
         # f3 = [sp.Piecewise((yi**2, yi < 0), (0, True)) for yi in yvec]
         # f3 = [sp.ITE(yi < 0, yi**2, 0) for yi in yvec]
-        return f1 + f2  # + f3
+        return f_preserv + f_equil  # + f3
 
 
 class NumSysSquare(NumSysLin):
 
     small = 1e-30
 
-    @staticmethod
-    def pre_processor(x, params):
+    def pre_processor(self, x, params):
         return (np.sqrt(np.abs(x)), params)
 
-    @staticmethod
-    def post_processor(x, params):
+    def post_processor(self, x, params):
         return x**2, params
 
     def internal_x0(self, init_concs):
@@ -197,21 +197,42 @@ class NumSysSquare(NumSysLin):
         return NumSysLin.f(self, ysq, params)
 
 
+class NumSysLinTanh(NumSysLin):
+
+    def pre_processor(self, x, params):
+        ymax = self.eqsys.upper_conc_bounds(params[:self.eqsys.ns])
+        return np.arctanh((8*x/ymax - 4) / 5), params
+
+    def post_processor(self, x, params):
+        ymax = self.eqsys.upper_conc_bounds(params[:self.eqsys.ns])
+        return ymax*(4 + 5*np.tanh(x))/8, params
+
+    def internal_x0(self, init_concs):
+        return self.pre_processor(init_concs, init_concs)[0]
+
+    def f(self, yvec, params):
+        import sympy
+        ymax = self.eqsys.upper_conc_bounds(
+            params[:self.eqsys.ns],
+            min_=lambda a, b: sympy.Piecewise((a, a < b), (b, True)))
+        ytanh = [yimax*(4 + 5*sympy.tanh(yi))/8
+                 for yimax, yi in zip(ymax, yvec)]
+        return NumSysLin.f(self, ytanh, params)
+
+
 class NumSysLog(_NumSys):
 
     small = math.exp(-60)  # anything less than `small` is insignificant
 
-    @staticmethod
-    def pre_processor(x, params):
-        return (np.log(np.asarray(x) + NumSysLog.small)/10,  # 10: damping
+    def pre_processor(self, x, params):
+        return (np.log(np.asarray(x) + NumSysLog.small/2)/10,  # 10: damping
                 params)  # zero conc. ~= small
 
-    @staticmethod
-    def post_processor(x, params):
+    def post_processor(self, x, params):
         return np.exp(x), params
 
     def internal_x0(self, init_concs):
-        #return [1]*len(init_concs)
+        # return [1]*len(init_concs)
         return [0.1]*len(init_concs)
         # np.log(np.abs(init_concs))/10 # [0]*len(init_concs)
 
@@ -223,12 +244,12 @@ class NumSysLog(_NumSys):
             self.eqsys.eq_constants(non_precip_rids, eq_params, self.small),
             self.rref_equil, ln=self.ln, exp=self.exp,
             non_precip_rids=non_precip_rids)
-        f1 = mat_dot_vec(A, yvec, [-self.ln(k) for k in ks])  # yvec == ln(C)
+        f_equil = mat_dot_vec(A, yvec, [-self.ln(k) for k in ks])  # y == ln(C)
         B, comp_nrs = self.eqsys.composition_balance_vectors()
-        f2 = linear_exprs(B, list(map(self.exp, yvec)),
-                          mat_dot_vec(B, init_concs),
-                          rref=self.rref_preserv)
-        return f1 + f2
+        f_preserv = linear_exprs(B, list(map(self.exp, yvec)),
+                                 mat_dot_vec(B, init_concs),
+                                 rref=self.rref_preserv)
+        return f_equil + f_preserv
 
 
 class EqSystem(ReactionSystem):
@@ -239,7 +260,7 @@ class EqSystem(ReactionSystem):
         return np.array([small if idx in non_precip_rids else
                          eq_params[idx] for idx, eq in enumerate(eq_params)])
 
-    def upper_conc_bounds(self, init_concs):
+    def upper_conc_bounds(self, init_concs, min_=min):
         init_concs_arr = self.as_per_substance_array(init_concs)
         composition_conc = defaultdict(float)
         for conc, s_obj in zip(init_concs_arr, self.substances.values()):
@@ -253,7 +274,7 @@ class EqSystem(ReactionSystem):
             for comp_nr, coeff in s_obj.composition.items():
                 if comp_nr == 0:
                     continue
-                upper = min(upper, composition_conc[comp_nr]/coeff)
+                upper = min_(upper, composition_conc[comp_nr]/coeff)
             bounds.append(upper)
         return bounds
 
@@ -267,7 +288,6 @@ class EqSystem(ReactionSystem):
         if rref:
             from pyneqsys.symbolic import linear_rref
             ln = ln or math.log
-            print('self.stoichs(non_precip_rids)', self.stoichs(non_precip_rids)) ##DEBUG, DO-NOT-MERGE!
             rA, rb = linear_rref(self.stoichs(non_precip_rids),
                                  list(map(ln, eq_params)),
                                  Matrix)
@@ -285,7 +305,8 @@ class EqSystem(ReactionSystem):
         vs = []
         sorted_composition_keys = sorted(composition_keys)
         for key in sorted_composition_keys:
-            vs.append([s.composition.get(key, 0) for s in self.substances.values()])
+            vs.append([s.composition.get(key, 0)
+                       for s in self.substances.values()])
         return vs, sorted_composition_keys
 
     def composition_conservation(self, concs, init_concs):
@@ -297,7 +318,8 @@ class EqSystem(ReactionSystem):
 
     @property
     def solid_substance_idxs(self):
-        return [idx for idx, s in enumerate(self.substances.values()) if s.solid]
+        return [idx for idx, s in enumerate(
+            self.substances.values()) if s.solid]
 
     @property
     def solid_rxn_idxs(self):
@@ -390,13 +412,12 @@ class EqSystem(ReactionSystem):
 
         def factory(conds):
             numsys, new_kw = _get_numsys_kwargs(conds)
-            return ChainedNeqSys.from_callback(NumSys,
-                numsys.f, self.ns, nparams=self.ns+self.nr, **new_kw)
+            return ChainedNeqSys.from_callback(
+                NumSys, numsys.f, self.ns, nparams=self.ns+self.nr, **new_kw)
         cond_cbs = [(self.fw_cond_factory(ri),
                      self.bw_cond_factory(ri, NumSys[0].small)) for
                     ri in self.solid_rxn_idxs]
         return ConditionalNeqSys(cond_cbs, factory)
-
 
     def non_precip_rids(self, precipitates):
         return [idx for idx, precip in zip(
@@ -443,7 +464,8 @@ class EqSystem(ReactionSystem):
 
     def substance_labels(self, latex=False):
         if latex:
-            result = ['$' + s.latex_name + '$' for s in self.substances.values()]
+            result = ['$' + s.latex_name + '$'
+                      for s in self.substances.values()]
             return result
         else:
             return [s.name for s in self.substances.values()]
