@@ -363,66 +363,26 @@ class EqSystem(ReactionSystem):
                 return True
         return bw_cond
 
-    def get_neqsys_x0(self, init_concs, rref_equil=False, rref_preserv=False,
-                      NumSys=(NumSysLin,), **kwargs):
-
-        if len(NumSys) > 1:
-            from pyneqsys import ChainedNeqSys
-            neqsys_x0_pairs = [
-                self.get_neqsys_x0(init_concs, rref_equil,
-                                   rref_preserv, (_NS,), **kwargs)
-                for _NS in NumSys
-            ]
-            return (
-                ChainedNeqSys(list(zip(*neqsys_x0_pairs))[0]),
-                neqsys_x0_pairs[0][1]
-            )
-
-        import sympy as sp
-
-        def _get_numsys_kwargs(precipitates):
-            numsys = NumSys[0](
-                self, ln=sp.log, exp=sp.exp, rref_equil=rref_equil,
-                rref_preserv=rref_preserv, precipitates=precipitates)
-            new_kwargs = kwargs.copy()
-            if numsys.pre_processor is not None:
-                new_kwargs['pre_processors'] = [numsys.pre_processor]
-            if numsys.post_processor is not None:
-                new_kwargs['post_processors'] = [numsys.post_processor]
-            return numsys, new_kwargs
-
-        from pyneqsys import SymbolicSys
-
-        if len(self.solid_rxn_idxs) == 0:
-            numsys, new_kw = _get_numsys_kwargs(())
-            return (
-                SymbolicSys.from_callback(
-                    numsys.f, self.ns, nparams=self.ns+self.nr, **new_kw),
-                numsys.internal_x0(init_concs)
-            )
-        else:
-            # we have multiple equation systems corresponding
-            # to the permutations of presence of each solid phase
-            from pyneqsys import ConditionalNeqSys
-
-            def factory(conds):
-                numsys, new_kw = _get_numsys_kwargs(conds)
-                return SymbolicSys.from_callback(
-                    numsys.f, self.ns, nparams=self.ns+self.nr, **new_kw)
-            cond_cbs = [(self.fw_cond_factory(ri),
-                         self.bw_cond_factory(ri, NumSys[0].small)) for
-                        ri in self.solid_rxn_idxs]
-            return (ConditionalNeqSys(cond_cbs, factory),
-                    _get_numsys_kwargs(())[0].internal_x0(init_concs))
-
     def get_neqsys(self, init_concs, rref_equil=False, rref_preserv=False,
                    NumSys=(NumSysLin,), **kwargs):
         from pyneqsys import ConditionalNeqSys, ChainedNeqSys
+        import sympy as sp
+        from pyneqsys.symbolic import SymbolicSys
 
         def factory(conds):
-            numsys, new_kw = _get_numsys_kwargs(conds)
-            return ChainedNeqSys.from_callback(
-                NumSys, numsys.f, self.ns, nparams=self.ns+self.nr, **new_kw)
+            neqsystems = []
+            for NS in NumSys:
+                ns = NS(self, ln=sp.log, exp=sp.exp, rref_equil=rref_equil,
+                        rref_preserv=rref_preserv, precipitates=conds)
+                symb_kw = {}
+                if ns.pre_processor is not None:
+                    symb_kw['pre_processors'] = [ns.pre_processor]
+                if ns.post_processor is not None:
+                    symb_kw['post_processors'] = [ns.post_processor]
+                neqsystems.append(SymbolicSys.from_callback(
+                    ns.f, self.ns, nparams=self.ns + self.nr, **symb_kw))
+            return ChainedNeqSys(neqsystems)
+
         cond_cbs = [(self.fw_cond_factory(ri),
                      self.bw_cond_factory(ri, NumSys[0].small)) for
                     ri in self.solid_rxn_idxs]
@@ -448,17 +408,16 @@ class EqSystem(ReactionSystem):
              **kwargs):
         init_concs = self.as_per_substance_array(init_concs)
         params = np.concatenate((init_concs, self.eq_constants()))
-        internal_x0 = None
         if neqsys is None:
-            neqsys, internal_x0 = self.get_neqsys_x0(
+            neqsys = self.get_neqsys(
                 init_concs,
                 rref_equil=kwargs.pop('rref_equil', False),
                 rref_preserv=kwargs.pop('rref_preserv', False),
                 NumSys=NumSys
             )
-            if x0 is None:
-                x0, _ = neqsys.post_process(internal_x0, params)
-        x, sol = neqsys.solve(x0, params, internal_x0, **kwargs)
+        if x0 is None:
+            x0 = init_concs
+        x, sol = neqsys.solve(x0, params, **kwargs)
         if not sol['success']:
             warnings.warn("Root finding indicated as failed by solver.")
         sane = self._result_is_sane(init_concs, x)
@@ -505,14 +464,14 @@ class EqSystem(ReactionSystem):
 
         new_kwargs = kwargs.copy()
         init_concs = self.as_per_substance_array(init_concs)
-        neqsys, x0_ = self.get_neqsys_x0(
+        neqsys = self.get_neqsys(
             init_concs,
             rref_equil=new_kwargs.pop('rref_equil', False),
             rref_preserv=new_kwargs.pop('rref_preserv', False),
             NumSys=NumSys
         )
         if x0 is None:
-            x0 = x0_
+            x0 = init_concs
 
         if plot:
             cb = neqsys.solve_and_plot_series
