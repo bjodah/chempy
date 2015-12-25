@@ -326,13 +326,22 @@ class EqSystem(ReactionSystem):
         return [idx for idx, rxn in enumerate(self.rxns)
                 if rxn.has_solids(self.substances)]
 
+    def _dissolved(self, concs):
+        new_concs = concs.copy()
+        for r in self.rxns:
+            if r.has_solids(self.substances):
+                net_stoich = np.asarray(r.net_stoich(self.substances))
+                s_net, s_stoich, s_idx = r.solid_stoich(self.substances)
+                new_concs -= new_concs[s_idx]/s_stoich * net_stoich
+        return new_concs
+
     def fw_cond_factory(self, ri):
         """ """
         rxn = self.rxns[ri]
 
         def fw_cond(x, p):
             solid_stoich_coeff = rxn.solid_stoich(self.substances)[1]
-            q = rxn.Q(self.substances, x)
+            q = rxn.Q(self.substances, self._dissolved(x))
             k = rxn.K()
             QoverK = q/k
             if solid_stoich_coeff > 0:
@@ -365,7 +374,7 @@ class EqSystem(ReactionSystem):
                 for _NS in NumSys
             ]
             return (
-                ChainedNeqSys(next(zip(*neqsys_x0_pairs))),
+                ChainedNeqSys(list(zip(*neqsys_x0_pairs))[0]),
                 neqsys_x0_pairs[0][1]
             )
 
@@ -435,8 +444,8 @@ class EqSystem(ReactionSystem):
             return False
         return True
 
-    def root(self, init_concs, x0=None, neqsys=None,
-             solver=None, NumSys=(NumSysLin,), **kwargs):
+    def root(self, init_concs, x0=None, neqsys=None, NumSys=(NumSysLin,),
+             **kwargs):
         init_concs = self.as_per_substance_array(init_concs)
         params = np.concatenate((init_concs, self.eq_constants()))
         internal_x0 = None
@@ -449,7 +458,7 @@ class EqSystem(ReactionSystem):
             )
             if x0 is None:
                 x0, _ = neqsys.post_process(internal_x0, params)
-        x, sol = neqsys.solve(solver, x0, params, internal_x0, **kwargs)
+        x, sol = neqsys.solve(x0, params, internal_x0, **kwargs)
         if not sol['success']:
             warnings.warn("Root finding indicated as failed by solver.")
         sane = self._result_is_sane(init_concs, x)
@@ -483,7 +492,7 @@ class EqSystem(ReactionSystem):
         ax.set_xlabel(xlbl + ' / %s' % conc_unit_str)
         ax.set_ylabel('Concentration / %s' % conc_unit_str)
 
-    def roots(self, init_concs, varied, varied_data, x0=None, solver=None,
+    def roots(self, init_concs, varied, varied_data, x0=None,
               NumSys=(NumSysLin,), plot_kwargs=None, **kwargs):
         plot = plot_kwargs is not None
         if plot:
@@ -521,8 +530,7 @@ class EqSystem(ReactionSystem):
             cb = neqsys.solve_series
 
         params = np.concatenate((init_concs, self.eq_constants()))
-        xvecs, sols = cb(solver,
-                         x0, params, varied_data,
+        xvecs, sols = cb(x0, params, varied_data,
                          self.as_substance_index(varied), **new_kwargs)
         sanity = [self._result_is_sane(init_concs, x) for x in xvecs]
 
