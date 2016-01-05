@@ -376,13 +376,13 @@ class ReactionSystem(object):
     def params(self):
         return [rxn.param for rxn in self.rxns]
 
-    def as_per_substance_array(self, cont):
+    def as_per_substance_array(self, cont, dtype=np.float64):
         """ Turns e.g. a dict into an ordered array """
         if isinstance(cont, np.ndarray):
             pass
         elif isinstance(cont, dict):
             cont = [cont[k] for k in self.substances.keys()]
-        cont = np.asarray(cont)
+        cont = np.asarray(cont, dtype=dtype)
         if cont.shape[-1] != self.ns:
             raise ValueError("Incorrect size")
         return cont

@@ -10,6 +10,7 @@ try:
 except ImportError:
     default_units = None
     default_constants = None
+    SI_base_registry = None
 else:
     # Let us extend the underlying pq namespace with some common units in
     # chemistry
@@ -59,17 +60,17 @@ else:
                                          u_symbol=u'μmol')
     default_units.umol_per_J = default_units.umol / pq.joule
 
-# unit registry data and logic:
+    # unit registry data and logic:
 
-SI_base_registry = {
-    'length': default_units.metre,
-    'mass': default_units.kilogram,
-    'time': default_units.second,
-    'current': default_units.ampere,
-    'temperature': default_units.kelvin,
-    'luminous_intensity': default_units.candela,
-    'amount': default_units.mole
-}
+    SI_base_registry = {
+        'length': default_units.metre,
+        'mass': default_units.kilogram,
+        'time': default_units.second,
+        'current': default_units.ampere,
+        'temperature': default_units.kelvin,
+        'luminous_intensity': default_units.candela,
+        'amount': default_units.mole
+    }
 
 
 def get_derived_unit(registry, key):

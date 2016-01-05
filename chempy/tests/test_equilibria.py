@@ -157,6 +157,14 @@ def _get_NaCl():
     return eqsys, [s.name for s in sbstncs], cases
 
 
+def test_EqSystem_dissolved():
+    eqsys, names, _ = _get_NaCl()
+    inp = eqsys.as_per_substance_array({'Na+': 1, 'Cl-': 2, 'NaCl': 4})
+    result = eqsys.dissolved(inp)
+    ref = eqsys.as_per_substance_array({'Na+': 5, 'Cl-': 6, 'NaCl': 0})
+    assert np.allclose(result, ref)
+
+
 @pytest.mark.parametrize('NumSys', [(NumSysLin,), (NumSysLog,)])
 def test_solid(NumSys):
     eqsys, species, cases = _get_NaCl()

@@ -326,7 +326,8 @@ class EqSystem(ReactionSystem):
         return [idx for idx, rxn in enumerate(self.rxns)
                 if rxn.has_solids(self.substances)]
 
-    def _dissolved(self, concs):
+    def dissolved(self, concs):
+        """ Return dissolved concentrations """
         new_concs = concs.copy()
         for r in self.rxns:
             if r.has_solids(self.substances):
@@ -335,13 +336,12 @@ class EqSystem(ReactionSystem):
                 new_concs -= new_concs[s_idx]/s_stoich * net_stoich
         return new_concs
 
-    def fw_cond_factory(self, ri):
-        """ """
+    def _fw_cond_factory(self, ri):
         rxn = self.rxns[ri]
 
         def fw_cond(x, p):
             solid_stoich_coeff = rxn.solid_stoich(self.substances)[1]
-            q = rxn.Q(self.substances, self._dissolved(x))
+            q = rxn.Q(self.substances, self.dissolved(x))
             k = rxn.K()
             QoverK = q/k
             if solid_stoich_coeff > 0:
@@ -352,7 +352,7 @@ class EqSystem(ReactionSystem):
                 raise NotImplementedError
         return fw_cond
 
-    def bw_cond_factory(self, ri, small):
+    def _bw_cond_factory(self, ri, small):
         rxn = self.rxns[ri]
 
         def bw_cond(x, p):
@@ -363,30 +363,59 @@ class EqSystem(ReactionSystem):
                 return True
         return bw_cond
 
-    def get_neqsys(self, init_concs, rref_equil=False, rref_preserv=False,
-                   NumSys=(NumSysLin,), **kwargs):
+    def _SymbolicSys_from_NumSys(self, NS, conds, rref_equil, rref_preserv):
+        from pyneqsys.symbolic import SymbolicSys
+        import sympy as sp
+        ns = NS(self, ln=sp.log, exp=sp.exp, rref_equil=rref_equil,
+                rref_preserv=rref_preserv, precipitates=conds)
+        symb_kw = {}
+        if ns.pre_processor is not None:
+            symb_kw['pre_processors'] = [ns.pre_processor]
+        if ns.post_processor is not None:
+            symb_kw['post_processors'] = [ns.post_processor]
+        return SymbolicSys.from_callback(
+            ns.f, self.ns, nparams=self.ns + self.nr, **symb_kw)
+
+    def get_neqsys_conditional_chained(self, init_concs, rref_equil=False, rref_preserv=False, NumSys=NumSysLin):
+        from pyneqsys import ConditionalNeqSys, ChainedNeqSys
+
+        if isinstance(NumSys, _NumSys):
+            NumSys = NumSys,
+
+        def factory(conds):
+            return ChainedNeqSys([self._SymbolicSys_from_NumSys(
+                NS, conds, rref_equil, rref_preserv) for NS in NumSys])
+
+        cond_cbs = [(self._fw_cond_factory(ri),
+                     self._bw_cond_factory(ri, NumSys[0].small)) for
+                    ri in self.solid_rxn_idxs]
+        return ConditionalNeqSys(cond_cbs, factory)
+
+    def get_neqsys_chained_conditional(self, init_concs, rref_equil=False,
+                                       rref_preserv=False,
+                                       NumSys=NumSysLin, **kwargs):
         from pyneqsys import ConditionalNeqSys, ChainedNeqSys
         import sympy as sp
         from pyneqsys.symbolic import SymbolicSys
 
-        def factory(conds):
-            neqsystems = []
-            for NS in NumSys:
-                ns = NS(self, ln=sp.log, exp=sp.exp, rref_equil=rref_equil,
-                        rref_preserv=rref_preserv, precipitates=conds)
-                symb_kw = {}
-                if ns.pre_processor is not None:
-                    symb_kw['pre_processors'] = [ns.pre_processor]
-                if ns.post_processor is not None:
-                    symb_kw['post_processors'] = [ns.post_processor]
-                neqsystems.append(SymbolicSys.from_callback(
-                    ns.f, self.ns, nparams=self.ns + self.nr, **symb_kw))
-            return ChainedNeqSys(neqsystems)
+        if isinstance(NumSys, _NumSys):
+            NumSys = NumSys,
 
-        cond_cbs = [(self.fw_cond_factory(ri),
-                     self.bw_cond_factory(ri, NumSys[0].small)) for
-                    ri in self.solid_rxn_idxs]
-        return ConditionalNeqSys(cond_cbs, factory)
+        def mk_factory(NS):
+            def factory(conds):
+                return self._SymbolicSys_from_NumSys(NS, conds, rref_equil,
+                                                     rref_preserv)
+            return factory
+
+        return ChainedNeqSys(
+            [ConditionalNeqSys(
+                [(self._fw_cond_factory(ri),
+                  self._bw_cond_factory(ri, NS.small)) for
+                 ri in self.solid_rxn_idxs],
+                mk_factory(NS)
+            ) for NS in NumSys])
+
+    get_neqsys =  get_neqsys_conditional_chained
 
     def non_precip_rids(self, precipitates):
         return [idx for idx, precip in zip(
@@ -407,7 +436,8 @@ class EqSystem(ReactionSystem):
     def root(self, init_concs, x0=None, neqsys=None, NumSys=(NumSysLin,),
              **kwargs):
         init_concs = self.as_per_substance_array(init_concs)
-        params = np.concatenate((init_concs, self.eq_constants()))
+        params = np.concatenate((init_concs,
+                                 [float(elem) for elem in self.eq_constants()]))
         if neqsys is None:
             neqsys = self.get_neqsys(
                 init_concs,
