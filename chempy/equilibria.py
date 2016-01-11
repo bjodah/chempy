@@ -1,10 +1,9 @@
 from __future__ import division, absolute_import
 
 import math
-import os
 import warnings
 from collections import defaultdict
-from functools import reduce, partial
+from functools import reduce
 from operator import mul, add
 
 
@@ -139,6 +138,7 @@ class _NumSys(object):
     small = 0  # precipitation limit
     pre_processor = None
     post_processor = None
+    internal_x0_cb = None
 
     def __init__(self, eqsys, rref_equil=False, rref_preserv=False, ln=None,
                  exp=None, precipitates=()):
@@ -156,8 +156,9 @@ class _NumSys(object):
 
 class NumSysLin(_NumSys):
 
-    def internal_x0(self, init_concs):
-        return init_concs
+    def internal_x0_cb(self, init_concs, params):
+        # reduce risk of stationary starting point
+        return (99*init_concs + self.eqsys.dissolved(init_concs))/100
 
     def f(self, yvec, params):
         from pyneqsys.symbolic import linear_exprs
@@ -176,12 +177,31 @@ class NumSysLin(_NumSys):
         # import sympy as sp
         # f3 = [sp.Piecewise((yi**2, yi < 0), (0, True)) for yi in yvec]
         # f3 = [sp.ITE(yi < 0, yi**2, 0) for yi in yvec]
-        return f_preserv + f_equil  # + f3
+        return f_equil + f_preserv  # + f3
+
+
+class NumSysLinRel(NumSysLin):
+
+    def max_concs(self, params, min_=min, dtype=np.float64):
+        init_concs = params[:self.eqsys.ns]
+        return self.eqsys.upper_conc_bounds(init_concs, min_=min_, dtype=dtype)
+
+    def pre_processor(self, x, params):
+        return x/self.max_concs(params), params
+
+    def post_processor(self, x, params):
+        return x*self.max_concs(params), params
+
+    def f(self, yvec, params):
+        import sympy as sp
+        return NumSysLin.f(self, [m*yi for m, yi in zip(
+            self.max_concs(params, min_=lambda x: sp.Min(*x), dtype=object),
+            yvec)], params)
 
 
 class NumSysSquare(NumSysLin):
 
-    small = 1e-30
+    small = 1e-40
 
     def pre_processor(self, x, params):
         return (np.sqrt(np.abs(x)), params)
@@ -189,7 +209,7 @@ class NumSysSquare(NumSysLin):
     def post_processor(self, x, params):
         return x**2, params
 
-    def internal_x0(self, init_concs):
+    def internal_x0_cb(self, init_concs, params):
         return np.sqrt(np.abs(init_concs))
 
     def f(self, yvec, params):
@@ -207,7 +227,7 @@ class NumSysLinTanh(NumSysLin):
         ymax = self.eqsys.upper_conc_bounds(params[:self.eqsys.ns])
         return ymax*(4 + 5*np.tanh(x))/8, params
 
-    def internal_x0(self, init_concs):
+    def internal_x0_cb(self, init_concs, params):
         return self.pre_processor(init_concs, init_concs)[0]
 
     def f(self, yvec, params):
@@ -231,7 +251,7 @@ class NumSysLog(_NumSys):
     def post_processor(self, x, params):
         return np.exp(x), params
 
-    def internal_x0(self, init_concs):
+    def internal_x0_cb(self, init_concs, params):
         # return [1]*len(init_concs)
         return [0.1]*len(init_concs)
         # np.log(np.abs(init_concs))/10 # [0]*len(init_concs)
@@ -260,22 +280,22 @@ class EqSystem(ReactionSystem):
         return np.array([small if idx in non_precip_rids else
                          eq_params[idx] for idx, eq in enumerate(eq_params)])
 
-    def upper_conc_bounds(self, init_concs, min_=min):
-        init_concs_arr = self.as_per_substance_array(init_concs)
+    def upper_conc_bounds(self, init_concs, min_=min, dtype=np.float64):
+        init_concs_arr = self.as_per_substance_array(init_concs, dtype=dtype)
         composition_conc = defaultdict(float)
         for conc, s_obj in zip(init_concs_arr, self.substances.values()):
             for comp_nr, coeff in s_obj.composition.items():
-                if comp_nr == 0:
+                if comp_nr == 0:  # charge may be created (if compensated)
                     continue
                 composition_conc[comp_nr] += coeff*conc
         bounds = []
         for s_obj in self.substances.values():
-            upper = float('inf')
+            choose_from = []
             for comp_nr, coeff in s_obj.composition.items():
                 if comp_nr == 0:
                     continue
-                upper = min_(upper, composition_conc[comp_nr]/coeff)
-            bounds.append(upper)
+                choose_from.append(composition_conc[comp_nr]/coeff)
+            bounds.append(min_(choose_from))
         return bounds
 
     def equilibrium_quotients(self, concs):
@@ -344,6 +364,7 @@ class EqSystem(ReactionSystem):
             q = rxn.Q(self.substances, self.dissolved(x))
             k = rxn.K()
             QoverK = q/k
+            print('QoverK', QoverK)  # DEBUG DO-NOT-MERGE!
             if solid_stoich_coeff > 0:
                 return QoverK < 1
             elif solid_stoich_coeff < 0:
@@ -357,10 +378,21 @@ class EqSystem(ReactionSystem):
 
         def bw_cond(x, p):
             solid_idx = rxn.solid_stoich(self.substances)[2]
+            print('x[solid_idx]', x[solid_idx])  # DEBUG DO-NOT-MERGE!
             if x[solid_idx] < small:
                 return False
             else:
                 return True
+            # solid_stoich_coeff = rxn.solid_stoich(self.substances)[1]
+            # q = rxn.Q(self.substances, self.dissolved(x))
+            # k = rxn.K()
+            # QoverK = q/k
+            # if solid_stoich_coeff > 0:
+            #     return QoverK <= 1
+            # elif solid_stoich_coeff < 0:
+            #     return QoverK >= 1
+            # else:
+            #     raise NotImplementedError
         return bw_cond
 
     def _SymbolicSys_from_NumSys(self, NS, conds, rref_equil, rref_preserv):
@@ -373,14 +405,19 @@ class EqSystem(ReactionSystem):
             symb_kw['pre_processors'] = [ns.pre_processor]
         if ns.post_processor is not None:
             symb_kw['post_processors'] = [ns.post_processor]
+        if ns.internal_x0_cb is not None:
+            symb_kw['internal_x0_cb'] = ns.internal_x0_cb
         return SymbolicSys.from_callback(
             ns.f, self.ns, nparams=self.ns + self.nr, **symb_kw)
 
-    def get_neqsys_conditional_chained(self, init_concs, rref_equil=False, rref_preserv=False, NumSys=NumSysLin):
+    def get_neqsys_conditional_chained(self, init_concs, rref_equil=False,
+                                       rref_preserv=False, NumSys=NumSysLin):
         from pyneqsys import ConditionalNeqSys, ChainedNeqSys
 
-        if isinstance(NumSys, _NumSys):
-            NumSys = NumSys,
+        try:
+            NumSys[0]
+        except TypeError:
+            NumSys = (NumSys,)
 
         def factory(conds):
             return ChainedNeqSys([self._SymbolicSys_from_NumSys(
@@ -395,11 +432,11 @@ class EqSystem(ReactionSystem):
                                        rref_preserv=False,
                                        NumSys=NumSysLin, **kwargs):
         from pyneqsys import ConditionalNeqSys, ChainedNeqSys
-        import sympy as sp
-        from pyneqsys.symbolic import SymbolicSys
 
-        if isinstance(NumSys, _NumSys):
-            NumSys = NumSys,
+        try:
+            NumSys[0]
+        except TypeError:
+            NumSys = (NumSys,)
 
         def mk_factory(NS):
             def factory(conds):
@@ -415,7 +452,8 @@ class EqSystem(ReactionSystem):
                 mk_factory(NS)
             ) for NS in NumSys])
 
-    get_neqsys =  get_neqsys_conditional_chained
+    # get_neqsys = get_neqsys_conditional_chained  #
+    get_neqsys = get_neqsys_chained_conditional  # fails more often
 
     def non_precip_rids(self, precipitates):
         return [idx for idx, precip in zip(
@@ -433,11 +471,11 @@ class EqSystem(ReactionSystem):
             return False
         return True
 
-    def root(self, init_concs, x0=None, neqsys=None, NumSys=(NumSysLin,),
+    def root(self, init_concs, x0=None, neqsys=None, NumSys=NumSysLin,
              **kwargs):
         init_concs = self.as_per_substance_array(init_concs)
-        params = np.concatenate((init_concs,
-                                 [float(elem) for elem in self.eq_constants()]))
+        params = np.concatenate((init_concs, [float(elem) for elem
+                                              in self.eq_constants()]))
         if neqsys is None:
             neqsys = self.get_neqsys(
                 init_concs,
@@ -467,19 +505,6 @@ class EqSystem(ReactionSystem):
             return result
         else:
             return [s.name for s in self.substances.values()]
-
-    def plot(self, xres, varied_data, conc_unit_str='M', subplot_kwargs=None,
-             latex_names=False, ax=None, **kwargs):
-        """ plots results from roots() """
-        if ax is None:
-            ax = self._get_default_plot_ax(subplot_kwargs)
-        from pyneqsys.plotting import plot_series, mpl_outside_legend
-        plot_series(xres, varied_data, labels=self.substance_labels(
-            latex_names), ax=ax, **kwargs)
-        mpl_outside_legend(ax)
-        xlbl = '$[' + varied.latex_name + ']$' if latex_names else str(varied)
-        ax.set_xlabel(xlbl + ' / %s' % conc_unit_str)
-        ax.set_ylabel('Concentration / %s' % conc_unit_str)
 
     def roots(self, init_concs, varied, varied_data, x0=None,
               NumSys=(NumSysLin,), plot_kwargs=None, **kwargs):
@@ -519,8 +544,9 @@ class EqSystem(ReactionSystem):
             cb = neqsys.solve_series
 
         params = np.concatenate((init_concs, self.eq_constants()))
-        xvecs, sols = cb(x0, params, varied_data,
-                         self.as_substance_index(varied), **new_kwargs)
+        xvecs, sols = cb(
+            x0, params, varied_data, self.as_substance_index(varied),
+            propagate=False, **new_kwargs)
         sanity = [self._result_is_sane(init_concs, x) for x in xvecs]
 
         if plot:

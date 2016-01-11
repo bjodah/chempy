@@ -12,7 +12,6 @@ def test_Substance():
     assert abs(s.mass - 1.008) < 1e-3
 
 
-
 def test_Solute():
     s = Solute('Hp', formula='H{+}', solid=True)
     assert abs(s.mass - 1.00794 + 5.5e-4) < 2e-5

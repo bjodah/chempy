@@ -25,8 +25,6 @@ else:
             if attr.startswith('_NameSpace_'):
                 return self.__dict__[attr]
             else:
-                print(self._NameSpace_attr_store.keys())
-                print(attr in self._NameSpace_attr_store)
                 try:
                     return self._NameSpace_attr_store[attr]
                 except KeyError:
@@ -41,8 +39,6 @@ else:
     default_units = NameSpace(pq)
     default_units.decimetre = pq.UnitQuantity(
         'decimetre',  default_units.m / 10.0, u_symbol='dm')
-    print(default_units.__dict__['_NameSpace_attr_store'])
-    print(default_units.decimetre)
     default_units.molar = pq.UnitQuantity(
         'molar',  default_units.mole / default_units.decimetre ** 3,
         u_symbol='M')

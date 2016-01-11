@@ -1,6 +1,8 @@
 v0.2.0
 ======
+- Added two new modules: chempy.util.table, chempy.util.graph
 - Reaction, ReactionSystems now expects stoichs etc. to be given wrt to Substance names.
+- Added chempy.chemistry.ArrgeniusRate
 - EqSystemLog, EqSystemLin -> EqSystem, (NumSysLog, NumSysLin)
 - Support for solid phases in equilibria
 - Submodules for water properties moved to chempy.properties

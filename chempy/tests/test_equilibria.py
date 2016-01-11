@@ -104,7 +104,7 @@ def test_Equilibria_arithmetics():
 def test_Equilibria_root():
     eqsys, c0 = get_ammonical_cupric_eqsys()
     x, sol, sane = eqsys.root(c0, NumSys=(NumSysLog,))
-    assert sol.success and sane
+    assert sol['success'] and sane
 
 
 def test_Equilibria_root_simple():
@@ -119,11 +119,13 @@ def test_Equilibria_root_simple():
     water_auto_protolysis = Equilibrium(
         {water.name: 1}, {hydronium.name: 1, hydroxide.name: 1}, 1e-14/55.5)
     ammonia_protolysis = Equilibrium(
-        {ammonium.name: 1}, {hydronium.name: 1, ammonia.name: 1}, 10**-9.26/55.5
+        {ammonium.name: 1}, {hydronium.name: 1, ammonia.name: 1},
+        10**-9.26/55.5
     )
     eqsys = EqSystem([water_auto_protolysis, ammonia_protolysis], solutes)
 
-    init_concs = collections.defaultdict(float, {water.name: 55.5, ammonia.name: 1e-3})
+    init_concs = collections.defaultdict(float, {
+        water.name: 55.5, ammonia.name: 1e-3})
     x, sol1, sane1 = eqsys.root(init_concs)
     x, sol2, sane2 = eqsys.root(init_concs, x, NumSys=(NumSysLog,))
     assert sane2
@@ -150,9 +152,9 @@ def _get_NaCl():
         [(.5, .5, .4), (.9, .9, 0)],
         [(1, 1, 1), (2, 2, 0)],
         [(0, 0, 2), (2, 2, 0)],
-        [(0, 0, 3), (2, 2, 1)],
         [(3, 3, 3), (2, 2, 4)],
-        [(3, 3, 0), (2, 2, 1)]
+        [(3, 3, 0), (2, 2, 1)],
+        [(0, 0, 3), (2, 2, 1)],
     ]
     return eqsys, [s.name for s in sbstncs], cases
 
@@ -165,14 +167,14 @@ def test_EqSystem_dissolved():
     assert np.allclose(result, ref)
 
 
-@pytest.mark.parametrize('NumSys', [(NumSysLin,), (NumSysLog,)])
+@pytest.mark.parametrize('NumSys', [(NumSysLin,), (NumSysLog,),
+                                    (NumSysLog, NumSysLin)])
 def test_solid(NumSys):
     eqsys, species, cases = _get_NaCl()
 
     for init, final in cases:
-        print(init, final)
-        x, sol, sane = eqsys.root(dict(zip(species, init)), method='lm',
-                                  NumSys=NumSys)
-        #assert sol['success'] and sane
+        x, sol, sane = eqsys.root(dict(zip(species, init)),
+                                  NumSys=NumSys, rref_preserv=True)
+        assert sol['success'] and sane
         assert x is not None
         assert np.allclose(x, np.asarray(final))

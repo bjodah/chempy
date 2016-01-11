@@ -2,13 +2,14 @@
 
 from __future__ import division
 
-import numpy as np
-
 from itertools import chain
 from operator import itemgetter
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict, namedtuple
 import warnings
 
+import numpy as np
+
+from .arrhenius import arrhenius_equation
 from .util.arithmeticdict import ArithmeticDict
 
 
@@ -45,7 +46,8 @@ class Substance(object):
     latex_name: str
     formula: carries dict attribute "atoms"
     composition: dict or None (default)
-        dict (int -> number) e.g. {atomic number: count}, zero has special meaning (net charge)
+        dict (int -> number) e.g. {atomic number: count}, zero has special
+        meaning (net charge)
     other_properties: dict
         free form dictionary. Could be simple such as ``{'mp': 0, 'bp': 100}``
         or considerably more involved, e.g.: ``{'diffusion_coefficient': {
@@ -117,7 +119,28 @@ class Solute(Substance):
 
 
 class Reaction(object):
-    """
+    """ Class representing a chemical reaction
+
+    Consider for example:
+
+        A + R --> A + P; r = k*A*R
+
+    this would be represented as ``Reaction({'A': 1, 'R': 1},
+    {'A': 1, 'P': 1}, param=k)``. Some reactions have a larger
+    stoichiometric coefficient than what appears in the rate
+    expression, e.g.:
+
+        5*C1 + C2 --> B; r = k*C1*C2
+
+    this can be represented as ``Reaction({'C1': 1, 'C2': 1},
+    {'B': 1}, inact_reac={'C1': 4}, param=k)``.
+
+    The rate constant information in ``param`` may be callable (with a single
+    argument representing the state, e.g. temperature)
+
+    Additional data may be stored in the ``other_properties`` dict.
+
+
     Parameters
     ----------
     reac: dict (str -> int)
@@ -126,6 +149,7 @@ class Reaction(object):
     inact_reac: dict (optional)
     name: str (optional)
     k: deprecated (alias for param)
+    other_properties: dict (optional)
     """
 
     str_arrow = '->'
@@ -133,7 +157,7 @@ class Reaction(object):
     param_char = 'k'  # convention
 
     def __init__(self, reac, prod, param=None, inact_reac=None, name=None,
-                 k=None):
+                 k=None, other_properties=None):
         self.reac = reac
         self.prod = prod
         if k is not None:
@@ -142,8 +166,9 @@ class Reaction(object):
             param = k
             warnings.warn("Use param instead", DeprecationWarning)
         self.param = param
-        self.inact_reac = inact_reac
+        self.inact_reac = inact_reac or {}
         self.name = name
+        self.other_properties = other_properties or {}
 
     def __eq__(lhs, rhs):
         if not isinstance(lhs, Reaction) or not isinstance(rhs, Reaction):
@@ -157,6 +182,14 @@ class Reaction(object):
         return tuple(self.prod.get(k, 0) - self.reac.get(k, 0) - (
             0 if self.inact_reac is None else self.inact_reac.get(k, 0)
         ) for k in substances)
+
+    def all_reac_stoich(self, substances):
+        return tuple(self.reac.get(k, 0) + (
+            0 if self.inact_reac is None else self.inact_reac.get(k, 0)
+        ) for k in substances)
+
+    def prod_stoich(self, substances):
+        return tuple(self.prod.get(k, 0) for k in substances)
 
     def _xsolid_stoich(self, substances, xor):
         return tuple((
@@ -183,7 +216,7 @@ class Reaction(object):
 
     def has_solids(self, substances):
         for s_name in chain(self.reac.keys(), self.prod.keys(),
-                           (self.inact_reac or {}).keys()):
+                            (self.inact_reac or {}).keys()):
             if substances[s_name].solid:
                 return True
         return False
@@ -198,7 +231,8 @@ class Reaction(object):
 
     def _get_str(self, name_attr, arrow_attr, substances):
         reac, prod = [[
-            ((str(v)+' ') if v > 1 else '') + getattr(substances[k], name_attr, k)
+            ((str(v)+' ') if v > 1 else '') + getattr(
+                substances[k], name_attr, k)
             for k, v in filter(itemgetter(1), d.items())
         ] for d in (self.reac, self.prod)]
         fmtstr = "{} " + getattr(self, arrow_attr) + " {}"
@@ -210,7 +244,8 @@ class Reaction(object):
 
     def _violation(self, substances, attr):
         net = 0.0
-        for substance, coeff in zip(substances.values(), self.net_stoich(substances.keys())):
+        for substance, coeff in zip(substances.values(),
+                                    self.net_stoich(substances.keys())):
             net += getattr(substance, attr) * coeff
         return net
 
@@ -224,11 +259,11 @@ class Reaction(object):
         if composition_keys is None:
             composition_keys = Substance.composition_keys(substances.values())
         net = [0]*len(composition_keys)
-        for substance, coeff in zip(substances.values(), self.net_stoich(substances.keys())):
+        for substance, coeff in zip(substances.values(),
+                                    self.net_stoich(substances.keys())):
             for idx, key in enumerate(composition_keys):
                 net[idx] += substance.composition.get(key, 0) * coeff
         return net
-
 
 
 def equilibrium_quotient(concs, stoich):
@@ -243,6 +278,19 @@ def equilibrium_quotient(concs, stoich):
     return tot
 
 
+class ArrheniusRate(namedtuple('ArrheniusRate', 'A Ea')):
+    """
+    Ea: float
+        activation energy
+    A: float
+        preexponential prefactor (Arrhenius type eq.)
+    """
+    def __call__(self, T, constants=None, units=None, exp=None):
+        """ See :py:func`chempy.arrhenius.arrhenius_equation`. """
+        return arrhenius_equation(self.A, self.Ea, T, constants=constants,
+                                  units=units, exp=exp)
+
+
 class Equilibrium(Reaction):
     """
     Represents equilibrium reaction
@@ -252,7 +300,7 @@ class Equilibrium(Reaction):
 
     str_arrow = '<->'
     latex_arrow = '\\rightleftharpoons'
-    param_char = 'k'  # convention
+    param_char = 'K'  # convention
 
     def __init__(self, reac, prod, param, *args):
         if not all(arg is None for arg in args):
@@ -262,8 +310,9 @@ class Equilibrium(Reaction):
     def K(self, state=None):
         """ Return equilibrium quotient (possibly state dependent) """
         if callable(self.param):
-            if state is None:
-                raise ValueError("No state provided")
+            # For some cases a default might be obvious:
+            # if state is None:
+            #     raise ValueError("No state provided")
             return self.param(state)
         else:
             if state is not None:
@@ -333,9 +382,7 @@ class ReactionSystem(object):
     rxns: sequence
          sequence of :py:class:`Reaction` instances
     substances: OrderedDict
-
-    substance_names: iterable of strings (optional)
-        if not provided substacens.keys() will be used.
+         mapping str -> Substance instances
     name: string (optional)
          Name of ReactionSystem (e.g. model name / citation key)
 
@@ -343,10 +390,10 @@ class ReactionSystem(object):
     ----------
     rxns: list of objects
         sequence of :class:`Reaction` instances
-    species_names: set of strings
-        names of occurring species
+    substances: OrderedDict
+        mapping substance name to substance index
     ns: int
-        number of species
+        number of substances
     nr: int
         number of reactions
 
@@ -360,8 +407,12 @@ class ReactionSystem(object):
             try:
                 self.substances = OrderedDict(substances)
             except:
-                self.substances = OrderedDict([(s.name, s) for s in substances])
+                self.substances = OrderedDict([(s.name, s) for
+                                               s in substances])
         self.name = name
+
+    def substance_names(self):
+        return tuple(substance.name for substance in self.substances.values())
 
     @property
     def nr(self):
@@ -394,18 +445,29 @@ class ReactionSystem(object):
         else:
             return list(self.substances.keys()).index(sbstnc)
 
+    def _stoichs(self, attr):
+        # dtype: see https://github.com/sympy/sympy/issues/10295
+        return np.array([(getattr(eq, attr)(self.substances.keys())) for
+                         eq in self.rxns],
+                        dtype=object)
+
     def net_stoichs(self):
-        return np.array([(eq.net_stoich(self.substances.keys())) for
-                         idx, eq in enumerate(self.rxns)],
-                        dtype=object)  # dtype: see https://github.com/sympy/sympy/issues/10295
+        return self._stoichs('net_stoich')
+
+    def all_reac_stoichs(self):
+        return self._stoichs('all_reac_stoich')
+
+    def prod_stoichs(self):
+        return self._stoichs('prod_stoich')
 
     def stoichs(self, non_precip_rids=()):
+        # dtype: see https://github.com/sympy/sympy/issues/10295
         return np.array([(
             -np.array(eq.solid_stoich(self.substances)[0]) if idx
             in non_precip_rids else
             eq.non_solid_stoich(self.substances)
         ) for idx, eq in enumerate(self.rxns)],
-                        dtype=object)  # dtype: see https://github.com/sympy/sympy/issues/10295
+                        dtype=object)
 
     def obeys_mass_balance(self):
         """ Returns True if all reactions obeys mass balance, else False. """
