@@ -364,7 +364,6 @@ class EqSystem(ReactionSystem):
             q = rxn.Q(self.substances, self.dissolved(x))
             k = rxn.K()
             QoverK = q/k
-            print('QoverK', QoverK)  # DEBUG DO-NOT-MERGE!
             if solid_stoich_coeff > 0:
                 return QoverK < 1
             elif solid_stoich_coeff < 0:
@@ -378,7 +377,6 @@ class EqSystem(ReactionSystem):
 
         def bw_cond(x, p):
             solid_idx = rxn.solid_stoich(self.substances)[2]
-            print('x[solid_idx]', x[solid_idx])  # DEBUG DO-NOT-MERGE!
             if x[solid_idx] < small:
                 return False
             else:
@@ -506,12 +504,25 @@ class EqSystem(ReactionSystem):
         else:
             return [s.name for s in self.substances.values()]
 
-    def roots(self, init_concs, varied, varied_data, x0=None,
-              NumSys=(NumSysLin,), plot_kwargs=None, **kwargs):
-        plot = plot_kwargs is not None
-        if plot:
-            if plot_kwargs is True:
-                plot_kwargs = {}
+    def roots(self, init_concs, varied_data, varied, x0=None,
+              NumSys=NumSysLin, plot_kwargs=None, **kwargs):
+        """
+        init_concs: array or dict
+        varied_data: array
+        varied_idx: int or str
+        x0: array
+        NumSys: _NumSys subclass
+            See :class:`NumSysLin`, :class:`NumSysLog`, etc.
+        plot_kwargs: dict
+            See py:meth:`pyneqsys.NeqSys.solve`. Two additional keys
+            are intercepted here:
+                latex_names: bool (default: False)
+                conc_unit_str: str (default: 'M')
+        \*\*kwargs:
+            kwargs passed on to py:meth:`pyneqsys.NeqSys.solve_series`
+        """
+        _plot = plot_kwargs is not None
+        if _plot:
             latex_names = plot_kwargs.pop('latex_names', False)
             conc_unit_str = plot_kwargs.pop('conc_unit_str', 'M')
             if 'ax' not in plot_kwargs:
@@ -528,38 +539,33 @@ class EqSystem(ReactionSystem):
         if x0 is None:
             x0 = init_concs
 
-        if plot:
+        if _plot:
             cb = neqsys.solve_and_plot_series
-            if 'plot_series_ax' not in new_kwargs:
-                new_kwargs['plot_series_ax'] = plot_kwargs.pop('ax', None)
-            if 'plot_series_kwargs' not in new_kwargs:
-                new_kwargs['plot_series_kwargs'] = {}
-            if 'labels' not in new_kwargs['plot_series_kwargs']:
-                new_kwargs['plot_series_kwargs']['labels'] = (
+            if 'plot_kwargs' not in new_kwargs:
+                new_kwargs['plot_kwargs'] = {}
+            if 'labels' not in new_kwargs['plot_kwargs']:
+                new_kwargs['plot_kwargs']['labels'] = (
                     self.substance_labels(latex_names))
-            if len(plot_kwargs) > 0:
-                raise KeyError("Unhandled kwarg keys: %s" % str(
-                    plot_kwargs.keys()))
         else:
             cb = neqsys.solve_series
 
         params = np.concatenate((init_concs, self.eq_constants()))
-        xvecs, sols = cb(
+        xvecs, info_dicts = cb(
             x0, params, varied_data, self.as_substance_index(varied),
             propagate=False, **new_kwargs)
         sanity = [self._result_is_sane(init_concs, x) for x in xvecs]
 
-        if plot:
+        if _plot:
             import matplotlib.pyplot as plt
             from pyneqsys.plotting import mpl_outside_legend
             mpl_outside_legend(plt.gca())
             varied_subst = self.substances[varied]
-            xlbl = ('$[' + varied_subst.latex_name + ']$' if latex_names
+            xlbl = ('$[' + varied_subst.latex_name + ']_0$' if latex_names
                     else str(varied_subst))
-            plt.gca().set_xlabel(xlbl + ' / %s' % conc_unit_str)
-            plt.gca().set_ylabel('Concentration / %s' % conc_unit_str)
+            plt.gca().set_xlabel(xlbl + ' / ' + conc_unit_str)
+            plt.gca().set_ylabel('Concentration / ' + conc_unit_str)
 
-        return xvecs, sols, sanity
+        return xvecs, info_dicts, sanity
 
     def plot_errors(self, concs, init_concs, varied_data, varied, axes=None,
                     compositions=True, Q=True, subplot_kwargs=None):
