@@ -36,17 +36,17 @@ class Always(object):
 
 
 def get_odesys(rsys, include_params=False, SymbolicSys=None,
-               units_registry=None):
+               unit_registry=None):
     if SymbolicSys is None:
         from pyodesys.symbolic import SymbolicSys
 
     rsys_params = rsys.params()
 
-    if units_registry is not None:
+    if unit_registry is not None:
         # We need to make rsys_params unit less and create
         # a post- & pre-processor for SymbolicSys
-        time_unit = get_derived_unit(units_registry, 'time')
-        conc_unit = get_derived_unit(units_registry, 'concentration')
+        time_unit = get_derived_unit(unit_registry, 'time')
+        conc_unit = get_derived_unit(unit_registry, 'concentration')
         p_units = list(law_of_mass_action_rates(Always(1/conc_unit), rsys,
                                               Always(conc_unit/time_unit)))
         rsys_params = [to_unitless(elem, p_unit) for elem, p_unit
