@@ -143,7 +143,7 @@ def _get_NaCl():
     Na_p, Cl_m, NaCl = sbstncs = (
         Solute('Na+', 1, composition={11: 1}),
         Solute('Cl-', -1, composition={17: 1}),
-        Solute('NaCl', composition={11: 1, 17: 1}, solid=True)
+        Solute('NaCl', composition={11: 1, 17: 1}, precipitate=True)
     )
     sp = Equilibrium({'NaCl': 1}, {'Na+': 1, 'Cl-': 1}, 4.0)
     eqsys = EqSystem([sp], sbstncs)
@@ -169,7 +169,7 @@ def test_EqSystem_dissolved():
 
 @pytest.mark.parametrize('NumSys', [(NumSysLin,), (NumSysLog,),
                                     (NumSysLog, NumSysLin)])
-def test_solid(NumSys):
+def test_precipitate(NumSys):
     eqsys, species, cases = _get_NaCl()
 
     for init, final in cases:

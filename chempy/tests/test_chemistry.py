@@ -13,7 +13,7 @@ def test_Substance():
 
 
 def test_Solute():
-    s = Solute('Hp', formula='H{+}', solid=True)
+    s = Solute('Hp', formula='H{+}', precipitate=True)
     assert abs(s.mass - 1.00794 + 5.5e-4) < 2e-5
 
 

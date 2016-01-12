@@ -337,22 +337,22 @@ class EqSystem(ReactionSystem):
                 np.dot(A, self.as_per_substance_array(init_concs).T))
 
     @property
-    def solid_substance_idxs(self):
+    def precipitate_substance_idxs(self):
         return [idx for idx, s in enumerate(
-            self.substances.values()) if s.solid]
+            self.substances.values()) if s.precipitate]
 
     @property
-    def solid_rxn_idxs(self):
+    def precipitate_rxn_idxs(self):
         return [idx for idx, rxn in enumerate(self.rxns)
-                if rxn.has_solids(self.substances)]
+                if rxn.has_precipitates(self.substances)]
 
     def dissolved(self, concs):
         """ Return dissolved concentrations """
         new_concs = concs.copy()
         for r in self.rxns:
-            if r.has_solids(self.substances):
+            if r.has_precipitates(self.substances):
                 net_stoich = np.asarray(r.net_stoich(self.substances))
-                s_net, s_stoich, s_idx = r.solid_stoich(self.substances)
+                s_net, s_stoich, s_idx = r.precipitate_stoich(self.substances)
                 new_concs -= new_concs[s_idx]/s_stoich * net_stoich
         return new_concs
 
@@ -360,13 +360,13 @@ class EqSystem(ReactionSystem):
         rxn = self.rxns[ri]
 
         def fw_cond(x, p):
-            solid_stoich_coeff = rxn.solid_stoich(self.substances)[1]
+            precip_stoich_coeff = rxn.precipitate_stoich(self.substances)[1]
             q = rxn.Q(self.substances, self.dissolved(x))
             k = rxn.K()
             QoverK = q/k
-            if solid_stoich_coeff > 0:
+            if precip_stoich_coeff > 0:
                 return QoverK < 1
-            elif solid_stoich_coeff < 0:
+            elif precip_stoich_coeff < 0:
                 return QoverK > 1
             else:
                 raise NotImplementedError
@@ -376,18 +376,18 @@ class EqSystem(ReactionSystem):
         rxn = self.rxns[ri]
 
         def bw_cond(x, p):
-            solid_idx = rxn.solid_stoich(self.substances)[2]
-            if x[solid_idx] < small:
+            precipitate_idx = rxn.precipitate_stoich(self.substances)[2]
+            if x[precipitate_idx] < small:
                 return False
             else:
                 return True
-            # solid_stoich_coeff = rxn.solid_stoich(self.substances)[1]
+            # precip_stoich_coeff = rxn.precipitate_stoich(self.substances)[1]
             # q = rxn.Q(self.substances, self.dissolved(x))
             # k = rxn.K()
             # QoverK = q/k
-            # if solid_stoich_coeff > 0:
+            # if precip_stoich_coeff > 0:
             #     return QoverK <= 1
-            # elif solid_stoich_coeff < 0:
+            # elif prec_stoich_coeff < 0:
             #     return QoverK >= 1
             # else:
             #     raise NotImplementedError
@@ -423,7 +423,7 @@ class EqSystem(ReactionSystem):
 
         cond_cbs = [(self._fw_cond_factory(ri),
                      self._bw_cond_factory(ri, NumSys[0].small)) for
-                    ri in self.solid_rxn_idxs]
+                    ri in self.precipitate_rxn_idxs]
         return ConditionalNeqSys(cond_cbs, factory)
 
     def get_neqsys_chained_conditional(self, init_concs, rref_equil=False,
@@ -446,7 +446,7 @@ class EqSystem(ReactionSystem):
             [ConditionalNeqSys(
                 [(self._fw_cond_factory(ri),
                   self._bw_cond_factory(ri, NS.small)) for
-                 ri in self.solid_rxn_idxs],
+                 ri in self.precipitate_rxn_idxs],
                 mk_factory(NS)
             ) for NS in NumSys])
 
@@ -455,7 +455,7 @@ class EqSystem(ReactionSystem):
 
     def non_precip_rids(self, precipitates):
         return [idx for idx, precip in zip(
-            self.solid_rxn_idxs, precipitates) if not precip]
+            self.precipitate_rxn_idxs, precipitates) if not precip]
 
     def _result_is_sane(self, init_concs, x):
         sc_upper_bounds = np.array(self.upper_conc_bounds(init_concs))
@@ -591,7 +591,8 @@ class EqSystem(ReactionSystem):
                              ls=ls[cidx % len(ls)], c=c[cidx % len(c)])
 
         if Q:
-            qs = self.equilibrium_quotients(concs)  # TODO: handle solid phases
+            # TODO: handle precipitate phases in plotting Q error
+            qs = self.equilibrium_quotients(concs)
             ks = [rxn.param for rxn in self.rxns]
             for idx, (q, k) in enumerate(zip(qs, ks)):
                 axes[0].plot(concs[:, varied_idx],

@@ -114,7 +114,7 @@ class Substance(object):
 class Solute(Substance):
 
     def __init__(self, *args, **kwargs):
-        self.solid = kwargs.pop('solid', False)
+        self.precipitate = kwargs.pop('precipitate', False)
         super(self.__class__, self).__init__(*args, **kwargs)
 
 
@@ -191,33 +191,33 @@ class Reaction(object):
     def prod_stoich(self, substances):
         return tuple(self.prod.get(k, 0) for k in substances)
 
-    def _xsolid_stoich(self, substances, xor):
+    def _xprecipitate_stoich(self, substances, xor):
         return tuple((
-            0 if xor ^ v.solid else
+            0 if xor ^ v.precipitate else
             self.prod.get(k, 0) - self.reac.get(k, 0) - (
                 0 if self.inact_reac is None else self.inact_reac.get(k, 0)
             )) for k, v in substances.items())
 
-    def solid_stoich(self, substances):
-        """ Only stoichiometry of solids """
-        net = self._xsolid_stoich(substances, True)
+    def precipitate_stoich(self, substances):
+        """ Only stoichiometry of precipitates """
+        net = self._xprecipitate_stoich(substances, True)
         found1 = -1
         for idx in range(len(net)):
             if net[idx] != 0:
                 if found1 == -1:
                     found1 = idx
                 else:
-                    raise NotImplementedError("Only one solid assumed.")
+                    raise NotImplementedError("Only one precipitate assumed.")
         return net, net[idx], idx
 
-    def non_solid_stoich(self, substances):
-        """ Only stoichiometry of non-solids """
-        return self._xsolid_stoich(substances, False)
+    def non_precipitate_stoich(self, substances):
+        """ Only stoichiometry of non-precipitates """
+        return self._xprecipitate_stoich(substances, False)
 
-    def has_solids(self, substances):
+    def has_precipitates(self, substances):
         for s_name in chain(self.reac.keys(), self.prod.keys(),
                             (self.inact_reac or {}).keys()):
-            if substances[s_name].solid:
+            if substances[s_name].precipitate:
                 return True
         return False
 
@@ -320,27 +320,27 @@ class Equilibrium(Reaction):
             return self.param
 
     def Q(self, substances, concs):
-        stoich = self.non_solid_stoich(substances)
+        stoich = self.non_precipitate_stoich(substances)
         return equilibrium_quotient(concs, stoich)
 
-    def solid_factor(self, substances, sc_concs):
+    def precipitate_factor(self, substances, sc_concs):
         factor = 1
         for r, n in self.reac.items():
-            if r.solid:
+            if r.precipitate:
                 factor *= sc_concs[substances.index(r)]**-n
         for p, n in self.prod.items():
-            if p.solid:
+            if p.precipitate:
                 factor *= sc_concs[substances.index(p)]**n
         return factor
 
     def dimensionality(self):
         result = 0
         for r, n in self.reac.items():
-            if r.solid:
+            if r.precipitate:
                 continue
             result -= n
         for p, n in self.prod.items():
-            if p.solid:
+            if p.precipitate:
                 continue
             result += n
         return result
@@ -463,9 +463,9 @@ class ReactionSystem(object):
     def stoichs(self, non_precip_rids=()):
         # dtype: see https://github.com/sympy/sympy/issues/10295
         return np.array([(
-            -np.array(eq.solid_stoich(self.substances)[0]) if idx
+            -np.array(eq.precipitate_stoich(self.substances)[0]) if idx
             in non_precip_rids else
-            eq.non_solid_stoich(self.substances)
+            eq.non_precipitate_stoich(self.substances)
         ) for idx, eq in enumerate(self.rxns)],
                         dtype=object)
 

@@ -28,7 +28,7 @@ def get_ammonical_cupric_eqsys():
     (Hp, OHm, NH4p, NH3, H2O, Cupp, CuNH31pp, CuNH32pp,
      CuNH33pp, CuNH34pp, CuNH35pp, Cu2OH2pp, CuOH3m,
      CuOH4mm, CuOH2) = [s.name for s in substances]
-    substances[-1].solid = True
+    substances[-1].precipitate = True
     init_conc = {Hp: 1e-7, OHm: 1e-7, NH4p: 0, NH3: 1.0, Cupp: 1e-2,
                  CuNH31pp: 0, CuNH32pp: 0, CuNH33pp: 0, CuNH34pp: 0,
                  CuNH35pp: 0, H2O: 55.5, Cu2OH2pp: 0, CuOH2: 0, CuOH3m: 0,
