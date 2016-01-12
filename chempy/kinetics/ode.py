@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function)
 
-from collections import namedtuple
-
 from chempy.units import get_derived_unit, to_unitless
+
 
 def law_of_mass_action_rates(y, rsys, k=None):
     for idx, rxn in enumerate(rsys.rxns):
@@ -28,6 +27,7 @@ def dCdt(rsys, rates):
 
 class Always(object):
     __slots__ = ('value')
+
     def __init__(self, value):
         self.value = value
 
@@ -48,12 +48,14 @@ def get_odesys(rsys, include_params=False, SymbolicSys=None,
         time_unit = get_derived_unit(unit_registry, 'time')
         conc_unit = get_derived_unit(unit_registry, 'concentration')
         p_units = list(law_of_mass_action_rates(Always(1/conc_unit), rsys,
-                                              Always(conc_unit/time_unit)))
+                                                Always(conc_unit/time_unit)))
         rsys_params = [to_unitless(elem, p_unit) for elem, p_unit
                        in zip(rsys_params, p_units)]
+
         def pre_processor(x, y, p):
             return to_unitless(x, time_unit), to_unitless(y, conc_unit), [
                 to_unitless(elem, p_unit) for elem, p_unit in zip(p, p_units)]
+
         def post_processor(x, y, p):
             return x*time_unit, y*conc_unit, [elem*p_unit for elem, p_unit
                                               in zip(p, p_units)]

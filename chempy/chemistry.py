@@ -13,6 +13,7 @@ from .arrhenius import arrhenius_equation
 from .util.arithmeticdict import ArithmeticDict
 from .units import to_unitless
 
+
 def elements(formula):
     """
     Returns a dict mapping {periodictable.core.Element: int}
