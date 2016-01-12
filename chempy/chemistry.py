@@ -11,7 +11,7 @@ import numpy as np
 
 from .arrhenius import arrhenius_equation
 from .util.arithmeticdict import ArithmeticDict
-
+from .units import to_unitless
 
 def elements(formula):
     """
@@ -93,7 +93,7 @@ class Substance(object):
                     pass
             if charge is not None:
                 self.composition[0] = charge
-        self.other_properties = other_properties
+        self.other_properties = other_properties or {}
 
     def __repr__(self):
         kw = ['name=' + self.name + ', ...']  # Too verbose to print all
@@ -149,6 +149,8 @@ class Reaction(object):
     inact_reac: dict (optional)
     name: str (optional)
     k: deprecated (alias for param)
+    ref: object
+        reference
     other_properties: dict (optional)
     """
 
@@ -157,7 +159,7 @@ class Reaction(object):
     param_char = 'k'  # convention
 
     def __init__(self, reac, prod, param=None, inact_reac=None, name=None,
-                 k=None, other_properties=None):
+                 k=None, ref=None, other_properties=None):
         self.reac = reac
         self.prod = prod
         if k is not None:
@@ -168,6 +170,7 @@ class Reaction(object):
         self.param = param
         self.inact_reac = inact_reac or {}
         self.name = name
+        self.ref = ref
         self.other_properties = other_properties or {}
 
     def __eq__(lhs, rhs):
@@ -427,8 +430,10 @@ class ReactionSystem(object):
     def params(self):
         return [rxn.param for rxn in self.rxns]
 
-    def as_per_substance_array(self, cont, dtype=np.float64):
+    def as_per_substance_array(self, cont, dtype=np.float64, unit=None):
         """ Turns e.g. a dict into an ordered array """
+        if unit is not None:
+            cont = to_unitless(cont, unit)
         if isinstance(cont, np.ndarray):
             pass
         elif isinstance(cont, dict):
@@ -436,7 +441,7 @@ class ReactionSystem(object):
         cont = np.asarray(cont, dtype=dtype)
         if cont.shape[-1] != self.ns:
             raise ValueError("Incorrect size")
-        return cont
+        return cont*(unit if unit is not None else 1)
 
     def as_substance_index(self, sbstnc):
         """ Returns the index of a Substance in the system"""

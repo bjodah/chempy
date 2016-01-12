@@ -17,12 +17,17 @@ ChemPy
    :target: http://hera.physchem.kth.se/~chempy/branches/master/htmlcov
    :alt: coverage
 
-`ChemPy <https://github.com/bjodah/chempy>`_ is a python package useful for (physical) chemistry. Currently it includes:
+`ChemPy <https://github.com/bjodah/chempy>`_ is a python (Py 2.7 & 3.4) package useful for (physical) chemistry. Currently it includes:
 
 - Solver for equilibria (including multiphase systems)
-- Debye-Hückel expressions
 - Numerical integration routines for chemical kinetics (ODE solver frontend)
 - Integrated rate expressions (and convenience fitting routines)
+- Relations in Physical chemistry
+
+  - Debye-Hückel expressions
+  - Arrhenius equation
+  - Einstein-Smoluchowski equation
+
 - Properties
 
   - water density

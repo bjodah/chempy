@@ -48,6 +48,8 @@ else:
         u_symbol='(100eV)**-1')
     default_units.micromole = pq.UnitQuantity(
         'micromole',  pq.mole/1e6,  u_symbol=u'μmol')
+    default_units.kilojoule = pq.UnitQuantity(
+        'kilojoule',  1e3*pq.joule,  u_symbol='kJ')
     default_units.perMolar_perSecond = 1/default_units.molar/pq.s
     default_units.per100eV = pq.UnitQuantity(
         'per_100_eV', 1/(100*pq.eV*pq.constants.Avogadro_constant),
@@ -159,6 +161,8 @@ def to_unitless(value, new_unit=None):
         new_unit = pq.dimensionless
     if isinstance(value, (list, tuple)):
         return np.array([to_unitless(elem, new_unit) for elem in value])
+    if isinstance(value, dict):
+        return {k: to_unitless(v, new_unit) for k, v in value.items()}
     try:
         result = (value*pq.dimensionless/new_unit).rescale(pq.dimensionless)
         if result.ndim == 0:
