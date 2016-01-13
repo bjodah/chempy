@@ -8,7 +8,7 @@ build:
     - python2 setup.py sdist
     - pip install dist/*.tar.gz
     - pip install --user -r optional_requirements.txt
-    - (cd examples/; ipython2 nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
+    - (cd examples/; ipython2 nbconvert --to=html --debug --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
     - (cd examples/; ../scripts/render_index.sh *.html)
     - ./scripts/generate_docs.sh
     - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
