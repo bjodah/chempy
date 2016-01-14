@@ -182,10 +182,10 @@ class Reaction(object):
                 return False
         return True
 
-    def net_stoich(self, substances):
-        return tuple(self.prod.get(k, 0) - self.reac.get(k, 0) - (
-            0 if self.inact_reac is None else self.inact_reac.get(k, 0)
-        ) for k in substances)
+    def net_stoich(self, substance_keys):
+        return tuple(self.prod.get(k, 0) -
+                     self.reac.get(k, 0) -
+                     self.inact_reac.get(k, 0) for k in substance_keys)
 
     def all_reac_stoich(self, substances):
         return tuple(self.reac.get(k, 0) + (
@@ -227,21 +227,28 @@ class Reaction(object):
 
     def __str__(self):
         try:
-            s = ' %s=%.2g' % (self.param_char, self.param)
+            s = '; %s=%.2g' % (self.param_char, self.param)
         except:
             s = ''
         return self._get_str('name', 'str_arrow', {
-            k: k for k in chain(self.reac.keys(), self.prod.keys())}) + s
+            k: k for k in chain(self.reac.keys(), self.prod.keys(),
+                                self.inact_reac.keys())
+        }) + s
 
     def _get_str(self, name_attr, arrow_attr, substances):
-        reac, prod = [[
-            ((str(v)+' ') if v > 1 else '') + getattr(
-                substances[k], name_attr, k)
+        reac, prod, inact_reac = [[
+            ((str(v)+' ') if v > 1 else '') + str(getattr(
+                substances[k], name_attr, k))
             for k, v in filter(itemgetter(1), d.items())
-        ] for d in (self.reac, self.prod)]
-        fmtstr = "{} " + getattr(self, arrow_attr) + " {}"
-        return fmtstr.format(" + ".join(reac),
-                             " + ".join(prod))
+        ] for d in (self.reac, self.prod, self.inact_reac)]
+        fmtstr = "{}{}" + getattr(self, arrow_attr) + "{}"
+        if len(inact_reac) > 0:
+            inact_piece = '(+ ' + " + ".join(inact_reac) + ') '
+        else:
+            inact_piece = ''
+        return fmtstr.format(" + ".join(reac) + ' ',
+                             inact_piece,
+                             ' ' + " + ".join(prod))
 
     def latex(self, substances):
         return self._get_str('latex_name', 'latex_arrow', substances)

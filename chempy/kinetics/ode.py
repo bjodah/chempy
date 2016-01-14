@@ -7,8 +7,8 @@ from chempy.units import get_derived_unit, to_unitless
 def law_of_mass_action_rates(y, rsys, k=None):
     for idx, rxn in enumerate(rsys.rxns):
         rate = 1
-        for substance, coeff in rxn.reac.items():
-            idx = rsys.as_substance_index(substance)
+        for substance_key, coeff in rxn.reac.items():
+            idx = rsys.as_substance_index(substance_key)
             rate *= y[idx]**coeff
         if k is None:
             yield rate * rxn.param
@@ -19,8 +19,8 @@ def law_of_mass_action_rates(y, rsys, k=None):
 def dCdt(rsys, rates):
     f = [0]*rsys.ns
     net_stoichs = rsys.net_stoichs()
-    for idx_s, sbstnc in enumerate(rsys.substances):
-        for idx_r, rxn in enumerate(rsys.rxns):
+    for idx_s in range(rsys.ns):
+        for idx_r in range(rsys.nr):
             f[idx_s] += net_stoichs[idx_r, idx_s]*rates[idx_r]
     return f
 
@@ -40,6 +40,7 @@ def get_odesys(rsys, include_params=False, SymbolicSys=None,
     if SymbolicSys is None:
         from pyodesys.symbolic import SymbolicSys
 
+    kwargs = {'names': list(rsys.substances.keys())}
     rsys_params = rsys.params()
 
     if unit_registry is not None:
@@ -59,10 +60,8 @@ def get_odesys(rsys, include_params=False, SymbolicSys=None,
         def post_processor(x, y, p):
             return x*time_unit, y*conc_unit, [elem*p_unit for elem, p_unit
                                               in zip(p, p_units)]
-        kwargs = {'pre_processors': [pre_processor],
-                  'post_processors': [post_processor]}
-    else:
-        kwargs = {}
+        kwargs['pre_processors'] = [pre_processor]
+        kwargs['post_processors'] = [post_processor]
 
     def dydt(t, y, p):
         rates = list(law_of_mass_action_rates(

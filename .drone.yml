@@ -6,8 +6,10 @@ build:
     - pip3 install --user -r requirements.txt
     - PYTHONPATH=$(pwd) ./scripts/run_tests.sh --cov chempy --cov-report html
     - python2 setup.py sdist
-    - pip install dist/*.tar.gz
-    - pip install --user -r optional_requirements.txt
+    - pip2 install dist/*.tar.gz
+    - pip3 install dist/*.tar.gz
+    - pip2 install --user -r optional_requirements.txt
+    - pip3 install --user -r optional_requirements.txt
     - (cd examples/; ipython2 nbconvert --to=html --debug --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
     - (cd examples/; ../scripts/render_index.sh *.html)
     - ./scripts/generate_docs.sh
