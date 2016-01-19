@@ -18,9 +18,23 @@ from ..units import to_unitless, get_derived_unit
 tex_templates = {
     'document': {
         'default': r"""
-\documentclass{article}
+\documentclass[a4paper,9pt]{article}
 \pagestyle{empty}
+\usepackage[paper=a4paper,margin=1cm]{geometry}
 %(usepkg)s
+\hypersetup{
+  bookmarksnumbered=true,
+  breaklinks=false,
+  raiselinks=true,
+  pdfborder={0 0 0},
+  colorlinks=true,
+  plainpages=false,
+  pdfstartview={FitH},
+  pdfcreator={LaTeX with hyperref package},
+  citecolor=teal,
+  linkcolor=red,
+  urlcolor=blue,
+}
 \begin{document}
 %(begins)s
 %(table)s
@@ -94,7 +108,7 @@ def render_tex_to_pdf(contents, texfname, pdffname, output_dir, save):
 
 
 def rsys2tablines(rsys, rref0=1, coldelim=' & ',
-                  tex=True, rxnarrow=r'$\rightarrow$', ref_fmt='{}',
+                  tex=True, ref_fmt=None,
                   unit_registry=None, unit_fmt='{}'):
     """
     Generates a table representation of a ReactionSystem.
@@ -108,8 +122,6 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
         column delimiter (default: ' & ')
     tex: bool
         use latex formated output (default: True)
-    rxnarrow: string
-        default: '\$\\rightarrow\$'
     ref_fmt: string or callable
         format string of ``ref`` attribute of reactions
     unit_registry: unit registry
@@ -118,32 +130,45 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
 
     param_fmt = '{0:.3g}'  # Could be taken from Reaction instance
 
-    def _get_name(sn):
-        return getattr(rsys.substances[sn], 'latex_name' if tex else 'name')
+    if ref_fmt is None:
+        def ref_fmt(s):
+            if tex and s.startswith('doi:'):
+                return r'\texttt{\href{http://dx.doi.org/'+s[4:]+'}{'+s+'}}'
+            else:
+                return s
+
+    def _wrap(s):
+        if tex:
+            return '\\ensuremath{' + s + '}'
+        else:
+            return s
+
     lines = []
-    all_reac_stoichs = rsys.all_reac_stoichs()
-    prod_stoichs = rsys.prod_stoichs()
     for ri, rxn in enumerate(rsys.rxns):
-        rxn_ref = rxn.other_properties.get('ref', None)
+        rxn_ref = rxn.ref
         if unit_registry is not None:
             kunit = (get_derived_unit(unit_registry,
-                                      'concentration')**(1-rxn.order) /
+                                      'concentration')**(1-rxn.order()) /
                      get_derived_unit(unit_registry, 'time'))
             k = to_unitless(rxn.param, kunit)
         else:
             kunit = 1
             k = rxn.param
+        r_str, ir_str, arrow_str, p_str, ip_str = rxn._get_str_parts(
+            'latex_name' if tex else 'name',
+            'latex_arrow' if tex else 'str_arrow',
+            rsys.substances)
         lines.append(coldelim.join([
             str(rref0+ri),
-            ' + '.join([('' if num == 1 else str(num)) + _get_name(key) for
-                        key, num in zip(rsys.substances, all_reac_stoichs[ri, :]) if num > 0]),
-            rxnarrow,
-            ' + '.join([('' if num == 1 else str(num)) + _get_name(key) for
-                        key, num in zip(rsys.substances, prod_stoichs[ri, :]) if num > 0]),
+            _wrap(r_str + ir_str),
+            _wrap(arrow_str),
+            _wrap(p_str + ip_str),
             param_fmt.format(k),
-            unit_fmt.format(kunit),
-            ref_fmt() if callable(ref_fmt) else ref_fmt.format(rxn_ref)
+            unit_fmt.format(kunit.dimensionality.latex if tex
+                            else kunit.dimensionality),
+            ref_fmt(rxn_ref) if callable(ref_fmt) else ref_fmt.format(rxn_ref)
         ]))
+
     return lines
 
 
@@ -226,14 +251,19 @@ def rsys2pdf_table(rsys, output_dir=None, doc_template=None,
     """
     if doc_template is None:
         doc_template = tex_templates['document']['default']
-    _pkgs = ['booktabs', 'amsmath'] + (['lscape'] if landscape else [])
+    _pkgs = [
+        'booktabs', 'amsmath', ('pdftex,colorlinks,unicode=True',
+                                'hyperref')] + (
+                                    ['lscape'] if landscape else [])
     if kwargs.get('longtable', False):
         _pkgs += ['longtable']
     if kwargs.get('siunitx', False):
         _pkgs += ['siunitx']
     _envs = ['tiny'] + (['landscape'] if landscape else [])
     defaults = {
-        'usepkg': '\n'.join([r'\usepackage{%s}' % pkg for pkg in _pkgs]),
+        'usepkg': '\n'.join([(r'\usepackage' + ('[%s]' if isinstance(pkg, tuple)
+                                                else '') + '{%s}') % pkg for
+                             pkg in _pkgs]),
         'begins': '\n'.join([r'\begin{%s}' % env for env in _envs]),
         'ends': '\n'.join([r'\end{%s}' % env for env in _envs[::-1]])
     }
@@ -251,6 +281,6 @@ def rsys2pdf_table(rsys, output_dir=None, doc_template=None,
 
     contents = doc_template % doc_template_dict
 
-    texfname = (rsys.name or 'output') + '.tex'
-    pdffname = (rsys.name or 'output') + '.pdf'
+    texfname = 'output.tex'
+    pdffname = 'output.pdf'
     return render_tex_to_pdf(contents, texfname, pdffname, output_dir, save)

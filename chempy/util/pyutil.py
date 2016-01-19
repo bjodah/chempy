@@ -18,7 +18,7 @@ def defaultnamedtuple(typename, field_names, defaults=()):
 
     Examples
     --------
-    >>> Body = namedtuple('Body', 'x y z density', (1.0,))
+    >>> Body = defaultnamedtuple('Body', 'x y z density', (1.0,))
     >>> Body.__doc__
     'Body(x, y, z, density)'
     >>> b = Body(10, z=3, y=5)

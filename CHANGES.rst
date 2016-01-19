@@ -10,6 +10,7 @@ v0.2.0
 - Submodules for water properties moved to chempy.properties
 - Moved class ``Equilibrium`` from .equilibria to .chemistry
 - Renamed Reaction.params to Reaction.param
+- Added method: Reaction.order()
 
 v0.1
 ====

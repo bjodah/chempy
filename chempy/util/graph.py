@@ -46,7 +46,7 @@ def rsys2dot(rsys, tex=False, rprefix='r', rref0=1,
         ))
 
     all_reac_stoichs = rsys.all_reac_stoichs()
-    prod_stoichs = rsys.prod_stoichs()
+    all_prod_stoichs = rsys.all_prod_stoichs()
 
     for ri, rxn in enumerate(rsys.rxns):
         rid = rprefix + str(ri+rref0)
@@ -60,7 +60,7 @@ def rsys2dot(rsys, tex=False, rprefix='r', rref0=1,
                 continue
             add_vertex(key, num, True)
         for idx, key in enumerate(rsys.substances):
-            num = prod_stoichs[ri, idx]
+            num = all_prod_stoichs[ri, idx]
             if num == 0:
                 continue
             add_vertex(key, num, False)

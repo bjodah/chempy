@@ -71,7 +71,6 @@ def get_odesys(rsys, include_params=False, SymbolicSys=None,
     else:
         rsys_params = rsys.params()
 
-
     def dydt(t, y, p):
         rates = list(law_of_mass_action_rates(
             y, rsys, rsys_params if include_params else p))

@@ -149,6 +149,7 @@ class Reaction(object):
     prod: dict (str -> int)
     param: float or callable
     inact_reac: dict (optional)
+    inact_prod: dict (optional)
     name: str (optional)
     k: deprecated (alias for param)
     ref: object
@@ -160,8 +161,9 @@ class Reaction(object):
     latex_arrow = r'\rightarrow'
     param_char = 'k'  # convention
 
-    def __init__(self, reac, prod, param=None, inact_reac=None, name=None,
-                 k=None, ref=None, other_properties=None):
+    def __init__(self, reac, prod, param=None, inact_reac=None,
+                 inact_prod=None, name=None, k=None, ref=None,
+                 other_properties=None):
         self.reac = reac
         self.prod = prod
         if k is not None:
@@ -171,6 +173,7 @@ class Reaction(object):
             warnings.warn("Use param instead", DeprecationWarning)
         self.param = param
         self.inact_reac = inact_reac or {}
+        self.inact_prod = inact_prod or {}
         self.name = name
         self.ref = ref
         self.other_properties = other_properties or {}
@@ -178,30 +181,34 @@ class Reaction(object):
     def __eq__(lhs, rhs):
         if not isinstance(lhs, Reaction) or not isinstance(rhs, Reaction):
             return NotImplemented
-        for attr in ['reac', 'prod', 'param', 'inact_reac']:
+        for attr in ['reac', 'prod', 'param', 'inact_reac', 'inact_prod']:
             if getattr(lhs, attr) != getattr(rhs, attr):
                 return False
         return True
 
+    def order(self):
+        return sum(self.reac.values())
+
     def net_stoich(self, substance_keys):
         return tuple(self.prod.get(k, 0) -
-                     self.reac.get(k, 0) -
+                     self.reac.get(k, 0) +
+                     self.inact_prod.get(k, 0) -
                      self.inact_reac.get(k, 0) for k in substance_keys)
 
     def all_reac_stoich(self, substances):
-        return tuple(self.reac.get(k, 0) + (
-            0 if self.inact_reac is None else self.inact_reac.get(k, 0)
-        ) for k in substances)
+        return tuple(self.reac.get(k, 0) + self.inact_reac.get(k, 0)
+                     for k in substances)
 
-    def prod_stoich(self, substances):
-        return tuple(self.prod.get(k, 0) for k in substances)
+    def all_prod_stoich(self, substances):
+        return tuple(self.prod.get(k, 0) + self.inact_prod.get(k, 0)
+                     for k in substances)
 
     def _xprecipitate_stoich(self, substances, xor):
         return tuple((
             0 if xor ^ v.precipitate else
-            self.prod.get(k, 0) - self.reac.get(k, 0) - (
-                0 if self.inact_reac is None else self.inact_reac.get(k, 0)
-            )) for k, v in substances.items())
+            self.prod.get(k, 0) + self.inact_prod.get(k, 0) -
+            self.reac.get(k, 0) - self.inact_reac.get(k, 0)
+        ) for k, v in substances.items())
 
     def precipitate_stoich(self, substances):
         """ Only stoichiometry of precipitates """
@@ -221,35 +228,42 @@ class Reaction(object):
 
     def has_precipitates(self, substances):
         for s_name in chain(self.reac.keys(), self.prod.keys(),
-                            (self.inact_reac or {}).keys()):
+                            self.inact_reac.keys(),
+                            self.inact_prod.keys()):
             if substances[s_name].precipitate:
                 return True
         return False
 
-    def _get_str(self, name_attr, arrow_attr, substances):
-        reac, prod, inact_reac = [[
+    def _get_str_parts(self, name_attr, arrow_attr, substances):
+        reac, prod, i_reac, i_prod = [[
             ((str(v)+' ') if v > 1 else '') + str(getattr(
                 substances[k], name_attr, k))
             for k, v in filter(itemgetter(1), d.items())
-        ] for d in (self.reac, self.prod, self.inact_reac)]
-        if len(inact_reac) > 0:
-            inact_piece = '(+ ' + " + ".join(inact_reac) + ') '
-        else:
-            inact_piece = ''
-        return "{}{}{}{}".format(" + ".join(reac) + ' ',
-                             inact_piece,
-                             getattr(self, arrow_attr),
-                             ' ' + " + ".join(prod))
+        ] for d in (self.reac, self.prod, self.inact_reac,
+                    self.inact_prod)]
+        r_str = " + ".join(reac)
+        ir_str = ' (+ ' + " + ".join(i_reac) + ')' if len(i_reac) > 0 else ''
+        arrow_str = getattr(self, arrow_attr)
+        p_str = " + ".join(prod)
+        ip_str = ' (+ ' + " + ".join(i_prod) + ')' if len(i_prod) > 0 else ''
+        return r_str, ir_str, arrow_str, p_str, ip_str
+
+    def _get_str(self, *args):
+        return "{}{} {} {}{}".format(*self._get_str_parts(*args))
 
     def __str__(self):
         try:
-            str_param = '%.3g' % self.param
-        except TypeError:
-            str_param = str(self.param)
+            str_param = '%.3g %s' % (self.param, self.param.dimensionality)
+        except AttributeError:
+            try:
+                str_param = '%.3g' % self.param
+            except TypeError:
+                str_param = str(self.param)
         s = '; ' + self.param_char + '=' + str_param
         return self._get_str('name', 'str_arrow', {
             k: k for k in chain(self.reac.keys(), self.prod.keys(),
-                                self.inact_reac.keys())
+                                self.inact_reac.keys(),
+                                self.inact_prod.keys())
         }) + s
 
     def latex(self, substances):
@@ -308,9 +322,12 @@ class ArrheniusRate(defaultnamedtuple('ArrheniusRate', 'A Ea ref', [None])):
     def __str__(self):
         return "{}*exp({}/(R*T))".format(self.A, self.Ea)
 
+
 class ArrheniusRateWithUnits(ArrheniusRate):
-    def __call__(self, T, constants=default_constants, units=default_units, exp=None):
-        return super(ArrheniusRateWithUnits, self).__call__(T, constants, units, exp)
+    def __call__(self, T, constants=default_constants, units=default_units,
+                 exp=None):
+        return super(ArrheniusRateWithUnits, self).__call__(
+            T, constants, units, exp)
 
 
 class Equilibrium(Reaction):
@@ -324,10 +341,37 @@ class Equilibrium(Reaction):
     latex_arrow = r'\rightleftharpoons'
     param_char = 'K'  # convention
 
-    def __init__(self, reac, prod, param, *args):
-        if not all(arg is None for arg in args):
+    def __init__(self, reac, prod, param, *args, **kwargs):
+        ref = kwargs.pop('ref')
+        if not all(arg is None for arg in args) or len(kwargs) > 0:
             raise NotImplementedError("Inactive reac/prod not implemented")
-        return super(Equilibrium, self).__init__(reac, prod, param)
+        return super(Equilibrium, self).__init__(reac, prod, param, ref=ref)
+
+    def as_reactions(self, state=None, kf=None, kb=None, units=None):
+        """ Creates a pair of Reaction instances """
+        nb = sum(self.prod.values())
+        nf = sum(self.reac.values())
+        if units is None:
+            if hasattr(kf, 'units') or hasattr(kb, 'units'):
+                raise ValueError("units missing")
+            c0 = 1
+        else:
+            c0 = 1*units.molar  # standard concentration IUPAC
+
+        if kf is None:
+            if kb is None:
+                raise ValueError("Exactly one rate needs to be provided")
+            kf = kb * self.K(state) * c0**(nb - nf)
+        elif kb is None:
+            kb = kf / (self.K(state) * c0**(nb - nf))
+        else:
+            raise ValueError("Exactly one rate needs to be provided")
+        return (
+            Reaction(self.reac, self.prod, kf, self.inact_reac,
+                     self.inact_prod, ref=self.ref),
+            Reaction(self.prod, self.reac, kb, self.inact_prod,
+                     self.inact_reac, ref=self.ref)
+        )
 
     def K(self, state=None):
         """ Return equilibrium quotient (possibly state dependent) """
@@ -431,7 +475,15 @@ class ReactionSystem(object):
             except:
                 self.substances = OrderedDict([(s.name, s) for
                                                s in substances])
+        self._sanity_check()
         self.name = name
+
+    def _sanity_check(self):
+        for rxn in self.rxns:
+            for key in chain(rxn.reac, rxn.prod, rxn.inact_reac,
+                             rxn.inact_prod):
+                if key not in self.substances:
+                    raise ValueError("Unkown substance: %s" % key)
 
     def substance_names(self):
         return tuple(substance.name for substance in self.substances.values())
@@ -481,8 +533,8 @@ class ReactionSystem(object):
     def all_reac_stoichs(self):
         return self._stoichs('all_reac_stoich')
 
-    def prod_stoichs(self):
-        return self._stoichs('prod_stoich')
+    def all_prod_stoichs(self):
+        return self._stoichs('all_prod_stoich')
 
     def stoichs(self, non_precip_rids=()):
         # dtype: see https://github.com/sympy/sympy/issues/10295

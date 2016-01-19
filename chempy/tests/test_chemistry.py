@@ -6,7 +6,7 @@ import math
 from ..units import default_units
 from ..chemistry import (
     Substance, Solute, Reaction, ReactionSystem, ArrheniusRate,
-    ArrheniusRateWithUnits
+    ArrheniusRateWithUnits, Equilibrium
 )
 
 
@@ -68,3 +68,14 @@ def test_ArrheniusRateWithUnits():
     k = ArrheniusRateWithUnits(1e10/s, 42e3 * J/mol)(273.15*K)
     ref = 1e10/s * math.exp(-42e3/(8.3145*273.15))
     assert abs((k - ref)/ref) < 1e-4
+
+
+def test_Equilibrium__as_reactions():
+    s = default_units.second
+    M = default_units.molar
+    H2O, Hp, OHm = map(Substance, 'H2O H+ OH-'.split())
+    eq = Equilibrium({'H2O': 1}, {'H+': 1, 'OH-': 1}, 1e-14)
+    rate = 1.31e11/M/s
+    fw, bw = eq.as_reactions(kb=rate, units=default_units)
+    assert abs((bw.param - rate)/rate) < 1e-15
+    assert abs((fw.param / M)/bw.param - 1e-14)/1e-14 < 1e-15
