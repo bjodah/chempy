@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function)
 
+import math
 
-from ..chemistry import Substance, Solute, Reaction
+from ..units import default_units
+from ..chemistry import (
+    Substance, Solute, Reaction, ReactionSystem, ArrheniusRate,
+    ArrheniusRateWithUnits
+)
 
 
 def test_Substance():
@@ -36,3 +41,30 @@ def test_Reaction():
     r3 = Reaction({Hp: 2, OHm: 1}, {H2O: 2})
     assert sum(r3.composition_violation(substance_dict)) != 0
     assert r3.charge_neutrality_violation(substance_dict) != 0
+
+
+def test_ReactionSystem__as_per_substance_array():
+    mol = default_units.mol
+    m = default_units.metre
+    M = default_units.molar
+    rs = ReactionSystem([], [Substance('H2O')])
+    c = rs.as_per_substance_array({'H2O': 1*M},
+                                  unit=M)
+    assert c.dimensionality == M.dimensionality
+    assert abs(c[0]/(1000*mol/m**3) - 1) < 1e-16
+
+
+def test_ArrheniusRate():
+    k = ArrheniusRate(1e10, 42e3)(273.15)
+    ref = 1e10 * math.exp(-42e3/(8.3145*273.15))
+    assert abs((k - ref)/ref) < 1e-4
+
+
+def test_ArrheniusRateWithUnits():
+    s = default_units.second
+    mol = default_units.mol
+    J = default_units.joule
+    K = default_units.kelvin
+    k = ArrheniusRateWithUnits(1e10/s, 42e3 * J/mol)(273.15*K)
+    ref = 1e10/s * math.exp(-42e3/(8.3145*273.15))
+    assert abs((k - ref)/ref) < 1e-4

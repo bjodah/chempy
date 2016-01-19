@@ -36,12 +36,12 @@ class Always(object):
 
 
 def get_odesys(rsys, include_params=False, SymbolicSys=None,
-               unit_registry=None):
+               unit_registry=None, output_conc_unit=None,
+               output_time_unit=None):
     if SymbolicSys is None:
         from pyodesys.symbolic import SymbolicSys
 
     kwargs = {'names': list(rsys.substances.keys())}
-    rsys_params = rsys.params()
 
     if unit_registry is not None:
         # We need to make rsys_params unit less and create
@@ -51,17 +51,26 @@ def get_odesys(rsys, include_params=False, SymbolicSys=None,
         p_units = list(law_of_mass_action_rates(Always(1/conc_unit), rsys,
                                                 Always(conc_unit/time_unit)))
         rsys_params = [to_unitless(elem, p_unit) for elem, p_unit
-                       in zip(rsys_params, p_units)]
+                       in zip(rsys.params(), p_units)]
 
         def pre_processor(x, y, p):
             return to_unitless(x, time_unit), to_unitless(y, conc_unit), [
                 to_unitless(elem, p_unit) for elem, p_unit in zip(p, p_units)]
 
         def post_processor(x, y, p):
-            return x*time_unit, y*conc_unit, [elem*p_unit for elem, p_unit
-                                              in zip(p, p_units)]
+            time = x*time_unit
+            if output_time_unit is not None:
+                time = time.rescale(output_time_unit)
+            conc = y*conc_unit
+            if output_conc_unit is not None:
+                conc = conc.rescale(output_conc_unit)
+            return time, conc, [elem*p_unit for elem, p_unit
+                                in zip(p, p_units)]
         kwargs['pre_processors'] = [pre_processor]
         kwargs['post_processors'] = [post_processor]
+    else:
+        rsys_params = rsys.params()
+
 
     def dydt(t, y, p):
         rates = list(law_of_mass_action_rates(

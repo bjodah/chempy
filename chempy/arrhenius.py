@@ -43,7 +43,11 @@ def arrhenius_equation(A, Ea, T, constants=None, units=None, exp=None):
         except ImportError:
             from math import exp
     R = _get_R(constants, units)
-    return A*exp(-Ea/(R*T))
+    try:
+        RT = (R*T).rescale(Ea.dimensionality)
+    except AttributeError:
+        RT = R*T
+    return A*exp(-Ea/RT)
 
 
 def fit_arrhenius_equation(k, T, kerr=None, linearized=False):

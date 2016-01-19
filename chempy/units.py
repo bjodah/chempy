@@ -162,7 +162,10 @@ def to_unitless(value, new_unit=None):
     if isinstance(value, (list, tuple)):
         return np.array([to_unitless(elem, new_unit) for elem in value])
     if isinstance(value, dict):
-        return {k: to_unitless(v, new_unit) for k, v in value.items()}
+        new_value = value.copy()
+        for k in new_value:
+            new_value[k] = to_unitless(new_value[k], new_unit)
+        return new_value
     try:
         result = (value*pq.dimensionless/new_unit).rescale(pq.dimensionless)
         if result.ndim == 0:

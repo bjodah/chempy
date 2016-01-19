@@ -4,14 +4,15 @@ from __future__ import division
 
 from itertools import chain
 from operator import itemgetter
-from collections import defaultdict, OrderedDict, namedtuple
+from collections import defaultdict, OrderedDict
 import warnings
 
 import numpy as np
 
 from .arrhenius import arrhenius_equation
 from .util.arithmeticdict import ArithmeticDict
-from .units import to_unitless
+from .util.pyutil import defaultnamedtuple
+from .units import to_unitless, default_constants, default_units
 
 
 def elements(formula):
@@ -156,7 +157,7 @@ class Reaction(object):
     """
 
     str_arrow = '->'
-    latex_arrow = '\\rightarrow'
+    latex_arrow = r'\rightarrow'
     param_char = 'k'  # convention
 
     def __init__(self, reac, prod, param=None, inact_reac=None, name=None,
@@ -225,30 +226,31 @@ class Reaction(object):
                 return True
         return False
 
-    def __str__(self):
-        try:
-            s = '; %s=%.2g' % (self.param_char, self.param)
-        except:
-            s = ''
-        return self._get_str('name', 'str_arrow', {
-            k: k for k in chain(self.reac.keys(), self.prod.keys(),
-                                self.inact_reac.keys())
-        }) + s
-
     def _get_str(self, name_attr, arrow_attr, substances):
         reac, prod, inact_reac = [[
             ((str(v)+' ') if v > 1 else '') + str(getattr(
                 substances[k], name_attr, k))
             for k, v in filter(itemgetter(1), d.items())
         ] for d in (self.reac, self.prod, self.inact_reac)]
-        fmtstr = "{}{}" + getattr(self, arrow_attr) + "{}"
         if len(inact_reac) > 0:
             inact_piece = '(+ ' + " + ".join(inact_reac) + ') '
         else:
             inact_piece = ''
-        return fmtstr.format(" + ".join(reac) + ' ',
+        return "{}{}{}{}".format(" + ".join(reac) + ' ',
                              inact_piece,
+                             getattr(self, arrow_attr),
                              ' ' + " + ".join(prod))
+
+    def __str__(self):
+        try:
+            str_param = '%.3g' % self.param
+        except TypeError:
+            str_param = str(self.param)
+        s = '; ' + self.param_char + '=' + str_param
+        return self._get_str('name', 'str_arrow', {
+            k: k for k in chain(self.reac.keys(), self.prod.keys(),
+                                self.inact_reac.keys())
+        }) + s
 
     def latex(self, substances):
         return self._get_str('latex_name', 'latex_arrow', substances)
@@ -289,17 +291,26 @@ def equilibrium_quotient(concs, stoich):
     return tot
 
 
-class ArrheniusRate(namedtuple('ArrheniusRate', 'A Ea')):
+class ArrheniusRate(defaultnamedtuple('ArrheniusRate', 'A Ea ref', [None])):
     """
     Ea: float
         activation energy
     A: float
         preexponential prefactor (Arrhenius type eq.)
+    ref: object (default: None)
+        arbitrary reference (e.g. string representing citation key)
     """
     def __call__(self, T, constants=None, units=None, exp=None):
         """ See :py:func`chempy.arrhenius.arrhenius_equation`. """
         return arrhenius_equation(self.A, self.Ea, T, constants=constants,
                                   units=units, exp=exp)
+
+    def __str__(self):
+        return "{}*exp({}/(R*T))".format(self.A, self.Ea)
+
+class ArrheniusRateWithUnits(ArrheniusRate):
+    def __call__(self, T, constants=default_constants, units=default_units, exp=None):
+        return super(ArrheniusRateWithUnits, self).__call__(T, constants, units, exp)
 
 
 class Equilibrium(Reaction):
@@ -310,7 +321,7 @@ class Equilibrium(Reaction):
     """
 
     str_arrow = '<->'
-    latex_arrow = '\\rightleftharpoons'
+    latex_arrow = r'\rightleftharpoons'
     param_char = 'K'  # convention
 
     def __init__(self, reac, prod, param, *args):
