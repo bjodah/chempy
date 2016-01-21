@@ -132,6 +132,8 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
 
     if ref_fmt is None:
         def ref_fmt(s):
+            if s is None:
+                return 'None'
             if tex and s.startswith('doi:'):
                 return r'\texttt{\href{http://dx.doi.org/'+s[4:]+'}{'+s+'}}'
             else:
@@ -151,8 +153,10 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
                                       'concentration')**(1-rxn.order()) /
                      get_derived_unit(unit_registry, 'time'))
             k = to_unitless(rxn.param, kunit)
+            k_unit_str = (kunit.dimensionality.latex if tex
+                          else kunit.dimensionality)
         else:
-            kunit = 1
+            k_unit_str = '-'
             k = rxn.param
         r_str, ir_str, arrow_str, p_str, ip_str = rxn._get_str_parts(
             'latex_name' if tex else 'name',
@@ -164,8 +168,7 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
             _wrap(arrow_str),
             _wrap(p_str + ip_str),
             param_fmt.format(k),
-            unit_fmt.format(kunit.dimensionality.latex if tex
-                            else kunit.dimensionality),
+            unit_fmt.format(k_unit_str),
             ref_fmt(rxn_ref) if callable(ref_fmt) else ref_fmt.format(rxn_ref)
         ]))
 
