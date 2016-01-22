@@ -9,8 +9,8 @@ from chempy.util.graph import rsys2dot, rsys2graph
 
 def _get_rsys():
     r1 = Reaction({'A': 2}, {'B': 1}, k=3.0)
-    A = Substance('A', latex_name='\\ensuremath{\\boldsymbol{A}}')
-    B = Substance('B', latex_name='\\ensuremath{\\boldsymbol{B}}')
+    A = Substance('A', latex_name='\\boldsymbol{A}')
+    B = Substance('B', latex_name='\\boldsymbol{B}')
     rsys = ReactionSystem([r1], [A, B])
     return rsys
 

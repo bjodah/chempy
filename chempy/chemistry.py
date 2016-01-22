@@ -342,7 +342,7 @@ class Equilibrium(Reaction):
     param_char = 'K'  # convention
 
     def __init__(self, reac, prod, param, *args, **kwargs):
-        ref = kwargs.pop('ref')
+        ref = kwargs.pop('ref', None)
         if not all(arg is None for arg in args) or len(kwargs) > 0:
             raise NotImplementedError("Inactive reac/prod not implemented")
         return super(Equilibrium, self).__init__(reac, prod, param, ref=ref)

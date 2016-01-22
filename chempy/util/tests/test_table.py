@@ -14,7 +14,7 @@ from .test_graph import _get_rsys
 
 def test_rsys2tablines():
     assert rsys2tablines(_get_rsys(), tex=False) == [
-        '1 & 2A & --> & B & 3 & 1 & None'
+        '1 & 2 A & -> & B & 3 & - & None'
     ]
 
 
@@ -28,7 +28,7 @@ def test_rsys2table():
 \toprule
 Id. & Reactants &  & Products & {Rate constant} & Unit & Ref \\
 \midrule
-1 & 2\ensuremath{\boldsymbol{A}} & \ensuremath{\rightarrow} & \ensuremath{\boldsymbol{B}} & 3 & - & None \\
+1 & \ensuremath{2 \boldsymbol{A}} & \ensuremath{\rightarrow} & \ensuremath{\boldsymbol{B}} & 3 & - & None \\
 \bottomrule
 \end{tabular}
 \end{table}"""
