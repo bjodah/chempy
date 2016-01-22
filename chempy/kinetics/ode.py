@@ -5,15 +5,15 @@ from chempy.units import get_derived_unit, to_unitless
 
 
 def law_of_mass_action_rates(y, rsys, k=None):
-    for idx, rxn in enumerate(rsys.rxns):
+    for rxn_idx, rxn in enumerate(rsys.rxns):
         rate = 1
         for substance_key, coeff in rxn.reac.items():
-            idx = rsys.as_substance_index(substance_key)
-            rate *= y[idx]**coeff
+            s_idx = rsys.as_substance_index(substance_key)
+            rate *= y[s_idx]**coeff
         if k is None:
             yield rate * rxn.param
         else:
-            yield rate * k[idx]
+            yield rate * k[rxn_idx]
 
 
 def dCdt(rsys, rates):
