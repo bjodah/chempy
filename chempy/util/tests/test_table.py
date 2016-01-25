@@ -19,7 +19,8 @@ def test_rsys2tablines():
 
 
 def test_rsys2table():
-    assert rsys2table(_get_rsys()) == r"""
+    assert rsys2table(_get_rsys()) == (
+        r"""
 \begin{table}
 \centering
 \label{tab:none}
@@ -28,10 +29,11 @@ def test_rsys2table():
 \toprule
 Id. & Reactants &  & Products & {Rate constant} & Unit & Ref \\
 \midrule
-1 & \ensuremath{2 \boldsymbol{A}} & \ensuremath{\rightarrow} & \ensuremath{\boldsymbol{B}} & \ensuremath{3} & - & None \\
+1 & \ensuremath{2 \boldsymbol{A}} & \ensuremath{\rightarrow} &""" +
+        r""" \ensuremath{\boldsymbol{B}} & \ensuremath{3} & - & None \\
 \bottomrule
 \end{tabular}
-\end{table}"""
+\end{table}""")
 
 
 @pytest.mark.parametrize('longtable', (True, False))

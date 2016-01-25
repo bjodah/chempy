@@ -17,6 +17,7 @@ else:
     # Let us extend the underlying pq namespace with some common units in
     # chemistry
     default_constants = pq.constants
+
     class NameSpace:
         def __init__(self, default):
             self._NameSpace_default = default
@@ -40,9 +41,10 @@ else:
     default_units = NameSpace(pq)
     default_units.decimetre = pq.UnitQuantity(
         'decimetre',  default_units.m / 10.0, u_symbol='dm')
-    default_units.molar = pq.UnitQuantity(
-        'M',  default_units.mole / default_units.decimetre ** 3,
-        u_symbol='M')
+    if not hasattr(default_units, 'molar'):
+        default_units.molar = pq.UnitQuantity(
+            'M',  default_units.mole / default_units.decimetre ** 3,
+            u_symbol='M')
     default_units.per100eV = pq.UnitQuantity(
         'per_100_eV',
         1/(100*default_units.eV*default_constants.Avogadro_constant),
