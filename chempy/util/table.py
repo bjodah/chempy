@@ -109,7 +109,7 @@ def render_tex_to_pdf(contents, texfname, pdffname, output_dir, save):
 
 def rsys2tablines(rsys, rref0=1, coldelim=' & ',
                   tex=True, ref_fmt=None,
-                  unit_registry=None, unit_fmt='{}'):
+                  unit_registry=None, unit_fmt='{}', k_fmt='{0:.4g}'):
     """
     Generates a table representation of a ReactionSystem.
 
@@ -127,9 +127,6 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
     unit_registry: unit registry
         optional (default: None)
     """
-
-    param_fmt = '{0:.3g}'  # Could be taken from Reaction instance
-
     if ref_fmt is None:
         def ref_fmt(s):
             if s is None:
@@ -152,12 +149,16 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
             kunit = (get_derived_unit(unit_registry,
                                       'concentration')**(1-rxn.order()) /
                      get_derived_unit(unit_registry, 'time'))
-            k = to_unitless(rxn.param, kunit)
-            k_unit_str = (kunit.dimensionality.latex if tex
-                          else kunit.dimensionality)
+            try:
+                k = k_fmt.format(to_unitless(rxn.param, kunit))
+                k_unit_str = (kunit.dimensionality.latex if tex
+                              else kunit.dimensionality)
+            except:
+                k = rxn.param.equation_as_string(k_fmt, tex)
+                k_unit_str = '-'
         else:
             k_unit_str = '-'
-            k = rxn.param
+            k = k_fmt.format(rxn.param)
         r_str, ir_str, arrow_str, p_str, ip_str = rxn._get_str_parts(
             'latex_name' if tex else 'name',
             'latex_arrow' if tex else 'str_arrow',
@@ -167,7 +168,7 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
             _wrap(r_str + ir_str),
             _wrap(arrow_str),
             _wrap(p_str + ip_str),
-            param_fmt.format(k),
+            _wrap(k),
             unit_fmt.format(k_unit_str),
             ref_fmt(rxn_ref) if callable(ref_fmt) else ref_fmt.format(rxn_ref)
         ]))
@@ -219,7 +220,7 @@ def rsys2table(rsys, table_template=None,
     if 'body' in table_template_dict:
         raise KeyError("There is already a 'body' key in table_template_dict")
     table_template_dict['body'] = (line_term + '\n').join(rsys2tablines(
-        rsys, **kwargs)) + line_term
+        rsys, k_fmt=r'\num{{{0:.4g}}}' if siunitx else '{0:.4g}', **kwargs)) + line_term
 
     if table_template is None:
         if table_template_dict['table_env'] == 'longtable':

@@ -319,8 +319,33 @@ class ArrheniusRate(defaultnamedtuple('ArrheniusRate', 'A Ea ref', [None])):
         return arrhenius_equation(self.A, self.Ea, T, constants=constants,
                                   units=units, exp=exp)
 
+    @staticmethod
+    def _fmt(arg, precision, tex):
+        if tex:
+            unit_str = arg.dimensionality.latex.strip('$')
+        else:
+            from quantities.markup import config
+            attr = 'unicode' if config.use_unicode else 'string'
+            unit_str = getattr(arg.dimensionality, attr)
+        return precision.format(float(arg.magnitude)) + " " + unit_str
+
+    def format(self, precision, tex=False):
+        try:
+            str_A = self._fmt(self.A, precision, tex)
+            str_Ea = self._fmt(self.Ea, precision, tex)
+        except:
+            str_A = precision.format(self.A)
+            str_Ea = precision.format(self.Ea)
+        return str_A, str_Ea
+
+    def equation_as_string(self, precision, tex=False):
+        if tex:
+            return r"{}\exp \left(\frac{{{}}}{{RT}} \right)".format(*self.format(precision, tex))
+        else:
+            return "{}*exp({}/(R*T))".format(*self.format(precision, tex))
+
     def __str__(self):
-        return "{}*exp({}/(R*T))".format(self.A, self.Ea)
+        return self.equation_as_string('{0:.5g}')
 
 
 class ArrheniusRateWithUnits(ArrheniusRate):

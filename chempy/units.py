@@ -8,14 +8,15 @@ import numpy as np
 try:
     import quantities as pq
 except ImportError:
-    default_units = None
+    UncertainQuantity = None
     default_constants = None
+    default_units = None
     SI_base_registry = None
 else:
+    UncertainQuantity = pq.UncertainQuantity
     # Let us extend the underlying pq namespace with some common units in
     # chemistry
     default_constants = pq.constants
-
     class NameSpace:
         def __init__(self, default):
             self._NameSpace_default = default
@@ -40,7 +41,7 @@ else:
     default_units.decimetre = pq.UnitQuantity(
         'decimetre',  default_units.m / 10.0, u_symbol='dm')
     default_units.molar = pq.UnitQuantity(
-        'molar',  default_units.mole / default_units.decimetre ** 3,
+        'M',  default_units.mole / default_units.decimetre ** 3,
         u_symbol='M')
     default_units.per100eV = pq.UnitQuantity(
         'per_100_eV',

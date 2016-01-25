@@ -4,16 +4,19 @@ from __future__ import (absolute_import, division, print_function)
 from chempy.units import get_derived_unit, to_unitless
 
 
-def law_of_mass_action_rates(y, rsys, k=None):
+def law_of_mass_action_rates(y, rsys, k=None, state=None):
+    def _eval_k(_k):
+        return _k(state) if callable(_k) else _k
+
     for rxn_idx, rxn in enumerate(rsys.rxns):
         rate = 1
         for substance_key, coeff in rxn.reac.items():
             s_idx = rsys.as_substance_index(substance_key)
             rate *= y[s_idx]**coeff
         if k is None:
-            yield rate * rxn.param
+            yield rate * _eval_k(rxn.param)
         else:
-            yield rate * k[rxn_idx]
+            yield rate * _eval_k(k[rxn_idx])
 
 
 def dCdt(rsys, rates):
@@ -37,7 +40,7 @@ class Always(object):
 
 def get_odesys(rsys, include_params=False, SymbolicSys=None,
                unit_registry=None, output_conc_unit=None,
-               output_time_unit=None):
+               output_time_unit=None, state=None):
     if SymbolicSys is None:
         from pyodesys.symbolic import SymbolicSys
 
@@ -49,8 +52,8 @@ def get_odesys(rsys, include_params=False, SymbolicSys=None,
         time_unit = get_derived_unit(unit_registry, 'time')
         conc_unit = get_derived_unit(unit_registry, 'concentration')
         p_units = list(law_of_mass_action_rates(Always(1/conc_unit), rsys,
-                                                Always(conc_unit/time_unit)))
-        rsys_params = [to_unitless(elem, p_unit) for elem, p_unit
+                                                Always(conc_unit/time_unit), state))
+        rsys_params = [elem(state) if callable(elem) else to_unitless(elem, p_unit) for elem, p_unit
                        in zip(rsys.params(), p_units)]
 
         def pre_processor(x, y, p):
