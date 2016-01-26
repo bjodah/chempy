@@ -11,6 +11,7 @@ v0.2.0
 - Moved class ``Equilibrium`` from .equilibria to .chemistry
 - Renamed Reaction.params to Reaction.param
 - Added method: Reaction.order()
+- Added chempy.properties.sulfuric_acid_density_myhre_1998
 
 v0.1
 ====

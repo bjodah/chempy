@@ -17,7 +17,7 @@ ChemPy
    :target: http://hera.physchem.kth.se/~chempy/branches/master/htmlcov
    :alt: coverage
 
-`ChemPy <https://github.com/bjodah/chempy>`_ is a python (Py 2.7 & 3.4) package useful for (physical) chemistry. Currently it includes:
+`ChemPy <https://github.com/bjodah/chempy>`_ is a python (Py 2.7 & 3.4+) package useful for (physical) chemistry. Currently it includes:
 
 - Solver for equilibria (including multiphase systems)
 - Numerical integration routines for chemical kinetics (ODE solver frontend)
@@ -30,9 +30,10 @@ ChemPy
 
 - Properties
 
-  - water density
-  - water permittivity
-  - water diffusivity
+  - water density as function of temperature
+  - water permittivity as function of temperature and pressure
+  - water diffusivity as function of temperature
+  - sulfuric acid density as function of temperature & weight fraction H2SO4
 
 
 Documentation
@@ -55,22 +56,10 @@ Optional dependencies
 - pyodesys
 - pyneqsys
 
-Units
------
-Use of ``quantities`` is assumed, but only following attributes are actually
-accessed (parenthesis optional):
-
-- Kelvin
-- Joule
-- bar
-- meter
-- kilogram
-- mol
-- (nanometer)
 
 Tests
 -----
-Run ``py.test``
+Run ``python -m pytest --pyargs chempy``
 
 License
 -------

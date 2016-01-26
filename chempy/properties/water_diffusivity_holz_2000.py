@@ -15,11 +15,11 @@ D0 = 1.635e-8
 TS = 215.05
 dD0 = 2.242e-11
 dTS = 1.2
-low_t_bound = 273.15  # 0 deg C, m.p. at ambient pressure
-high_t_bound = 373.15  # 100 deg C, b.p. at ambient pressure
+low_t_bound = 273.15  # 0 deg C, (m.p. at ambient pressure)
+high_t_bound = 373.15  # 100 deg C, (b.p. at ambient pressure)
 
 
-def water_self_diffusion_coefficient(T=298.15, units=None, warn=True,
+def water_self_diffusion_coefficient(T=None, units=None, warn=True,
                                      err_mult=None):
     """
     Temperature-dependent self-diffusion coefficient of water.
@@ -55,6 +55,8 @@ def water_self_diffusion_coefficient(T=298.15, units=None, warn=True,
         K = units.Kelvin
         m = units.meter
         s = units.second
+    if T is None:
+        T = 298.15*K
     _D0 = D0 * m**2 * s**-1
     _TS = TS * K
     if err_mult is not None:

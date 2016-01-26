@@ -10,7 +10,7 @@ except ImportError:
     _any = any
 
 
-def water_permittivity(T=298.15, P=1, units=None, U=None,
+def water_permittivity(T=None, P=None, units=None, U=None,
                        just_return_U=False, warn=True, exp=None):
     """
     Relative permittivity of water as function of temperature (K)
@@ -50,8 +50,12 @@ def water_permittivity(T=298.15, P=1, units=None, U=None,
         K = 1
         bar = 1
     else:
-        K = units.Kelvin
+        K = units.kelvin
         bar = units.bar
+    if T is None:
+        T = 298.15*K
+    if P is None:
+        P = 1*bar
     if U is None:
         U = (3.4279e2,
              -5.0866e-3 / K,
@@ -81,6 +85,7 @@ def water_permittivity(T=298.15, P=1, units=None, U=None,
     C = U[3] + U[4]/(U[5] + T)
     eps1000 = U[0]*exp(U[1]*T + U[2]*T**2)
     return eps1000 + C*ln((B+P)/(B + 1000.0*bar))
+
 
 # generated at doi2bib.org:
 bibtex = """

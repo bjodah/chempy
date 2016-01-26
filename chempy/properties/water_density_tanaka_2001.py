@@ -8,7 +8,7 @@ except ImportError:
     _any = any
 
 
-def water_density(T=298.15, T0=None, units=None, a=None,
+def water_density(T=None, T0=None, units=None, a=None,
                   just_return_a=False, warn=True):
     """
     Density of water (kg/m3) as function of temperature (K)
@@ -20,7 +20,7 @@ def water_density(T=298.15, T0=None, units=None, a=None,
     T: float
         Temperature (in Kelvin) (default: 298.15)
     T0: float
-        Value of T for freezing point of water (default: 273.15)
+        Value of T for 0 degree Celsius (default: 273.15)
     units: object (optional)
         object with attributes: Kelvin, meter, kilogram
     a: array_like (optional)
@@ -56,17 +56,19 @@ def water_density(T=298.15, T0=None, units=None, a=None,
         K = units.Kelvin
         m = units.meter
         kg = units.kilogram
+    if T is None:
+        T = 298.15*K
     m3 = m**3
     if a is None:
         a = (-3.983035*K,  # C
              301.797*K,  # C
              522528.9*K*K,  # C**2
              69.34881*K,  # C
-             999.974950*kg/m3)  # kg / m**3
+             999.974950*kg/m3)
     if just_return_a:
         return a
     if T0 is None:
-        T0 = 273.15*K  # K
+        T0 = 273.15*K
     t = T - T0
     if warn and (_any(t < 0*K) or _any(t > 40*K)):
         warnings.warn("Temperature is outside range (0-40 degC)")

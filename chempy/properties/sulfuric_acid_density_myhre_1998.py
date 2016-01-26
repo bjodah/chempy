@@ -17,8 +17,7 @@ _data = np.array([[999.8426, 0.03345402, -0.005691304, 0, 0],
                   [576428.8, 0, 0, 0, 0]])
 
 
-def sulfuric_acid_density(w, T=None, T0=None, units=None, a=None,
-                          just_return_a=False, warn=True):
+def sulfuric_acid_density(w, T=None, T0=None, units=None, warn=True):
     """
     Density of sulfuric acid (kg/m³) as function of temperature (K)
     and mass fraction acid (w).
@@ -30,7 +29,7 @@ def sulfuric_acid_density(w, T=None, T0=None, units=None, a=None,
     T: float
         Temperature (in Kelvin) (273 <= T <= 323) (default: 298.15)
     T0: float
-        Value of T for freezing point of water (default: 273.15)
+        Value of T for 0 degree Celsius (default: 273.15)
     units: object (optional)
         object with attributes: kelvin, meter, kilogram
     warn: bool (default: True)
@@ -65,7 +64,7 @@ def sulfuric_acid_density(w, T=None, T0=None, units=None, a=None,
         T = 298.15*K
     m3 = m**3
     if T0 is None:
-        T0 = 273.15*K  # K
+        T0 = 273.15*K
     t = T - T0
     if warn:
         if np.any(t < 0*K) or np.any(t > 50*K):
