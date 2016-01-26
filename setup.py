@@ -3,7 +3,7 @@
 
 import os
 import shutil
-from distutils.core import setup
+from setuptools import setup
 
 pkg_name = "chempy"
 

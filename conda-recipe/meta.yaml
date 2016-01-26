@@ -1,6 +1,6 @@
 package:
     name: chempy
-    version: 0.2.0.dev0
+    version: 0.3.0.git
 
 source:
     path: ../
