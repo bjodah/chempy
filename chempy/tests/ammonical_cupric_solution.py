@@ -3,30 +3,32 @@
 from __future__ import (absolute_import, division, print_function)
 
 from chempy.chemistry import Solute, Equilibrium
-from chempy.equilibria import EqSystemLog
+from chempy.equilibria import EqSystem
 import periodictable
 
 
 def get_ammonical_cupric_eqsys():
-    substances = (Hp, OHm, NH4p, NH3, H2O, Cupp, CuNH31pp, CuNH32pp, CuNH33pp,
-                  CuNH34pp, CuNH35pp, Cu2OH2pp, CuOH3m, CuOH4mm, CuOH2) = [
-                      Solute(n, latex_name=l, formula=periodictable.formula(n))
-                      for n, l in [
-                              ('H{+}', 'H^+'), ('HO{-}', 'OH^-'),
-                              ('NH3 + H{+}', 'NH_4^+'),
-                              ('NH3', 'NH_3'), ('H2O', 'H_2O'),
-                              ('Cu{2+}', 'Cu^{2+}'),
-                              ('Cu{2+}NH3', 'Cu(NH_3)^{2+}'),
-                              ('Cu{2+}(NH3)2', 'Cu(NH_3)_2^{2+}'),
-                              ('Cu{2+}(NH3)3', 'Cu(NH_3)_3^{2+}'),
-                              ('Cu{2+}(NH3)4', 'Cu(NH_3)_4^{2+}'),
-                              ('Cu{2+}(NH3)5', 'Cu(NH_3)_5^{2+}'),
-                              ('2Cu{2+} + 2HO{-}', 'Cu_2(OH)_2^{2+}'),
-                              ('Cu{2+} + 3HO{-}', 'Cu(OH)_3^-'),
-                              ('Cu{2+} + 4HO{-}', 'Cu(OH)_4^{2-}'),
-                              ('Cu{2+} + 2HO{-}', 'Cu(OH_2)(s)'),
-                      ]]
-    CuOH2.solid = True
+    substances = [
+        Solute(n, latex_name=l, formula=periodictable.formula(n))
+        for n, l in [
+                ('H{+}', 'H^+'), ('HO{-}', 'OH^-'),
+                ('NH3 + H{+}', 'NH_4^+'),
+                ('NH3', 'NH_3'), ('H2O', 'H_2O'),
+                ('Cu{2+}', 'Cu^{2+}'),
+                ('Cu{2+}NH3', 'Cu(NH_3)^{2+}'),
+                ('Cu{2+}(NH3)2', 'Cu(NH_3)_2^{2+}'),
+                ('Cu{2+}(NH3)3', 'Cu(NH_3)_3^{2+}'),
+                ('Cu{2+}(NH3)4', 'Cu(NH_3)_4^{2+}'),
+                ('Cu{2+}(NH3)5', 'Cu(NH_3)_5^{2+}'),
+                ('2Cu{2+} + 2HO{-}', 'Cu_2(OH)_2^{2+}'),
+                ('Cu{2+} + 3HO{-}', 'Cu(OH)_3^-'),
+                ('Cu{2+} + 4HO{-}', 'Cu(OH)_4^{2-}'),
+                ('Cu{2+} + 2HO{-}', 'Cu(OH_2)(s)'),
+        ]]
+    (Hp, OHm, NH4p, NH3, H2O, Cupp, CuNH31pp, CuNH32pp,
+     CuNH33pp, CuNH34pp, CuNH35pp, Cu2OH2pp, CuOH3m,
+     CuOH4mm, CuOH2) = [s.name for s in substances]
+    substances[-1].precipitate = True
     init_conc = {Hp: 1e-7, OHm: 1e-7, NH4p: 0, NH3: 1.0, Cupp: 1e-2,
                  CuNH31pp: 0, CuNH32pp: 0, CuNH33pp: 0, CuNH34pp: 0,
                  CuNH35pp: 0, H2O: 55.5, Cu2OH2pp: 0, CuOH2: 0, CuOH3m: 0,
@@ -51,5 +53,5 @@ def get_ammonical_cupric_eqsys():
     skip_subs, skip_eq = (1, 3)
     simpl_subs = substances[:-skip_subs]
     simpl_eq = equilibria[:-skip_eq] + new_eqs
-    simpl_c0 = {k: init_conc[k] for k in simpl_subs}
-    return EqSystemLog(simpl_eq, simpl_subs), simpl_c0
+    simpl_c0 = {k.name: init_conc[k.name] for k in substances[:-skip_subs]}
+    return EqSystem(simpl_eq, simpl_subs), simpl_c0

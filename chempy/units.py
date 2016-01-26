@@ -8,9 +8,12 @@ import numpy as np
 try:
     import quantities as pq
 except ImportError:
-    default_units = None
+    UncertainQuantity = None
     default_constants = None
+    default_units = None
+    SI_base_registry = None
 else:
+    UncertainQuantity = pq.UncertainQuantity
     # Let us extend the underlying pq namespace with some common units in
     # chemistry
     default_constants = pq.constants
@@ -24,8 +27,6 @@ else:
             if attr.startswith('_NameSpace_'):
                 return self.__dict__[attr]
             else:
-                print(self._NameSpace_attr_store.keys())
-                print(attr in self._NameSpace_attr_store)
                 try:
                     return self._NameSpace_attr_store[attr]
                 except KeyError:
@@ -40,30 +41,37 @@ else:
     default_units = NameSpace(pq)
     default_units.decimetre = pq.UnitQuantity(
         'decimetre',  default_units.m / 10.0, u_symbol='dm')
-    print(default_units.__dict__['_NameSpace_attr_store'])
-    print(default_units.decimetre)
-    default_units.molar = pq.UnitQuantity(
-        'molar',  default_units.mole / default_units.decimetre ** 3,
-        u_symbol='M')
+    if not hasattr(default_units, 'molar'):
+        default_units.molar = pq.UnitQuantity(
+            'M',  default_units.mole / default_units.decimetre ** 3,
+            u_symbol='M')
     default_units.per100eV = pq.UnitQuantity(
         'per_100_eV',
         1/(100*default_units.eV*default_constants.Avogadro_constant),
         u_symbol='(100eV)**-1')
     default_units.micromole = pq.UnitQuantity(
         'micromole',  pq.mole/1e6,  u_symbol=u'μmol')
+    default_units.kilojoule = pq.UnitQuantity(
+        'kilojoule',  1e3*pq.joule,  u_symbol='kJ')
+    default_units.perMolar_perSecond = 1/default_units.molar/pq.s
+    default_units.per100eV = pq.UnitQuantity(
+        'per_100_eV', 1/(100*pq.eV*pq.constants.Avogadro_constant),
+        u_symbol='(100eV)**-1')
+    default_units.umol = pq.UnitQuantity('micromole',  pq.mole/1e6,
+                                         u_symbol=u'μmol')
+    default_units.umol_per_J = default_units.umol / pq.joule
 
+    # unit registry data and logic:
 
-# unit registry data and logic:
-
-SI_base_registry = {
-    'length': default_units.metre,
-    'mass': default_units.kilogram,
-    'time': default_units.second,
-    'current': default_units.ampere,
-    'temperature': default_units.kelvin,
-    'luminous_intensity': default_units.candela,
-    'amount': default_units.mole
-}
+    SI_base_registry = {
+        'length': default_units.metre,
+        'mass': default_units.kilogram,
+        'time': default_units.second,
+        'current': default_units.ampere,
+        'temperature': default_units.kelvin,
+        'luminous_intensity': default_units.candela,
+        'amount': default_units.mole
+    }
 
 
 def get_derived_unit(registry, key):
@@ -156,6 +164,11 @@ def to_unitless(value, new_unit=None):
         new_unit = pq.dimensionless
     if isinstance(value, (list, tuple)):
         return np.array([to_unitless(elem, new_unit) for elem in value])
+    if isinstance(value, dict):
+        new_value = value.copy()
+        for k in new_value:
+            new_value[k] = to_unitless(new_value[k], new_unit)
+        return new_value
     try:
         result = (value*pq.dimensionless/new_unit).rescale(pq.dimensionless)
         if result.ndim == 0:

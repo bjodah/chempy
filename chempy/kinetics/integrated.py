@@ -1,8 +1,11 @@
 from __future__ import division
 
+# Add documentation
+# Rename esoteric parameter names
 
-def dimerization_irrev(t, kf, P0, t0, initial_C):
-    pass
+
+def dimerization_irrev(t, kf, initial_C, P0=1, t0=0):
+    return 1/(1/initial_C + kf*(t-t0))
 
 
 def pseudo_irrev(t, kf, P0, t0, excess_C, limiting_C, eps_l, exp=None):
