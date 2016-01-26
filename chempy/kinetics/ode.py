@@ -6,7 +6,8 @@ from chempy.units import get_derived_unit, to_unitless
 
 def law_of_mass_action_rates(y, rsys, k=None, state=None):
     def _eval_k(_k):
-        return _k(state) if callable(_k) else _k
+        is_func = callable(_k) and not _k.__class__.__name__ == 'Symbol'
+        return _k(state) if is_func else _k
 
     for rxn_idx, rxn in enumerate(rsys.rxns):
         rate = 1
