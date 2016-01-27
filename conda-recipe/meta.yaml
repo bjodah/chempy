@@ -20,7 +20,6 @@ requirements:
         - periodictable
         - quantities
         - pyneqsys
-        - symengine
 
 test:
     imports:
