@@ -20,13 +20,14 @@ requirements:
         - periodictable
         - quantities
         - pyneqsys
-        - symengine
 
 test:
     imports:
         - chempy
     requires:
         - pytest
+    commands:
+        - python -m pytest --pyargs chempy
 
 about:
     home: https://github.com/bjodah/chempy
