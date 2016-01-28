@@ -39,7 +39,8 @@ def elements(formula):
 
 
 class Substance(object):
-    """
+    """ Class representing a chemical substance
+
     Parameters
     ----------
     name: str
@@ -54,7 +55,33 @@ class Substance(object):
         free form dictionary. Could be simple such as ``{'mp': 0, 'bp': 100}``
         or considerably more involved, e.g.: ``{'diffusion_coefficient': {
             'water': lambda T: 2.1*m**2/s/K*(T - 273.15*K)}}``
+
+    Attributes
+    ----------
+    mass
+        maps to other_properties, and when unavailable looks for formula.mass
+
+    Examples
+    --------
+    >>> ammonium = Substance('NH4+', 1, 'NH_4^+', composition={14:1, 1: 4},
+    ...     other_properties={'mass': 18.0385, 'pKa': 9.24})
+    >>> ammonium.name
+    'NH4+'
+    >>> ammonium.composition  # note that charge was inserted as composition[0]
+    {0: 1, 1: 4, 14: 1}
+    >>> ammonium.other_properties['mass']
+    18.0385
+    >>> ammonium.other_properties['pKa']
+    9.24
+    >>> ammonium.mass  # mass is a special case (also attribute)
+    18.0385
+    >>> ammonium.pKa
+    Traceback (most recent call last):
+        ...
+    AttributeError: 'Substance' object has no attribute 'pKa'
+
     """
+
     attrs = ('name', 'mass', 'latex_name', 'formula', 'composition',
              'other_properties')
 
@@ -65,9 +92,16 @@ class Substance(object):
     @property
     def mass(self):
         try:
-            return self.formula.mass
-        except:
-            return None  # we could use atomic masses here
+            return self.other_properties['mass']
+        except KeyError:
+            try:
+                return self.formula.mass
+            except AttributeError:
+                return None  # we could use atomic masses here
+
+    @mass.setter
+    def mass(self, value):
+        self.other_properties['mass'] = value
 
     def __init__(self, name=None, charge=None, latex_name=None, formula=None,
                  composition=None, other_properties=None):

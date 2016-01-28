@@ -2,6 +2,7 @@
 from __future__ import (absolute_import, division, print_function)
 
 import math
+from operator import attrgetter
 
 from ..units import default_units
 from ..chemistry import (
@@ -15,6 +16,16 @@ def test_Substance():
     assert s.composition == {0: 1, 1: 1}
     assert s.charge == 1
     assert abs(s.mass - 1.008) < 1e-3
+
+
+def test_Substance__periodictable():
+    import periodictable
+    H2O = Substance(name='H2O',  charge=0, formula=periodictable.formula('H2O'),
+                    latex_name=r'$\mathrm{H_{2}O}$',
+                    other_properties={'pKa': 14})
+    OH_m = Substance(name='OH-',  charge=-1, formula=periodictable.formula('OH'),
+                     latex_name=r'$\mathrm{OH^{-}}$')
+    assert sorted([OH_m, H2O], key=attrgetter('name')) == [H2O, OH_m]
 
 
 def test_Solute():
