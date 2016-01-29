@@ -82,7 +82,7 @@ class Substance(object):
 
     """
 
-    attrs = ('name', 'mass', 'latex_name', 'formula', 'composition',
+    attrs = ('name', 'latex_name', 'formula', 'composition',
              'other_properties')
 
     @property
@@ -98,10 +98,6 @@ class Substance(object):
                 return self.formula.mass
             except AttributeError:
                 return None  # we could use atomic masses here
-
-    @mass.setter
-    def mass(self, value):
-        self.other_properties['mass'] = value
 
     def __init__(self, name=None, charge=None, latex_name=None, formula=None,
                  composition=None, other_properties=None):
@@ -374,7 +370,8 @@ class ArrheniusRate(defaultnamedtuple('ArrheniusRate', 'A Ea ref', [None])):
 
     def equation_as_string(self, precision, tex=False):
         if tex:
-            return r"{}\exp \left(\frac{{{}}}{{RT}} \right)".format(*self.format(precision, tex))
+            return r"{}\exp \left(\frac{{{}}}{{RT}} \right)".format(
+                *self.format(precision, tex))
         else:
             return "{}*exp({}/(R*T))".format(*self.format(precision, tex))
 
@@ -532,8 +529,11 @@ class ReactionSystem(object):
             try:
                 self.substances = OrderedDict(substances)
             except:
-                self.substances = OrderedDict([(s.name, s) for
-                                               s in substances])
+                if isinstance(substances, str):
+                    self.substances = OrderedDict([(s, Substance(s)) for s in substances])
+                else:
+                    self.substances = OrderedDict([
+                        (s.name, s) for s in substances])
         self._sanity_check()
         self.name = name
 
