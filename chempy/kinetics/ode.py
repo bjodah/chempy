@@ -41,11 +41,12 @@ class Always(object):
 
 def get_odesys(rsys, include_params=False, SymbolicSys=None,
                unit_registry=None, output_conc_unit=None,
-               output_time_unit=None, state=None):
+               output_time_unit=None, state=None, **kwargs):
     if SymbolicSys is None:
         from pyodesys.symbolic import SymbolicSys
 
-    kwargs = {'names': list(rsys.substances.keys())}
+    if 'names' not in kwargs:
+        kwargs['names'] = list(rsys.substances.keys())
 
     if unit_registry is not None:
         # We need to make rsys_params unit less and create
