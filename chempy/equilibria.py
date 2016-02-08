@@ -174,10 +174,15 @@ class NumSysLin(_NumSys):
         B, comp_nrs = self.eqsys.composition_balance_vectors()
         f_preserv = linear_exprs(B, yvec, mat_dot_vec(B, init_concs),
                                  rref=self.rref_preserv)
-        # import sympy as sp
-        # f3 = [sp.Piecewise((yi**2, yi < 0), (0, True)) for yi in yvec]
-        # f3 = [sp.ITE(yi < 0, yi**2, 0) for yi in yvec]
-        return f_equil + f_preserv  # + f3
+        return f_equil + f_preserv
+
+
+class _NumSysLinNegPenalty(NumSysLin):
+
+    def f(self, yvec, params):
+        import sympy as sp
+        f_penalty = [sp.Piecewise((yi**2, yi < 0), (0, True)) for yi in yvec]
+        return super(_NumSysLinNegPenalty, self).f(yvec, params) + f_penalty
 
 
 class NumSysLinRel(NumSysLin):
@@ -201,7 +206,7 @@ class NumSysLinRel(NumSysLin):
 
 class NumSysSquare(NumSysLin):
 
-    small = 1e-40
+    small = 1e-35
 
     def pre_processor(self, x, params):
         return (np.sqrt(np.abs(x)), params)
@@ -254,7 +259,6 @@ class NumSysLog(_NumSys):
     def internal_x0_cb(self, init_concs, params):
         # return [1]*len(init_concs)
         return [0.1]*len(init_concs)
-        # np.log(np.abs(init_concs))/10 # [0]*len(init_concs)
 
     def f(self, yvec, params):
         from pyneqsys.symbolic import linear_exprs
@@ -546,10 +550,11 @@ class EqSystem(ReactionSystem):
                 plot_kwargs['ax'] = self._get_default_plot_ax()
 
         init_concs = self.as_per_substance_array(init_concs)
-        neqsys = self.get_neqsys(neqsys_type, init_concs, NumSys=NumSys,
-                                 rref_equil=kwargs.pop('rref_equil', False),
-                                 rref_preserv=kwargs.pop('rref_preserv', False),
-                                 precipitates=kwargs.pop('precipitates', None))
+        neqsys = self.get_neqsys(
+            neqsys_type, init_concs, NumSys=NumSys,
+            rref_equil=kwargs.pop('rref_equil', False),
+            rref_preserv=kwargs.pop('rref_preserv', False),
+            precipitates=kwargs.pop('precipitates', None))
         if x0 is None:
             x0 = init_concs
 

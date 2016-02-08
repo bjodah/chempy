@@ -1,27 +1,11 @@
 build:
-  image: bjodah/bjodahimg:latest
+  image: bjodah/bjodahimg:v1.1
   commands:
-    - if bash -c '[[ "$DRONE_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]'; then export CHEMPY_RELEASE_VERSION=$DRONE_BRANCH; echo ${CHEMPY_RELEASE_VERSION} | tail -c +2 > __conda_version__.txt; fi
-    - pip install --user -r requirements.txt
-    - pip3 install --user -r requirements.txt
-    - PYTHONPATH=$(pwd) ./scripts/run_tests.sh --cov chempy --cov-report html
-    - python2 setup.py sdist
-    - pip2 install dist/*.tar.gz
-    - pip3 install dist/*.tar.gz
-    - pip2 install --user -r optional_requirements.txt
-    - pip3 install --user -r optional_requirements.txt
+    - ./scripts/ci.sh chempy
     - (cd examples/; ipython2 nbconvert --to=html --debug --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
     - (cd examples/; ../scripts/render_index.sh *.html)
     - ./scripts/generate_docs.sh
-    - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
-    - touch doc/_build/html/.nojekyll
-    - cp LICENSE doc/_build/html/.nojekyll
-    - git config --global user.name "drone"
-    - git config --global user.email "drone@nohost.com"
-    - mkdir -p deploy/public_html/branches/$$BRANCH deploy/script_queue
-    - cp -r dist/* htmlcov/ examples/ doc/_build/html/ deploy/public_html/branches/$$BRANCH/
-    - if bash -c '[[ "$DRONE_BRANCH" == "master" ]]'; then echo 'source /etc/profile; cd ~/benchmarks/; asv run -k -e >asv-run.log; asv publish>asv-publish.log'>deploy/script_queue/run_benchmark.sh; chmod +x deploy/script_queue/run_benchmark.sh; fi
-    - if bash -c '[[ "$DRONE_BRANCH" == "master" ]]'; then cp -r benchmarks/ deploy/; mkdir -p deploy/gh-pages; ./scripts/dir_to_branch.sh doc/_build/html bjodah chempy gh-pages deploy/gh-pages; fi
+    - ./scripts/prepare_deploy.sh
 
 deploy:
 

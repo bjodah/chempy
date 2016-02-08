@@ -8,8 +8,14 @@ if [[ $1 != v* ]]; then
     exit 1
 fi
 ./scripts/check_clean_repo_on_master.sh
+
 echo ${1#v}>__conda_version__.txt
-trap "rm __conda_version__.txt" EXIT SIGINT SIGTERM
-for CPY in {27,34}; do
-    CONDA_PY=$CPY conda build --no-test conda-recipe
-done
+cleanup() {
+    rm __conda_version__.txt
+}
+trap cleanup INT TERM
+
+CONDA_PY=34 conda build conda-recipe
+CONDA_PY=27 conda build --no-test conda-recipe
+
+cleanup

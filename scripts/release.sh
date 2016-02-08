@@ -21,6 +21,15 @@ PATH=$2:$PATH ./scripts/build_conda_recipe.sh $1
 git tag -a $1 -m $1
 git push
 git push --tags
-twine upload dist/${PKG}-${1#v}.tar.gz
+VERSION=${1#v}
+twine upload dist/${PKG}-$VERSION.tar.gz
+MD5=$(md5sum dist/${PKG}-${1#v}.tar.gz | cut -f1 -d' ')
+cp -r conda-recipe/ dist/conda-recipe-${1#v}
+sed -i -E -e "s/version:(.+)/version: $VERSION/" -e "s/path:(.+)/fn: $PKG-$VERSION.tar.gz\n    url: https:\/\/pypi.python.org\/packages\/source\/${PKG:0:1}\/$PKG\/$PKG-$VERSION.tar.gz#md5=$MD5\n    md5: $MD5/" dist/conda-recipe-${1#v}/meta.yaml
 env ${PKG_UPPER}_RELEASE_VERSION=$1 python setup.py upload_sphinx
-echo "Remember to bump version (and commit and push)!"
+
+# Specific for this project:
+scp -r dist/conda-recipe-${1#v}/ $PKG@hera:~
+ssh $PKG@hera "conda-build conda-recipe-${1#v}/"
+
+echo "Remember to build conda-recipe, bump version (and commit and push)!"
