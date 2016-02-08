@@ -412,11 +412,6 @@ class EqSystem(ReactionSystem):
                                        rref_preserv=False, NumSys=NumSysLin):
         from pyneqsys import ConditionalNeqSys, ChainedNeqSys
 
-        try:
-            NumSys[0]
-        except TypeError:
-            NumSys = (NumSys,)
-
         def factory(conds):
             return ChainedNeqSys([self._SymbolicSys_from_NumSys(
                 NS, conds, rref_equil, rref_preserv) for NS in NumSys])
@@ -428,13 +423,8 @@ class EqSystem(ReactionSystem):
 
     def get_neqsys_chained_conditional(self, init_concs, rref_equil=False,
                                        rref_preserv=False,
-                                       NumSys=NumSysLin, **kwargs):
+                                       NumSys=NumSysLin):
         from pyneqsys import ConditionalNeqSys, ChainedNeqSys
-
-        try:
-            NumSys[0]
-        except TypeError:
-            NumSys = (NumSys,)
 
         def mk_factory(NS):
             def factory(conds):
@@ -450,8 +440,31 @@ class EqSystem(ReactionSystem):
                 mk_factory(NS)
             ) for NS in NumSys])
 
-    # get_neqsys = get_neqsys_conditional_chained  #
-    get_neqsys = get_neqsys_chained_conditional  # fails more often
+    def get_neqsys_static_conditions(self, init_concs, rref_equil=False,
+                                     rref_preserv=False,
+                                     NumSys=NumSysLin, precipitates=None):
+        if precipitates is None:
+            precipitates = (False,)*len(self.precipitate_rxn_idxs)
+        from pyneqsys import ChainedNeqSys
+        return ChainedNeqSys([self._SymbolicSys_from_NumSys(
+            NS, precipitates, rref_equil, rref_preserv) for NS in NumSys])
+
+    def get_neqsys(self, neqsys_type, init_concs, NumSys=NumSysLin, **kwargs):
+        new_kw = {'rref_equil': False, 'rref_preserv': False}
+        if neqsys_type == 'static_conditions':
+            new_kw['precipitates'] = None
+        for k in new_kw:
+            if k in kwargs:
+                new_kw[k] = kwargs.pop(k)
+
+        try:
+            NumSys[0]
+        except TypeError:
+            new_kw['NumSys'] = (NumSys,)
+        else:
+            new_kw['NumSys'] = NumSys
+
+        return getattr(self, 'get_neqsys_' + neqsys_type)(init_concs, **new_kw)
 
     def non_precip_rids(self, precipitates):
         return [idx for idx, precip in zip(
@@ -470,17 +483,16 @@ class EqSystem(ReactionSystem):
         return True
 
     def root(self, init_concs, x0=None, neqsys=None, NumSys=NumSysLin,
-             **kwargs):
+             neqsys_type='chained_conditional', **kwargs):
         init_concs = self.as_per_substance_array(init_concs)
         params = np.concatenate((init_concs, [float(elem) for elem
                                               in self.eq_constants()]))
         if neqsys is None:
             neqsys = self.get_neqsys(
-                init_concs,
+                neqsys_type, init_concs, NumSys=NumSys,
                 rref_equil=kwargs.pop('rref_equil', False),
                 rref_preserv=kwargs.pop('rref_preserv', False),
-                NumSys=NumSys
-            )
+                precipitates=kwargs.pop('precipitates', None))
         if x0 is None:
             x0 = init_concs
         x, sol = neqsys.solve(x0, params, **kwargs)
@@ -505,8 +517,11 @@ class EqSystem(ReactionSystem):
             return [s.name for s in self.substances.values()]
 
     def roots(self, init_concs, varied_data, varied, x0=None,
-              NumSys=NumSysLin, plot_kwargs=None, **kwargs):
+              NumSys=NumSysLin, plot_kwargs=None,
+              neqsys_type='chained_conditional', **kwargs):
         """
+        Parameters
+        ----------
         init_concs: array or dict
         varied_data: array
         varied_idx: int or str
@@ -518,6 +533,8 @@ class EqSystem(ReactionSystem):
             are intercepted here:
                 latex_names: bool (default: False)
                 conc_unit_str: str (default: 'M')
+        neqsys_type: str
+            what method to use for NeqSys construction (get_neqsys_*)
         \*\*kwargs:
             kwargs passed on to py:meth:`pyneqsys.NeqSys.solve_series`
         """
@@ -528,23 +545,20 @@ class EqSystem(ReactionSystem):
             if 'ax' not in plot_kwargs:
                 plot_kwargs['ax'] = self._get_default_plot_ax()
 
-        new_kwargs = kwargs.copy()
         init_concs = self.as_per_substance_array(init_concs)
-        neqsys = self.get_neqsys(
-            init_concs,
-            rref_equil=new_kwargs.pop('rref_equil', False),
-            rref_preserv=new_kwargs.pop('rref_preserv', False),
-            NumSys=NumSys
-        )
+        neqsys = self.get_neqsys(neqsys_type, init_concs, NumSys=NumSys,
+                                 rref_equil=kwargs.pop('rref_equil', False),
+                                 rref_preserv=kwargs.pop('rref_preserv', False),
+                                 precipitates=kwargs.pop('precipitates', None))
         if x0 is None:
             x0 = init_concs
 
         if _plot:
             cb = neqsys.solve_and_plot_series
-            if 'plot_kwargs' not in new_kwargs:
-                new_kwargs['plot_kwargs'] = {}
-            if 'labels' not in new_kwargs['plot_kwargs']:
-                new_kwargs['plot_kwargs']['labels'] = (
+            if 'plot_kwargs' not in kwargs:
+                kwargs['plot_kwargs'] = {}
+            if 'labels' not in kwargs['plot_kwargs']:
+                kwargs['plot_kwargs']['labels'] = (
                     self.substance_labels(latex_names))
         else:
             cb = neqsys.solve_series
@@ -552,7 +566,7 @@ class EqSystem(ReactionSystem):
         params = np.concatenate((init_concs, self.eq_constants()))
         xvecs, info_dicts = cb(
             x0, params, varied_data, self.as_substance_index(varied),
-            propagate=False, **new_kwargs)
+            propagate=False, **kwargs)
         sanity = [self._result_is_sane(init_concs, x) for x in xvecs]
 
         if _plot:

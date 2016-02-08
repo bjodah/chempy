@@ -1,3 +1,7 @@
+v0.2.1
+======
+- EqSystem.root and EqSystem.roots got new kwarg: neqsys_type
+
 v0.2.0
 ======
 - Signature of chempy.equilibria.roots, changed.
