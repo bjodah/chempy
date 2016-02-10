@@ -11,6 +11,7 @@ import numpy as np
 
 from .arrhenius import arrhenius_equation
 from .util.arithmeticdict import ArithmeticDict
+from .util.parsing import to_composition, mass_from_composition
 from .util.pyutil import defaultnamedtuple
 from .units import to_unitless, default_constants, default_units
 
@@ -47,7 +48,9 @@ class Substance(object):
     charge: int (optional, default: None)
         will be stored in composition[0].
     latex_name: str
-    formula: carries dict attribute "atoms"
+    formula: str (optional, default: None)
+        e.g. 'Na/+', 'H2O', 'Fe(CN)6/4-' used when charge and composition are
+        ``None``.
     composition: dict or None (default)
         dict (int -> number) e.g. {atomic number: count}, zero has special
         meaning (net charge)
@@ -82,8 +85,7 @@ class Substance(object):
 
     """
 
-    attrs = ('name', 'latex_name', 'formula', 'composition',
-             'other_properties')
+    attrs = ('name', 'latex_name', 'composition', 'other_properties')
 
     @property
     def charge(self):
@@ -94,38 +96,28 @@ class Substance(object):
         try:
             return self.other_properties['mass']
         except KeyError:
-            try:
-                return self.formula.mass
-            except AttributeError:
-                return None  # we could use atomic masses here
+            if self.composition is not None:
+                return mass_from_composition(self.composition)
 
     def __init__(self, name=None, charge=None, latex_name=None, formula=None,
                  composition=None, other_properties=None):
         self.name = name
         self.latex_name = latex_name
-
-        if isinstance(formula, str):
-            import periodictable
-            formula = periodictable.formula(formula)
-        self.formula = formula
-
-        if composition is None and formula is not None:
-            composition = {
-                k.number: v for k, v in elements(formula).items()}
         self.composition = composition or {}
 
         if 0 in self.composition:
             if charge is not None:
                 raise KeyError("Cannot give both charge and composition[0]")
         else:
-            if charge is None:
-                try:
-                    charge = self.formula.charge
-                except AttributeError:
-                    pass
             if charge is not None:
                 self.composition[0] = charge
         self.other_properties = other_properties or {}
+
+    @classmethod
+    def from_formula(cls, formula, other_properties):
+        return cls(formula, latex_name=to_latex(formula),
+                   composition=to_composition(formula),
+                   other_properties=other_properties)
 
     def __repr__(self):
         kw = ['name=' + self.name + ', ...']  # Too verbose to print all

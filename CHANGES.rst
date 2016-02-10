@@ -1,5 +1,7 @@
-v0.2.1
+v0.3.0
 ======
+- Signature of chempy.chemistry.Substance changed
+- New module chempy.util.parsing, (drop dependency on periodictable)
 - EqSystem.root and EqSystem.roots got new kwarg: neqsys_type
 
 v0.2.0

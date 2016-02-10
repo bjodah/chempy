@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
+Utility functions related to stoichiometry.
 """
+
 from __future__ import (absolute_import, division, print_function)
 
 import numpy as np
