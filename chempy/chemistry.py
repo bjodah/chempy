@@ -11,7 +11,7 @@ import numpy as np
 
 from .arrhenius import arrhenius_equation
 from .util.arithmeticdict import ArithmeticDict
-from .util.parsing import to_composition, mass_from_composition
+from .util.parsing import to_composition, mass_from_composition, to_latex
 from .util.pyutil import defaultnamedtuple
 from .units import to_unitless, default_constants, default_units
 
@@ -89,7 +89,7 @@ class Substance(object):
 
     @property
     def charge(self):
-        return self.composition[0]  # electron deficiency
+        return self.composition.get(0, 0)  # electron (net) deficiency
 
     @property
     def mass(self):
@@ -114,10 +114,10 @@ class Substance(object):
         self.other_properties = other_properties or {}
 
     @classmethod
-    def from_formula(cls, formula, other_properties):
+    def from_formula(cls, formula, **kwargs):
         return cls(formula, latex_name=to_latex(formula),
                    composition=to_composition(formula),
-                   other_properties=other_properties)
+                   **kwargs)
 
     def __repr__(self):
         kw = ['name=' + self.name + ', ...']  # Too verbose to print all
@@ -140,6 +140,12 @@ class Solute(Substance):
     def __init__(self, *args, **kwargs):
         self.precipitate = kwargs.pop('precipitate', False)
         super(self.__class__, self).__init__(*args, **kwargs)
+
+    @classmethod
+    def from_formula(cls, formula, **kwargs):
+        if formula.endswith('(s)'):
+            kwargs['precipitate'] = True
+        return super(Solute, cls).from_formula(formula, **kwargs)
 
 
 class Reaction(object):
@@ -499,6 +505,8 @@ class ReactionSystem(object):
          mapping str -> Substance instances
     name: string (optional)
          Name of ReactionSystem (e.g. model name / citation key)
+    check_balance: bool (default: None)
+        if None => True if all substances has composition attribute.
 
     Attributes
     ----------
@@ -513,7 +521,7 @@ class ReactionSystem(object):
 
     """
 
-    def __init__(self, rxns, substances, name=None):
+    def __init__(self, rxns, substances, name=None, check_balance=None):
         self.rxns = rxns
         if isinstance(substances, OrderedDict):
             self.substances = substances
@@ -528,6 +536,21 @@ class ReactionSystem(object):
                         (s.name, s) for s in substances])
         self._sanity_check()
         self.name = name
+        if check_balance is None:
+            for subst in self.substances.values():
+                if subst.composition is None:
+                    check_balance = False
+                    break
+            else:
+                check_balance = True
+        if check_balance:
+            self._balance_check()
+
+    def _balance_check(self):
+        for rxn in self.rxns:
+            for net in rxn.composition_violation(self.substances):
+                if net != 0:
+                    raise ValueError("Reaction not balanced: %s" % str(rxn))
 
     def _sanity_check(self):
         for rxn in self.rxns:

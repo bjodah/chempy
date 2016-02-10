@@ -201,17 +201,43 @@ def _get_charge(chgstr):
         raise ValueError("Invalid charge description (+ or - missing)")
 
 
-def _formula_to_parts(formula):
-    parts = formula.split('/')
+def _formula_to_parts(formula, prefixes, suffixes):
+    drop_pref, drop_suff = [], []
+    for ign in prefixes:
+        if formula.startswith(ign):
+            drop_pref.append(ign)
+            formula = formula[len(ign):]
+    for ign in suffixes:
+        if formula.endswith(ign):
+            drop_suff.append(ign)
+            formula = formula[:-len(ign)]
+    if '/' not in formula and (formula.endswith('+') or formula.endswith('-')):
+        parts = [formula[:-1], formula[-1:]]
+    else:
+        parts = formula.split('/')
+    if len(parts) == 1:
+        parts += [None]
 
     if '+' in parts[0] or '-' in parts[0]:
         raise ValueError("Charge needs to be separated with a /")
+    if parts[1] is not None:
+        wo_pm = parts[1].replace('+', '').replace('-', '')
+        if wo_pm != '' and not str.isdigit(wo_pm):
+            raise ValueError("Non-digits in charge specifier")
     if len(parts) > 2:
         raise ValueError("At most one '/' allowed in formula")
-    return parts
+    return parts + [tuple(drop_pref), tuple(drop_suff[::-1])]
 
 
-def to_composition(formula):
+def _parse_stoich(stoich):
+    if stoich == 'e':  # special case, the electron is not an element
+        return {}
+    return {symbols.index(k)+1: n for k, n in _parser.parseString(stoich)}
+
+
+def to_composition(formula,
+                   prefixes=('.',),
+                   suffixes=('(s)', '(l)', '(g)', '(aq)')):
     """ Parse composition of formula representing a chemical formula
 
     Composition is represented as a dict mapping int -> int (atomic
@@ -220,44 +246,69 @@ def to_composition(formula):
     Parameters
     ----------
     formula: str
-        Chemical formula, e.g. 'H2O', 'Fe/3+', 'Cl/-'
+        Chemical formula, e.g. 'H2O', 'Fe/3+', 'Cl-'
+    prefixes: tuple of strings
+        Prefixes to ignore, e.g. ('.', ':')
+    suffixes: tuple of strings
+        Suffixes to ignore, e.g. ('(g)', '(s)')
 
     Examples
     --------
-    >>> parse_formula('NH4/+'):
+    >>> to_composition('NH4/+')
     {0: 1, 1: 4, 7: 1}
+    >>> to_composition('.NHO-(aq)')
+    {0: -1, 1: 1, 7: 1, 8: 1}
     """
-    parts = _formula_to_parts(formula)
-    comp = {symbols.index(k)+1: n for k, n in _parser.parseString(parts[0])}
-    if len(parts) == 2:
+    parts = _formula_to_parts(formula, prefixes, suffixes)
+    comp = _parse_stoich(parts[0])
+    if parts[1] is not None:
         comp[0] = _get_charge(parts[1])
     return comp
 
 
-def to_latex(formula):
+def _subs(string, patterns):
+    for patt, repl in patterns:
+        string = string.replace(patt, repl)
+    return string
+
+
+def to_latex(formula,
+             prefixes=(('.', r'^\bullet '),),
+             suffixes=('(s)', '(l)', '(g)', '(aq)')):
     """ Convert formula string to latex representation
 
     Parameters
     ----------
     formula: str
-        Chemical formula, e.g. 'H2O', 'Fe/3+', 'Cl/-'
+        Chemical formula, e.g. 'H2O', 'Fe/3+', 'Cl-'
+    prefixes: iterable of length 2-tuples
+        Prefixes to keep (formated)
+    suffixes: tuple of strings
+        Suffixes to keep, e.g. ('(g)', '(s)')
 
     Examples
     --------
     >>> to_latex('NH4/+')
     NH_{4}^{+}
     >>> to_latex('Fe(CN)6/+2')
-    Fe(CN)_{6}^{2+}
+    'Fe(CN)_{6}^{2+}'
+    >>> to_latex('Fe(CN)6/+2(aq)')
+    'Fe(CN)_{6}^{2+}(aq)'
+    >>> to_latex('.NHO-(aq)')
+    '\\cdot NHO^{-}(aq)'
 
     """
-    parts = _formula_to_parts(formula)
+    parts = _formula_to_parts(formula, [x[0] for x in prefixes], suffixes)
 
     string = re.sub(r'([0-9]+)', r'_{\1}', parts[0])
-    if len(parts) == 2:
+    if parts[1] is not None:
         chg = _get_charge(parts[1])
         if chg < 0:
             token = '-' if chg == -1 else '%d-' % -chg
         if chg > 0:
             token = '+' if chg == 1 else '%d+' % chg
         string += '^{%s}' % token
-    return string
+    if len(parts) > 4:
+        raise ValueError("Incorrect formula")
+    pre_str = ''.join(map(lambda x: _subs(x, prefixes), parts[2]))
+    return pre_str + string + ''.join(parts[3])
