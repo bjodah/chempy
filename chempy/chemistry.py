@@ -5,12 +5,12 @@ from __future__ import division
 from itertools import chain
 from operator import itemgetter
 from collections import defaultdict, OrderedDict
-import warnings
 
 import numpy as np
 
 from .arrhenius import arrhenius_equation
 from .util.arithmeticdict import ArithmeticDict
+from .util.parsing import to_composition, mass_from_composition, to_latex
 from .util.pyutil import defaultnamedtuple
 from .units import to_unitless, default_constants, default_units
 
@@ -39,14 +39,17 @@ def elements(formula):
 
 
 class Substance(object):
-    """
+    """ Class representing a chemical substance
+
     Parameters
     ----------
     name: str
     charge: int (optional, default: None)
         will be stored in composition[0].
     latex_name: str
-    formula: carries dict attribute "atoms"
+    formula: str (optional, default: None)
+        e.g. 'Na/+', 'H2O', 'Fe(CN)6/4-' used when charge and composition are
+        ``None``.
     composition: dict or None (default)
         dict (int -> number) e.g. {atomic number: count}, zero has special
         meaning (net charge)
@@ -54,48 +57,66 @@ class Substance(object):
         free form dictionary. Could be simple such as ``{'mp': 0, 'bp': 100}``
         or considerably more involved, e.g.: ``{'diffusion_coefficient': {
             'water': lambda T: 2.1*m**2/s/K*(T - 273.15*K)}}``
+
+    Attributes
+    ----------
+    mass
+        maps to other_properties, and when unavailable looks for formula.mass
+
+    Examples
+    --------
+    >>> ammonium = Substance('NH4+', 1, 'NH_4^+', composition={14:1, 1: 4},
+    ...     other_properties={'mass': 18.0385, 'pKa': 9.24})
+    >>> ammonium.name
+    'NH4+'
+    >>> ammonium.composition  # note that charge was inserted as composition[0]
+    {0: 1, 1: 4, 14: 1}
+    >>> ammonium.other_properties['mass']
+    18.0385
+    >>> ammonium.other_properties['pKa']
+    9.24
+    >>> ammonium.mass  # mass is a special case (also attribute)
+    18.0385
+    >>> ammonium.pKa
+    Traceback (most recent call last):
+        ...
+    AttributeError: 'Substance' object has no attribute 'pKa'
+
     """
-    attrs = ('name', 'mass', 'latex_name', 'formula', 'composition',
-             'other_properties')
+
+    attrs = ('name', 'latex_name', 'composition', 'other_properties')
 
     @property
     def charge(self):
-        return self.composition[0]  # electron deficiency
+        return self.composition.get(0, 0)  # electron (net) deficiency
 
     @property
     def mass(self):
         try:
-            return self.formula.mass
-        except:
-            return None  # we could use atomic masses here
+            return self.other_properties['mass']
+        except KeyError:
+            if self.composition is not None:
+                return mass_from_composition(self.composition)
 
     def __init__(self, name=None, charge=None, latex_name=None, formula=None,
                  composition=None, other_properties=None):
         self.name = name
         self.latex_name = latex_name
-
-        if isinstance(formula, str):
-            import periodictable
-            formula = periodictable.formula(formula)
-        self.formula = formula
-
-        if composition is None and formula is not None:
-            composition = {
-                k.number: v for k, v in elements(formula).items()}
         self.composition = composition or {}
 
         if 0 in self.composition:
             if charge is not None:
                 raise KeyError("Cannot give both charge and composition[0]")
         else:
-            if charge is None:
-                try:
-                    charge = self.formula.charge
-                except AttributeError:
-                    pass
             if charge is not None:
                 self.composition[0] = charge
         self.other_properties = other_properties or {}
+
+    @classmethod
+    def from_formula(cls, formula, **kwargs):
+        return cls(formula, latex_name=to_latex(formula),
+                   composition=to_composition(formula),
+                   **kwargs)
 
     def __repr__(self):
         kw = ['name=' + self.name + ', ...']  # Too verbose to print all
@@ -118,6 +139,12 @@ class Solute(Substance):
     def __init__(self, *args, **kwargs):
         self.precipitate = kwargs.pop('precipitate', False)
         super(self.__class__, self).__init__(*args, **kwargs)
+
+    @classmethod
+    def from_formula(cls, formula, **kwargs):
+        if formula.endswith('(s)'):
+            kwargs['precipitate'] = True
+        return super(Solute, cls).from_formula(formula, **kwargs)
 
 
 class Reaction(object):
@@ -162,15 +189,10 @@ class Reaction(object):
     param_char = 'k'  # convention
 
     def __init__(self, reac, prod, param=None, inact_reac=None,
-                 inact_prod=None, name=None, k=None, ref=None,
+                 inact_prod=None, name=None, ref=None,
                  other_properties=None):
         self.reac = reac
         self.prod = prod
-        if k is not None:
-            if param is not None:
-                raise ValueError("Got both param and k")
-            param = k
-            warnings.warn("Use param instead", DeprecationWarning)
         self.param = param
         self.inact_reac = inact_reac or {}
         self.inact_prod = inact_prod or {}
@@ -340,7 +362,8 @@ class ArrheniusRate(defaultnamedtuple('ArrheniusRate', 'A Ea ref', [None])):
 
     def equation_as_string(self, precision, tex=False):
         if tex:
-            return r"{}\exp \left(\frac{{{}}}{{RT}} \right)".format(*self.format(precision, tex))
+            return r"{}\exp \left(\frac{{{}}}{{RT}} \right)".format(
+                *self.format(precision, tex))
         else:
             return "{}*exp({}/(R*T))".format(*self.format(precision, tex))
 
@@ -362,15 +385,13 @@ class Equilibrium(Reaction):
     See :py:class:`Reaction` for parameters
     """
 
-    str_arrow = '<->'
+    str_arrow = '='
     latex_arrow = r'\rightleftharpoons'
     param_char = 'K'  # convention
 
     def __init__(self, reac, prod, param, *args, **kwargs):
-        ref = kwargs.pop('ref', None)
-        if not all(arg is None for arg in args) or len(kwargs) > 0:
-            raise NotImplementedError("Inactive reac/prod not implemented")
-        return super(Equilibrium, self).__init__(reac, prod, param, ref=ref)
+        return super(Equilibrium, self).__init__(
+            reac, prod, param, *args, **kwargs)
 
     def as_reactions(self, state=None, kf=None, kb=None, units=None):
         """ Creates a pair of Reaction instances """
@@ -476,6 +497,8 @@ class ReactionSystem(object):
          mapping str -> Substance instances
     name: string (optional)
          Name of ReactionSystem (e.g. model name / citation key)
+    check_balance: bool (default: None)
+        if None => True if all substances has composition attribute.
 
     Attributes
     ----------
@@ -490,7 +513,7 @@ class ReactionSystem(object):
 
     """
 
-    def __init__(self, rxns, substances, name=None):
+    def __init__(self, rxns, substances, name=None, check_balance=None):
         self.rxns = rxns
         if isinstance(substances, OrderedDict):
             self.substances = substances
@@ -498,10 +521,29 @@ class ReactionSystem(object):
             try:
                 self.substances = OrderedDict(substances)
             except:
-                self.substances = OrderedDict([(s.name, s) for
-                                               s in substances])
+                if isinstance(substances, str):
+                    self.substances = OrderedDict([
+                        (s, Substance(s)) for s in substances])
+                else:
+                    self.substances = OrderedDict([
+                        (s.name, s) for s in substances])
         self._sanity_check()
         self.name = name
+        if check_balance is None:
+            for subst in self.substances.values():
+                if subst.composition is None:
+                    check_balance = False
+                    break
+            else:
+                check_balance = True
+        if check_balance:
+            self._balance_check()
+
+    def _balance_check(self):
+        for rxn in self.rxns:
+            for net in rxn.composition_violation(self.substances):
+                if net != 0:
+                    raise ValueError("Reaction not balanced: %s" % str(rxn))
 
     def _sanity_check(self):
         for rxn in self.rxns:

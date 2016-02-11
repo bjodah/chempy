@@ -8,7 +8,7 @@ from chempy.util.graph import rsys2dot, rsys2graph
 
 
 def _get_rsys():
-    r1 = Reaction({'A': 2}, {'B': 1}, k=3.0)
+    r1 = Reaction({'A': 2}, {'B': 1}, param=3.0)
     A = Substance('A', latex_name='\\boldsymbol{A}')
     B = Substance('B', latex_name='\\boldsymbol{B}')
     rsys = ReactionSystem([r1], [A, B])
@@ -35,6 +35,7 @@ def test_rsys2graph():
     try:
         rsys2graph(rsys, os.path.join(tempdir, 'out.png'))
         rsys2graph(rsys, os.path.join(tempdir, 'out.ps'))
-        rsys2graph(rsys, os.path.join(tempdir, 'out.tex'))
+        # rsys2graph(rsys, os.path.join(tempdir, 'out.tex'))
+        # https://github.com/kjellmf/dot2tex/issues/48
     finally:
         shutil.rmtree(tempdir)

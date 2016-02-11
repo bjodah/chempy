@@ -1,3 +1,11 @@
+v0.3.0
+======
+- Signature of chempy.chemistry.Substance changed
+- New module chempy.util.parsing, (drop dependency on periodictable)
+- EqSystem.root and EqSystem.roots got new kwarg: neqsys_type
+- chemistry.Equilibrium learned to handle inactive reactants/products
+- chemistry.Reaction dropped kwarg 'k' (deprecated since v0.2.0)
+
 v0.2.0
 ======
 - Signature of chempy.equilibria.roots, changed.

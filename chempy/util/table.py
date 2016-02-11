@@ -176,8 +176,8 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
     return lines
 
 
-def rsys2table(rsys, table_template=None,
-               table_template_dict=None, **kwargs):
+def rsys2table(rsys, table_template=None, table_template_dict=None,
+               param_name='Rate constant', **kwargs):
     r"""
     Renders user provided table_template with table_template_dict which
     also has 'body' entry generated from `rsys2tablines`.
@@ -190,6 +190,8 @@ def rsys2table(rsys, table_template=None,
     rsys: ReactionSystem
     table_template: string
     table_tempalte_dict: dict used to render table_template (excl. "body")
+    param_name: str
+        Column header for parameter column
     longtable: bool
         use longtable in defaults. (default: False)
     **kwargs:
@@ -202,7 +204,7 @@ def rsys2table(rsys, table_template=None,
             'longtable', False) else 'table',
         'alignment': 'llllSll' if siunitx else 'lllllll',
         'header': kwargs.get('coldelim', ' & ').join([
-            'Id.', 'Reactants', '', 'Products', '{Rate constant}',
+            'Id.', 'Reactants', '', 'Products', '{%s}' % param_name,
             'Unit', 'Ref'
         ]) + line_term,
         'short_cap': rsys.name,

@@ -4,27 +4,18 @@ from __future__ import (absolute_import, division, print_function)
 
 from chempy.chemistry import Solute, Equilibrium
 from chempy.equilibria import EqSystem
-import periodictable
 
 
 def get_ammonical_cupric_eqsys():
+    NH3_complexes = ['CuNH3/2+', 'Cu(NH3)2/2+', 'Cu(NH3)3/2+', 'Cu(NH3)4/2+',
+                     'Cu(NH3)5/2+']
+    OH_complexes = ['Cu2(OH)2/2+', 'Cu(OH)3-', 'Cu(OH)4/2-']
     substances = [
-        Solute(n, latex_name=l, formula=periodictable.formula(n))
-        for n, l in [
-                ('H{+}', 'H^+'), ('HO{-}', 'OH^-'),
-                ('NH3 + H{+}', 'NH_4^+'),
-                ('NH3', 'NH_3'), ('H2O', 'H_2O'),
-                ('Cu{2+}', 'Cu^{2+}'),
-                ('Cu{2+}NH3', 'Cu(NH_3)^{2+}'),
-                ('Cu{2+}(NH3)2', 'Cu(NH_3)_2^{2+}'),
-                ('Cu{2+}(NH3)3', 'Cu(NH_3)_3^{2+}'),
-                ('Cu{2+}(NH3)4', 'Cu(NH_3)_4^{2+}'),
-                ('Cu{2+}(NH3)5', 'Cu(NH_3)_5^{2+}'),
-                ('2Cu{2+} + 2HO{-}', 'Cu_2(OH)_2^{2+}'),
-                ('Cu{2+} + 3HO{-}', 'Cu(OH)_3^-'),
-                ('Cu{2+} + 4HO{-}', 'Cu(OH)_4^{2-}'),
-                ('Cu{2+} + 2HO{-}', 'Cu(OH_2)(s)'),
-        ]]
+        Solute.from_formula(n) for n in [
+            'H+', 'OH-', 'NH4+', 'NH3', 'H2O', 'Cu/2+'] +
+        NH3_complexes + OH_complexes + ['Cu(OH)2(s)']
+    ]
+
     (Hp, OHm, NH4p, NH3, H2O, Cupp, CuNH31pp, CuNH32pp,
      CuNH33pp, CuNH34pp, CuNH35pp, Cu2OH2pp, CuOH3m,
      CuOH4mm, CuOH2) = [s.name for s in substances]
