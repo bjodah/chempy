@@ -13,9 +13,7 @@ echo ${1#v}>__conda_version__.txt
 cleanup() {
     rm __conda_version__.txt
 }
-trap cleanup INT TERM
+trap cleanup INT TERM EXIT
 
 CONDA_PY=34 conda build conda-recipe
-CONDA_PY=27 conda build --no-test conda-recipe
-
-cleanup
+CONDA_PY=27 conda build conda-recipe

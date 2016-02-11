@@ -11,14 +11,23 @@ build:
 requirements:
     build:
         - python
+        - numpy
+        - sympy
+        - scipy
+        - matplotlib
+        - quantities
+        - pyparsing
+        - pyneqsys
+        - pyodesys
+#        - dot2tex
     run:
         - python
         - numpy
         - sympy
         - scipy
         - matplotlib
-        - pyparsing
         - quantities
+        - pyparsing
         - pyneqsys
         - pyodesys
 #        - dot2tex
@@ -26,10 +35,6 @@ requirements:
 test:
     imports:
         - chempy
-    requires:
-        - pytest
-    commands:
-        - python -m pytest --pyargs chempy
 
 about:
     home: https://github.com/bjodah/chempy

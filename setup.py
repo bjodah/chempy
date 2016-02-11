@@ -74,7 +74,7 @@ setup_kwargs = {
     'install_requires': [
         'numpy>1.7', 'scipy>=0.16.1', 'matplotlib>=1.3.1',
         'sympy>=0.7.6.1', 'quantities>=0.11.1', 'pyneqsys>=0.3.0',
-        'pyodesys>=0.5.0', 'pyparsing>=2.0.2',
+        'pyodesys>=0.5.0', 'pyparsing>=2.0.3',
         # 'dot2tex>=2.9.0'
     ],
     'extras_require': {
