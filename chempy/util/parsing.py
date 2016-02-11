@@ -3,6 +3,7 @@
 from __future__ import (absolute_import, division, print_function)
 
 from collections import defaultdict
+
 import re
 from pyparsing import (
     Forward, Group, OneOrMore, Optional, ParseResults,
@@ -163,7 +164,7 @@ _relative_atomic_masses = (
 def _get_relative_atomic_masses():
     for mass in _relative_atomic_masses.split():
         if mass.startswith('[') and mass.endswith(']'):
-            yield float(mass[1:-2])
+            yield float(mass[1:-1])
         elif '(' in mass:
             yield float(mass.split('(')[0])
         else:
@@ -234,9 +235,19 @@ def _parse_stoich(stoich):
         return {}
     return {symbols.index(k)+1: n for k, n in _parser.parseString(stoich)}
 
+_greek_letters = (
+    'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta',
+    'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'o', 'pi', 'rho', 'sigma',
+    'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega'
+)
+
+_latex_mapping = {k + '-': '\\' + k + '-' for k in _greek_letters}
+_latex_mapping['epsilon-'] = '\\varepsilon-'
+_latex_mapping['.'] = '^\\bullet '
+
 
 def to_composition(formula,
-                   prefixes=('.',),
+                   prefixes=None,
                    suffixes=('(s)', '(l)', '(g)', '(aq)')):
     """ Parse composition of formula representing a chemical formula
 
@@ -247,18 +258,21 @@ def to_composition(formula,
     ----------
     formula: str
         Chemical formula, e.g. 'H2O', 'Fe/3+', 'Cl-'
-    prefixes: tuple of strings
-        Prefixes to ignore, e.g. ('.', ':')
+    prefixes: iterable strings
+        Prefixes to ignore, e.g. ('.', 'alpha-')
     suffixes: tuple of strings
         Suffixes to ignore, e.g. ('(g)', '(s)')
 
     Examples
     --------
-    >>> to_composition('NH4/+')
-    {0: 1, 1: 4, 7: 1}
-    >>> to_composition('.NHO-(aq)')
-    {0: -1, 1: 1, 7: 1, 8: 1}
+    >>> to_composition('NH4/+') == {0: 1, 1: 4, 7: 1}
+    True
+    >>> to_composition('.NHO-(aq)') == {0: -1, 1: 1, 7: 1, 8: 1}
+    True
+
     """
+    if prefixes is None:
+        prefixes = _latex_mapping.keys()
     parts = _formula_to_parts(formula, prefixes, suffixes)
     comp = _parse_stoich(parts[0])
     if parts[1] is not None:
@@ -267,38 +281,43 @@ def to_composition(formula,
 
 
 def _subs(string, patterns):
-    for patt, repl in patterns:
+    for patt, repl in patterns.items():
         string = string.replace(patt, repl)
     return string
 
 
 def to_latex(formula,
-             prefixes=(('.', r'^\bullet '),),
-             suffixes=('(s)', '(l)', '(g)', '(aq)')):
-    """ Convert formula string to latex representation
+             prefixes=None,
+             suffixes=('(s)', '(l)', '(g)', '(aq)'),
+             intercept=None):
+    r""" Convert formula string to latex representation
 
     Parameters
     ----------
     formula: str
         Chemical formula, e.g. 'H2O', 'Fe/3+', 'Cl-'
-    prefixes: iterable of length 2-tuples
-        Prefixes to keep (formated)
+    prefixes: dict
+        Prefix transofmrations, default: greek letters and .
     suffixes: tuple of strings
         Suffixes to keep, e.g. ('(g)', '(s)')
 
     Examples
     --------
     >>> to_latex('NH4/+')
-    NH_{4}^{+}
+    'NH_{4}^{+}'
     >>> to_latex('Fe(CN)6/+2')
     'Fe(CN)_{6}^{2+}'
     >>> to_latex('Fe(CN)6/+2(aq)')
     'Fe(CN)_{6}^{2+}(aq)'
     >>> to_latex('.NHO-(aq)')
-    '\\cdot NHO^{-}(aq)'
+    '^\\bullet NHO^{-}(aq)'
+    >>> to_latex('alpha-FeOOH(s)')
+    '\\alpha-FeOOH(s)'
 
     """
-    parts = _formula_to_parts(formula, [x[0] for x in prefixes], suffixes)
+    if prefixes is None:
+        prefixes = _latex_mapping
+    parts = _formula_to_parts(formula, prefixes.keys(), suffixes)
 
     string = re.sub(r'([0-9]+)', r'_{\1}', parts[0])
     if parts[1] is not None:
@@ -312,3 +331,67 @@ def to_latex(formula,
         raise ValueError("Incorrect formula")
     pre_str = ''.join(map(lambda x: _subs(x, prefixes), parts[2]))
     return pre_str + string + ''.join(parts[3])
+
+
+def _parse_multiplicity(strings):
+    """
+    Examples
+    --------
+    >>> _parse_multiplicity(['2 H2O2', 'O2']) == {'H2O2': 2, 'O2': 1}
+    True
+    >>> _parse_multiplicity(['2 * H2O2', 'O2']) == {'H2O2': 2, 'O2': 1}
+    True
+
+    """
+    result = {}
+    for items in [re.split(' \* | ', s) for s in strings]:
+        if len(items) == 1:
+            result[items[0]] = 1
+        elif len(items) == 2:
+            result[items[1]] = int(items[0])
+        else:
+            raise ValueError("To many parts in substring")
+    return result
+
+
+def to_reaction(line, substance_keys):
+    """ Parses a string into a Reaction object and substances
+
+    Reac1 + 2 Reac2 + (2 Reac1) -> Prod1 + Prod2; 10**3.7; ref='doi:12/ab'
+    Reac1 = Prod1; 2.1;
+
+    Parameters
+    ----------
+    line: str
+        string representation to be parsed
+    substance_keys: iterable of strings
+        Allowed names, e.g. ('H2O', 'H+', 'OH-')
+
+    """
+    # TODO: add handling of units.
+
+    from ..chemistry import Reaction, Equilibrium
+    stoich, param, kwargs = map(str.strip, line.rstrip('\n').split(';'))
+    for token in ('->', '='):
+        if token in stoich:
+            reac_prod = [[y.strip() for y in x.split(' + ')] for
+                         x in stoich.split(token)]
+            Cls = {'->': Reaction, '=': Equilibrium}[token]
+            break
+    else:
+        raise ValueError("Missing token: -> or =")
+
+    act, inact = [], []
+    for side in reac_prod:
+        if side[-1].startswith('('):
+            if not side[-1].endswith(')'):
+                raise ValueError("Bad format (missing closing paren in inactive part)")
+            inact.append(_parse_multiplicity(side[-1][1:-1].split(' + ')))
+            act.append(_parse_multiplicity(side[:-1]))
+        else:
+            inact.append({})
+            act.append(_parse_multiplicity(side))
+
+    # stoich coeff -> dict
+    return Cls(act[0], act[1], eval(param), inact_reac=inact[0],
+               inact_prod=inact[1], **eval('dict('+kwargs+')'))

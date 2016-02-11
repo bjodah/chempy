@@ -5,7 +5,7 @@ import pytest
 
 from ..parsing import (
     to_composition, relative_atomic_masses, mass_from_composition,
-    to_latex
+    to_latex, to_reaction
 )
 
 
@@ -36,6 +36,9 @@ def test_to_composition():
     with pytest.raises(ValueError):
         to_composition('F-F')
 
+    assert to_composition('alpha-FeOOH(s)') == {1: 1, 8: 2, 26: 1}
+    assert to_composition('epsilon-Zn(OH)2(s)') == {1: 2, 8: 2, 30: 1}
+
 
 def test_relative_atomic_masses():
     assert relative_atomic_masses[0] == 1.008
@@ -64,3 +67,37 @@ def test_to_latex():
     assert to_latex('ONOOH') == 'ONOOH'
     assert to_latex('.ONOO') == r'^\bullet ONOO'
     assert to_latex('.NO3/2-') == r'^\bullet NO_{3}^{2-}'
+    assert to_latex('alpha-FeOOH(s)') == r'\alpha-FeOOH(s)'
+    assert to_latex('epsilon-Zn(OH)2(s)') == r'\varepsilon-Zn(OH)_{2}(s)'
+
+
+def test_to_reaction():
+    from chempy.chemistry import Reaction, Equilibrium
+    rxn = to_reaction('H+ + OH- -> H2O; 1.0e10; ref="it\'s fast man..."',
+                      'H+ OH- H2O'.split())
+    assert rxn.__class__ == Reaction
+
+    assert rxn.reac['H+'] == 1
+    assert rxn.reac['OH-'] == 1
+    assert rxn.prod['H2O'] == 1
+    assert rxn.param == 1e10
+    assert rxn.ref.startswith('it')
+
+    eq = to_reaction('H+ + OH- = H2O; 1.0e10; ref="it\'s fast man..."',
+                     'H+ OH- H2O'.split())
+    assert eq.__class__ == Equilibrium
+
+    assert eq.reac['H+'] == 1
+    assert eq.reac['OH-'] == 1
+    assert eq.prod['H2O'] == 1
+    assert eq.ref.startswith('it')
+
+    for s in ['2 e-(aq) + (2 H2O) -> H2 + 2 OH- ; 1e6 ; ',
+              '2 * e-(aq) + (2 H2O) -> 1 * H2 + 2 * OH- ; 1e6 ; ']:
+        rxn2 = to_reaction(s, 'e-(aq) H2 OH- H2O'.split())
+        assert rxn2.__class__ == Reaction
+        assert rxn2.reac['e-(aq)'] == 2
+        assert rxn2.inact_reac['H2O'] == 2
+        assert rxn2.prod['H2'] == 1
+        assert rxn2.prod['OH-'] == 2
+        assert rxn2.param == 1e6

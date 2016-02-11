@@ -21,6 +21,7 @@ requirements:
         - quantities
         - pyneqsys
         - pyodesys
+#        - dot2tex
 
 test:
     imports:

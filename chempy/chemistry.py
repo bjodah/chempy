@@ -5,7 +5,6 @@ from __future__ import division
 from itertools import chain
 from operator import itemgetter
 from collections import defaultdict, OrderedDict
-import warnings
 
 import numpy as np
 
@@ -190,15 +189,10 @@ class Reaction(object):
     param_char = 'k'  # convention
 
     def __init__(self, reac, prod, param=None, inact_reac=None,
-                 inact_prod=None, name=None, k=None, ref=None,
+                 inact_prod=None, name=None, ref=None,
                  other_properties=None):
         self.reac = reac
         self.prod = prod
-        if k is not None:
-            if param is not None:
-                raise ValueError("Got both param and k")
-            param = k
-            warnings.warn("Use param instead", DeprecationWarning)
         self.param = param
         self.inact_reac = inact_reac or {}
         self.inact_prod = inact_prod or {}
@@ -391,15 +385,13 @@ class Equilibrium(Reaction):
     See :py:class:`Reaction` for parameters
     """
 
-    str_arrow = '<->'
+    str_arrow = '='
     latex_arrow = r'\rightleftharpoons'
     param_char = 'K'  # convention
 
     def __init__(self, reac, prod, param, *args, **kwargs):
-        ref = kwargs.pop('ref', None)
-        if not all(arg is None for arg in args) or len(kwargs) > 0:
-            raise NotImplementedError("Inactive reac/prod not implemented")
-        return super(Equilibrium, self).__init__(reac, prod, param, ref=ref)
+        return super(Equilibrium, self).__init__(
+            reac, prod, param, *args, **kwargs)
 
     def as_reactions(self, state=None, kf=None, kb=None, units=None):
         """ Creates a pair of Reaction instances """
@@ -530,7 +522,8 @@ class ReactionSystem(object):
                 self.substances = OrderedDict(substances)
             except:
                 if isinstance(substances, str):
-                    self.substances = OrderedDict([(s, Substance(s)) for s in substances])
+                    self.substances = OrderedDict([
+                        (s, Substance(s)) for s in substances])
                 else:
                     self.substances = OrderedDict([
                         (s.name, s) for s in substances])

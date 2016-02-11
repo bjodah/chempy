@@ -12,7 +12,7 @@ from ..chemistry import (
 
 
 def test_Substance():
-    s = Substance('Hp', formula='H{+}')
+    s = Substance.from_formula('H+')
     assert s.composition == {0: 1, 1: 1}
     assert s.charge == 1
     assert abs(s.mass - 1.008) < 1e-3
@@ -26,11 +26,6 @@ def test_Substance__periodictable():
     OH_m = Substance(name='OH-',  charge=-1, formula=periodictable.formula('OH'),
                      latex_name=r'$\mathrm{OH^{-}}$')
     assert sorted([OH_m, H2O], key=attrgetter('name')) == [H2O, OH_m]
-
-
-def test_Solute():
-    s = Solute('Hp', formula='H{+}', precipitate=True)
-    assert abs(s.mass - 1.00794 + 5.5e-4) < 2e-5
 
 
 def test_Reaction():
