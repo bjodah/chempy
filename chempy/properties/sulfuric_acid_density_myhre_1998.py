@@ -135,8 +135,8 @@ def density_from_concentration(conc, T=None, molar_mass=None,
 
     Examples
     --------
-    >>> print('%d' % sulfuric_acid_density(.5, 293))
-    1396
+    >>> print('%d' % density_from_concentration(400, 293))
+    1021
 
     Raises
     ------
