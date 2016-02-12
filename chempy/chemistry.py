@@ -517,16 +517,14 @@ class ReactionSystem(object):
         self.rxns = rxns
         if isinstance(substances, OrderedDict):
             self.substances = substances
+        elif isinstance(substances, str):
+            self.substances = OrderedDict([
+                (s, Substance(s)) for s in substances])
         else:
             try:
-                self.substances = OrderedDict(substances)
+                self.substances = OrderedDict([(s.name, s) for s in substances])
             except:
-                if isinstance(substances, str):
-                    self.substances = OrderedDict([
-                        (s, Substance(s)) for s in substances])
-                else:
-                    self.substances = OrderedDict([
-                        (s.name, s) for s in substances])
+                self.substances = OrderedDict(substances)
         self._sanity_check()
         self.name = name
         if check_balance is None:

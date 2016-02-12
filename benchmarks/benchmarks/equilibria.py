@@ -6,25 +6,22 @@ class TimeEqsys:
 
     def setup(self):
         self.eqsys, self.c0 = get_ammonical_cupric_eqsys()
-        self.species = {s.name: s for s in self.eqsys.substances}
 
     def time_roots(self):
-        x, new_inits, success = self.eqsys.roots(self.c0, self.species['NH3'],
-                                                 np.logspace(-3, 0, 50))
+        x, new_inits, success = self.eqsys.roots(
+            self.c0, np.logspace(-3, 0, 50), 'NH3')
         assert all(success)
 
     def time_roots_symengine(self):
         from symengine import Lambdify
         x, new_inits, success = self.eqsys.roots(
-            self.c0, self.species['NH3'], np.logspace(-3, 0, 50),
+            self.c0, np.logspace(-3, 0, 50), 'NH3',
             lambdify=Lambdify, lambdify_unpack=False)
         assert all(success)
 
-
-    def time_roots_carry(self):
-        x, new_inits, success = self.eqsys.roots(self.c0, self.species['NH3'],
-                                                 np.logspace(-3, 0, 50),
-                                                 carry=True)
+    def time_roots_no_propagate(self):
+        x, new_inits, success = self.eqsys.roots(
+            self.c0, np.logspace(-3, 0, 50), 'NH3', propagate=False)
         assert all(success)
 
 

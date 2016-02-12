@@ -1,3 +1,7 @@
+v0.3.1
+======
+- ReactionSystem now handles "substances" argument more robustely.
+
 v0.3.0
 ======
 - Signature of chempy.chemistry.Substance changed
