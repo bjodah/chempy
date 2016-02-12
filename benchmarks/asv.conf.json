@@ -43,10 +43,14 @@
     // list indicates to just test against the default (latest)
     // version.
     "matrix": {
+        "numpy": [],
+        "sympy": [],
         "scipy": [],
-        "periodictable": [],
-        "pyodesys": [],
+        "matplotlib": [],
+        "quantities": [],
+        "pyparsing": [],
         "pyneqsys": [],
+        "pyodesys": [],
         "symengine-python": [],
     },
 
