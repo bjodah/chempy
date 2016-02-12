@@ -301,7 +301,7 @@ class Reaction(object):
                 str_param = '%.3g' % self.param
             except TypeError:
                 str_param = str(self.param)
-        s = '; ' + self.param_char + '=' + str_param
+        s = '; ' + str_param
         return self._get_str('name', 'str_arrow', {
             k: k for k in chain(self.reac.keys(), self.prod.keys(),
                                 self.inact_reac.keys(),

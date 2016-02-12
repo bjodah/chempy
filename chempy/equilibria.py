@@ -492,7 +492,7 @@ class EqSystem(ReactionSystem):
             return False
         return True
 
-    def root(self, init_concs, x0=None, neqsys=None, NumSys=NumSysLin,
+    def root(self, init_concs, x0=None, neqsys=None, NumSys=NumSysLog,
              neqsys_type='chained_conditional', **kwargs):
         init_concs = self.as_per_substance_array(init_concs)
         params = np.concatenate((init_concs, [float(elem) for elem
@@ -527,7 +527,7 @@ class EqSystem(ReactionSystem):
             return [s.name for s in self.substances.values()]
 
     def roots(self, init_concs, varied_data, varied, x0=None,
-              NumSys=NumSysLin, plot_kwargs=None,
+              NumSys=NumSysLog, plot_kwargs=None,
               neqsys_type='chained_conditional', **kwargs):
         """
         Parameters
