@@ -1,12 +1,11 @@
-from __future__ import division  # Py2/3 compatibility
+# -*- coding: utf-8 -*-
+"""
+This modules collects expressions for the Debye-Hückel constants.
 
-from .core import ActivityProduct, ionic_strength
+"""
+from __future__ import (absolute_import, division, print_function)
 
-_radii_nm = {  # in nanometer
-    'Fe3+': 0.9,
-    'SCN-': 0.35,
-    'Fe2+': 0.6,
-}
+from .core import _ActivityProductBase, ionic_strength
 
 
 def A(eps_r, T, rho, b0=1, constants=None, units=None, one=1):
@@ -40,7 +39,9 @@ def A(eps_r, T, rho, b0=1, constants=None, units=None, one=1):
     References
     ----------
     Atkins, De Paula, Physical Chemistry, 8th edition
+
     """
+
     if constants is None:
         combined = 132871.85866393594
         if units is not None:
@@ -84,7 +85,9 @@ def B(eps_r, T, rho, b0=1, constants=None, units=None, one=1):
     Returns
     -------
     Debye Huckel B constant (default in m**-1)
+
     """
+
     if constants is None:
         combined = 15903203868.740343
         if units is not None:
@@ -161,7 +164,7 @@ def davies_activity_product(I, stoich, z, a, T, eps_r, rho, C=-0.3, exp=None):
     return exp(tot)
 
 
-class LimitingDebyeHuckelActivityProduct(ActivityProduct):
+class LimitingDebyeHuckelActivityProduct(_ActivityProductBase):
 
     def __call__(self, c):
         z = self.args[0]
@@ -169,7 +172,7 @@ class LimitingDebyeHuckelActivityProduct(ActivityProduct):
         return limiting_activity_product(I, self.stoich, *self.args)
 
 
-class ExtendedDebyeHuckelActivityProduct(ActivityProduct):
+class ExtendedDebyeHuckelActivityProduct(_ActivityProductBase):
 
     def __call__(self, c):
         z = self.args[0]

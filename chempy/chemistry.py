@@ -4,7 +4,7 @@ from __future__ import division
 
 from itertools import chain
 from operator import itemgetter
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict
 
 import numpy as np
 
@@ -13,29 +13,6 @@ from .util.arithmeticdict import ArithmeticDict
 from .util.parsing import to_composition, mass_from_composition, to_latex
 from .util.pyutil import defaultnamedtuple
 from .units import to_unitless, default_constants, default_units
-
-
-def elements(formula):
-    """
-    Returns a dict mapping {periodictable.core.Element: int}
-
-    Parameters
-    ----------
-    formula: periodictable.formulas.Formula
-
-    Returns
-    -------
-    defaultdict(int) with atom numbers as keys and respective number
-        of occuring atoms in formula.
-    """
-    # see https://github.com/pkienzle/periodictable/issues/14
-    d = defaultdict(int)
-    for atm, n in formula.atoms.items():
-        try:
-            d[atm.element] += n
-        except AttributeError:
-            d[atm] += n
-    return d
 
 
 class Substance(object):
@@ -47,9 +24,6 @@ class Substance(object):
     charge: int (optional, default: None)
         will be stored in composition[0].
     latex_name: str
-    formula: str (optional, default: None)
-        e.g. 'Na/+', 'H2O', 'Fe(CN)6/4-' used when charge and composition are
-        ``None``.
     composition: dict or None (default)
         dict (int -> number) e.g. {atomic number: count}, zero has special
         meaning (net charge)
@@ -98,7 +72,7 @@ class Substance(object):
             if self.composition is not None:
                 return mass_from_composition(self.composition)
 
-    def __init__(self, name=None, charge=None, latex_name=None, formula=None,
+    def __init__(self, name=None, charge=None, latex_name=None,
                  composition=None, other_properties=None):
         self.name = name
         self.latex_name = latex_name
@@ -114,6 +88,30 @@ class Substance(object):
 
     @classmethod
     def from_formula(cls, formula, **kwargs):
+        """ Creates a Substance instance from its formula
+
+        Parameters
+        ----------
+        formula: str (optional, default: None)
+            e.g. 'Na/+', 'H2O', 'Fe(CN)6/4-' used when charge and composition
+            are ``None``.
+        \*\*kwargs:
+            keyword arguments passed on to `.Substance`
+
+        Examples
+        --------
+        >>> NH3 = Substance.from_formula('NH3')
+        >>> NH3.composition == {1: 3, 7: 1}
+        True
+        >>> '%.2f' % NH3.mass
+        '17.03'
+        >>> NH3.charge
+        0
+        >>> NH3.latex_name
+        'NH_{3}'
+
+        """
+
         return cls(formula, latex_name=to_latex(formula),
                    composition=to_composition(formula),
                    **kwargs)
@@ -135,6 +133,12 @@ class Substance(object):
 
 
 class Solute(Substance):
+    """ [DEPRECATED] Use `.Species` instead Subclass of Substance
+
+    Counter-intuitive to its name Solute has an additional
+    property 'precipitate'
+
+    """
 
     def __init__(self, *args, **kwargs):
         self.precipitate = kwargs.pop('precipitate', False)
@@ -145,6 +149,22 @@ class Solute(Substance):
         if formula.endswith('(s)'):
             kwargs['precipitate'] = True
         return super(Solute, cls).from_formula(formula, **kwargs)
+
+
+class Species(Substance):
+    def __init__(self, *args, **kwargs):
+        self.phase_idx = kwargs.pop('phase_idx', 0)
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+    @classmethod
+    def from_formula(cls, formula, phases=('(g)', '(s)'), **kwargs):
+        p_i = 0
+        for idx, phase in enumerate(phases):
+            if formula.endswith(phase):
+                p_i = len(phases) - idx
+                break
+        return super(Solute, cls).from_formula(
+            formula, phase_idx=p_i, **kwargs)
 
 
 class Reaction(object):
