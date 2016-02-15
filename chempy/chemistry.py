@@ -11,7 +11,7 @@ import numpy as np
 from .arrhenius import arrhenius_equation
 from .util.arithmeticdict import ArithmeticDict
 from .util.parsing import to_composition, mass_from_composition, to_latex
-from .util.pyutil import defaultnamedtuple
+from .util.pyutil import defaultnamedtuple, deprecated
 from .units import to_unitless, default_constants, default_units
 
 
@@ -92,9 +92,8 @@ class Substance(object):
 
         Parameters
         ----------
-        formula: str (optional, default: None)
-            e.g. 'Na/+', 'H2O', 'Fe(CN)6/4-' used when charge and composition
-            are ``None``.
+        formula: str
+            e.g. 'Na/+', 'H2O', 'Fe(CN)6/4-'
         \*\*kwargs:
             keyword arguments passed on to `.Substance`
 
@@ -132,8 +131,77 @@ class Substance(object):
         return sorted(keys)
 
 
+class Species(Substance):
+    """ Substance belonging to a phase
+
+    Species extends .`Substance` with the new attribute :attr:`phase_idx`
+
+    Attributes
+    ----------
+    phase_idx: int
+        Index of the phase (default is 0)
+    """
+    def __init__(self, *args, **kwargs):
+        phase_idx = kwargs.pop('phase_idx', 0)
+        super(Species, self).__init__(*args, **kwargs)
+        self.phase_idx = phase_idx
+
+    @classmethod
+    def from_formula(cls, formula, phases=('(s)', '(g)'), **kwargs):
+        """ Create a Species instance from its formula
+
+        Analogous to .`Substance.from_formula` but with the addition that
+        phase_idx is determined from the formula (and a mapping provided by
+        ``phases``)
+
+        Parameters
+        ----------
+        formula: str
+            e.g. 'H2O', 'NaCl(s)', 'CO2(aq)', 'CO2(g)'
+        phases: iterable of str or dict mapping str -> int
+            ``phase_idx`` is determined from the suffix of ``formula`` where
+            the suffixes is mapped from phases, in pseudo-code:
+                if ``phases`` is a dictionary:
+                    ``phase_idx = phases[suffix]``
+                else:
+                    ``phase_idx = phases.index(suffix) + 1``
+            and if suffixes is missing in phases phase_idx is taken to be 0
+
+        Examples
+        --------
+        >>> water = Species.from_formula('H2O')
+        >>> water.phase_idx
+        0
+        >>> NaCl = Species.from_formula('NaCl(s)')
+        >>> NaCl.phase_idx
+        1
+        >>> CO2g = Species.from_formula('CO2(g)')
+        >>> CO2g.phase_idx
+        2
+        >>> CO2aq = Species.from_formula('CO2(aq)', {'(aq)': 0, '(s)': 1, '(g)': 2})
+        >>> CO2aq.phase_idx
+        0
+
+        """
+        p_i = 0
+        if isinstance(phases, dict):
+            for k, v in phases.items():
+                if formula.endswith(k):
+                    p_i = v
+                    break
+        else:
+            for idx, phase in enumerate(phases):
+                if formula.endswith(phase):
+                    p_i = idx + 1
+                    break
+        return super(Species, cls).from_formula(
+            formula, phase_idx=p_i, **kwargs)
+
+
+@deprecated(deprecated_since_version='0.3.1',
+            will_be_missing_in='0.4.0', use_instead=Species)
 class Solute(Substance):
-    """ [DEPRECATED] Use `.Species` instead Subclass of Substance
+    """ [DEPRECATED] Use `.Species` instead
 
     Counter-intuitive to its name Solute has an additional
     property 'precipitate'
@@ -141,30 +209,17 @@ class Solute(Substance):
     """
 
     def __init__(self, *args, **kwargs):
-        self.precipitate = kwargs.pop('precipitate', False)
-        super(self.__class__, self).__init__(*args, **kwargs)
+        precipitate = kwargs.pop('precipitate', False)
+        Substance.__init__(self, *args, **kwargs)
+        self.precipitate = precipitate
 
     @classmethod
     def from_formula(cls, formula, **kwargs):
         if formula.endswith('(s)'):
             kwargs['precipitate'] = True
-        return super(Solute, cls).from_formula(formula, **kwargs)
-
-
-class Species(Substance):
-    def __init__(self, *args, **kwargs):
-        self.phase_idx = kwargs.pop('phase_idx', 0)
-        super(self.__class__, self).__init__(*args, **kwargs)
-
-    @classmethod
-    def from_formula(cls, formula, phases=('(g)', '(s)'), **kwargs):
-        p_i = 0
-        for idx, phase in enumerate(phases):
-            if formula.endswith(phase):
-                p_i = len(phases) - idx
-                break
-        return super(Solute, cls).from_formula(
-            formula, phase_idx=p_i, **kwargs)
+        return cls(formula, latex_name=to_latex(formula),
+                   composition=to_composition(formula),
+                   **kwargs)
 
 
 class Reaction(object):

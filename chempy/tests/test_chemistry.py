@@ -4,6 +4,8 @@ from __future__ import (absolute_import, division, print_function)
 import math
 from operator import attrgetter
 
+import pytest
+
 from ..units import default_units
 from ..chemistry import (
     Substance, Solute, Reaction, ReactionSystem, ArrheniusRate,
@@ -23,6 +25,12 @@ def test_Substance__2():
                     other_properties={'pKa': 14})
     OH_m = Substance(name='OH-',  charge=-1, latex_name=r'$\mathrm{OH^{-}}$')
     assert sorted([OH_m, H2O], key=attrgetter('name')) == [H2O, OH_m]
+
+
+def test_Solute():
+    with pytest.warns(DeprecationWarning):
+        w = Solute('H2O')
+    assert w.name == 'H2O'
 
 
 def test_Reaction():
