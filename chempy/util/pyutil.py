@@ -45,8 +45,31 @@ def defaultnamedtuple(typename, field_names, defaults=()):
 
 
 class deprecated(DeprecationWarning):
-    """ search the code base for examples
+    """ decorator for deprecating functions and classes
 
+    Search the code base for more examples
+
+    Parameters
+    ----------
+    deprecated_since_version: str
+        version string, e.g. '0.2.1'
+    will_be_missing_in: str
+        version string, e.g. '0.3.0'
+    use_instead: object
+        function or class to use instead
+    issue: str
+        issue identifier, e.g. 'gh-15' where 15 is the issue number on github.
+
+    Examples
+    --------
+    >>> @deprecated(deprecated_since_version='0.4.0')
+    ... def some_old_function(x):
+    ...     return x*x - x
+    ...
+
+
+    Notes
+    -----
     DeprecationWarning is ignored by default. Run python with -W flag or set
     the appropriate environment variable:
 

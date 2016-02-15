@@ -36,6 +36,8 @@ class Substance(object):
     ----------
     mass
         maps to other_properties, and when unavailable looks for formula.mass
+    attrs
+        a tuple of attribute names for serialization
 
     Examples
     --------
@@ -62,10 +64,16 @@ class Substance(object):
 
     @property
     def charge(self):
+        """ Convenience property for accessing ``composition[0]`` """
         return self.composition.get(0, 0)  # electron (net) deficiency
 
     @property
     def mass(self):
+        """ Convenience property for accessing ``other_properties['mass']``
+
+        when ``other_properties['mass']`` is missing the mass is calculated
+        from the :attr:`composition` using :func:`chempy.util.parsing.mass_from_composition`.
+        """
         try:
             return self.other_properties['mass']
         except KeyError:
@@ -88,7 +96,7 @@ class Substance(object):
 
     @classmethod
     def from_formula(cls, formula, **kwargs):
-        """ Creates a Substance instance from its formula
+        """ Creates a :class:`Substance` instance from its formula
 
         Parameters
         ----------
@@ -124,6 +132,7 @@ class Substance(object):
 
     @staticmethod
     def composition_keys(substance_iter):
+        """ Occuring :attr:`composition` keys among a series of substances """
         keys = set()
         for s in substance_iter:
             for k in s.composition.keys():
@@ -134,7 +143,7 @@ class Substance(object):
 class Species(Substance):
     """ Substance belonging to a phase
 
-    Species extends .`Substance` with the new attribute :attr:`phase_idx`
+    Species extends :class:`Substance` with the new attribute :attr:`phase_idx`
 
     Attributes
     ----------
@@ -149,12 +158,13 @@ class Species(Substance):
     @property
     @deprecated(deprecated_since_version='0.3.1', will_be_missing_in='0.4.0')
     def precipitate(self):
+        """ deprecated attribute, provided for compatibility for now """
         return self.phase_idx > 0
 
     @classmethod
     def from_formula(cls, formula, phases=('(s)', '(l)', '(g)'),
                      default_phase_idx=0, **kwargs):
-        """ Create a Species instance from its formula
+        """ Create a :class:`Species` instance from its formula
 
         Analogous to .`Substance.from_formula` but with the addition that
         phase_idx is determined from the formula (and a mapping provided by
@@ -323,19 +333,23 @@ class Reaction(object):
         return True
 
     def order(self):
+        """ Sum of (active) reactant stoichiometries """
         return sum(self.reac.values())
 
     def net_stoich(self, substance_keys):
+        """ Per substance net stoichiometry tuple (active & inactive) """
         return tuple(self.prod.get(k, 0) -
                      self.reac.get(k, 0) +
                      self.inact_prod.get(k, 0) -
                      self.inact_reac.get(k, 0) for k in substance_keys)
 
     def all_reac_stoich(self, substances):
+        """ Per substance reactant stoichiometry tuple (active & inactive) """
         return tuple(self.reac.get(k, 0) + self.inact_reac.get(k, 0)
                      for k in substances)
 
     def all_prod_stoich(self, substances):
+        """ Per substance product stoichiometry tuple (active & inactive) """
         return tuple(self.prod.get(k, 0) + self.inact_prod.get(k, 0)
                      for k in substances)
 
@@ -403,6 +417,7 @@ class Reaction(object):
         }) + s
 
     def latex(self, substances):
+        """ Returns a LaTeX representation of the reaction """
         return self._get_str('latex_name', 'latex_arrow', substances)
 
     def _violation(self, substances, attr):
@@ -413,12 +428,39 @@ class Reaction(object):
         return net
 
     def mass_balance_violation(self, substances):
+        """ Net amount of mass produced
+
+        Parameters
+        ----------
+        substances: dict
+
+        Returns
+        -------
+        float: amount of net mass produced/consumed
+
+        """
         return self._violation(substances, 'mass')
 
     def charge_neutrality_violation(self, substances):
+        """ Net amount of charge produced
+
+        Parameters
+        ----------
+        substances: dict
+
+        Returns
+        -------
+        float: amount of net charge produced/consumed
+
+        """
         return self._violation(substances, 'charge')
 
     def composition_violation(self, substances, composition_keys=None):
+        """ Net amount of constituent produced
+
+        If composition keys correspond to conserved entities e.g. atoms
+        in chemical reactions, this function should return a list of zeros.
+        """
         if composition_keys is None:
             composition_keys = Substance.composition_keys(substances.values())
         net = [0]*len(composition_keys)
@@ -430,6 +472,21 @@ class Reaction(object):
 
 
 def equilibrium_quotient(concs, stoich):
+    """ Calculates the equilibrium quotient of an equilbrium
+
+    Parameters
+    ----------
+    concs: array_like
+        per substance concentration
+    stoich: iterable of integers
+        per substance stoichiometric coefficient
+
+    Examples
+    --------
+    >>> '%.12g' % equilibrium_quotient([1.0, 1e-7, 1e-7], [-1, 1, 1])
+    '1e-14'
+
+    """
     if not hasattr(concs, 'ndim') or concs.ndim == 1:
         tot = 1
     else:
@@ -442,13 +499,23 @@ def equilibrium_quotient(concs, stoich):
 
 
 class ArrheniusRate(defaultnamedtuple('ArrheniusRate', 'A Ea ref', [None])):
-    """
+    """ Kinetic data in the form of an Arrhenius parametrization
+
+    Parameters
+    ----------
     Ea: float
         activation energy
     A: float
         preexponential prefactor (Arrhenius type eq.)
     ref: object (default: None)
         arbitrary reference (e.g. string representing citation key)
+
+    Examples
+    --------
+    >>> k = ArrheniusRate(1e13, 40e3)
+    >>> '%.5g' % k(298.15)
+    '9.8245e+05'
+
     """
     def __call__(self, T, constants=None, units=None, exp=None):
         """ See :py:func`chempy.arrhenius.arrhenius_equation`. """
@@ -508,7 +575,7 @@ class Equilibrium(Reaction):
             reac, prod, param, *args, **kwargs)
 
     def as_reactions(self, state=None, kf=None, kb=None, units=None):
-        """ Creates a pair of Reaction instances """
+        """ Creates a forward and backward :class:`Reaction` pair """
         nb = sum(self.prod.values())
         nf = sum(self.reac.values())
         if units is None:
@@ -546,6 +613,7 @@ class Equilibrium(Reaction):
             return self.param
 
     def Q(self, substances, concs):
+        """ Calculates the equilibrium qoutient """
         stoich = self.non_precipitate_stoich(substances)
         return equilibrium_quotient(concs, stoich)
 
@@ -665,6 +733,7 @@ class ReactionSystem(object):
                     raise ValueError("Unkown substance: %s" % key)
 
     def substance_names(self):
+        """ Returns a tuple of the substances' names """
         return tuple(substance.name for substance in self.substances.values())
 
     @property
@@ -678,6 +747,7 @@ class ReactionSystem(object):
         return len(self.substances)
 
     def params(self):
+        """ Returns list of per reaction ``param`` value """
         return [rxn.param for rxn in self.rxns]
 
     def as_per_substance_array(self, cont, dtype=np.float64, unit=None):
@@ -716,6 +786,7 @@ class ReactionSystem(object):
         return self._stoichs('all_prod_stoich')
 
     def stoichs(self, non_precip_rids=()):
+        """ Conditional stoichiometries depending on precipitation status """
         # dtype: see https://github.com/sympy/sympy/issues/10295
         return np.array([(
             -np.array(eq.precipitate_stoich(self.substances)[0]) if idx
