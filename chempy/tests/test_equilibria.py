@@ -8,7 +8,7 @@ import numpy as np
 from scipy.optimize import fsolve
 
 from ..chemistry import (
-    Solute, Substance, Reaction, Equilibrium
+    Substance, Reaction, Equilibrium, Species, Solute,
 )
 
 from ..equilibria import (
@@ -117,7 +117,7 @@ def _solutes(Cls):
     )
 
 
-@pytest.mark.parametrize('Cls', [Solute])
+@pytest.mark.parametrize('Cls', [Solute, Species])
 def test_Equilibria_root_simple(Cls):
     solutes = water, hydronium, hydroxide, ammonium, ammonia = _solutes(Cls)
 
@@ -144,11 +144,11 @@ def test_Equilibria_root_simple(Cls):
     assert np.allclose(x, ref, rtol=0.02, atol=1e-16)
 
 
-def _get_NaCl():
+def _get_NaCl(Cls, **precipitate_kwargs):
     Na_p, Cl_m, NaCl = sbstncs = (
-        Solute('Na+', 1, composition={11: 1}),
-        Solute('Cl-', -1, composition={17: 1}),
-        Solute('NaCl', composition={11: 1, 17: 1}, precipitate=True)
+        Cls('Na+', 1, composition={11: 1}),
+        Cls('Cl-', -1, composition={17: 1}),
+        Cls('NaCl', composition={11: 1, 17: 1}, **precipitate_kwargs)
     )
     sp = Equilibrium({'NaCl': 1}, {'Na+': 1, 'Cl-': 1}, 4.0)
     eqsys = EqSystem([sp], sbstncs)
@@ -164,8 +164,12 @@ def _get_NaCl():
     return eqsys, [s.name for s in sbstncs], cases
 
 
-def test_EqSystem_dissolved():
-    eqsys, names, _ = _get_NaCl()
+@pytest.mark.parametrize('kwargs', [
+    dict(Cls=Solute, precipitate=True),
+    dict(Cls=Species, phase_idx=1)
+])
+def test_EqSystem_dissolved(kwargs):
+    eqsys, names, _ = _get_NaCl(**kwargs)
     inp = eqsys.as_per_substance_array({'Na+': 1, 'Cl-': 2, 'NaCl': 4})
     result = eqsys.dissolved(inp)
     ref = eqsys.as_per_substance_array({'Na+': 5, 'Cl-': 6, 'NaCl': 0})
@@ -175,7 +179,7 @@ def test_EqSystem_dissolved():
 @pytest.mark.parametrize('NumSys', [(NumSysLin,), (NumSysLog,),
                                     (NumSysLog, NumSysLin)])
 def test_precipitate(NumSys):
-    eqsys, species, cases = _get_NaCl()
+    eqsys, species, cases = _get_NaCl(Solute, precipitate=True)
 
     for init, final in cases:
         x, sol, sane = eqsys.root(dict(zip(species, init)),

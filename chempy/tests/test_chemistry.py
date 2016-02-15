@@ -35,6 +35,8 @@ def test_Species():
     assert Species.from_formula('CO2(g)', mapping).phase_idx == 2
     assert Species.from_formula('CO2(aq)', mapping).phase_idx == 0
     assert Species.from_formula('NaCl(s)').phase_idx == 1
+    assert Species.from_formula('NaCl(s)', phase_idx=7).phase_idx == 7
+    assert Species.from_formula('CO2(aq)', mapping, phase_idx=7).phase_idx == 7
 
 
 def test_Solute():

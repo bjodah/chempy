@@ -146,6 +146,11 @@ class Species(Substance):
         super(Species, self).__init__(*args, **kwargs)
         self.phase_idx = phase_idx
 
+    @property
+    @deprecated(deprecated_since_version='0.3.1', will_be_missing_in='0.4.0')
+    def precipitate(self):
+        return self.phase_idx > 0
+
     @classmethod
     def from_formula(cls, formula, phases=('(s)', '(l)', '(g)'),
                      default_phase_idx=0, **kwargs):
@@ -160,8 +165,8 @@ class Species(Substance):
         formula: str
             e.g. 'H2O', 'NaCl(s)', 'CO2(aq)', 'CO2(g)'
         phases: iterable of str or dict mapping str -> int
-            ``phase_idx`` is determined from the suffix of ``formula`` where
-            the suffixes is mapped from phases, in pseudo-code:
+            if not in \*\*kwargs, ``phase_idx`` is determined from the suffix
+            of ``formula`` where the suffixes is mapped from phases:
                 if ``phases`` is a dictionary:
                     ``phase_idx = phases[suffix]``
                 else:
@@ -171,6 +176,8 @@ class Species(Substance):
             If ``default_phase_idx`` is ``bNone``, ``ValueError`` is raised for
                 unkown suffixes.
             Else ``default_phase_idx`` is used as ``phase_idx`` in those cases.
+        \*\*kwargs:
+            Keyword arguments passed on.
 
         Examples
         --------
@@ -207,22 +214,25 @@ class Species(Substance):
             if ``default_phase_idx`` is ``None`` and no suffix found in phases
 
         """
-        p_i = None
-        if isinstance(phases, dict):
-            for k, v in phases.items():
-                if formula.endswith(k):
-                    p_i = v
-                    break
+        if 'phase_idx' in kwargs:
+            p_i = kwargs.pop('phase_idx')
         else:
-            for idx, phase in enumerate(phases):
-                if formula.endswith(phase):
-                    p_i = idx + 1
-                    break
-        if p_i is None:
-            if default_phase_idx is None:
-                raise ValueError("Could not determine phase_idx")
+            p_i = None
+            if isinstance(phases, dict):
+                for k, v in phases.items():
+                    if formula.endswith(k):
+                        p_i = v
+                        break
             else:
-                p_i = default_phase_idx
+                for idx, phase in enumerate(phases):
+                    if formula.endswith(phase):
+                        p_i = idx + 1
+                        break
+            if p_i is None:
+                if default_phase_idx is None:
+                    raise ValueError("Could not determine phase_idx")
+                else:
+                    p_i = default_phase_idx
         return super(Species, cls).from_formula(
             formula, phase_idx=p_i, **kwargs)
 
