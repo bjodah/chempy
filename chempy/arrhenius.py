@@ -28,14 +28,17 @@ def arrhenius_equation(A, Ea, T, constants=None, units=None, exp=None):
         activation energy
     T: float with unit
         temperature
-    units: object (optional, default: None)
-        attributes accessed: Joule, Kelvin and mol
     constants: object (optional, default: None)
         if None:
             T assumed to be in Kelvin, Ea in J/(K mol)
         else:
             attributes accessed: molar_gas_constant
             Tip: pass quantities.constants
+    units: object (optional, default: None)
+        attributes accessed: Joule, Kelvin and mol
+    exp: callback (optional)
+        callback for calculating the exponential, default: numpy.exp, math.exp
+
     """
     if exp is None:
         try:

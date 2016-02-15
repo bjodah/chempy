@@ -376,7 +376,7 @@ def _parse_multiplicity(strings):
     return result
 
 
-def to_reaction(line, substance_keys):
+def to_reaction(line, substance_keys, token, Cls):
     """ Parses a string into a Reaction object and substances
 
     Reac1 + 2 Reac2 + (2 Reac1) -> Prod1 + Prod2; 10**3.7; ref='doi:12/ab'
@@ -391,17 +391,20 @@ def to_reaction(line, substance_keys):
 
     """
     # TODO: add handling of units.
-
-    from ..chemistry import Reaction, Equilibrium
-    stoich, param, kwargs = map(str.strip, line.rstrip('\n').split(';'))
-    for token in ('->', '='):
-        if token in stoich:
-            reac_prod = [[y.strip() for y in x.split(' + ')] for
-                         x in stoich.split(token)]
-            Cls = {'->': Reaction, '=': Equilibrium}[token]
-            break
+    try:
+        stoich, param, kwargs = map(str.strip, line.rstrip('\n').split(';'))
+    except ValueError:
+        stoich, param = map(str.strip, line.rstrip('\n').split(';'))
+        kwargs = {}
     else:
-        raise ValueError("Missing token: -> or =")
+        import chempy
+        kwargs = eval('dict('+kwargs+')')
+
+    if not token in stoich:
+        raise ValueError("Missing token: %s" % token)
+
+    reac_prod = [[y.strip() for y in x.split(' + ')] for
+                 x in stoich.split(token)]
 
     act, inact = [], []
     for side in reac_prod:
@@ -416,4 +419,4 @@ def to_reaction(line, substance_keys):
 
     # stoich coeff -> dict
     return Cls(act[0], act[1], eval(param), inact_reac=inact[0],
-               inact_prod=inact[1], **eval('dict('+kwargs+')'))
+               inact_prod=inact[1], **kwargs)

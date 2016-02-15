@@ -74,7 +74,7 @@ def test_to_latex():
 def test_to_reaction():
     from chempy.chemistry import Reaction, Equilibrium
     rxn = to_reaction('H+ + OH- -> H2O; 1.0e10; ref="it\'s fast man..."',
-                      'H+ OH- H2O'.split())
+                      'H+ OH- H2O'.split(), '->', Reaction)
     assert rxn.__class__ == Reaction
 
     assert rxn.reac['H+'] == 1
@@ -84,7 +84,7 @@ def test_to_reaction():
     assert rxn.ref.startswith('it')
 
     eq = to_reaction('H+ + OH- = H2O; 1.0e10; ref="it\'s fast man..."',
-                     'H+ OH- H2O'.split())
+                     'H+ OH- H2O'.split(), '=', Equilibrium)
     assert eq.__class__ == Equilibrium
 
     assert eq.reac['H+'] == 1
@@ -94,7 +94,7 @@ def test_to_reaction():
 
     for s in ['2 e-(aq) + (2 H2O) -> H2 + 2 OH- ; 1e6 ; ',
               '2 * e-(aq) + (2 H2O) -> 1 * H2 + 2 * OH- ; 1e6 ; ']:
-        rxn2 = to_reaction(s, 'e-(aq) H2 OH- H2O'.split())
+        rxn2 = to_reaction(s, 'e-(aq) H2 OH- H2O'.split(), '->', Reaction)
         assert rxn2.__class__ == Reaction
         assert rxn2.reac['e-(aq)'] == 2
         assert rxn2.inact_reac['H2O'] == 2

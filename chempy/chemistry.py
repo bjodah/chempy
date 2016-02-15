@@ -10,7 +10,9 @@ import numpy as np
 
 from .arrhenius import arrhenius_equation
 from .util.arithmeticdict import ArithmeticDict
-from .util.parsing import to_composition, mass_from_composition, to_latex
+from .util.parsing import (
+    to_composition, mass_from_composition, to_latex, to_reaction
+)
 from .util.pyutil import defaultnamedtuple, deprecated
 from .units import to_unitless, default_constants, default_units
 
@@ -323,6 +325,25 @@ class Reaction(object):
         self.name = name
         self.ref = ref
         self.other_properties = other_properties or {}
+
+    @classmethod
+    def from_string(cls, string, substance_keys):
+        """ Parses a string into an instance
+
+        Parameters
+        ----------
+        string: str
+            string representation of the reaction
+        substance_keys: iterable of strings
+
+        Examples
+        --------
+        >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4")
+        >>> r.reac == {'H2O': 1} and r.prod == {'H+': 1, 'OH-': 1}
+        True
+
+        """
+        return to_reaction(string, substance_keys, cls.str_arrow, cls)
 
     def __eq__(lhs, rhs):
         if not isinstance(lhs, Reaction) or not isinstance(rhs, Reaction):
