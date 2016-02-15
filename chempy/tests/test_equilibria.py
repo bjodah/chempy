@@ -79,9 +79,9 @@ def _get_es1():
 
 
 def _get_es_water(EqSys=EqSystem):
-    H2O = Solute('H2O', charge=0, composition={1: 2, 8: 1})
-    OHm = Solute('OH-', charge=-1, composition={1: 1, 8: 1})
-    Hp = Solute('H+', charge=1, composition={1: 1})
+    H2O = Substance('H2O', charge=0, composition={1: 2, 8: 1})
+    OHm = Substance('OH-', charge=-1, composition={1: 1, 8: 1})
+    Hp = Substance('H+', charge=1, composition={1: 1})
     Kw = 1e-14/55.5
     w_auto_p = Equilibrium({'H2O': 1}, {'Hp': 1, 'OHm': 1}, Kw)
     return EqSys([w_auto_p], [H2O, OHm, Hp])
@@ -107,14 +107,19 @@ def test_Equilibria_root():
     assert sol['success'] and sane
 
 
-def test_Equilibria_root_simple():
-    solutes = water, hydronium, hydroxide, ammonium, ammonia = (
-        Solute('H2O', 0, composition={1: 2, 8: 1}),
-        Solute('H+', 1, composition={1: 1}),
-        Solute('OH-', -1, composition={1: 1, 8: 1}),
-        Solute('NH4+', 1, composition={1: 4, 7: 1}),
-        Solute('NH3', 0, composition={1: 3, 7: 1})
+def _solutes(Cls):
+    return (
+        Cls('H2O', 0, composition={1: 2, 8: 1}),
+        Cls('H+', 1, composition={1: 1}),
+        Cls('OH-', -1, composition={1: 1, 8: 1}),
+        Cls('NH4+', 1, composition={1: 4, 7: 1}),
+        Cls('NH3', 0, composition={1: 3, 7: 1})
     )
+
+
+@pytest.mark.parametrize('Cls', [Solute])
+def test_Equilibria_root_simple(Cls):
+    solutes = water, hydronium, hydroxide, ammonium, ammonia = _solutes(Cls)
 
     water_auto_protolysis = Equilibrium(
         {water.name: 1}, {hydronium.name: 1, hydroxide.name: 1}, 1e-14/55.5)

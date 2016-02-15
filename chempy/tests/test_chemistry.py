@@ -8,7 +8,7 @@ import pytest
 
 from ..units import default_units
 from ..chemistry import (
-    Substance, Solute, Reaction, ReactionSystem, ArrheniusRate,
+    Substance, Species, Reaction, ReactionSystem, ArrheniusRate,
     ArrheniusRateWithUnits, Equilibrium
 )
 
@@ -27,7 +27,18 @@ def test_Substance__2():
     assert sorted([OH_m, H2O], key=attrgetter('name')) == [H2O, OH_m]
 
 
+def test_Species():
+    s = Species.from_formula('H2O')
+    assert s.phase_idx == 0
+    mapping = {'(aq)': 0, '(s)': 1, '(g)': 2}
+    assert Species.from_formula('CO2(g)').phase_idx == 3
+    assert Species.from_formula('CO2(g)', mapping).phase_idx == 2
+    assert Species.from_formula('CO2(aq)', mapping).phase_idx == 0
+    assert Species.from_formula('NaCl(s)').phase_idx == 1
+
+
 def test_Solute():
+    from ..chemistry import Solute
     with pytest.warns(DeprecationWarning):
         w = Solute('H2O')
     assert w.name == 'H2O'
@@ -35,9 +46,9 @@ def test_Solute():
 
 def test_Reaction():
     substances = s_Hp, s_OHm, s_H2O = (
-        Solute('H+', composition={0: 1, 1: 1}),
-        Solute('OH-', composition={0: -1, 1: 1, 8: 1}),
-        Solute('H2O', composition={0: 0, 1: 2, 8: 1}),
+        Substance('H+', composition={0: 1, 1: 1}),
+        Substance('OH-', composition={0: -1, 1: 1, 8: 1}),
+        Substance('H2O', composition={0: 0, 1: 2, 8: 1}),
     )
     substance_names = Hp, OHm, H2O = [s.name for s in substances]
     substance_dict = {n: s for n, s in zip(substance_names, substances)}

@@ -22,7 +22,7 @@ class Substance(object):
     ----------
     name: str
     charge: int (optional, default: None)
-        will be stored in composition[0].
+        will be stored in composition[0], prefer composition when possible
     latex_name: str
     composition: dict or None (default)
         dict (int -> number) e.g. {atomic number: count}, zero has special
@@ -147,7 +147,8 @@ class Species(Substance):
         self.phase_idx = phase_idx
 
     @classmethod
-    def from_formula(cls, formula, phases=('(s)', '(g)'), **kwargs):
+    def from_formula(cls, formula, phases=('(s)', '(l)', '(g)'),
+                     default_phase_idx=0, **kwargs):
         """ Create a Species instance from its formula
 
         Analogous to .`Substance.from_formula` but with the addition that
@@ -166,6 +167,10 @@ class Species(Substance):
                 else:
                     ``phase_idx = phases.index(suffix) + 1``
             and if suffixes is missing in phases phase_idx is taken to be 0
+        default_phase_idx: int or None
+            If ``default_phase_idx`` is ``bNone``, ``ValueError`` is raised for
+                unkown suffixes.
+            Else ``default_phase_idx`` is used as ``phase_idx`` in those cases.
 
         Examples
         --------
@@ -175,15 +180,34 @@ class Species(Substance):
         >>> NaCl = Species.from_formula('NaCl(s)')
         >>> NaCl.phase_idx
         1
+        >>> Hg_l = Species.from_formula('Hg(l)')
+        >>> Hg_l.phase_idx
+        2
         >>> CO2g = Species.from_formula('CO2(g)')
         >>> CO2g.phase_idx
-        2
-        >>> CO2aq = Species.from_formula('CO2(aq)', {'(aq)': 0, '(s)': 1, '(g)': 2})
+        3
+        >>> CO2aq = Species.from_formula('CO2(aq)', default_phase_idx=None)
+        Traceback (most recent call last):
+            ...
+        ValueError: Could not determine phase_idx
+        >>> CO2aq = Species.from_formula('CO2(aq)')
         >>> CO2aq.phase_idx
         0
+        >>> CO2aq = Species.from_formula('CO2(aq)', ['(aq)'],
+        ...     default_phase_idx=None)
+        >>> CO2aq.phase_idx
+        1
+        >>> Species.from_formula('CO2(aq)', {'(aq)': 0}, None).phase_idx
+        0
+
+
+        Raises
+        ------
+        ValueError:
+            if ``default_phase_idx`` is ``None`` and no suffix found in phases
 
         """
-        p_i = 0
+        p_i = None
         if isinstance(phases, dict):
             for k, v in phases.items():
                 if formula.endswith(k):
@@ -194,6 +218,11 @@ class Species(Substance):
                 if formula.endswith(phase):
                     p_i = idx + 1
                     break
+        if p_i is None:
+            if default_phase_idx is None:
+                raise ValueError("Could not determine phase_idx")
+            else:
+                p_i = default_phase_idx
         return super(Species, cls).from_formula(
             formula, phase_idx=p_i, **kwargs)
 
@@ -338,11 +367,11 @@ class Reaction(object):
             for k, v in filter(itemgetter(1), d.items())
         ] for d in (self.reac, self.prod, self.inact_reac,
                     self.inact_prod)]
-        r_str = " + ".join(reac)
-        ir_str = ' (+ ' + " + ".join(i_reac) + ')' if len(i_reac) > 0 else ''
+        r_str = " + ".join(sorted(reac))
+        ir_str = ' (+ ' + " + ".join(sorted(i_reac)) + ')' if len(i_reac) > 0 else ''
         arrow_str = getattr(self, arrow_attr)
-        p_str = " + ".join(prod)
-        ip_str = ' (+ ' + " + ".join(i_prod) + ')' if len(i_prod) > 0 else ''
+        p_str = " + ".join(sorted(prod))
+        ip_str = ' (+ ' + " + ".join(sorted(i_prod)) + ')' if len(i_prod) > 0 else ''
         return r_str, ir_str, arrow_str, p_str, ip_str
 
     def _get_str(self, *args):
