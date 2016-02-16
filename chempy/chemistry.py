@@ -335,7 +335,7 @@ class Reaction(object):
         ----------
         string: str
             string representation of the reaction
-        substance_keys: iterable of strings
+        substance_keys: iterable of strings or string
         globals_: dict (optional)
             dict for eval for (default: None -> {'chempy': chempy})
 
@@ -352,6 +352,9 @@ class Reaction(object):
         eval which is a severe security concern for untrusted input.
 
         """
+        if isinstance(substance_keys, str):
+            if ' ' in substance_keys:
+                substance_keys = substance_keys.split()
         return to_reaction(string, substance_keys, cls.str_arrow, cls, globals_)
 
     def __eq__(lhs, rhs):
@@ -719,6 +722,14 @@ class ReactionSystem(object):
     nr: int
         number of reactions
 
+    Examples
+    --------
+    >>> from chempy import Reaction
+    >>> r1 = Reaction({'R1': 1}, {'P1': 1}, 42.0)
+    >>> rsys = ReactionSystem([r1], 'R1 P1')
+    >>> rsys.as_per_substance_array({'R1': 2, 'P1': 3})
+    array([ 2.,  3.])
+
     """
 
     def __init__(self, rxns, substances, name=None, check_balance=None):
@@ -726,6 +737,8 @@ class ReactionSystem(object):
         if isinstance(substances, OrderedDict):
             self.substances = substances
         elif isinstance(substances, str):
+            if ' ' in substances:
+                substances = substances.split()
             self.substances = OrderedDict([
                 (s, Substance(s)) for s in substances])
         else:
