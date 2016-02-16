@@ -41,7 +41,8 @@ def test_Species():
 
 def test_Solute():
     from ..chemistry import Solute
-    with pytest.warns(DeprecationWarning):
+    from ..util.pyutil import ChemPyDeprecationWarning
+    with pytest.warns(ChemPyDeprecationWarning):
         w = Solute('H2O')
     assert w.name == 'H2O'
 

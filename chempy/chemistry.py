@@ -74,7 +74,8 @@ class Substance(object):
         """ Convenience property for accessing ``other_properties['mass']``
 
         when ``other_properties['mass']`` is missing the mass is calculated
-        from the :attr:`composition` using :func:`chempy.util.parsing.mass_from_composition`.
+        from the :attr:`composition` using
+        :func:`chempy.util.parsing.mass_from_composition`.
         """
         try:
             return self.other_properties['mass']
@@ -327,7 +328,7 @@ class Reaction(object):
         self.other_properties = other_properties or {}
 
     @classmethod
-    def from_string(cls, string, substance_keys):
+    def from_string(cls, string, substance_keys, globals_=None):
         """ Parses a string into an instance
 
         Parameters
@@ -335,15 +336,23 @@ class Reaction(object):
         string: str
             string representation of the reaction
         substance_keys: iterable of strings
+        globals_: dict (optional)
+            dict for eval for (default: None -> {'chempy': chempy})
 
         Examples
         --------
-        >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4")
+        >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4",
+        ...         'H2O H+ OH-'.split())
         >>> r.reac == {'H2O': 1} and r.prod == {'H+': 1, 'OH-': 1}
         True
 
+        Notes
+        -----
+        :func:`chempy.util.parsing.to_reaction` is used which in turn calls
+        eval which is a severe security concern for untrusted input.
+
         """
-        return to_reaction(string, substance_keys, cls.str_arrow, cls)
+        return to_reaction(string, substance_keys, cls.str_arrow, cls, globals_)
 
     def __eq__(lhs, rhs):
         if not isinstance(lhs, Reaction) or not isinstance(rhs, Reaction):
@@ -590,10 +599,6 @@ class Equilibrium(Reaction):
     str_arrow = '='
     latex_arrow = r'\rightleftharpoons'
     param_char = 'K'  # convention
-
-    def __init__(self, reac, prod, param, *args, **kwargs):
-        return super(Equilibrium, self).__init__(
-            reac, prod, param, *args, **kwargs)
 
     def as_reactions(self, state=None, kf=None, kb=None, units=None):
         """ Creates a forward and backward :class:`Reaction` pair """

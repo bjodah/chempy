@@ -1,4 +1,8 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function
+
+from .util.pyutil import defaultnamedtuple, deprecated
+from .units import default_units
 
 
 def Henry_H_at_T(T, H, Tderiv, T0=None, units=None, exp=None):
@@ -31,14 +35,12 @@ def Henry_H_at_T(T, H, Tderiv, T0=None, units=None, exp=None):
         K = 1
     else:
         K = units.Kelvin
-
     if T0 is None:
         T0 = 298.15*K
-
     return H * exp(Tderiv*(1/T - 1/T0))
 
 
-class Henry(defaultnamedtuple('Henry', 'Hcp Tderiv T0 ref', [298.15, None])):
+class Henry(defaultnamedtuple('Henry', 'Hcp Tderiv T0 ref', [None, None])):
     """ Henry's gas constant
 
     Note that the reference temperature
@@ -59,16 +61,19 @@ class Henry(defaultnamedtuple('Henry', 'Hcp Tderiv T0 ref', [298.15, None])):
 
     Examples
     --------
-    >>> from chempy.units import to_unitless, default_units as u
-    >>> H_CO = Henry(9.7e-6 * u.mol/u.m3/u.Pa, 1300*u.K, 'sander_2015')
-    >>> '%.2g' % to_unitless(H_CO(298.15*u.K), u.molar/u.bar)
-    1.2e-3
+    >>> H_H2 = Henry(1.2e-3, 1800, ref='carpenter_1966')
+    >>> '%.2g' % H_H2(298.15)
+    '0.0012'
 
     """
 
     def __call__(self, T, units=None, exp=None):
         """ Evaluates Henry's constant for provided temperature """
-        return Henry_H_at_T(self.Hcp, self.Tderiv, T, units=units)
+        return Henry_H_at_T(T, self.Hcp, self.Tderiv, self.T0, units=units)
+
+    @deprecated('0.3.1', '0.5.0', __call__)
+    def get_kH_at_T(self, *args, **kwargs):
+        return self(*args, **kwargs)
 
     def get_c_at_T_and_P(self, T, P, **kwargs):
         """ Convenience method for calculating concentration
@@ -104,3 +109,19 @@ class Henry(defaultnamedtuple('Henry', 'Hcp Tderiv T0 ref', [298.15, None])):
             Keyword arguments passed on to :meth:`__call__`
         """
         return c / self(T, **kwargs)
+
+
+class HenryWithUnits(Henry):
+    """ Analogous to :class:`Henry`
+
+    Examples
+    --------
+    >>> from chempy.units import to_unitless, default_units as u
+    >>> H_CO = HenryWithUnits(9.7e-6 * u.mol/u.m**3/u.Pa, 1300*u.K, ref='sander_2015')
+    >>> '%.2g' % to_unitless(H_CO(298.15 * u.K), u.molar/u.bar)
+    '0.00097'
+
+    """
+    def __call__(self, T, units=default_units, exp=None):
+        """ Evaluates Henry's constant for provided temperature """
+        return super(HenryWithUnits, self).__call__(T, units, exp)

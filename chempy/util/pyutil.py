@@ -3,6 +3,7 @@ from __future__ import (absolute_import, division, print_function)
 
 from collections import namedtuple, Mapping
 from functools import wraps
+import os
 import warnings
 
 from .. import __url__
@@ -44,7 +45,11 @@ def defaultnamedtuple(typename, field_names, defaults=()):
     return Tuple
 
 
-class deprecated(DeprecationWarning):
+class ChemPyDeprecationWarning(DeprecationWarning):
+    pass
+
+
+class deprecated(object):
     """ decorator for deprecating functions and classes
 
     Search the code base for more examples
@@ -70,17 +75,11 @@ class deprecated(DeprecationWarning):
 
     Notes
     -----
-    DeprecationWarning is ignored by default. Run python with -W flag or set
-    the appropriate environment variable:
-
-    ::
-
-       $ python -c 'import warnings as w; w.warn("no", DeprecationWarning)'
-       $ python -Wd -c 'import warnings as w; w.warn("no", DeprecationWarning)'
-       -c:1: DeprecationWarning: no
-       $ export PYTHONWARNINGS=d
-       $ python -c 'import warnings as w; w.warn("no", DeprecationWarning)'
-       -c:1: DeprecationWarning: no
+    :class:`DeprecationWarning` is ignored by default. Therefore a custom
+    warning is used :class:`ChemPyDeprecationWarning` which is showed once
+    by default. You can modify that behaviour by setting the environment
+    variable CHEMPY_DEPRECATION_FILTER to something else than 'once'
+    (see `warnings.simplefilter` for options).
 
     """
 
@@ -110,14 +109,27 @@ class deprecated(DeprecationWarning):
         if hasattr(wrapped, '__mro__'):  # wrapped is a class
             class wrapper(wrapped):
                 def __init__(self, *args, **kwargs):
-                    warnings.warn(msg, DeprecationWarning, stacklevel=3)
+                    warnings.warn(msg, ChemPyDeprecationWarning, stacklevel=3)
                     wrapped.__init__(self, *args, **kwargs)
 
         else:  # wrapped is a function
             @wraps(wrapped)
             def wrapper(*args, **kwargs):
-                warnings.warn(msg, DeprecationWarning, stacklevel=3)
+                warnings.warn(msg, ChemPyDeprecationWarning, stacklevel=3)
                 return wrapped(*args, **kwargs)
 
         wrapper._deprecation = self
         return wrapper
+
+# Alternatively, run python with -W flag or set
+# the appropriate environment variable:
+#
+#    $ python -c 'import warnings as w; w.warn("no", DeprecationWarning)'
+#    $ python -Wd -c 'import warnings as w; w.warn("no", DeprecationWarning)'
+#    -c:1: DeprecationWarning: no
+#    $ export PYTHONWARNINGS=d
+#    $ python -c 'import warnings as w; w.warn("no", DeprecationWarning)'
+#    -c:1: DeprecationWarning: no
+
+warnings.simplefilter(os.environ.get('CHEMPY_DEPRECATION_FILTER', 'once'),
+                      ChemPyDeprecationWarning)

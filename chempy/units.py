@@ -38,6 +38,12 @@ else:
             else:
                 self._NameSpace_attr_store[attr] = val
 
+        def as_dict(self):
+            result = {k: v for k, v in self._NameSpace_default.__dict__.items()
+                      if not k.startswith('_')}
+            result.update(self._NameSpace_attr_store)
+            return result
+
     default_units = NameSpace(pq)
     default_units.decimetre = pq.UnitQuantity(
         'decimetre',  default_units.m / 10.0, u_symbol='dm')
