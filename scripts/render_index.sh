@@ -16,6 +16,9 @@ cat <<EOF>index.html
 <body>
 EOF
 for f in $@; do
+    if [[ $f == _* ]]; then
+        continue  # don't include notebooks starting with underscore
+    fi
     img=$(basename $f .html).png
     phantomjs $(unset CDPATH && cd "$(dirname "$0")" && echo $PWD)/rasterize.js $f $tmpdir/$img 1200px*900px
     convert $tmpdir/$img -resize 400x300 thumbs/$img
