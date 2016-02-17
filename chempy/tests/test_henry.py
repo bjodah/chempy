@@ -1,4 +1,9 @@
-from ..henry import Henry
+# -*- coding: utf-8 -*-
+from __future__ import (absolute_import, division, print_function)
+
+
+from ..henry import Henry, HenryWithUnits
+from ..units import allclose, default_units as u
 
 
 def test_Henry():
@@ -7,22 +12,21 @@ def test_Henry():
     assert abs(kH_O2.get_c_at_T_and_P(290, 1) - 0.001421892) < 1e-8
     assert abs(kH_O2.get_P_at_T_and_c(310, 1e-3) - 1.05) < 1e-3
 
-    try:
-        import quantities as pq
-        import numpy as np
-        from .util import allclose
+    import numpy as np
 
-        dm3 = 1e-3*pq.metre**3
-        molar = pq.mol / dm3
-        kH_H2 = Henry(7.8e-4*molar/pq.atm, 640*pq.K, units=pq, ref='dean_1992')
+    kH_H2 = HenryWithUnits(7.8e-4*u.molar/u.atm, 640*u.K, ref='dean_1992')
 
-        assert allclose(kH_H2.get_kH_at_T(
-            300*pq.K), 7.697430323e-4*molar/pq.atm)
-        kH = kH_H2.get_c_at_T_and_P(
-            np.linspace(297.5, 298.65, 3)*pq.K, .1*pq.bar)
-        assert allclose(kH, 7.7e-5*molar, rtol=1e-5, atol=1e-6*molar)
-        kH = kH_H2.get_P_at_T_and_c(
-            298.15*pq.K, np.linspace(2e-3, 2.1e-3, 3)*molar)
-        assert allclose(kH, 2.65*pq.atm, rtol=1e-5, atol=0.2*pq.bar)
-    except ImportError:
-        pass
+    assert allclose(kH_H2.get_kH_at_T(
+        300*u.K), 7.697430323e-4*u.molar/u.atm)
+    kH = kH_H2.get_c_at_T_and_P(
+        np.linspace(297.5, 298.65, 3)*u.K, .1*u.bar)
+    assert allclose(kH, 7.7e-5*u.molar, rtol=1e-5, atol=1e-6*u.molar)
+    kH = kH_H2.get_P_at_T_and_c(
+        298.15*u.K, np.linspace(2e-3, 2.1e-3, 3)*u.molar)
+    assert allclose(kH, 2.65*u.atm, rtol=1e-5, atol=0.2*u.bar)
+
+
+def test_HenryWithUnits():
+    kH_H2 = HenryWithUnits(7.8e-4*u.molar/u.atm, 640*u.K, ref='dean_1992')
+    Hcp = kH_H2(300*u.K)
+    assert allclose(Hcp, 7.697430323e-4*u.molar/u.atm)

@@ -6,5 +6,8 @@ related problems.
 
 from __future__ import absolute_import, division, print_function
 
+from ._url import __url__
 from ._release import __version__
-__url__ = "https://github.com/bjodah/chempy"
+from .chemistry import Substance, Reaction, Equilibrium, ReactionSystem, Species
+from .equilibria import EqSystem
+from .henry import Henry

@@ -1,5 +1,6 @@
 v0.3.1
 ======
+- chemistry.Solute deprecated, will be removed in v0.4.0, use chemistry.Species instead
 - ReactionSystem now handles "substances" argument more robustely.
 
 v0.3.0
@@ -25,6 +26,6 @@ v0.2.0
 - Added method: Reaction.order()
 - Added chempy.properties.sulfuric_acid_density_myhre_1998
 
-v0.1
-====
+v0.1.0
+======
 - Initial release

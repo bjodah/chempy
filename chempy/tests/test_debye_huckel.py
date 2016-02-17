@@ -2,7 +2,7 @@ from math import log as ln
 
 from ..debye_huckel import A as A_dh, B as B_dh
 from ..debye_huckel import limiting_log_gamma
-from .util import allclose
+from ..units import allclose
 
 import quantities as pq
 

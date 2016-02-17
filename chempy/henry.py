@@ -1,15 +1,53 @@
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
+# -*- coding: utf-8 -*-
+"""
+Module for dealing with constants `Henry's law
+<https://en.wikipedia.org/wiki/Henry's_law>`_.
+"""
+from __future__ import absolute_import, division, print_function
 
-try:
-    from numpy import exp as _exp
-except ImportError:
-    from math import exp as _exp
+from .util.pyutil import defaultnamedtuple, deprecated
+from .units import default_units
 
 
-class Henry(object):
+def Henry_H_at_T(T, H, Tderiv, T0=None, units=None, exp=None):
+    """ Evaluate Henry's constant H at temperature T
+
+    Parameters
+    ----------
+    T: float
+        Temperature (with units), assumed to be in Kelvin if ``units == None``
+    H: float
+        Henry's constant
+    Tderiv: float (optional)
+        dln(H)/d(1/T), assumed to be in Kelvin if ``units == None``.
+        default: 298.15 K
+    T0: float
+        Reference temperature, assumed to be in Kelvin if ``units == None``
+    units: object (optional)
+        object with attributes: kelvin (e.g. chempy.units.default_units)
+    exp: callback (optional)
+        callback for calculating the exponential, default: numpy.exp, math.exp
+
     """
-    Henry's gas constant. Note that the reference temperature
+    if exp is None:
+        try:
+            from numpy import exp
+        except ImportError:
+            from math import exp
+
+    if units is None:
+        K = 1
+    else:
+        K = units.Kelvin
+    if T0 is None:
+        T0 = 298.15*K
+    return H * exp(Tderiv*(1/T - 1/T0))
+
+
+class Henry(defaultnamedtuple('Henry', 'Hcp Tderiv T0 ref', [None, None])):
+    """ Henry's gas constant
+
+    Note that the reference temperature
     is set by the attribute :py:attr:`T0` which defaults to
     298.15 (Kelvin).
 
@@ -24,37 +62,70 @@ class Henry(object):
         Reference for origin of parameters
     units: object (optional)
         object with attributes: kelvin
+
+    Examples
+    --------
+    >>> H_H2 = Henry(1.2e-3, 1800, ref='carpenter_1966')
+    >>> '%.2g' % H_H2(298.15)
+    '0.0012'
+
     """
 
-    def __init__(self, kH0, derivative, T0=None, units=None, ref=None):
-        if units is None:
-            kelvin = 1
-        else:
-            kelvin = units.kelvin
-        self.kH0 = kH0
-        self.derivative = derivative
-        if T0 is None:
-            self.T0 = 298.15 * kelvin
-        else:
-            self.T0 = T0
-        self.ref = ref
+    def __call__(self, T, units=None, exp=None):
+        """ Evaluates Henry's constant for provided temperature """
+        return Henry_H_at_T(T, self.Hcp, self.Tderiv, self.T0, units=units)
 
-    def get_kH_at_T(self, T, exp=None):
-        """ Evaluate kH at temperature T """
-        if exp is None:
-            exp = _exp
-        return self.kH0 * exp(
-            self.derivative*(1/T - 1/self.T0))
+    @deprecated('0.3.1', '0.5.0', __call__)
+    def get_kH_at_T(self, *args, **kwargs):
+        return self(*args, **kwargs)
 
-    def get_c_at_T_and_P(self, T, P):
-        """
-        Calculate what concentration is needed for achieving a given partial
+    def get_c_at_T_and_P(self, T, P, **kwargs):
+        """ Convenience method for calculating concentration
+
+        Calculate what concentration is needed to achieve a given partial
         pressure at a specified temperature
-        """
-        return P * self.get_kH_at_T(T)
 
-    def get_P_at_T_and_c(self, T, c):
+        Parameters
+        ----------
+        T: float
+            Temperature
+        P: float
+            Pressure
+        \*\*kwargs:
+            Keyword arguments passed on to :meth:`__call__`
+
         """
+        return P * self(T, **kwargs)
+
+    def get_P_at_T_and_c(self, T, c, **kwargs):
+        """ Convenience method for calculating concentration
+
         Calculate the partial pressure for given temperature and concentration
+
+
+        Parameters
+        ----------
+        T: float
+            Temperature
+        P: float
+            Pressure
+        \*\*kwargs:
+            Keyword arguments passed on to :meth:`__call__`
         """
-        return c / self.get_kH_at_T(T)
+        return c / self(T, **kwargs)
+
+
+class HenryWithUnits(Henry):
+    """ Analogous to :class:`Henry`
+
+    Examples
+    --------
+    >>> from chempy.units import to_unitless, default_units as u
+    >>> H_CO = HenryWithUnits(9.7e-6 * u.mol/u.m**3/u.Pa, 1300*u.K, ref='sander_2015')
+    >>> '%.2g' % to_unitless(H_CO(298.15 * u.K), u.molar/u.bar)
+    '0.00097'
+
+    """
+    def __call__(self, T, units=default_units, exp=None):
+        """ Evaluates Henry's constant for provided temperature """
+        return super(HenryWithUnits, self).__call__(T, units, exp)

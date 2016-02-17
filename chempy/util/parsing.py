@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+""" Functions for chemical formulae and reactions """
 
 from __future__ import (absolute_import, division, print_function)
 
@@ -174,6 +175,28 @@ relative_atomic_masses = tuple(_get_relative_atomic_masses())
 
 
 def mass_from_composition(composition):
+    """ Calculates molecular mass from atomic weights
+
+    Parameters
+    ----------
+    composition: dict
+        Dictionary mapping int (atomic number) to int (coefficient)
+
+    Returns
+    -------
+    float
+        molecular weight in atomic mass units
+
+
+    Notes
+    -----
+    Atomic number 0 denotes charge or "net electron defficiency"
+
+    Examples
+    --------
+    >>> '%.2f' % mass_from_composition({0: -1, 1: 1, 8: 1})
+    '17.01'
+    """
     mass = 0.0
     for k, v in composition.items():
         if k == 0:  # electron
@@ -354,7 +377,7 @@ def _parse_multiplicity(strings):
     return result
 
 
-def to_reaction(line, substance_keys):
+def to_reaction(line, substance_keys, token, Cls, globals_=None):
     """ Parses a string into a Reaction object and substances
 
     Reac1 + 2 Reac2 + (2 Reac1) -> Prod1 + Prod2; 10**3.7; ref='doi:12/ab'
@@ -366,26 +389,45 @@ def to_reaction(line, substance_keys):
         string representation to be parsed
     substance_keys: iterable of strings
         Allowed names, e.g. ('H2O', 'H+', 'OH-')
+    globals_: dict (optional)
+        Globals passed on to :func:`eval`, when ``None``:
+        `chempy.units.default_units` is used with 'chempy'
+        and 'default_units' extra entries.
+
+    Notes
+    -----
+    This function calls :func:`eval`, hence there are severe security concerns
+    with running this on untrusted data.
 
     """
     # TODO: add handling of units.
+    if globals_ is None:
+        import chempy
+        from chempy.units import default_units
+        globals_ = {'chempy': chempy, 'default_units': default_units}
+        globals_.update(default_units.as_dict())
 
-    from ..chemistry import Reaction, Equilibrium
-    stoich, param, kwargs = map(str.strip, line.rstrip('\n').split(';'))
-    for token in ('->', '='):
-        if token in stoich:
-            reac_prod = [[y.strip() for y in x.split(' + ')] for
-                         x in stoich.split(token)]
-            Cls = {'->': Reaction, '=': Equilibrium}[token]
-            break
+    try:
+        stoich, param, kwargs = map(str.strip, line.rstrip('\n').split(';'))
+    except ValueError:
+        stoich, param = map(str.strip, line.rstrip('\n').split(';'))
+        kwargs = {}
     else:
-        raise ValueError("Missing token: -> or =")
+        kwargs = eval('dict('+kwargs+')', globals_)
+
+    param = eval(param, globals_)
+
+    if token not in stoich:
+        raise ValueError("Missing token: %s" % token)
+
+    reac_prod = [[y.strip() for y in x.split(' + ')] for
+                 x in stoich.split(token)]
 
     act, inact = [], []
     for side in reac_prod:
         if side[-1].startswith('('):
             if not side[-1].endswith(')'):
-                raise ValueError("Bad format (missing closing paren in inactive part)")
+                raise ValueError("Bad format (missing closing paren)")
             inact.append(_parse_multiplicity(side[-1][1:-1].split(' + ')))
             act.append(_parse_multiplicity(side[:-1]))
         else:
@@ -393,5 +435,5 @@ def to_reaction(line, substance_keys):
             act.append(_parse_multiplicity(side))
 
     # stoich coeff -> dict
-    return Cls(act[0], act[1], eval(param), inact_reac=inact[0],
-               inact_prod=inact[1], **eval('dict('+kwargs+')'))
+    return Cls(act[0], act[1], param, inact_reac=inact[0],
+               inact_prod=inact[1], **kwargs)

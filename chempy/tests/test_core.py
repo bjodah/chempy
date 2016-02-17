@@ -1,4 +1,4 @@
-from ..core import ActivityProduct, ionic_strength
+from ..core import _ActivityProductBase, ionic_strength
 
 
 def test_ionic_strength():
@@ -6,7 +6,7 @@ def test_ionic_strength():
                               [-1, 2, -3, 4]) - 17.7) < 1e-14
 
 
-def test_ActivityProduct():
-    ap = ActivityProduct((1, -2, 3), 17, 42)
+def test_ActivityProductBase():
+    ap = _ActivityProductBase((1, -2, 3), 17, 42)
     assert ap.stoich == (1, -2, 3)
     assert ap.args == (17, 42)

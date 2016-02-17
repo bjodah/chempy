@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
-
+"""
+Convenince functions for representing reaction systems as graphs.
+"""
 import os
 import subprocess
 import shutil
 import tempfile
-
-
-"""
-Convenince functions for representing reaction systems as graphs.
-"""
 
 
 def rsys2dot(rsys, tex=False, rprefix='r', rref0=1,

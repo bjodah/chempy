@@ -4,9 +4,11 @@ from __future__ import (absolute_import, division, print_function)
 import math
 from operator import attrgetter
 
+import pytest
+
 from ..units import default_units
 from ..chemistry import (
-    Substance, Solute, Reaction, ReactionSystem, ArrheniusRate,
+    Substance, Species, Reaction, ReactionSystem, ArrheniusRate,
     ArrheniusRateWithUnits, Equilibrium
 )
 
@@ -18,21 +20,38 @@ def test_Substance():
     assert abs(s.mass - 1.008) < 1e-3
 
 
-def test_Substance__periodictable():
-    import periodictable
-    H2O = Substance(name='H2O',  charge=0, formula=periodictable.formula('H2O'),
-                    latex_name=r'$\mathrm{H_{2}O}$',
+def test_Substance__2():
+    H2O = Substance(name='H2O',  charge=0, latex_name=r'$\mathrm{H_{2}O}$',
                     other_properties={'pKa': 14})
-    OH_m = Substance(name='OH-',  charge=-1, formula=periodictable.formula('OH'),
-                     latex_name=r'$\mathrm{OH^{-}}$')
+    OH_m = Substance(name='OH-',  charge=-1, latex_name=r'$\mathrm{OH^{-}}$')
     assert sorted([OH_m, H2O], key=attrgetter('name')) == [H2O, OH_m]
+
+
+def test_Species():
+    s = Species.from_formula('H2O')
+    assert s.phase_idx == 0
+    mapping = {'(aq)': 0, '(s)': 1, '(g)': 2}
+    assert Species.from_formula('CO2(g)').phase_idx == 3
+    assert Species.from_formula('CO2(g)', mapping).phase_idx == 2
+    assert Species.from_formula('CO2(aq)', mapping).phase_idx == 0
+    assert Species.from_formula('NaCl(s)').phase_idx == 1
+    assert Species.from_formula('NaCl(s)', phase_idx=7).phase_idx == 7
+    assert Species.from_formula('CO2(aq)', mapping, phase_idx=7).phase_idx == 7
+
+
+def test_Solute():
+    from ..chemistry import Solute
+    from ..util.pyutil import ChemPyDeprecationWarning
+    with pytest.warns(ChemPyDeprecationWarning):
+        w = Solute('H2O')
+    assert w.name == 'H2O'
 
 
 def test_Reaction():
     substances = s_Hp, s_OHm, s_H2O = (
-        Solute('H+', composition={0: 1, 1: 1}),
-        Solute('OH-', composition={0: -1, 1: 1, 8: 1}),
-        Solute('H2O', composition={0: 0, 1: 2, 8: 1}),
+        Substance('H+', composition={0: 1, 1: 1}),
+        Substance('OH-', composition={0: -1, 1: 1, 8: 1}),
+        Substance('H2O', composition={0: 0, 1: 2, 8: 1}),
     )
     substance_names = Hp, OHm, H2O = [s.name for s in substances]
     substance_dict = {n: s for n, s in zip(substance_names, substances)}

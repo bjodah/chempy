@@ -4,38 +4,17 @@ from __future__ import division
 
 from itertools import chain
 from operator import itemgetter
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict
 
 import numpy as np
 
 from .arrhenius import arrhenius_equation
 from .util.arithmeticdict import ArithmeticDict
-from .util.parsing import to_composition, mass_from_composition, to_latex
-from .util.pyutil import defaultnamedtuple
+from .util.parsing import (
+    to_composition, mass_from_composition, to_latex, to_reaction
+)
+from .util.pyutil import defaultnamedtuple, deprecated
 from .units import to_unitless, default_constants, default_units
-
-
-def elements(formula):
-    """
-    Returns a dict mapping {periodictable.core.Element: int}
-
-    Parameters
-    ----------
-    formula: periodictable.formulas.Formula
-
-    Returns
-    -------
-    defaultdict(int) with atom numbers as keys and respective number
-        of occuring atoms in formula.
-    """
-    # see https://github.com/pkienzle/periodictable/issues/14
-    d = defaultdict(int)
-    for atm, n in formula.atoms.items():
-        try:
-            d[atm.element] += n
-        except AttributeError:
-            d[atm] += n
-    return d
 
 
 class Substance(object):
@@ -45,23 +24,22 @@ class Substance(object):
     ----------
     name: str
     charge: int (optional, default: None)
-        will be stored in composition[0].
+        will be stored in composition[0], prefer composition when possible
     latex_name: str
-    formula: str (optional, default: None)
-        e.g. 'Na/+', 'H2O', 'Fe(CN)6/4-' used when charge and composition are
-        ``None``.
     composition: dict or None (default)
         dict (int -> number) e.g. {atomic number: count}, zero has special
         meaning (net charge)
     other_properties: dict
         free form dictionary. Could be simple such as ``{'mp': 0, 'bp': 100}``
-        or considerably more involved, e.g.: ``{'diffusion_coefficient': {
-            'water': lambda T: 2.1*m**2/s/K*(T - 273.15*K)}}``
+        or considerably more involved, e.g.: ``{'diffusion_coefficient': {\
+ 'water': lambda T: 2.1*m**2/s/K*(T - 273.15*K)}}``
 
     Attributes
     ----------
     mass
         maps to other_properties, and when unavailable looks for formula.mass
+    attrs
+        a tuple of attribute names for serialization
 
     Examples
     --------
@@ -88,17 +66,24 @@ class Substance(object):
 
     @property
     def charge(self):
+        """ Convenience property for accessing ``composition[0]`` """
         return self.composition.get(0, 0)  # electron (net) deficiency
 
     @property
     def mass(self):
+        """ Convenience property for accessing ``other_properties['mass']``
+
+        when ``other_properties['mass']`` is missing the mass is calculated
+        from the :attr:`composition` using
+        :func:`chempy.util.parsing.mass_from_composition`.
+        """
         try:
             return self.other_properties['mass']
         except KeyError:
             if self.composition is not None:
                 return mass_from_composition(self.composition)
 
-    def __init__(self, name=None, charge=None, latex_name=None, formula=None,
+    def __init__(self, name=None, charge=None, latex_name=None,
                  composition=None, other_properties=None):
         self.name = name
         self.latex_name = latex_name
@@ -114,6 +99,29 @@ class Substance(object):
 
     @classmethod
     def from_formula(cls, formula, **kwargs):
+        """ Creates a :class:`Substance` instance from its formula
+
+        Parameters
+        ----------
+        formula: str
+            e.g. 'Na/+', 'H2O', 'Fe(CN)6/4-'
+        \*\*kwargs:
+            keyword arguments passed on to `.Substance`
+
+        Examples
+        --------
+        >>> NH3 = Substance.from_formula('NH3')
+        >>> NH3.composition == {1: 3, 7: 1}
+        True
+        >>> '%.2f' % NH3.mass
+        '17.03'
+        >>> NH3.charge
+        0
+        >>> NH3.latex_name
+        'NH_{3}'
+
+        """
+
         return cls(formula, latex_name=to_latex(formula),
                    composition=to_composition(formula),
                    **kwargs)
@@ -127,6 +135,7 @@ class Substance(object):
 
     @staticmethod
     def composition_keys(substance_iter):
+        """ Occuring :attr:`composition` keys among a series of substances """
         keys = set()
         for s in substance_iter:
             for k in s.composition.keys():
@@ -134,17 +143,135 @@ class Substance(object):
         return sorted(keys)
 
 
+class Species(Substance):
+    """ Substance belonging to a phase
+
+    Species extends :class:`Substance` with the new attribute :attr:`phase_idx`
+
+    Attributes
+    ----------
+    phase_idx: int
+        Index of the phase (default is 0)
+    """
+    def __init__(self, *args, **kwargs):
+        phase_idx = kwargs.pop('phase_idx', 0)
+        super(Species, self).__init__(*args, **kwargs)
+        self.phase_idx = phase_idx
+
+    @property
+    @deprecated(deprecated_since_version='0.3.1', will_be_missing_in='0.4.0')
+    def precipitate(self):
+        """ deprecated attribute, provided for compatibility for now """
+        return self.phase_idx > 0
+
+    @classmethod
+    def from_formula(cls, formula, phases=('(s)', '(l)', '(g)'),
+                     default_phase_idx=0, **kwargs):
+        """ Create a :class:`Species` instance from its formula
+
+        Analogous to :meth:`Substance.from_formula` but with the addition that
+        phase_idx is determined from the formula (and a mapping provided by
+        ``phases``)
+
+        Parameters
+        ----------
+        formula: str
+            e.g. 'H2O', 'NaCl(s)', 'CO2(aq)', 'CO2(g)'
+        phases: iterable of str or dict mapping str -> int
+            if not in \*\*kwargs, ``phase_idx`` is determined from the suffix
+            of ``formula`` where the suffixes is mapped from phases:
+                if ``phases`` is a dictionary:
+                    ``phase_idx = phases[suffix]``
+                else:
+                    ``phase_idx = phases.index(suffix) + 1``
+            and if suffixes is missing in phases phase_idx is taken to be 0
+        default_phase_idx: int or None
+            If ``default_phase_idx`` is ``bNone``, ``ValueError`` is raised for
+                unkown suffixes.
+            Else ``default_phase_idx`` is used as ``phase_idx`` in those cases.
+        \*\*kwargs:
+            Keyword arguments passed on.
+
+        Examples
+        --------
+        >>> water = Species.from_formula('H2O')
+        >>> water.phase_idx
+        0
+        >>> NaCl = Species.from_formula('NaCl(s)')
+        >>> NaCl.phase_idx
+        1
+        >>> Hg_l = Species.from_formula('Hg(l)')
+        >>> Hg_l.phase_idx
+        2
+        >>> CO2g = Species.from_formula('CO2(g)')
+        >>> CO2g.phase_idx
+        3
+        >>> CO2aq = Species.from_formula('CO2(aq)', default_phase_idx=None)
+        Traceback (most recent call last):
+            ...
+        ValueError: Could not determine phase_idx
+        >>> CO2aq = Species.from_formula('CO2(aq)')
+        >>> CO2aq.phase_idx
+        0
+        >>> CO2aq = Species.from_formula('CO2(aq)', ['(aq)'],
+        ...     default_phase_idx=None)
+        >>> CO2aq.phase_idx
+        1
+        >>> Species.from_formula('CO2(aq)', {'(aq)': 0}, None).phase_idx
+        0
+
+
+        Raises
+        ------
+        ValueError:
+            if ``default_phase_idx`` is ``None`` and no suffix found in phases
+
+        """
+        if 'phase_idx' in kwargs:
+            p_i = kwargs.pop('phase_idx')
+        else:
+            p_i = None
+            if isinstance(phases, dict):
+                for k, v in phases.items():
+                    if formula.endswith(k):
+                        p_i = v
+                        break
+            else:
+                for idx, phase in enumerate(phases):
+                    if formula.endswith(phase):
+                        p_i = idx + 1
+                        break
+            if p_i is None:
+                if default_phase_idx is None:
+                    raise ValueError("Could not determine phase_idx")
+                else:
+                    p_i = default_phase_idx
+        return super(Species, cls).from_formula(
+            formula, phase_idx=p_i, **kwargs)
+
+
+@deprecated(deprecated_since_version='0.3.1',
+            will_be_missing_in='0.4.0', use_instead=Species)
 class Solute(Substance):
+    """ [DEPRECATED] Use `.Species` instead
+
+    Counter-intuitive to its name Solute has an additional
+    property 'precipitate'
+
+    """
 
     def __init__(self, *args, **kwargs):
-        self.precipitate = kwargs.pop('precipitate', False)
-        super(self.__class__, self).__init__(*args, **kwargs)
+        precipitate = kwargs.pop('precipitate', False)
+        Substance.__init__(self, *args, **kwargs)
+        self.precipitate = precipitate
 
     @classmethod
     def from_formula(cls, formula, **kwargs):
         if formula.endswith('(s)'):
             kwargs['precipitate'] = True
-        return super(Solute, cls).from_formula(formula, **kwargs)
+        return cls(formula, latex_name=to_latex(formula),
+                   composition=to_composition(formula),
+                   **kwargs)
 
 
 class Reaction(object):
@@ -200,6 +327,36 @@ class Reaction(object):
         self.ref = ref
         self.other_properties = other_properties or {}
 
+    @classmethod
+    def from_string(cls, string, substance_keys, globals_=None):
+        """ Parses a string into an instance
+
+        Parameters
+        ----------
+        string: str
+            string representation of the reaction
+        substance_keys: iterable of strings or string
+        globals_: dict (optional)
+            dict for eval for (default: None -> {'chempy': chempy})
+
+        Examples
+        --------
+        >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4",
+        ...         'H2O H+ OH-'.split())
+        >>> r.reac == {'H2O': 1} and r.prod == {'H+': 1, 'OH-': 1}
+        True
+
+        Notes
+        -----
+        :func:`chempy.util.parsing.to_reaction` is used which in turn calls
+        eval which is a severe security concern for untrusted input.
+
+        """
+        if isinstance(substance_keys, str):
+            if ' ' in substance_keys:
+                substance_keys = substance_keys.split()
+        return to_reaction(string, substance_keys, cls.str_arrow, cls, globals_)
+
     def __eq__(lhs, rhs):
         if not isinstance(lhs, Reaction) or not isinstance(rhs, Reaction):
             return NotImplemented
@@ -209,19 +366,23 @@ class Reaction(object):
         return True
 
     def order(self):
+        """ Sum of (active) reactant stoichiometries """
         return sum(self.reac.values())
 
     def net_stoich(self, substance_keys):
+        """ Per substance net stoichiometry tuple (active & inactive) """
         return tuple(self.prod.get(k, 0) -
                      self.reac.get(k, 0) +
                      self.inact_prod.get(k, 0) -
                      self.inact_reac.get(k, 0) for k in substance_keys)
 
     def all_reac_stoich(self, substances):
+        """ Per substance reactant stoichiometry tuple (active & inactive) """
         return tuple(self.reac.get(k, 0) + self.inact_reac.get(k, 0)
                      for k in substances)
 
     def all_prod_stoich(self, substances):
+        """ Per substance product stoichiometry tuple (active & inactive) """
         return tuple(self.prod.get(k, 0) + self.inact_prod.get(k, 0)
                      for k in substances)
 
@@ -263,11 +424,11 @@ class Reaction(object):
             for k, v in filter(itemgetter(1), d.items())
         ] for d in (self.reac, self.prod, self.inact_reac,
                     self.inact_prod)]
-        r_str = " + ".join(reac)
-        ir_str = ' (+ ' + " + ".join(i_reac) + ')' if len(i_reac) > 0 else ''
+        r_str = " + ".join(sorted(reac))
+        ir_str = ' (+ ' + " + ".join(sorted(i_reac)) + ')' if len(i_reac) > 0 else ''
         arrow_str = getattr(self, arrow_attr)
-        p_str = " + ".join(prod)
-        ip_str = ' (+ ' + " + ".join(i_prod) + ')' if len(i_prod) > 0 else ''
+        p_str = " + ".join(sorted(prod))
+        ip_str = ' (+ ' + " + ".join(sorted(i_prod)) + ')' if len(i_prod) > 0 else ''
         return r_str, ir_str, arrow_str, p_str, ip_str
 
     def _get_str(self, *args):
@@ -281,7 +442,7 @@ class Reaction(object):
                 str_param = '%.3g' % self.param
             except TypeError:
                 str_param = str(self.param)
-        s = '; ' + self.param_char + '=' + str_param
+        s = '; ' + str_param
         return self._get_str('name', 'str_arrow', {
             k: k for k in chain(self.reac.keys(), self.prod.keys(),
                                 self.inact_reac.keys(),
@@ -289,6 +450,7 @@ class Reaction(object):
         }) + s
 
     def latex(self, substances):
+        """ Returns a LaTeX representation of the reaction """
         return self._get_str('latex_name', 'latex_arrow', substances)
 
     def _violation(self, substances, attr):
@@ -299,12 +461,39 @@ class Reaction(object):
         return net
 
     def mass_balance_violation(self, substances):
+        """ Net amount of mass produced
+
+        Parameters
+        ----------
+        substances: dict
+
+        Returns
+        -------
+        float: amount of net mass produced/consumed
+
+        """
         return self._violation(substances, 'mass')
 
     def charge_neutrality_violation(self, substances):
+        """ Net amount of charge produced
+
+        Parameters
+        ----------
+        substances: dict
+
+        Returns
+        -------
+        float: amount of net charge produced/consumed
+
+        """
         return self._violation(substances, 'charge')
 
     def composition_violation(self, substances, composition_keys=None):
+        """ Net amount of constituent produced
+
+        If composition keys correspond to conserved entities e.g. atoms
+        in chemical reactions, this function should return a list of zeros.
+        """
         if composition_keys is None:
             composition_keys = Substance.composition_keys(substances.values())
         net = [0]*len(composition_keys)
@@ -316,6 +505,21 @@ class Reaction(object):
 
 
 def equilibrium_quotient(concs, stoich):
+    """ Calculates the equilibrium quotient of an equilbrium
+
+    Parameters
+    ----------
+    concs: array_like
+        per substance concentration
+    stoich: iterable of integers
+        per substance stoichiometric coefficient
+
+    Examples
+    --------
+    >>> '%.12g' % equilibrium_quotient([1.0, 1e-7, 1e-7], [-1, 1, 1])
+    '1e-14'
+
+    """
     if not hasattr(concs, 'ndim') or concs.ndim == 1:
         tot = 1
     else:
@@ -328,16 +532,26 @@ def equilibrium_quotient(concs, stoich):
 
 
 class ArrheniusRate(defaultnamedtuple('ArrheniusRate', 'A Ea ref', [None])):
-    """
+    """ Kinetic data in the form of an Arrhenius parametrization
+
+    Parameters
+    ----------
     Ea: float
         activation energy
     A: float
         preexponential prefactor (Arrhenius type eq.)
     ref: object (default: None)
         arbitrary reference (e.g. string representing citation key)
+
+    Examples
+    --------
+    >>> k = ArrheniusRate(1e13, 40e3)
+    >>> '%.5g' % k(298.15)
+    '9.8245e+05'
+
     """
     def __call__(self, T, constants=None, units=None, exp=None):
-        """ See :py:func`chempy.arrhenius.arrhenius_equation`. """
+        """ See :func:`chempy.arrhenius.arrhenius_equation`. """
         return arrhenius_equation(self.A, self.Ea, T, constants=constants,
                                   units=units, exp=exp)
 
@@ -374,27 +588,23 @@ class ArrheniusRate(defaultnamedtuple('ArrheniusRate', 'A Ea ref', [None])):
 class ArrheniusRateWithUnits(ArrheniusRate):
     def __call__(self, T, constants=default_constants, units=default_units,
                  exp=None):
+        """ See :func:`chempy.arrhenius.arrhenius_equation`. """
         return super(ArrheniusRateWithUnits, self).__call__(
             T, constants, units, exp)
 
 
 class Equilibrium(Reaction):
-    """
-    Represents equilibrium reaction
+    """ Represents an equilibrium reaction
 
-    See :py:class:`Reaction` for parameters
-    """
+    See :class:`Reaction` for parameters
 
+    """
     str_arrow = '='
     latex_arrow = r'\rightleftharpoons'
     param_char = 'K'  # convention
 
-    def __init__(self, reac, prod, param, *args, **kwargs):
-        return super(Equilibrium, self).__init__(
-            reac, prod, param, *args, **kwargs)
-
     def as_reactions(self, state=None, kf=None, kb=None, units=None):
-        """ Creates a pair of Reaction instances """
+        """ Creates a forward and backward :class:`Reaction` pair """
         nb = sum(self.prod.values())
         nf = sum(self.reac.values())
         if units is None:
@@ -432,6 +642,7 @@ class Equilibrium(Reaction):
             return self.param
 
     def Q(self, substances, concs):
+        """ Calculates the equilibrium qoutient """
         stoich = self.non_precipitate_stoich(substances)
         return equilibrium_quotient(concs, stoich)
 
@@ -511,6 +722,14 @@ class ReactionSystem(object):
     nr: int
         number of reactions
 
+    Examples
+    --------
+    >>> from chempy import Reaction
+    >>> r1 = Reaction({'R1': 1}, {'P1': 1}, 42.0)
+    >>> rsys = ReactionSystem([r1], 'R1 P1')
+    >>> rsys.as_per_substance_array({'R1': 2, 'P1': 3})
+    array([ 2.,  3.])
+
     """
 
     def __init__(self, rxns, substances, name=None, check_balance=None):
@@ -518,6 +737,8 @@ class ReactionSystem(object):
         if isinstance(substances, OrderedDict):
             self.substances = substances
         elif isinstance(substances, str):
+            if ' ' in substances:
+                substances = substances.split()
             self.substances = OrderedDict([
                 (s, Substance(s)) for s in substances])
         else:
@@ -551,6 +772,7 @@ class ReactionSystem(object):
                     raise ValueError("Unkown substance: %s" % key)
 
     def substance_names(self):
+        """ Returns a tuple of the substances' names """
         return tuple(substance.name for substance in self.substances.values())
 
     @property
@@ -564,10 +786,11 @@ class ReactionSystem(object):
         return len(self.substances)
 
     def params(self):
+        """ Returns list of per reaction ``param`` value """
         return [rxn.param for rxn in self.rxns]
 
     def as_per_substance_array(self, cont, dtype=np.float64, unit=None):
-        """ Turns e.g. a dict into an ordered array """
+        """ Turns a dict into an ordered array """
         if unit is not None:
             cont = to_unitless(cont, unit)
         if isinstance(cont, np.ndarray):
@@ -602,6 +825,7 @@ class ReactionSystem(object):
         return self._stoichs('all_prod_stoich')
 
     def stoichs(self, non_precip_rids=()):
+        """ Conditional stoichiometries depending on precipitation status """
         # dtype: see https://github.com/sympy/sympy/issues/10295
         return np.array([(
             -np.array(eq.precipitate_stoich(self.substances)[0]) if idx
