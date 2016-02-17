@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 from __future__ import division
 
 from collections import defaultdict
+from itertools import chain
 
 
 class ArithmeticDict(defaultdict):
@@ -17,6 +19,24 @@ class ArithmeticDict(defaultdict):
     Nonexisting keys are interpreted to signal a zero
 
     __eq__ ignores values equal to ``self.default_factory()``
+
+    Examples
+    --------
+    >>> d1 = ArithmeticDict(float, {'a': 2.0, 'b': 3.0})
+    >>> d2 = ArithmeticDict(float, {'b': 5.0, 'c': 7.0})
+    >>> (d1 + d2) == {'a': 2., 'b': 8., 'c': 7., 'd': 0.}
+    True
+    >>> (d1 * d1) == {'a': 4.0, 'b': 9.0, 'z': 0}
+    True
+    >>> (d1 * d2) == {'b': 15}
+    True
+    >>> d1*2 == {'a': 4, 'b': 6}
+    True
+    >>> (d1 / {'a': 2, 'b': 11})['b'] == 3./11
+    True
+    >>> d2/3 == {'b': 5./3, 'c': 7./3}
+    True
+
     """
 
     def copy(self):
@@ -57,10 +77,10 @@ class ArithmeticDict(defaultdict):
         return -1*self + other
 
     def __imul__(self, other):
-        try:
-            for k, v in other.items():
-                self[k] *= v
-        except AttributeError:
+        if hasattr(other, 'keys'):
+            for k in set(chain(self.keys(), other.keys())):
+                self[k] = self[k]*other[k]
+        else:
             for k in self:
                 self[k] *= other
         return self
@@ -74,10 +94,10 @@ class ArithmeticDict(defaultdict):
         return self * other
 
     def __itruediv__(self, other):
-        try:
-            for k, v in other.items():
-                self[k] /= v
-        except AttributeError:
+        if hasattr(other, 'items'):
+            for k in set(chain(self.keys(), other.keys())):
+                self[k] = self[k]/other[k]
+        else:
             for k in self:
                 self[k] /= other
         return self
