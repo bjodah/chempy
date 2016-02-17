@@ -1,4 +1,8 @@
-from __future__ import division
+"""
+This module collects special cases of systems for which analytic solutions
+are available.
+"""
+from __future__ import (absolute_import, division, print_function)
 
 # Add documentation
 # Rename esoteric parameter names

@@ -6,19 +6,17 @@ from itertools import chain
 
 
 class ArithmeticDict(defaultdict):
-    """
-    A dictionary which supports:
+    """ A dictionary which supports arithmetics
 
-    addition, subtraction, multiplication and division
-
-    subclassed from defaultdict, if other term/factor
-    has items() the arithmetics is performed on a key
-    per key basis. If AttributeError is raised when trying
-    to access items() the operation is broadcasted onto all values.
-
+    Subclassed from defaultdict, with support for addition, subtraction,
+    multiplication and division. If other term/factor has a :meth:`keys` method
+    the arithmetics are performed on a key per key basis. If :meth:`keys` is
+    missing, the operation is broadcasted onto all values.
     Nonexisting keys are interpreted to signal a zero
 
-    __eq__ ignores values equal to ``self.default_factory()``
+    Notes
+    -----
+    ``__eq__`` ignores values equal to ``self.default_factory()``
 
     Examples
     --------
@@ -94,7 +92,7 @@ class ArithmeticDict(defaultdict):
         return self * other
 
     def __itruediv__(self, other):
-        if hasattr(other, 'items'):
+        if hasattr(other, 'keys'):
             for k in set(chain(self.keys(), other.keys())):
                 self[k] = self[k]/other[k]
         else:

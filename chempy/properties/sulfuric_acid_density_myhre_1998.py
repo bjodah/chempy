@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
+"""
+This module implements the denisty parameterisation of aqueous sulfuric acid
+of Myhre et al. from 1998.
+"""
 from __future__ import (absolute_import, division, print_function)
 
 import numpy as np
 import warnings
+
+from ..util import NoConvergence
+
 
 _data = np.array([[999.8426, 0.03345402, -0.005691304, 0, 0],
                   [547.2659, -5.300445, 0.01187671, 0.0005990008, 0],
@@ -94,10 +101,6 @@ bibtex = """
 """
 
 
-class NoConvergence(Exception):
-    pass  # why is this not in the Python standard library!?
-
-
 def density_from_concentration(conc, T=None, molar_mass=None,
                                rho_cb=sulfuric_acid_density,
                                units=None, atol=None, maxiter=50, **kwargs):
@@ -140,7 +143,7 @@ def density_from_concentration(conc, T=None, molar_mass=None,
 
     Raises
     ------
-    NoConvergence:
+    chempy.util.NoConvergence:
         When maxiter is exceeded
 
     """
@@ -169,5 +172,5 @@ def density_from_concentration(conc, T=None, molar_mass=None,
         rho = new_rho
         iter_idx += 1
         if iter_idx > maxiter:
-            raise ValueError("maxiter exceeded")
+            raise NoConvergence("maxiter exceeded")
     return rho

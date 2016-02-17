@@ -15,6 +15,11 @@ def ionic_strength(molalities, charges, b0=1):
         reference molality, optionally with unit (amount / mass)
         by IUPAC defines it as 1 mol/kg. (default: 1)
 
+    Examples
+    --------
+    >>> ionic_strength([1e-3, 3e-3], [3, -1]) == .5 * (9 + 3) * 1e-3
+    True
+
     """
     tot = 0
     if len(molalities) != len(charges):

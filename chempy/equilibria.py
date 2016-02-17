@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-This module is provisional at the moment, i.e. the API is not stable and may
-break without a deprecation cycle.
+Module collecting classes and functions for dealing with (multiphase) chemical
+equilibria.
+
+.. Note::
+
+  This module is provisional at the moment, i.e. the API is not stable and may
+  break without a deprecation cycle.
 
 """
 from __future__ import division, absolute_import

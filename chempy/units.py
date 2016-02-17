@@ -1,4 +1,15 @@
 # -*- coding: utf-8 -*-
+""" The units module provides the following attributes:
+
+- ``chempy.units.default_units``
+- ``chempy.units.default_constants``
+- ``chempy.units.SI_base_registry``
+
+Currently `quantities <https://pypi.python.org/pypi/quantities>`_ is used as
+the underlying package to handle units. If it is possible you should try to
+only use the `chempy.units` module (in case ``ChemPy`` changes this backend).
+
+"""
 from __future__ import (absolute_import, division, print_function)
 
 # Currently we use quantities for units. This may change, therefore use this
@@ -18,7 +29,7 @@ else:
     # chemistry
     default_constants = pq.constants
 
-    class NameSpace:
+    class _NameSpace:
         def __init__(self, default):
             self._NameSpace_default = default
             self._NameSpace_attr_store = {}
@@ -44,7 +55,7 @@ else:
             result.update(self._NameSpace_attr_store)
             return result
 
-    default_units = NameSpace(pq)
+    default_units = _NameSpace(pq)
     default_units.decimetre = pq.UnitQuantity(
         'decimetre',  default_units.m / 10.0, u_symbol='dm')
     if not hasattr(default_units, 'molar'):
@@ -93,6 +104,13 @@ def get_derived_unit(registry, key):
         one of the registry keys or one of: 'diffusion', 'electrical_mobility',
         'permittivity', 'charge', 'energy', 'concentration', 'density',
         'radiolytic_yield'
+
+    Examples
+    --------
+    >>> m, s = default_units.meter, default_units.second
+    >>> get_derived_unit(SI_base_registry, 'diffusion') == m**2/s
+    True
+
     """
     if registry is None:
         return 1.0
@@ -115,6 +133,7 @@ def get_derived_unit(registry, key):
 
 
 def unit_registry_to_human_readable(unit_registry):
+    """ Serialization of a unit registry. """
     if unit_registry is None:
         return None
     new_registry = {}
@@ -133,6 +152,7 @@ def unit_registry_to_human_readable(unit_registry):
 
 
 def unit_registry_from_human_readable(unit_registry):
+    """ Deserialization of unit_registry. """
     if unit_registry is None:
         return None
     new_registry = {}
@@ -153,12 +173,32 @@ def unit_registry_from_human_readable(unit_registry):
 # Abstraction of underlying package providing units and dimensional analysis:
 
 def is_unitless(expr):
+    """ Returns ``True`` if ``expr`` is unitless, otherwise ``False``
+
+    Examples
+    --------
+    >>> is_unitless(42)
+    True
+    >>> is_unitless(42*default_units.kilogram)
+    False
+
+    """
     if hasattr(expr, 'dimensionality'):
         return expr.dimensionality == pq.dimensionless.dimensionality
     return True
 
 
 def unit_of(expr):
+    """ Returns the unit of a quantity
+
+    Examples
+    --------
+    >>> unit_of(42*pq.second) == unit_of(12*pq.second)
+    True
+    >>> unit_of(42)
+    1
+
+    """
     try:
         return expr.units
     except AttributeError:
@@ -166,6 +206,19 @@ def unit_of(expr):
 
 
 def to_unitless(value, new_unit=None):
+    """ Nondimensionalization of a quantity.
+
+    Parameters
+    ----------
+    value: quantity
+    new_unit: unit
+
+    Examples
+    --------
+    >>> '%.1g' % to_unitless(1*default_units.metre, default_units.nm)
+    '1e+09'
+
+    """
     if new_unit is None:
         new_unit = pq.dimensionless
     if isinstance(value, (list, tuple)):
@@ -188,6 +241,7 @@ def to_unitless(value, new_unit=None):
 # NumPy like functions for compatibility:
 
 def allclose(a, b, rtol=1e-8, atol=None):
+    """ Analogous to ``numpy.allclose``. """
     d = abs(a - b)
     lim = abs(a)*rtol
     if atol is not None:
@@ -204,6 +258,7 @@ def allclose(a, b, rtol=1e-8, atol=None):
 
 
 def linspace(start, stop, num=50):
+    """ Analogous to ``numpy.linspace``. """
     # work around for quantities v0.10.1 and NumPy
     unit = unit_of(start)
     start_ = to_unitless(start, unit)

@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+"""
+This module contains functions for formulating systems of Ordinary Differential
+Equations (ODE-systems) which may be integrated numerically to model temporal
+evolution of concentrations in reaction systems.
+"""
 from __future__ import (absolute_import, division, print_function)
 
 from chempy.units import get_derived_unit, to_unitless

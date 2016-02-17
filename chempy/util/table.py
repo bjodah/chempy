@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-chempy.util.table
--------------------
-
 Convenience functions for presenting reaction systems in tables.
 """
 from __future__ import (absolute_import, division, print_function)
@@ -71,6 +68,17 @@ tex_templates = {
 
 
 def render_tex_to_pdf(contents, texfname, pdffname, output_dir, save):
+    """ Generates a pdf from a tex file by calling pdflatex
+
+    Parameters
+    ----------
+    contents: str
+    texfname: path
+    pdffname: path
+    output_dir: path
+    save: path or bool or str(bool)
+
+    """
     created_tempdir = False
     try:
         if output_dir is None:

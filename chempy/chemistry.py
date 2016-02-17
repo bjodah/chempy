@@ -31,8 +31,8 @@ class Substance(object):
         meaning (net charge)
     other_properties: dict
         free form dictionary. Could be simple such as ``{'mp': 0, 'bp': 100}``
-        or considerably more involved, e.g.: ``{'diffusion_coefficient': {
-            'water': lambda T: 2.1*m**2/s/K*(T - 273.15*K)}}``
+        or considerably more involved, e.g.: ``{'diffusion_coefficient': {\
+ 'water': lambda T: 2.1*m**2/s/K*(T - 273.15*K)}}``
 
     Attributes
     ----------
@@ -169,7 +169,7 @@ class Species(Substance):
                      default_phase_idx=0, **kwargs):
         """ Create a :class:`Species` instance from its formula
 
-        Analogous to .`Substance.from_formula` but with the addition that
+        Analogous to :meth:`Substance.from_formula` but with the addition that
         phase_idx is determined from the formula (and a mapping provided by
         ``phases``)
 
@@ -551,7 +551,7 @@ class ArrheniusRate(defaultnamedtuple('ArrheniusRate', 'A Ea ref', [None])):
 
     """
     def __call__(self, T, constants=None, units=None, exp=None):
-        """ See :py:func`chempy.arrhenius.arrhenius_equation`. """
+        """ See :func:`chempy.arrhenius.arrhenius_equation`. """
         return arrhenius_equation(self.A, self.Ea, T, constants=constants,
                                   units=units, exp=exp)
 
@@ -588,17 +588,17 @@ class ArrheniusRate(defaultnamedtuple('ArrheniusRate', 'A Ea ref', [None])):
 class ArrheniusRateWithUnits(ArrheniusRate):
     def __call__(self, T, constants=default_constants, units=default_units,
                  exp=None):
+        """ See :func:`chempy.arrhenius.arrhenius_equation`. """
         return super(ArrheniusRateWithUnits, self).__call__(
             T, constants, units, exp)
 
 
 class Equilibrium(Reaction):
-    """
-    Represents equilibrium reaction
+    """ Represents an equilibrium reaction
 
-    See :py:class:`Reaction` for parameters
-    """
+    See :class:`Reaction` for parameters
 
+    """
     str_arrow = '='
     latex_arrow = r'\rightleftharpoons'
     param_char = 'K'  # convention
@@ -790,7 +790,7 @@ class ReactionSystem(object):
         return [rxn.param for rxn in self.rxns]
 
     def as_per_substance_array(self, cont, dtype=np.float64, unit=None):
-        """ Turns e.g. a dict into an ordered array """
+        """ Turns a dict into an ordered array """
         if unit is not None:
             cont = to_unitless(cont, unit)
         if isinstance(cont, np.ndarray):

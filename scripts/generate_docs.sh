@@ -12,8 +12,14 @@ NARGS=$#
 PKG=$(find . -maxdepth 2 -name __init__.py -print0 | xargs -0 -n1 dirname | xargs basename)
 AUTHOR=$(head -n 1 AUTHORS)
 sphinx-apidoc --full --force -A "$AUTHOR" --module-first --doc-version=$(python setup.py --version) -F -o doc $PKG/ $(find . -type d -name tests)
+sed -i "s/chempy's/ChemPy's/g" doc/index.rst
 #sed -i 's/Contents/.. include:: ..\/README.rst\n\nContents/g' doc/index.rst
-echo ".. include:: ../README.rst" >>doc/index.rst
+#echo ".. include:: ../README.rst" >>doc/index.rst
+cat <<EOF >>doc/index.rst
+Overview
+========
+$(tail -n+3 README.rst)
+EOF
 sed -i "s/'sphinx.ext.viewcode',/'sphinx.ext.viewcode',\n    'sphinx.ext.autosummary',\n    'numpydoc',/g" doc/conf.py
 sed -i "s/alabaster/sphinx_rtd_theme/g" doc/conf.py
 if [[ $NARGS -eq 3 ]]; then

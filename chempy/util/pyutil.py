@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+"""
+General utilities and exceptions.
+"""
 from __future__ import (absolute_import, division, print_function)
 
 from collections import namedtuple, Mapping
-from functools import wraps
 import os
 import warnings
 
@@ -43,6 +45,10 @@ def defaultnamedtuple(typename, field_names, defaults=()):
         defaults = (None,)*nmissing + tuple(defaults)
         Tuple.__new__.__defaults__ = tuple(Tuple(*defaults))
     return Tuple
+
+
+class NoConvergence(Exception):
+    pass  # why is this not in the Python standard library!?
 
 
 class ChemPyDeprecationWarning(DeprecationWarning):
@@ -105,21 +111,26 @@ class deprecated(object):
         return msg + '.'
 
     def __call__(self, wrapped):
+        """ Decorate function to be deprecated """
         msg = self.warning_message % {'func_name': wrapped.__name__}
         if hasattr(wrapped, '__mro__'):  # wrapped is a class
-            class wrapper(wrapped):
+            class _Wrapper(wrapped):
+                __doc__ = msg
+
                 def __init__(self, *args, **kwargs):
                     warnings.warn(msg, ChemPyDeprecationWarning, stacklevel=3)
                     wrapped.__init__(self, *args, **kwargs)
 
         else:  # wrapped is a function
-            @wraps(wrapped)
-            def wrapper(*args, **kwargs):
+            def _Wrapper(*args, **kwargs):
                 warnings.warn(msg, ChemPyDeprecationWarning, stacklevel=3)
                 return wrapped(*args, **kwargs)
+            _Wrapper.__doc__ = wrapped.__doc__ or msg
 
-        wrapper._deprecation = self
-        return wrapper
+        _Wrapper._deprecation = self
+        _Wrapper.__name__ = wrapped.__name__
+        _Wrapper.__module__ = wrapped.__module__
+        return _Wrapper
 
 # Alternatively, run python with -W flag or set
 # the appropriate environment variable:

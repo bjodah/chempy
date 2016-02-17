@@ -65,6 +65,8 @@ alternatively you may also use `pip`:
 (you can skip the ``--user`` flag if you have got root permissions), to run the
 tests you need ``pytest`` too:
 
+::
+
    $ python -m pip install --user --upgrade pytest
    $ python -m pytest --pyargs chempy
 
@@ -75,20 +77,31 @@ with using ``pytest --pyargs`` with conda at the moment.
 Examples
 --------
 See `examples/ <https://github.com/bjodah/chempy/tree/master/examples>`_, and rendered jupyter notebooks here:
-`<http://hera.physchem.kth.se/~chempy/branches/master/examples>`_. Here are a few simple examples:
+`<http://hera.physchem.kth.se/~chempy/branches/master/examples>`_. You may also browse the documentation for
+more examples. Here are a few code snippets:
 
+Parsing formulae
+~~~~~~~~~~~~~~~~
 .. code:: python
 
    >>> from chempy import Substance
    >>> Substance.from_formula('Fe(CN)6/3-').composition == {0: -3, 26: 1, 6: 6, 7: 6}
    True
 
+
+we see that the atomic numbers (and 0 for charge) became keys and multiplicity
+of each element became respective value. Note the ``/`` separating the charge.
+
+Chemical equilibria
+~~~~~~~~~~~~~~~~~~~
+.. code:: python
+
    >>> from chempy import Equilibrium
-   >>> from chempy.chemistry import Solute  # this will change to Specie
-   >>> substances = map(Solute.from_formula, 'H2O OH- H+ NH3 NH4+'.split())
+   >>> from chempy.chemistry import Species
    >>> water_autop = Equilibrium({'H2O': 1}, {'H+': 1, 'OH-': 1}, 10**-14)
    >>> ammonia_prot = Equilibrium({'NH4+': 1}, {'NH3': 1, 'H+': 1}, 10**-9.24)
    >>> from chempy.equilibria import EqSystem
+   >>> substances = map(Species.from_formula, 'H2O OH- H+ NH3 NH4+'.split())
    >>> eqsys = EqSystem([water_autop, ammonia_prot], substances)
    >>> print('\n'.join(map(str, eqsys.rxns)))
    H2O = H+ + OH-; 1e-14
@@ -99,6 +112,9 @@ See `examples/ <https://github.com/bjodah/chempy/tree/master/examples>`_, and re
    >>> assert sol['success'] and sane
    >>> print(', '.join('%.2g' % v for v in x))
    1, 0.0013, 7.6e-12, 0.099, 0.0013
+
+Please note that the API of the ``chempy.equilibria`` module is not finalized at
+the moment.
 
 
 Tests

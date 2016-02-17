@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
-
+"""
+Contains functions for the `Arrhenius equation
+<https://en.wikipedia.org/wiki/Arrhenius_equation>`_
+(:func:`arrhenius_equation`) and a convenience fitting routine
+(:func:`fit_arrhenius_equation`).
+"""
 from __future__ import (absolute_import, division, print_function)
 
 
@@ -54,6 +59,17 @@ def arrhenius_equation(A, Ea, T, constants=None, units=None, exp=None):
 
 
 def fit_arrhenius_equation(k, T, kerr=None, linearized=False):
+    """ Curve fitting of the Arrhenius equation to data points
+
+    Parameters
+    ----------
+    k: array_like
+    T: float
+    kerr: array_like (optional)
+    linearized: bool
+
+    """
+
     if len(k) != len(T):
         raise ValueError("k and T needs to be of equal length.")
     from math import exp
