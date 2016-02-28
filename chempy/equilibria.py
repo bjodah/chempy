@@ -21,6 +21,7 @@ from operator import mul, add
 import numpy as np
 
 from .chemistry import ReactionSystem, equilibrium_quotient
+from .util.pyutil import deprecated
 
 
 def reducemap(args, reduce_op, map_op):
@@ -164,6 +165,16 @@ class _NumSys(object):
         self.exp = exp
         self.precipitates = precipitates
 
+    def _get_A_ks(self, eq_params):
+        non_precip_rids = self.eqsys.non_precip_rids(self.precipitates)
+        return self.eqsys.stoichs_constants(
+            self.eqsys.eq_constants(non_precip_rids, eq_params, self.small),
+            self.rref_equil, ln=self.ln, exp=self.exp,
+            non_precip_rids=non_precip_rids)
+
+    def _inits_and_eq_params(self, params):
+        return params[:self.eqsys.ns], params[self.eqsys.ns:]
+
 
 class NumSysLin(_NumSys):
 
@@ -173,12 +184,8 @@ class NumSysLin(_NumSys):
 
     def f(self, yvec, params):
         from pyneqsys.symbolic import linear_exprs
-        init_concs, eq_params = params[:self.eqsys.ns], params[self.eqsys.ns:]
-        non_precip_rids = self.eqsys.non_precip_rids(self.precipitates)
-        A, ks = self.eqsys.stoichs_constants(
-            self.eqsys.eq_constants(non_precip_rids, eq_params, self.small),
-            self.rref_equil, ln=self.ln, exp=self.exp,
-            non_precip_rids=non_precip_rids)
+        init_concs, eq_params = self._inits_and_eq_params()
+        A, ks = self._get_A_ks(eq_params)
         # yvec == C
         f_equil = [q/k - 1 if k != 0 else q for q, k
                    in zip(prodpow(yvec, A), ks)]
@@ -273,13 +280,10 @@ class NumSysLog(_NumSys):
 
     def f(self, yvec, params):
         from pyneqsys.symbolic import linear_exprs
-        init_concs, eq_params = params[:self.eqsys.ns], params[self.eqsys.ns:]
-        non_precip_rids = self.eqsys.non_precip_rids(self.precipitates)
-        A, ks = self.eqsys.stoichs_constants(
-            self.eqsys.eq_constants(non_precip_rids, eq_params, self.small),
-            self.rref_equil, ln=self.ln, exp=self.exp,
-            non_precip_rids=non_precip_rids)
-        f_equil = mat_dot_vec(A, yvec, [-self.ln(k) for k in ks])  # y == ln(C)
+        init_concs, eq_params = self._inits_and_eq_params(params)
+        A, ks = self._get_A_ks(eq_params)
+        # yvec == ln(C)
+        f_equil = mat_dot_vec(A, yvec, [-self.ln(k) for k in ks])
         B, comp_nrs = self.eqsys.composition_balance_vectors()
         f_preserv = linear_exprs(B, list(map(self.exp, yvec)),
                                  mat_dot_vec(B, init_concs),
@@ -351,12 +355,24 @@ class EqSystem(ReactionSystem):
                 np.dot(A, self.as_per_substance_array(concs).T),
                 np.dot(A, self.as_per_substance_array(init_concs).T))
 
+    def other_phase_species_idxs(self, phase_idx=0):
+        return [idx for idx, s in enumerate(
+            self.substances.values()) if s.phase_idx != phase_idx]
+
     @property
+    @deprecated(last_supported_version='0.3.1', will_be_missing_in='0.4.0',
+                use_instead=other_phase_species_idxs)
     def precipitate_substance_idxs(self):
         return [idx for idx, s in enumerate(
             self.substances.values()) if s.precipitate]
 
+    def phase_transfer_reaction_idxs(self, phase_idx=0):
+        return [idx for idx, rxn in enumerate(self.rxns)
+                if rxn.has_precipitates(self.substances)]
+
     @property
+    @deprecated(last_supported_version='0.3.1', will_be_missing_in='0.4.0',
+                use_instead=phase_transfer_reaction_idxs)
     def precipitate_rxn_idxs(self):
         return [idx for idx, rxn in enumerate(self.rxns)
                 if rxn.has_precipitates(self.substances)]
