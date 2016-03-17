@@ -130,9 +130,9 @@ class Deprecation(object):
             class _Wrapper(wrapped):
                 __doc__ = msg + '\n\n' + wrapped_doc
 
-                def __init__(self, *args, **kwargs):
+                def __init__(_self, *args, **kwargs):
                     warnings.warn(msg, self.deprecation_warning, stacklevel=3)
-                    wrapped.__init__(self, *args, **kwargs)
+                    wrapped.__init__(_self, *args, **kwargs)
 
         else:  # wrapped is a function
             def _Wrapper(*args, **kwargs):
@@ -149,7 +149,7 @@ class Deprecation(object):
 def deprecated(*args, **kwargs):
     """ Helper to :class:`Deprecation` for using ChemPyDeprecationWarning. """
     return Deprecation(*args, deprecation_warning=ChemPyDeprecationWarning,
-                         **kwargs)
+                       **kwargs)
 
 warnings.simplefilter(os.environ.get('CHEMPY_DEPRECATION_FILTER', 'once'),
                       ChemPyDeprecationWarning)

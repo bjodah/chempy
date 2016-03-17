@@ -184,7 +184,7 @@ class NumSysLin(_NumSys):
 
     def f(self, yvec, params):
         from pyneqsys.symbolic import linear_exprs
-        init_concs, eq_params = self._inits_and_eq_params()
+        init_concs, eq_params = self._inits_and_eq_params(params)
         A, ks = self._get_A_ks(eq_params)
         # yvec == C
         f_equil = [q/k - 1 if k != 0 else q for q, k
