@@ -159,7 +159,7 @@ class Species(Substance):
         self.phase_idx = phase_idx
 
     @property
-    @deprecated(deprecated_since_version='0.3.1', will_be_missing_in='0.4.0')
+    @deprecated(last_supported_version='0.3.0', will_be_missing_in='0.4.0')
     def precipitate(self):
         """ deprecated attribute, provided for compatibility for now """
         return self.phase_idx > 0
@@ -185,8 +185,8 @@ class Species(Substance):
                 else:
                     ``phase_idx = phases.index(suffix) + 1``
             and if suffixes is missing in phases phase_idx is taken to be 0
-        default_phase_idx: int or None
-            If ``default_phase_idx`` is ``bNone``, ``ValueError`` is raised for
+        default_phase_idx: int or None (default: 0)
+            If ``default_phase_idx`` is ``None``, ``ValueError`` is raised for
                 unkown suffixes.
             Else ``default_phase_idx`` is used as ``phase_idx`` in those cases.
         \*\*kwargs:
@@ -250,7 +250,7 @@ class Species(Substance):
             formula, phase_idx=p_i, **kwargs)
 
 
-@deprecated(deprecated_since_version='0.3.1',
+@deprecated(last_supported_version='0.3.0',
             will_be_missing_in='0.4.0', use_instead=Species)
 class Solute(Substance):
     """ [DEPRECATED] Use `.Species` instead

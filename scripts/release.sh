@@ -8,7 +8,9 @@ if [[ $1 != v* ]]; then
     echo "Argument does not start with 'v'"
     exit 1
 fi
+VERSION=${1#v}
 ./scripts/check_clean_repo_on_master.sh
+! grep --include "*.py" "will_be_missing_in='$VERSION'" -R $PKG/  # see deprecation()
 cd $(dirname $0)/..
 # PKG will be name of the directory one level up containing "__init__.py" 
 PKG=$(find . -maxdepth 2 -name __init__.py -print0 | xargs -0 -n1 dirname | xargs basename)
@@ -22,7 +24,6 @@ PATH=$2:$PATH ./scripts/build_conda_recipe.sh $1
 git tag -a $1 -m $1
 git push
 git push --tags
-VERSION=${1#v}
 twine upload dist/${PKG}-$VERSION.tar.gz
 MD5=$(md5sum dist/${PKG}-$VERSION.tar.gz | cut -f1 -d' ')
 cp -r conda-recipe/ dist/conda-recipe-${1#v}

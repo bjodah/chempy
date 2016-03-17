@@ -17,7 +17,11 @@ if os.environ.get('CONDA_BUILD', '0') == '1':
     except IOError:
         pass
 
-release_py_path = os.path.join(pkg_name, '_release.py')
+
+def _path_under_setup(*args):
+    return os.path.join(os.path.dirname(__file__), *args)
+
+release_py_path = _path_under_setup(pkg_name, '_release.py')
 
 if (len(CHEMPY_RELEASE_VERSION) > 1 and
    CHEMPY_RELEASE_VERSION[0] == 'v'):
@@ -28,8 +32,6 @@ else:
     # read __version__ attribute from _release.py:
     exec(open(release_py_path).read())
 
-with open(pkg_name + '/__init__.py') as f:
-    long_description = f.read().split('"""')[1]
 
 submodules = [
     'chempy.kinetics',
@@ -56,13 +58,14 @@ classifiers = [
     'Programming Language :: Python :: 3.4',
 ]
 
+with open(_path_under_setup(pkg_name, '__init__.py'), 'rt') as f:
+    short_description = f.read().split('"""')[1].split('\n')[1]
+long_description = open(_path_under_setup('README.rst')).read()
 
 setup_kwargs = {
     'name': pkg_name,
-    'version': eval('__version__'),  # silence pyflakes
-    'description': (
-        'Package useful for (physical) chemistry'
-    ),
+    'version': __version__,
+    'description': short_description,
     'long_description': long_description,
     'author': 'Björn Dahlgren',
     'author_email': 'bjodah@DELETEMEgmail.com',
