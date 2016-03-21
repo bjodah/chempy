@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import (absolute_import, division, print_function)
+
 from ..einstein_smoluchowski import electrical_mobility_from_D
 from ..units import default_units, allclose, default_constants
 
@@ -17,3 +20,6 @@ def test_electrical_mobility_from_D():
     kB = 1.3806488e-23 * metre**2 * kilogram * second**-2 / kelvin
     ref = z*e*D/(kB*T)
     assert allclose(mu, ref, rtol=1e-5)
+
+    mu2 = electrical_mobility_from_D(3, -2, 100)
+    assert allclose(mu2, -2*1.60217657e-19*3/1.3806488e-23/100, rtol=1e-5)

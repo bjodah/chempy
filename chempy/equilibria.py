@@ -449,7 +449,7 @@ class EqSystem(ReactionSystem):
 
         cond_cbs = [(self._fw_cond_factory(ri),
                      self._bw_cond_factory(ri, NumSys[0].small)) for
-                    ri in self.precipitate_rxn_idxs]
+                    ri in self.phase_transfer_reaction_idxs()]
         return ConditionalNeqSys(cond_cbs, factory)
 
     def get_neqsys_chained_conditional(self, init_concs, rref_equil=False,
@@ -467,7 +467,7 @@ class EqSystem(ReactionSystem):
             [ConditionalNeqSys(
                 [(self._fw_cond_factory(ri),
                   self._bw_cond_factory(ri, NS.small)) for
-                 ri in self.precipitate_rxn_idxs],
+                 ri in self.phase_transfer_reaction_idxs()],
                 mk_factory(NS)
             ) for NS in NumSys])
 
@@ -475,7 +475,7 @@ class EqSystem(ReactionSystem):
                                      rref_preserv=False,
                                      NumSys=NumSysLin, precipitates=None):
         if precipitates is None:
-            precipitates = (False,)*len(self.precipitate_rxn_idxs)
+            precipitates = (False,)*len(self.phase_transfer_reaction_idxs())
         from pyneqsys import ChainedNeqSys
         return ChainedNeqSys([self._SymbolicSys_from_NumSys(
             NS, precipitates, rref_equil, rref_preserv) for NS in NumSys])
@@ -499,7 +499,7 @@ class EqSystem(ReactionSystem):
 
     def non_precip_rids(self, precipitates):
         return [idx for idx, precip in zip(
-            self.precipitate_rxn_idxs, precipitates) if not precip]
+            self.phase_transfer_reaction_idxs(), precipitates) if not precip]
 
     def _result_is_sane(self, init_concs, x):
         sc_upper_bounds = np.array(self.upper_conc_bounds(init_concs))
