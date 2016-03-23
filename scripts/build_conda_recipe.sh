@@ -1,7 +1,7 @@
 #!/bin/bash -ex
 # Usage:
 #
-#    $ ./scripts/build_conda_recipe.sh v1.2.3
+#    $ ./scripts/build_conda_recipe.sh v1.2.3 --python 2.7
 #
 if [[ $1 != v* ]]; then
     echo "Argument does not start with 'v'"
@@ -15,5 +15,4 @@ cleanup() {
 }
 trap cleanup INT TERM EXIT
 
-CONDA_PY=34 conda build conda-recipe
-CONDA_PY=27 conda build conda-recipe
+conda build ${@:2} ./conda-recipe/
