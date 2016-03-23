@@ -10,10 +10,10 @@ if [[ $1 != v* ]]; then
 fi
 VERSION=${1#v}
 ./scripts/check_clean_repo_on_master.sh
-! grep --include "*.py" "will_be_missing_in='$VERSION'" -R $PKG/  # see deprecation()
 cd $(dirname $0)/..
 # PKG will be name of the directory one level up containing "__init__.py" 
 PKG=$(find . -maxdepth 2 -name __init__.py -print0 | xargs -0 -n1 dirname | xargs basename)
+! grep --include "*.py" "will_be_missing_in='$VERSION'" -R $PKG/  # see deprecation()
 PKG_UPPER=$(echo $PKG | tr '[:lower:]' '[:upper:]')
 ./scripts/run_tests.sh
 env ${PKG_UPPER}_RELEASE_VERSION=$1 python setup.py sdist
