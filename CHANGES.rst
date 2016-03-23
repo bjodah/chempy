@@ -1,3 +1,7 @@
+v0.3.2
+======
+- Substance.from_formula now prefers e.g. Fe+3 over Fe/3+, latter deprecated
+
 v0.3.1
 ======
 - chemistry.Solute deprecated, will be removed in v0.4.0, use chemistry.Species instead
