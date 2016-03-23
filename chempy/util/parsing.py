@@ -6,10 +6,14 @@ from __future__ import (absolute_import, division, print_function)
 from collections import defaultdict
 
 import re
+import warnings
+
 from pyparsing import (
     Forward, Group, OneOrMore, Optional, ParseResults,
     Regex, Suppress, Word, nums
 )
+
+from .pyutil import ChemPyDeprecationWarning
 
 
 def _get_formula_parser():
@@ -207,25 +211,30 @@ def mass_from_composition(composition):
 
 
 def _get_charge(chgstr):
-    if '-' in chgstr:
-        if '+' in chgstr:
-            raise ValueError("Invalid charge description (+ & - present)")
-        if chgstr.count('-') != 1:
-            raise ValueError("Invalid charge description (multiple -)")
-        s = chgstr.replace('-', '')
-        return -int(1 if s == '' else s)
-    elif '+' in chgstr:
-        if '-' in chgstr:
-            raise ValueError("Invalid charge description (+ & - present)")
-        if chgstr.count('+') != 1:
-            raise ValueError("Invalid charge description (multiple +)")
-        s = chgstr.replace('+', '')
-        return int(1 if s == '' else s)
-    else:
-        raise ValueError("Invalid charge description (+ or - missing)")
+
+    if chgstr == '+':
+        return 1
+    elif chgstr == '-':
+        return -1
+
+    for token, anti, sign in zip('+-', '-+', (1, -1)):
+        if token in chgstr:
+            if anti in chgstr:
+                raise ValueError("Invalid charge description (+ & - present)")
+            before, after = chgstr.split(token)
+            if len(before) > 0 and len(after) > 0:
+                raise ValueError("Values both before and after charge token")
+            if len(before) > 0:
+                warnings.warn("'Fe/3+' deprecated, use e.g. 'Fe+3'",
+                              ChemPyDeprecationWarning, stacklevel=3)
+                return sign * int(1 if before == '' else before)
+            if len(after) > 0:
+                return sign * int(1 if after == '' else after)
+    raise ValueError("Invalid charge description (+ or - missing)")
 
 
 def _formula_to_parts(formula, prefixes, suffixes):
+    # Drop prefixes and suffixes
     drop_pref, drop_suff = [], []
     for ign in prefixes:
         if formula.startswith(ign):
@@ -235,21 +244,31 @@ def _formula_to_parts(formula, prefixes, suffixes):
         if formula.endswith(ign):
             drop_suff.append(ign)
             formula = formula[:-len(ign)]
-    if '/' not in formula and (formula.endswith('+') or formula.endswith('-')):
-        parts = [formula[:-1], formula[-1:]]
-    else:
-        parts = formula.split('/')
-    if len(parts) == 1:
-        parts += [None]
 
-    if '+' in parts[0] or '-' in parts[0]:
-        raise ValueError("Charge needs to be separated with a /")
-    if parts[1] is not None:
-        wo_pm = parts[1].replace('+', '').replace('-', '')
-        if wo_pm != '' and not str.isdigit(wo_pm):
-            raise ValueError("Non-digits in charge specifier")
-    if len(parts) > 2:
-        raise ValueError("At most one '/' allowed in formula")
+    # Extract charge
+    if '/' in formula:
+        warnings.warn("/ depr. (before 0.4.0): use 'Fe+3' over 'Fe/3+'",
+                      ChemPyDeprecationWarning, stacklevel=3)
+        parts = formula.split('/')
+
+        if '+' in parts[0] or '-' in parts[0]:
+            raise ValueError("Charge needs to be separated with a /")
+        if parts[1] is not None:
+            wo_pm = parts[1].replace('+', '').replace('-', '')
+            if wo_pm != '' and not str.isdigit(wo_pm):
+                raise ValueError("Non-digits in charge specifier")
+        if len(parts) > 2:
+            raise ValueError("At most one '/' allowed in formula")
+    else:
+        for token in '+-':
+            if token in formula:
+                if formula.count(token) > 1:
+                    raise ValueError("Multiple tokens: %s" % token)
+                parts = formula.split(token)
+                parts[1] = token + parts[1]
+                break
+        else:
+            parts = [formula, None]
     return parts + [tuple(drop_pref), tuple(drop_suff[::-1])]
 
 
@@ -280,7 +299,7 @@ def to_composition(formula,
     Parameters
     ----------
     formula: str
-        Chemical formula, e.g. 'H2O', 'Fe/3+', 'Cl-'
+        Chemical formula, e.g. 'H2O', 'Fe+3', 'Cl-'
     prefixes: iterable strings
         Prefixes to ignore, e.g. ('.', 'alpha-')
     suffixes: tuple of strings
@@ -288,7 +307,7 @@ def to_composition(formula,
 
     Examples
     --------
-    >>> to_composition('NH4/+') == {0: 1, 1: 4, 7: 1}
+    >>> to_composition('NH4+') == {0: 1, 1: 4, 7: 1}
     True
     >>> to_composition('.NHO-(aq)') == {0: -1, 1: 1, 7: 1, 8: 1}
     True
@@ -326,11 +345,11 @@ def to_latex(formula,
 
     Examples
     --------
-    >>> to_latex('NH4/+')
+    >>> to_latex('NH4+')
     'NH_{4}^{+}'
-    >>> to_latex('Fe(CN)6/+2')
+    >>> to_latex('Fe(CN)6+2')
     'Fe(CN)_{6}^{2+}'
-    >>> to_latex('Fe(CN)6/+2(aq)')
+    >>> to_latex('Fe(CN)6+2(aq)')
     'Fe(CN)_{6}^{2+}(aq)'
     >>> to_latex('.NHO-(aq)')
     '^\\bullet NHO^{-}(aq)'

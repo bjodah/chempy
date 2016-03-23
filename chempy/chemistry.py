@@ -104,7 +104,7 @@ class Substance(object):
         Parameters
         ----------
         formula: str
-            e.g. 'Na/+', 'H2O', 'Fe(CN)6/4-'
+            e.g. 'Na+', 'H2O', 'Fe(CN)6-4'
         \*\*kwargs:
             keyword arguments passed on to `.Substance`
 
