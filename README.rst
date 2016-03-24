@@ -70,9 +70,6 @@ tests you need ``pytest`` too:
    $ python -m pip install --user --upgrade pytest
    $ python -m pytest --pyargs chempy
 
-note that there are `some issues <https://github.com/conda/conda/issues/2075>`_
-with using ``pytest --pyargs`` with conda at the moment.
-
 
 Examples
 --------
