@@ -242,7 +242,12 @@ def to_unitless(value, new_unit=None):
 
 def allclose(a, b, rtol=1e-8, atol=None):
     """ Analogous to ``numpy.allclose``. """
-    d = abs(a - b)
+    try:
+        d = abs(a - b)
+    except TypeError:
+        if len(a) == len(b):
+            return all(allclose(_a, _b, rtol, atol) for _a, _b in zip(a, b))
+        raise
     lim = abs(a)*rtol
     if atol is not None:
         lim += atol

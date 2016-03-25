@@ -56,11 +56,15 @@ classifiers = [
     'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.4',
+    'Programming Language :: Python :: 3.5',
 ]
 
 with open(_path_under_setup(pkg_name, '__init__.py'), 'rt') as f:
     short_description = f.read().split('"""')[1].split('\n')[1]
+assert 10 < len(short_description) < 255
 long_description = open(_path_under_setup('README.rst')).read()
+assert len(long_description) > 100
+
 
 setup_kwargs = {
     'name': pkg_name,

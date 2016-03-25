@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import (absolute_import, division, print_function)
+
 from collections import defaultdict
 import numpy as np
 from ..units import (
@@ -45,6 +48,7 @@ def test_allclose():
     a = np.linspace(2, 3)*second
     b = np.linspace(2/3600., 3/3600.)*hour
     assert allclose(a, b)
+    assert allclose([3600*second, 2*metre/hour], [1*hour, 2/3600*metre/second])
 
 
 def test_is_unitless():
