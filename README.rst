@@ -86,8 +86,8 @@ Parsing formulae
    True
 
 
-we see that the atomic numbers (and 0 for charge) became keys and multiplicity
-of each element became respective value. Note the ``/`` separating the charge.
+as you see, the atomic numbers (and 0 for charge) is used as keys and the count of each kind
+became respective value.
 
 Chemical equilibria
 ~~~~~~~~~~~~~~~~~~~
@@ -113,10 +113,6 @@ Chemical equilibria
 Please note that the API of the ``chempy.equilibria`` module is not finalized at
 the moment.
 
-
-Tests
------
-Run ``py.test`` can be used to run the tests.``python -m pytest --pyargs chempy``
 
 License
 -------
