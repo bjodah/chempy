@@ -1,7 +1,7 @@
 build:
-  image: bjodah/bjodahimg:latest
+  image: bjodah/bjodahimg:v1.1
   commands:
-    - ./scripts/ci.sh chempy
+    - ./scripts/ci.sh
     - (cd examples/; ipython2 nbconvert --to=html --debug --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
     - (cd examples/; ../scripts/render_index.sh *.html)
     - ./scripts/generate_docs.sh
