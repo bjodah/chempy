@@ -796,7 +796,12 @@ class ReactionSystem(object):
         if isinstance(cont, np.ndarray):
             pass
         elif isinstance(cont, dict):
-            cont = [cont[k] for k in self.substances.keys()]
+            substance_keys = self.substances.keys()
+            for k in cont:
+                if k not in substance_keys:
+                    raise KeyError("Unkown substance key: %s" % k)
+            cont = [cont[k] for k in substance_keys]
+
         cont = np.asarray(cont, dtype=dtype)
         if cont.shape[-1] != self.ns:
             raise ValueError("Incorrect size")

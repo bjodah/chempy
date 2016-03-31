@@ -78,6 +78,10 @@ def test_ReactionSystem__as_per_substance_array():
     assert c.dimensionality == M.dimensionality
     assert abs(c[0]/(1000*mol/m**3) - 1) < 1e-16
 
+    c = rs.as_per_substance_array({'H2O': 1})
+    with pytest.raises(KeyError):
+        c = rs.as_per_substance_array({'H': 1})
+
 
 def test_ArrheniusRate():
     k = ArrheniusRate(1e10, 42e3)(273.15)
