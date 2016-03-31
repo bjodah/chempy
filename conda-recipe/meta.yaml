@@ -1,42 +1,42 @@
 package:
-    name: chempy
-    version: 0.4.0.git
+  name: chempy
+  version: 0.4.0.git
 
 source:
-    path: ../
+  path: ../
 
 build:
-    number: 0
+  number: 0
 
 requirements:
-    build:
-        - python
-        - numpy
-        - sympy
-        - scipy
-        - matplotlib
-        - quantities
-        - pyparsing
-        - pyneqsys
-        - pyodesys
-#        - dot2tex
-    run:
-        - python
-        - numpy
-        - sympy
-        - scipy
-        - matplotlib
-        - quantities
-        - pyparsing
-        - pyneqsys
-        - pyodesys
-#        - dot2tex
+  build:
+    - python
+    - numpy
+    - sympy
+    - scipy
+    - matplotlib
+    - quantities
+    - pyparsing
+    - pyneqsys
+    - pyodesys
+#    - dot2tex
+  run:
+    - python
+    - numpy
+    - sympy
+    - scipy
+    - matplotlib
+    - quantities
+    - pyparsing
+    - pyneqsys
+    - pyodesys
+#    - dot2tex
 
 test:
-    imports:
-        - chempy
+  imports:
+    - chempy
 
 about:
-    home: https://github.com/bjodah/chempy
-    license: BSD
-    summary: Python package useful for (physical) chemistry
+  home: https://github.com/bjodah/chempy
+  license: BSD
+  summary: Python package useful for (physical) chemistry
