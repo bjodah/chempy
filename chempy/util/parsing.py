@@ -143,6 +143,15 @@ names = (
     'Livermorium', '(Ununseptium)', '(Ununoctium)'
 )
 
+lower_names = tuple(n.lower().lstrip('(').rstrip(')') for n in names)
+
+
+def atomic_number(name):
+    try:
+        return symbols.index(name) + 1
+    except ValueError:
+        return lower_names.index(name.lower()) + 1
+
 # The data in '_relative_atomic_masses' is licensed under the CC-SA license
 # https://en.wikipedia.org/w/index.php?title=List_of_elements&oldid=700476748
 _relative_atomic_masses = (
@@ -377,7 +386,7 @@ def to_latex(formula,
     return pre_str + string + ''.join(parts[3])
 
 
-def _parse_multiplicity(strings):
+def _parse_multiplicity(strings, substance_keys=None):
     """
     Examples
     --------
@@ -395,6 +404,10 @@ def _parse_multiplicity(strings):
             result[items[1]] = int(items[0])
         else:
             raise ValueError("To many parts in substring")
+    if substance_keys is not None:
+        for k in result:
+            if k not in substance_keys:
+                raise ValueError("Unkown substance_key: %s" % k)
     return result
 
 
@@ -410,6 +423,10 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None):
         string representation to be parsed
     substance_keys: iterable of strings
         Allowed names, e.g. ('H2O', 'H+', 'OH-')
+    token : str
+        delimiter token between reactant and product side
+    Cls : class
+        e.g. subclass of Reaction
     globals_: dict (optional)
         Globals passed on to :func:`eval`, when ``None``:
         `chempy.units.default_units` is used with 'chempy'
@@ -449,11 +466,11 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None):
         if side[-1].startswith('('):
             if not side[-1].endswith(')'):
                 raise ValueError("Bad format (missing closing paren)")
-            inact.append(_parse_multiplicity(side[-1][1:-1].split(' + ')))
-            act.append(_parse_multiplicity(side[:-1]))
+            inact.append(_parse_multiplicity(side[-1][1:-1].split(' + '), substance_keys))
+            act.append(_parse_multiplicity(side[:-1], substance_keys))
         else:
             inact.append({})
-            act.append(_parse_multiplicity(side))
+            act.append(_parse_multiplicity(side, substance_keys))
 
     # stoich coeff -> dict
     return Cls(act[0], act[1], param, inact_reac=inact[0],

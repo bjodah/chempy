@@ -78,6 +78,10 @@ def test_ReactionSystem__as_per_substance_array():
     assert c.dimensionality == M.dimensionality
     assert abs(c[0]/(1000*mol/m**3) - 1) < 1e-16
 
+    c = rs.as_per_substance_array({'H2O': 1})
+    with pytest.raises(KeyError):
+        c = rs.as_per_substance_array({'H': 1})
+
 
 def test_ArrheniusRate():
     k = ArrheniusRate(1e10, 42e3)(273.15)
@@ -104,3 +108,11 @@ def test_Equilibrium__as_reactions():
     fw, bw = eq.as_reactions(kb=rate, units=default_units)
     assert abs((bw.param - rate)/rate) < 1e-15
     assert abs((fw.param / M)/bw.param - 1e-14)/1e-14 < 1e-15
+
+
+def test_Reaction__from_string():
+    r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H+ OH-'.split())
+    assert r.reac == {'H2O': 1} and r.prod == {'H+': 1, 'OH-': 1}
+
+    with pytest.raises(ValueError):
+        Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H OH-'.split())

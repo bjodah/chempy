@@ -333,16 +333,15 @@ class Reaction(object):
 
         Parameters
         ----------
-        string: str
+        string : str
             string representation of the reaction
-        substance_keys: iterable of strings or string
-        globals_: dict (optional)
+        substance_keys : iterable of strings or string
+        globals_ : dict (optional)
             dict for eval for (default: None -> {'chempy': chempy})
 
         Examples
         --------
-        >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4",
-        ...         'H2O H+ OH-'.split())
+        >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H+ OH-')
         >>> r.reac == {'H2O': 1} and r.prod == {'H+': 1, 'OH-': 1}
         True
 
@@ -796,7 +795,12 @@ class ReactionSystem(object):
         if isinstance(cont, np.ndarray):
             pass
         elif isinstance(cont, dict):
-            cont = [cont[k] for k in self.substances.keys()]
+            substance_keys = self.substances.keys()
+            for k in cont:
+                if k not in substance_keys:
+                    raise KeyError("Unkown substance key: %s" % k)
+            cont = [cont[k] for k in substance_keys]
+
         cont = np.asarray(cont, dtype=dtype)
         if cont.shape[-1] != self.ns:
             raise ValueError("Incorrect size")

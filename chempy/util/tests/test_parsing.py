@@ -5,8 +5,16 @@ import pytest
 
 from ..parsing import (
     to_composition, relative_atomic_masses, mass_from_composition,
-    to_latex, to_reaction
+    to_latex, to_reaction, atomic_number
 )
+
+
+def test_atomic_number():
+    assert atomic_number('U') == 92
+    assert atomic_number('carbon') == 6
+    assert atomic_number('ununpentium') == 115
+    with pytest.raises(ValueError):
+        atomic_number('unobtainium')
 
 
 def test_to_composition():
@@ -81,8 +89,9 @@ def test_to_latex():
 
 def test_to_reaction():
     from chempy.chemistry import Reaction, Equilibrium
-    rxn = to_reaction("H+ + OH- -> H2O; 1.4e11; ref={'doi': '10.1039/FT9908601539'}",
-                      'H+ OH- H2O'.split(), '->', Reaction)
+    rxn = to_reaction(
+        "H+ + OH- -> H2O; 1.4e11; ref={'doi': '10.1039/FT9908601539'}",
+        'H+ OH- H2O'.split(), '->', Reaction)
     assert rxn.__class__ == Reaction
 
     assert rxn.reac['H+'] == 1
