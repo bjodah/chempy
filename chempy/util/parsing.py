@@ -143,6 +143,15 @@ names = (
     'Livermorium', '(Ununseptium)', '(Ununoctium)'
 )
 
+lower_names = tuple(n.lower().lstrip('(').rstrip(')') for n in names)
+
+
+def atomic_number(name):
+    try:
+        return symbols.index(name) + 1
+    except ValueError:
+        return lower_names.index(name.lower()) + 1
+
 # The data in '_relative_atomic_masses' is licensed under the CC-SA license
 # https://en.wikipedia.org/w/index.php?title=List_of_elements&oldid=700476748
 _relative_atomic_masses = (
