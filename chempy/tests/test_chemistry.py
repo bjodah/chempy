@@ -111,7 +111,7 @@ def test_Equilibrium__as_reactions():
 
 
 def test_Reaction__from_string():
-    r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H+ OH-')
+    r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H+ OH-'.split())
     assert r.reac == {'H2O': 1} and r.prod == {'H+': 1, 'OH-': 1}
 
     with pytest.raises(ValueError):
