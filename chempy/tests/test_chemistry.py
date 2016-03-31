@@ -108,3 +108,11 @@ def test_Equilibrium__as_reactions():
     fw, bw = eq.as_reactions(kb=rate, units=default_units)
     assert abs((bw.param - rate)/rate) < 1e-15
     assert abs((fw.param / M)/bw.param - 1e-14)/1e-14 < 1e-15
+
+
+def test_Reaction__from_string():
+    r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H+ OH-')
+    assert r.reac == {'H2O': 1} and r.prod == {'H+': 1, 'OH-': 1}
+
+    with pytest.raises(ValueError):
+        Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H OH-'.split())
