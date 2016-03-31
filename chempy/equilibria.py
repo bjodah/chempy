@@ -192,6 +192,13 @@ class NumSysLin(_NumSys):
         B, comp_nrs = self.eqsys.composition_balance_vectors()
         f_preserv = linear_exprs(B, yvec, mat_dot_vec(B, init_concs),
                                  rref=self.rref_preserv)
+        print('f =============') # DO-NOT-MERGE!
+        print(A) # DO-NOT-MERGE!
+        print(self, self.small) # DO-NOT-MERGE!
+        print(yvec) # DO-NOT-MERGE!
+        print(params) # DO-NOT-MERGE!
+        print(f_equil) # DO-NOT-MERGE!
+        print(f_preserv) # DO-NOT-MERGE!
         return f_equil + f_preserv
 
 
@@ -276,7 +283,10 @@ class NumSysLog(_NumSys):
 
     def internal_x0_cb(self, init_concs, params):
         # return [1]*len(init_concs)
-        return [0.1]*len(init_concs)
+        # return [0.1]*len(init_concs)
+        # return np.log((np.asarray(init_concs) + self.small +
+        #               self.eqsys.upper_conc_bounds(init_concs))**0.5)
+        return [-0.003]*len(init_concs)
 
     def f(self, yvec, params):
         from pyneqsys.symbolic import linear_exprs
@@ -436,6 +446,8 @@ class EqSystem(ReactionSystem):
             symb_kw['post_processors'] = [ns.post_processor]
         if ns.internal_x0_cb is not None:
             symb_kw['internal_x0_cb'] = ns.internal_x0_cb
+        print('_SymbolicSys_from_NumSys(self, %s, %s, %s, %s)' %
+              (NS, conds, rref_equil, rref_preserv)) # DO-NOT-MERGE!
         return SymbolicSys.from_callback(
             ns.f, self.ns, nparams=self.ns + self.nr, **symb_kw)
 
