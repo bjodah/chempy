@@ -64,7 +64,7 @@ with io.open(_path_under_setup(pkg_name, '__init__.py'), 'rt',
              encoding='utf-8') as f:
     short_description = f.read().split('"""')[1].split('\n')[1]
 assert 10 < len(short_description) < 255
-long_descr = io.open(_path_under_setup('README.rst', encoding='utf-8')).read()
+long_descr = io.open(_path_under_setup('README.rst'), encoding='utf-8').read()
 assert len(long_descr) > 100
 
 
