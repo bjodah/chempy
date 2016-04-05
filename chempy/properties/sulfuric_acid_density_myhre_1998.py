@@ -103,7 +103,7 @@ bibtex = """
 
 def density_from_concentration(conc, T=None, molar_mass=None,
                                rho_cb=sulfuric_acid_density,
-                               units=None, atol=None, maxiter=50, **kwargs):
+                               units=None, atol=None, maxiter=10, **kwargs):
     """ Calculates the density of a solution from its concentration
 
     Given a function which calculates the density of a solution from the mass
@@ -160,6 +160,10 @@ def density_from_concentration(conc, T=None, molar_mass=None,
         atol = 1e-3 * kg_per_m3
     if molar_mass is None:
         molar_mass = (1.00794*2 + 32.066 + 4*15.9994)*1e-3 * kg / mol
+
+    if units is not None:
+        conc = conc.rescale(mol/m**3)
+        molar_mass = molar_mass.rescale(kg/mol)
 
     rho = 1100 * kg_per_m3
     delta_rho = float('inf') * kg_per_m3

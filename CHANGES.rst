@@ -1,3 +1,11 @@
+v0.3.6
+======
+- Substance got a new method: molar_mass
+
+v0.3.5
+======
+- More robust setup.py
+
 v0.3.3
 ======
 - ``chempy.units.allclose`` now handles iterables with disparate units.

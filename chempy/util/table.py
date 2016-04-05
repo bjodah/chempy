@@ -136,13 +136,18 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
         optional (default: None)
     """
     if ref_fmt is None:
+        def _doi(s):
+            return r'\texttt{\href{http://dx.doi.org/'+s+'}{doi:'+s+'}}'
+
         def ref_fmt(s):
             if s is None:
                 return 'None'
-            if tex and s.startswith('doi:'):
-                return r'\texttt{\href{http://dx.doi.org/'+s[4:]+'}{'+s+'}}'
-            else:
-                return s
+            if tex:
+                if isinstance(s, dict):
+                    return _doi(s['doi'])
+                if s.startswith('doi:'):
+                    return _doi(s[4:])
+            return s
 
     def _wrap(s):
         if tex:
@@ -230,7 +235,8 @@ def rsys2table(rsys, table_template=None, table_template_dict=None,
     if 'body' in table_template_dict:
         raise KeyError("There is already a 'body' key in table_template_dict")
     table_template_dict['body'] = (line_term + '\n').join(rsys2tablines(
-        rsys, k_fmt=r'\num{{{0:.4g}}}' if siunitx else '{0:.4g}', **kwargs)) + line_term
+        rsys, k_fmt=r'\num{{{0:.4g}}}' if siunitx else '{0:.4g}', **kwargs)
+    ) + line_term
 
     if table_template is None:
         if table_template_dict['table_env'] == 'longtable':
@@ -275,8 +281,8 @@ def rsys2pdf_table(rsys, output_dir=None, doc_template=None,
         _pkgs += ['siunitx']
     _envs = ['tiny'] + (['landscape'] if landscape else [])
     defaults = {
-        'usepkg': '\n'.join([(r'\usepackage' + ('[%s]' if isinstance(pkg, tuple)
-                                                else '') + '{%s}') % pkg for
+        'usepkg': '\n'.join([(r'\usepackage' + (
+            '[%s]' if isinstance(pkg, tuple) else '') + '{%s}') % pkg for
                              pkg in _pkgs]),
         'begins': '\n'.join([r'\begin{%s}' % env for env in _envs]),
         'ends': '\n'.join([r'\end{%s}' % env for env in _envs[::-1]])

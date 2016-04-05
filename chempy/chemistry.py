@@ -83,6 +83,9 @@ class Substance(object):
             if self.composition is not None:
                 return mass_from_composition(self.composition)
 
+    def molar_mass(self, units):
+        return self.mass*units.g/units.mol
+
     def __init__(self, name=None, charge=None, latex_name=None,
                  composition=None, other_properties=None):
         self.name = name

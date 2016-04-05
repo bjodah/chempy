@@ -68,6 +68,12 @@ def test_Reaction():
     assert r3.charge_neutrality_violation(substance_dict) != 0
 
 
+def test_Substance__molar_mass():
+    mw_water = Substance.from_formula('H2O').molar_mass(default_units)
+    q = mw_water / ((15.9994 + 2*1.008)*default_units.gram/default_units.mol)
+    assert abs(q - 1) < 1e-3
+
+
 def test_ReactionSystem__as_per_substance_array():
     mol = default_units.mol
     m = default_units.metre
