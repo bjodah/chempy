@@ -1,6 +1,8 @@
 v0.3.6
 ======
 - Substance got a new method: molar_mass
+- ``chempy.util.stoich.decompose_yields`` now takes reactions instead of
+  iterable of dicts (backward incompatible change).
 
 v0.3.5
 ======

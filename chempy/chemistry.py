@@ -43,12 +43,12 @@ class Substance(object):
 
     Examples
     --------
-    >>> ammonium = Substance('NH4+', 1, 'NH_4^+', composition={14:1, 1: 4},
+    >>> ammonium = Substance('NH4+', 1, 'NH_4^+', composition={7:1, 1: 4},
     ...     other_properties={'mass': 18.0385, 'pKa': 9.24})
     >>> ammonium.name
     'NH4+'
     >>> ammonium.composition  # note that charge was inserted as composition[0]
-    {0: 1, 1: 4, 14: 1}
+    {0: 1, 1: 4, 7: 1}
     >>> ammonium.other_properties['mass']
     18.0385
     >>> ammonium.other_properties['pKa']
@@ -59,6 +59,11 @@ class Substance(object):
     Traceback (most recent call last):
         ...
     AttributeError: 'Substance' object has no attribute 'pKa'
+    >>> nh4p = Substance.from_formula('NH4+')  # simpler
+    >>> nh4p.composition == {7: 1, 1: 4, 0: 1}
+    True
+    >>> nh4p.latex_name
+    'NH_{4}^{+}'
 
     """
 
@@ -370,6 +375,10 @@ class Reaction(object):
     def order(self):
         """ Sum of (active) reactant stoichiometries """
         return sum(self.reac.values())
+
+    def keys(self):
+        return set(chain(self.reac.keys(), self.prod.keys(),
+                         self.inact_reac.keys(), self.inact_prod.keys()))
 
     def net_stoich(self, substance_keys):
         """ Per substance net stoichiometry tuple (active & inactive) """
@@ -712,6 +721,8 @@ class ReactionSystem(object):
          Name of ReactionSystem (e.g. model name / citation key)
     check_balance: bool (default: None)
         if None => True if all substances has composition attribute.
+    substance_factory: callback
+        e.g. :meth:`Substance.from_formula`
 
     Attributes
     ----------
@@ -734,7 +745,8 @@ class ReactionSystem(object):
 
     """
 
-    def __init__(self, rxns, substances, name=None, check_balance=None):
+    def __init__(self, rxns, substances, name=None, check_balance=None,
+                 substance_factory=Substance):
         self.rxns = rxns
         if isinstance(substances, OrderedDict):
             self.substances = substances
@@ -742,12 +754,15 @@ class ReactionSystem(object):
             if ' ' in substances:
                 substances = substances.split()
             self.substances = OrderedDict([
-                (s, Substance(s)) for s in substances])
+                (s, substance_factory(s)) for s in substances])
         else:
             try:
                 self.substances = OrderedDict([(s.name, s) for s in substances])
             except:
-                self.substances = OrderedDict(substances)
+                try:
+                    self.substances = OrderedDict(substances)
+                except ValueError:
+                    self.substances = OrderedDict((k, substance_factory(k)) for k in substances)
         self._sanity_check()
         self.name = name
         if check_balance is None:
@@ -816,22 +831,23 @@ class ReactionSystem(object):
         else:
             return list(self.substances.keys()).index(sbstnc)
 
-    def _stoichs(self, attr):
+    def _stoichs(self, attr, keys=None):
+        if keys is None:
+            keys = self.substances.keys()
         # dtype: see https://github.com/sympy/sympy/issues/10295
-        return np.array([(getattr(eq, attr)(self.substances.keys())) for
-                         eq in self.rxns],
+        return np.array([(getattr(eq, attr)(keys)) for eq in self.rxns],
                         dtype=object)
 
-    def net_stoichs(self):
-        return self._stoichs('net_stoich')
+    def net_stoichs(self, keys=None):
+        return self._stoichs('net_stoich', keys)
 
-    def all_reac_stoichs(self):
-        return self._stoichs('all_reac_stoich')
+    def all_reac_stoichs(self, keys=None):
+        return self._stoichs('all_reac_stoich', keys)
 
-    def all_prod_stoichs(self):
-        return self._stoichs('all_prod_stoich')
+    def all_prod_stoichs(self, keys=None):
+        return self._stoichs('all_prod_stoich', keys)
 
-    def stoichs(self, non_precip_rids=()):
+    def stoichs(self, non_precip_rids=()):  # TODO: rename to cond_stoichs
         """ Conditional stoichiometries depending on precipitation status """
         # dtype: see https://github.com/sympy/sympy/issues/10295
         return np.array([(

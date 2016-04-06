@@ -67,11 +67,24 @@ def test_Reaction():
     assert sum(r3.composition_violation(substance_dict)) != 0
     assert r3.charge_neutrality_violation(substance_dict) != 0
 
+    assert r3.keys() == {Hp, OHm, H2O}
+
 
 def test_Substance__molar_mass():
     mw_water = Substance.from_formula('H2O').molar_mass(default_units)
     q = mw_water / ((15.9994 + 2*1.008)*default_units.gram/default_units.mol)
     assert abs(q - 1) < 1e-3
+
+
+def test_ReactionSystem__substance_factory():
+    rs = ReactionSystem([Reaction.from_string('H2O -> H+ + OH-', 'H2O H+ OH-')],
+                        'H2O H+ OH-', substance_factory=Substance.from_formula)
+    assert rs.net_stoichs(['H2O']) == [-1]
+    assert rs.net_stoichs(['H+']) == [1]
+    assert rs.net_stoichs(['OH-']) == [1]
+    assert rs.substances['H2O'].composition[8] == 1
+    assert rs.substances['OH-'].composition[0] == -1
+    assert rs.substances['H+'].charge == 1
 
 
 def test_ReactionSystem__as_per_substance_array():

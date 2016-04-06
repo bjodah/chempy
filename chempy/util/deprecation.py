@@ -5,10 +5,10 @@ import warnings
 
 
 class Deprecation(object):
-    """ factory of decorators for deprecating functions or classes
+    """ Decorator factory for deprecating functions or classes.
 
-    Search the code base for more examples. Note that the wrapper gets
-    :attr:`_deprecation` attribute with the :class:`Deprecation` instance.
+    This class represent deprecations of functions or classes and is designed
+    to be used with the ``warnings`` library.
 
     Parameters
     ----------
@@ -43,13 +43,13 @@ class Deprecation(object):
     ... def some_old_function(x):
     ...     return x*x - x
     ...
-    >>> some_old_function._deprecation.last_supported_version
+    >>> Deprecation.inspect(some_old_function).last_supported_version
     '0.4.0'
     >>> @Deprecation(will_be_missing_in='1.0')
     ... class ClumsyClass(object):
     ...     pass
     ...
-    >>> ClumsyClass._deprecation.will_be_missing_in
+    >>> Deprecation.inspect(ClumsyClass).will_be_missing_in
     '1.0'
     >>> warnings.resetwarnings()
 
@@ -68,8 +68,9 @@ class Deprecation(object):
         $ python -c 'import warnings as w; w.warn("X", DeprecationWarning)'
         -c:1: DeprecationWarning: X
 
-
     """
+
+    _deprecations = {}
 
     def __init__(self, last_supported_version=None, will_be_missing_in=None,
                  use_instead=None, issue=None, issues_url='%s',
@@ -81,6 +82,11 @@ class Deprecation(object):
         self.issues_url = issues_url
         self.warning = warning
         self.warning_message = self._warning_message_template()
+
+    @classmethod
+    def inspect(cls, obj):
+        """ Get the :class:`Deprecation` instance of a deprecated function. """
+        return cls._deprecations[obj]
 
     def _warning_message_template(self):
         msg = '%(func_name)s is deprecated'
@@ -109,16 +115,16 @@ class Deprecation(object):
                 __doc__ = msg + '\n\n' + wrapped_doc
 
                 def __init__(_self, *args, **kwargs):
-                    warnings.warn(msg, self.warning, stacklevel=3)
+                    warnings.warn(msg, self.warning, stacklevel=2)
                     wrapped.__init__(_self, *args, **kwargs)
 
         else:  # wrapped is a function
             def _Wrapper(*args, **kwargs):
-                warnings.warn(msg, self.warning, stacklevel=3)
+                warnings.warn(msg, self.warning, stacklevel=2)
                 return wrapped(*args, **kwargs)
             _Wrapper.__doc__ = msg + '\n\n' + wrapped_doc
 
-        _Wrapper._deprecation = self
+        self._deprecations[_Wrapper] = self
         _Wrapper.__name__ = wrapped.__name__
         _Wrapper.__module__ = wrapped.__module__
         return _Wrapper

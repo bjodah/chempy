@@ -448,7 +448,10 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None):
     try:
         stoich, param, kwargs = map(str.strip, line.rstrip('\n').split(';'))
     except ValueError:
-        stoich, param = map(str.strip, line.rstrip('\n').split(';'))
+        if ';' in line:
+            stoich, param = map(str.strip, line.rstrip('\n').split(';'))
+        else:
+            stoich, param = line.strip(), 'None'
         kwargs = {}
     else:
         kwargs = eval('dict('+kwargs+')', globals_)
