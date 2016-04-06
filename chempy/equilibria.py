@@ -21,6 +21,7 @@ from operator import mul, add
 import numpy as np
 
 from .chemistry import ReactionSystem, equilibrium_quotient
+from ._util import prodpow
 from .util.pyutil import deprecated
 
 
@@ -32,11 +33,6 @@ def vec_dot_vec(vec1, vec2):
     # return np.dot(vec1, vec2)
     # return np.add.reduce(np.multiply(vec1, vec2))
     return reducemap((vec1, vec2), add, mul)
-
-
-def prodpow(bases, exponents):
-    exponents = np.asarray(exponents)
-    return np.multiply.reduce(bases**exponents, axis=-1)
 
 
 def mat_dot_vec(iter_mat, iter_vec, iter_term=None):  # pure python (slow)

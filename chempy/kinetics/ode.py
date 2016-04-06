@@ -8,45 +8,7 @@ from __future__ import (absolute_import, division, print_function)
 
 from chempy.units import get_derived_unit, to_unitless
 
-
-def law_of_mass_action_rates(conc, rsys, k=None, state=None):
-    """ Returns a generator of reaction rate expressions
-
-    Rates according to the law of mass action (:attr:`rsys.inact_reac` ignored)
-    from a :class:`ReactionSystem`.
-
-    Parameters
-    ----------
-    conc: array_like
-        concentrations (floats or symbolic objects)
-    rsys: ReactionSystem instance
-        See :class:`ReactionSystem`
-    k: array_like (optional)
-        to override rate parameters of the reactions
-    state: object (optional)
-        argument for reaction parameters
-
-    Examples
-    --------
-    >>> from chempy import ReactionSystem, Reaction
-    >>> line, keys = 'H2O -> H+ + OH- ; 1e-4', 'H2O H+ OH-'
-    >>> rsys = ReactionSystem([Reaction.from_string(line, keys)], keys)
-    >>> next(law_of_mass_action_rates([55.4, 1e-7, 1e-7], rsys))
-    0.00554
-
-    """
-    def _eval_k(_k):
-        is_func = callable(_k) and not _k.__class__.__name__ == 'Symbol'
-        return _k(state) if is_func else _k
-    for rxn_idx, rxn in enumerate(rsys.rxns):
-        rate = 1
-        for substance_key, coeff in rxn.reac.items():
-            s_idx = rsys.as_substance_index(substance_key)
-            rate *= conc[s_idx]**coeff
-        if k is None:
-            yield rate * _eval_k(rxn.param)
-        else:
-            yield rate * _eval_k(k[rxn_idx])
+from .rates import MassAction, law_of_mass_action_rates
 
 
 def dCdt(rsys, rates):
@@ -143,8 +105,13 @@ def get_odesys(rsys, include_params=False, SymbolicSys=None,
         rsys_params = rsys.params()
 
     def dydt(t, y, p):
-        rates = list(law_of_mass_action_rates(
-            y, rsys, rsys_params if include_params else p))
+        rates = []
+        for ri, rxn in enumerate(rsys.rxns):
+            param = rxn.param
+            if not hasattr(param, 'expr'):
+                param = MassAction(param)  # default
+            rates.append(param.expr(ri, rsys, y, state,
+                                    rsys_params if include_params else p))
         return dCdt(rsys, rates)
 
     return SymbolicSys.from_callback(
