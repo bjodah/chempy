@@ -6,9 +6,11 @@ evolution of concentrations in reaction systems.
 """
 from __future__ import (absolute_import, division, print_function)
 
+import numpy as np
+
 from chempy.units import get_derived_unit, to_unitless
 
-from .rates import MassAction, law_of_mass_action_rates
+from .rates import _RateExpr, MassAction, law_of_mass_action_rates
 
 
 def dCdt(rsys, rates):
@@ -69,6 +71,7 @@ def get_odesys(rsys, include_params=False, SymbolicSys=None,
         argument for reaction parameters
     \*\*kwargs:
         Keyword arguemnts pass on to `SymbolicSys`
+
     """
     if SymbolicSys is None:
         from pyodesys.symbolic import SymbolicSys
@@ -104,14 +107,20 @@ def get_odesys(rsys, include_params=False, SymbolicSys=None,
     else:
         rsys_params = rsys.params()
 
+    _nscalars = [rxn.param.nargs if isinstance(rxn.param, _RateExpr) else 1 for
+                 rxn in rsys.rxns]
+    _accum_n_params = np.cumsum([0]+_nscalars)
+
     def dydt(t, y, p):
         rates = []
         for ri, rxn in enumerate(rsys.rxns):
             param = rxn.param
-            if not hasattr(param, 'expr'):
-                param = MassAction(param)  # default
-            rates.append(param.expr(ri, rsys, y, state,
-                                    rsys_params if include_params else p))
+            if not hasattr(param, 'eval'):
+                param = MassAction([param])  # default
+            # id0 = _accum_n_params[ri]
+            # id1 = _accum_n_params[ri+1]
+            # rsys_params[id0:id1]
+            rates.append(param.eval(rsys, ri, y, None))
         return dCdt(rsys, rates)
 
     return SymbolicSys.from_callback(

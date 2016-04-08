@@ -18,9 +18,11 @@ def test_h2_br2():
     # ½ dHBr/dt = k[H2][Br2]**(3/2) / ([Br2] + k'[HBr])
     k = 3.142
     kprime = 2.718
-    param = Quotient(GeneralPow(k, {'H2': 1, 'Br2': 3/2}),
-                     Sum([GeneralPow(1, {'Br2': 1}),
-                          GeneralPow(kprime, {'HBr': 1})]))
+    param = Quotient([
+        GeneralPow([k], {'H2': 1, 'Br2': 3/2}),
+        Sum([GeneralPow([1], {'Br2': 1}),
+             GeneralPow([kprime], {'HBr': 1})])
+    ])
     substances = 'H2 Br2 HBr'
     rxn = Reaction({'H2': 1, 'Br2': 1}, {'HBr': 2}, param)
     rsys = ReactionSystem([rxn], substances)
@@ -29,5 +31,5 @@ def test_h2_br2():
     c0 = {'H2': 13, 'Br2': 17, 'HBr': 19}
     r = k*c0['H2']*c0['Br2']**(3/2)/(c0['Br2'] + kprime*c0['HBr'])
     ref = rsys.as_per_substance_array({'H2': -r, 'Br2': -r, 'HBr': 2*r})
-    res = odesys.f_callback(rsys.as_per_substance_array(c0))
+    res = odesys.f_cb(0, rsys.as_per_substance_array(c0))
     assert np.allclose(res, ref)
