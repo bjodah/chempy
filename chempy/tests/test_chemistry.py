@@ -76,9 +76,21 @@ def test_Substance__molar_mass():
     assert abs(q - 1) < 1e-3
 
 
+def test_ReactionSystem():
+    kw = dict(substance_factory=Substance.from_formula)
+    r1 = Reaction.from_string('H2O -> H+ + OH-', 'H2O H+ OH-')
+    ReactionSystem([r1], 'H2O H+ OH-', **kw)
+    r2 = Reaction.from_string('H2O -> 2 H+ + OH-', 'H2O H+ OH-')
+    with pytest.raises(ValueError):
+        ReactionSystem([r2], 'H2O H+ OH-', **kw)
+    with pytest.raises(ValueError):
+        ReactionSystem([r1, r1], 'H2O H+ OH-', **kw)
+
+
 def test_ReactionSystem__substance_factory():
-    rs = ReactionSystem([Reaction.from_string('H2O -> H+ + OH-', 'H2O H+ OH-')],
-                        'H2O H+ OH-', substance_factory=Substance.from_formula)
+    r1 = Reaction.from_string('H2O -> H+ + OH-', 'H2O H+ OH-')
+    rs = ReactionSystem([r1], 'H2O H+ OH-',
+                        substance_factory=Substance.from_formula)
     assert rs.net_stoichs(['H2O']) == [-1]
     assert rs.net_stoichs(['H+']) == [1]
     assert rs.net_stoichs(['OH-']) == [1]

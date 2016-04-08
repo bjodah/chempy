@@ -352,6 +352,10 @@ class Reaction(object):
         >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H+ OH-')
         >>> r.reac == {'H2O': 1} and r.prod == {'H+': 1, 'OH-': 1}
         True
+        >>> r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", 'H2O H2 O2')
+        >>> r2.reac == {'H2O': 2} and r2.prod == {'H2': 2, 'O2': 1}
+        True
+
 
         Notes
         -----
@@ -743,6 +747,11 @@ class ReactionSystem(object):
     >>> rsys.as_per_substance_array({'R1': 2, 'P1': 3})
     array([ 2.,  3.])
 
+    Raises
+    ------
+    ValueError
+        When any reaction occurs more than once
+
     """
 
     def __init__(self, rxns, substances, name=None, check_balance=None,
@@ -774,6 +783,13 @@ class ReactionSystem(object):
                 check_balance = True
         if check_balance:
             self._balance_check()
+        self._duplicate_check()
+
+    def _duplicate_check(self):
+        for i1, rxn1 in enumerate(self.rxns):
+            for i2, rxn2 in enumerate(self.rxns[i1+1:]):
+                if rxn1 == rxn2:
+                    raise ValueError("Duplicate reactions %d & %d" % (i1, i2))
 
     def _balance_check(self):
         for rxn in self.rxns:
