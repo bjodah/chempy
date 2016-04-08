@@ -87,7 +87,7 @@ def test_ReactionSystem__substance_factory():
     assert rs.substances['H+'].charge == 1
 
 
-def test_ReactionSystem__as_per_substance_array():
+def test_ReactionSystem__as_per_substance_array_dict():
     mol = default_units.mol
     m = default_units.metre
     M = default_units.molar
@@ -100,6 +100,8 @@ def test_ReactionSystem__as_per_substance_array():
     c = rs.as_per_substance_array({'H2O': 1})
     with pytest.raises(KeyError):
         c = rs.as_per_substance_array({'H': 1})
+
+    assert rs.as_per_substance_dict([42]) == {'H2O': 42}
 
 
 def test_ArrheniusRate():

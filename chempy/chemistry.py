@@ -824,6 +824,9 @@ class ReactionSystem(object):
             raise ValueError("Incorrect size")
         return cont*(unit if unit is not None else 1)
 
+    def as_per_substance_dict(self, arr):
+        return dict(zip(self.substances.keys(), arr))
+
     def as_substance_index(self, sbstnc):
         """ Returns the index of a Substance in the system"""
         if isinstance(sbstnc, int):

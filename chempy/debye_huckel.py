@@ -125,6 +125,7 @@ def davies_log_gamma(I, z, A, C=-0.3, I0=1, one=1):
 
 
 def limiting_activity_product(I, stoich, z, T, eps_r, rho, exp=None):
+    """ Product of activity coefficients based on DH limiting law. """
     if exp is None:
         try:
             from numpy import exp
