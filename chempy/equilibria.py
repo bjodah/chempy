@@ -588,6 +588,12 @@ class EqSystem(ReactionSystem):
             if 'labels' not in kwargs['plot_kwargs']:
                 kwargs['plot_kwargs']['labels'] = (
                     self.substance_labels(latex_names))
+            if 'substances' in plot_kwargs:
+                if 'indices' in plot_kwargs:
+                    raise ValueError("Now I am confused..")
+                kwargs['plot_kwargs']['indices'] = map(
+                    self.as_substance_index, plot_kwargs.pop('substances'))
+                print(kwargs['plot_kwargs']['indices'])
         else:
             cb = neqsys.solve_series
 
