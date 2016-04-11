@@ -27,6 +27,13 @@ def test_Substance__2():
     assert sorted([OH_m, H2O], key=attrgetter('name')) == [H2O, OH_m]
 
 
+def test_Substance__from_formula():
+    H2O = Substance.from_formula('H2O')
+    assert H2O.composition == {1: 2, 8: 1}
+    assert H2O.latex_name == 'H_{2}O'
+    assert H2O.unicode_name == u'H₂O'
+
+
 def test_Species():
     s = Species.from_formula('H2O')
     assert s.phase_idx == 0
@@ -149,3 +156,17 @@ def test_Reaction__from_string():
 
     with pytest.raises(ValueError):
         Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H OH-'.split())
+
+
+def test_ReactioN__latex():
+    keys = 'H2O H2 O2'.split()
+    subst = {k: Substance.from_formula(k) for k in keys}
+    r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
+    assert r2.latex(subst) == r'2 H_{2}O \rightarrow 2 H_{2} + O_{2}'
+
+
+def test_ReactioN__unicode():
+    keys = u'H2O H2 O2'.split()
+    subst = {k: Substance.from_formula(k) for k in keys}
+    r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
+    assert r2.unicode(subst) == u'2 H₂O → 2 H₂ + O₂'

@@ -5,13 +5,15 @@ from __future__ import division
 from itertools import chain
 from operator import itemgetter
 from collections import OrderedDict
+import sys
 
 import numpy as np
 
 from .arrhenius import arrhenius_equation
 from .util.arithmeticdict import ArithmeticDict
 from .util.parsing import (
-    to_composition, mass_from_composition, to_latex, to_reaction
+    formula_to_composition, mass_from_composition, to_reaction,
+    formula_to_latex, formula_to_unicode
 )
 from .util.pyutil import defaultnamedtuple, deprecated
 from .units import to_unitless, default_constants, default_units
@@ -26,6 +28,7 @@ class Substance(object):
     charge: int (optional, default: None)
         will be stored in composition[0], prefer composition when possible
     latex_name: str
+    unicode_name: str
     composition: dict or None (default)
         dict (int -> number) e.g. {atomic number: count}, zero has special
         meaning (net charge)
@@ -67,7 +70,7 @@ class Substance(object):
 
     """
 
-    attrs = ('name', 'latex_name', 'composition', 'other_properties')
+    attrs = ('name', 'latex_name', 'unicode_name', 'composition', 'other_properties')
 
     @property
     def charge(self):
@@ -92,8 +95,9 @@ class Substance(object):
         return self.mass*units.g/units.mol
 
     def __init__(self, name=None, charge=None, latex_name=None,
-                 composition=None, other_properties=None):
+                 unicode_name=None, composition=None, other_properties=None):
         self.name = name
+        self.unicode_name = unicode_name
         self.latex_name = latex_name
         self.composition = composition or {}
 
@@ -130,8 +134,9 @@ class Substance(object):
 
         """
 
-        return cls(formula, latex_name=to_latex(formula),
-                   composition=to_composition(formula),
+        return cls(formula, latex_name=formula_to_latex(formula),
+                   unicode_name=formula_to_unicode(formula),
+                   composition=formula_to_composition(formula),
                    **kwargs)
 
     def __repr__(self):
@@ -277,8 +282,9 @@ class Solute(Substance):
     def from_formula(cls, formula, **kwargs):
         if formula.endswith('(s)'):
             kwargs['precipitate'] = True
-        return cls(formula, latex_name=to_latex(formula),
-                   composition=to_composition(formula),
+        return cls(formula, latex_name=formula_to_latex(formula),
+                   unicode_name=formula_to_unicode(formula),
+                   composition=formula_to_composition(formula),
                    **kwargs)
 
 
@@ -317,10 +323,12 @@ class Reaction(object):
     ref: object
         reference
     other_properties: dict (optional)
+
     """
 
     str_arrow = '->'
     latex_arrow = r'\rightarrow'
+    unicode_arrow = u'→'
     param_char = 'k'  # convention
 
     def __init__(self, reac, prod, param=None, inact_reac=None,
@@ -355,7 +363,6 @@ class Reaction(object):
         >>> r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", 'H2O H2 O2')
         >>> r2.reac == {'H2O': 2} and r2.prod == {'H2': 2, 'O2': 1}
         True
-
 
         Notes
         -----
@@ -432,22 +439,26 @@ class Reaction(object):
                 return True
         return False
 
-    def _get_str_parts(self, name_attr, arrow_attr, substances):
+    def _get_str_parts(self, name_attr, arrow_attr, substances, _str=str):
+        nullstr, space = _str(''), _str(' ')
         reac, prod, i_reac, i_prod = [[
-            ((str(v)+' ') if v > 1 else '') + str(getattr(
+            ((_str(v)+space) if v > 1 else nullstr) + _str(getattr(
                 substances[k], name_attr, k))
             for k, v in filter(itemgetter(1), d.items())
         ] for d in (self.reac, self.prod, self.inact_reac,
                     self.inact_prod)]
-        r_str = " + ".join(sorted(reac))
-        ir_str = ' (+ ' + " + ".join(sorted(i_reac)) + ')' if len(i_reac) > 0 else ''
+        r_str = _str(" + ").join(sorted(reac))
+        ir_str = (_str(' (+ ') + _str(" + ").join(sorted(i_reac)) + _str(')')
+                  if len(i_reac) > 0 else nullstr)
         arrow_str = getattr(self, arrow_attr)
-        p_str = " + ".join(sorted(prod))
-        ip_str = ' (+ ' + " + ".join(sorted(i_prod)) + ')' if len(i_prod) > 0 else ''
+        p_str = _str(" + ").join(sorted(prod))
+        ip_str = (_str(' (+ ') + _str(" + ").join(sorted(i_prod)) + _str(')')
+                  if len(i_prod) > 0 else nullstr)
         return r_str, ir_str, arrow_str, p_str, ip_str
 
-    def _get_str(self, *args):
-        return "{}{} {} {}{}".format(*self._get_str_parts(*args))
+    def _get_str(self, *args, **kwargs):
+        _str = kwargs.get('_str', str)
+        return _str("{}{} {} {}{}").format(*self._get_str_parts(*args, **kwargs))
 
     def __str__(self):
         try:
@@ -465,8 +476,33 @@ class Reaction(object):
         }) + s
 
     def latex(self, substances):
-        """ Returns a LaTeX representation of the reaction """
+        """ Returns a LaTeX representation of the reaction
+
+        Examples
+        --------
+        >>> keys = 'H2O H+ OH-'.split()
+        >>> subst = {k: Substance.from_formula(k) for k in keys}
+        >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", subst)
+        >>> r.latex(subst) == r'H_{2}O \\rightarrow H^{+} + OH^{-}'
+        True
+
+        """
         return self._get_str('latex_name', 'latex_arrow', substances)
+
+    def unicode(self, substances):
+        u""" Returns a LaTeX representation of the reaction
+
+        Examples
+        --------
+        >>> keys = 'H2O H+ OH-'.split()
+        >>> subst = {k: Substance.from_formula(k) for k in keys}
+        >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", subst)
+        >>> r.unicode(subst) == u'H₂O → H⁺ + OH⁻'
+        True
+
+        """
+        return self._get_str('unicode_name', 'unicode_arrow', substances,
+                             _str=str if sys.version_info[0] > 2 else unicode)
 
     def _violation(self, substances, attr):
         net = 0.0
@@ -616,6 +652,7 @@ class Equilibrium(Reaction):
     """
     str_arrow = '='
     latex_arrow = r'\rightleftharpoons'
+    unicode_arrow = '⇌'
     param_char = 'K'  # convention
 
     def as_reactions(self, state=None, kf=None, kb=None, units=None):
