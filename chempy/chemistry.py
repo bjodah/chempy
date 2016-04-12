@@ -92,6 +92,16 @@ class Substance(object):
                 return mass_from_composition(self.composition)
 
     def molar_mass(self, units):
+        """ Returns the molar mass (with units) of the substance
+
+        Examples
+        --------
+        >>> nh4p = Substance.from_formula('NH4+')  # simpler
+        >>> from chempy.units import default_units as u
+        >>> nh4p.molar_mass(u)
+        array(18.0384511) * g/mol
+
+        """
         return self.mass*units.g/units.mol
 
     def __init__(self, name=None, charge=None, latex_name=None,

@@ -82,12 +82,19 @@ Parsing formulae
 .. code:: python
 
    >>> from chempy import Substance
-   >>> Substance.from_formula('Fe(CN)6-3').composition == {0: -3, 26: 1, 6: 6, 7: 6}
+   >>> ferricyanide = Substance.from_formula('Fe(CN)6-3')
+   >>> ferricyanide.composition == {0: -3, 26: 1, 6: 6, 7: 6}
    True
+   >>> print(ferricyanide.unicode_name)
+   Fe(CN)₆³⁻
+   >>> print(ferricyanide.latex_name)
+   Fe(CN)_{6}^{3-}
+   >>> print('%.3f' % ferricyanide.mass)
+   211.955
 
 
-as you see, the atomic numbers (and 0 for charge) is used as keys and the count of each kind
-became respective value.
+as you see, in composition, the atomic numbers (and 0 for charge) is used as
+keys and the count of each kind became respective value.
 
 Chemical equilibria
 ~~~~~~~~~~~~~~~~~~~
