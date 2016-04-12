@@ -27,6 +27,13 @@ def test_Substance__2():
     assert sorted([OH_m, H2O], key=attrgetter('name')) == [H2O, OH_m]
 
 
+def test_Substance__from_formula():
+    H2O = Substance.from_formula('H2O')
+    assert H2O.composition == {1: 2, 8: 1}
+    assert H2O.latex_name == 'H_{2}O'
+    assert H2O.unicode_name == u'H₂O'
+
+
 def test_Species():
     s = Species.from_formula('H2O')
     assert s.phase_idx == 0
@@ -67,8 +74,39 @@ def test_Reaction():
     assert sum(r3.composition_violation(substance_dict)) != 0
     assert r3.charge_neutrality_violation(substance_dict) != 0
 
+    assert r3.keys() == {Hp, OHm, H2O}
 
-def test_ReactionSystem__as_per_substance_array():
+
+def test_Substance__molar_mass():
+    mw_water = Substance.from_formula('H2O').molar_mass(default_units)
+    q = mw_water / ((15.9994 + 2*1.008)*default_units.gram/default_units.mol)
+    assert abs(q - 1) < 1e-3
+
+
+def test_ReactionSystem():
+    kw = dict(substance_factory=Substance.from_formula)
+    r1 = Reaction.from_string('H2O -> H+ + OH-', 'H2O H+ OH-')
+    ReactionSystem([r1], 'H2O H+ OH-', **kw)
+    r2 = Reaction.from_string('H2O -> 2 H+ + OH-', 'H2O H+ OH-')
+    with pytest.raises(ValueError):
+        ReactionSystem([r2], 'H2O H+ OH-', **kw)
+    with pytest.raises(ValueError):
+        ReactionSystem([r1, r1], 'H2O H+ OH-', **kw)
+
+
+def test_ReactionSystem__substance_factory():
+    r1 = Reaction.from_string('H2O -> H+ + OH-', 'H2O H+ OH-')
+    rs = ReactionSystem([r1], 'H2O H+ OH-',
+                        substance_factory=Substance.from_formula)
+    assert rs.net_stoichs(['H2O']) == [-1]
+    assert rs.net_stoichs(['H+']) == [1]
+    assert rs.net_stoichs(['OH-']) == [1]
+    assert rs.substances['H2O'].composition[8] == 1
+    assert rs.substances['OH-'].composition[0] == -1
+    assert rs.substances['H+'].charge == 1
+
+
+def test_ReactionSystem__as_per_substance_array_dict():
     mol = default_units.mol
     m = default_units.metre
     M = default_units.molar
@@ -81,6 +119,8 @@ def test_ReactionSystem__as_per_substance_array():
     c = rs.as_per_substance_array({'H2O': 1})
     with pytest.raises(KeyError):
         c = rs.as_per_substance_array({'H': 1})
+
+    assert rs.as_per_substance_dict([42]) == {'H2O': 42}
 
 
 def test_ArrheniusRate():
@@ -116,3 +156,17 @@ def test_Reaction__from_string():
 
     with pytest.raises(ValueError):
         Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H OH-'.split())
+
+
+def test_ReactioN__latex():
+    keys = 'H2O H2 O2'.split()
+    subst = {k: Substance.from_formula(k) for k in keys}
+    r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
+    assert r2.latex(subst) == r'2 H_{2}O \rightarrow 2 H_{2} + O_{2}'
+
+
+def test_ReactioN__unicode():
+    keys = u'H2O H2 O2'.split()
+    subst = {k: Substance.from_formula(k) for k in keys}
+    r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
+    assert r2.unicode(subst) == u'2 H₂O → 2 H₂ + O₂'

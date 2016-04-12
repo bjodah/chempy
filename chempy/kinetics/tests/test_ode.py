@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import (absolute_import, division, print_function)
 
 import numpy as np
 
@@ -8,6 +9,8 @@ from chempy.units import (
 )
 from ..ode import get_odesys
 from ..integrated import dimerization_irrev
+
+from .test_rates import _get_h2_br2_rsys
 
 
 def test_get_odesys_1():
@@ -50,7 +53,6 @@ def test_get_odesys__with_units():
     yref = np.zeros((xout.size, 2))
     yref[:, 0] = Aref
     yref[:, 1] = .2e-3 + 2*Aref
-    print(yout)
     assert allclose(yout, yref*conc_unit)
 
 
@@ -63,3 +65,28 @@ def test_get_odesys_2():
     rsys = ReactionSystem([dissociation, recombination], substances)
     get_odesys(rsys, include_params=True,
                unit_registry=SI_base_registry, output_conc_unit=M)
+
+
+def test_h2_br2():
+    k, kprime = 3.142, 2.718
+    rsys = _get_h2_br2_rsys(k, kprime)
+
+    odesys = get_odesys(rsys, include_params=True)
+    c0 = {'H2': 13, 'Br2': 17, 'HBr': 19}
+    r = k*c0['H2']*c0['Br2']**(3/2)/(c0['Br2'] + kprime*c0['HBr'])
+    ref = rsys.as_per_substance_array({'H2': -r, 'Br2': -r, 'HBr': 2*r})
+    res = odesys.f_cb(0, rsys.as_per_substance_array(c0))
+    assert np.allclose(res, ref)
+
+
+def test_h2_br2_with_units():
+    u = default_units
+    k, kprime = 3.142 * u.s**-1 * u.molar**-0.5, 2.718
+    rsys = _get_h2_br2_rsys(k, kprime)
+    odesys = get_odesys(rsys, include_params=True,
+                        unit_registry=SI_base_registry)
+    c0 = {'H2': 13*u.molar, 'Br2': 16*u.molar, 'HBr': 19*u.molar}
+    r = k*c0['H2']*c0['Br2']**(3/2)/(c0['Br2'] + kprime*c0['HBr'])
+    ref = rsys.as_per_substance_array({'H2': -r, 'Br2': -r, 'HBr': 2*r})
+    res = odesys.f_cb(0, rsys.as_per_substance_array(c0, unit=u.molar))
+    assert allclose(ref, res)

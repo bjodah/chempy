@@ -5,8 +5,8 @@ from collections import defaultdict
 import numpy as np
 from ..units import (
     allclose, default_units, get_derived_unit, is_unitless, linspace,
-    SI_base_registry,
-    to_unitless,
+    SI_base_registry, unitless_in_registry, get_physical_quantity,
+    to_unitless, magnitude, default_unit_in_registry,
     unit_of,
     unit_registry_to_human_readable,
     unit_registry_from_human_readable,
@@ -21,7 +21,8 @@ kilogram = default_units.kilogram
 ampere = default_units.ampere
 kelvin = default_units.kelvin
 candela = default_units.candela
-molar = mole / dm**3
+molar = default_units.molar
+per100eV = default_units.per100eV
 
 
 def test_default_units():
@@ -201,3 +202,23 @@ def test_unit_registry_from_human_readable():
         'luminous_intensity': 1e-2*candela,
         'amount': 1e3*mole
     }
+
+
+def test_unitless_in_registry():
+    mag = magnitude(unitless_in_registry(3*per100eV, SI_base_registry))
+    ref = 3*1.0364268834527753e-07
+    assert abs(mag - ref) < 1e-14
+
+
+def test_get_physical_quantity():
+    assert get_physical_quantity(3*mole) == {'amount': 1}
+    assert get_physical_quantity(42) == {}
+
+
+def test_default_unit_in_registry():
+    mol_per_m3 = default_unit_in_registry(3*molar, SI_base_registry)
+    assert magnitude(mol_per_m3) == 1
+    assert mol_per_m3 == mole/metre**3
+
+    assert default_unit_in_registry(3, SI_base_registry) == 1
+    assert default_unit_in_registry(3.0, SI_base_registry) == 1

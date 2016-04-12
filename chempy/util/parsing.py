@@ -290,18 +290,22 @@ def _parse_stoich(stoich):
 
 _greek_letters = (
     'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta',
-    'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'o', 'pi', 'rho', 'sigma',
-    'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega'
+    'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'omicron', 'pi', 'rho',
+    'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega'
 )
+_greek_u = u'αβγδεζηθικλμνξοπρστυφχψω'
 
 _latex_mapping = {k + '-': '\\' + k + '-' for k in _greek_letters}
 _latex_mapping['epsilon-'] = '\\varepsilon-'
+_latex_mapping['omicron-'] = 'o-'
 _latex_mapping['.'] = '^\\bullet '
 
+_unicode_mapping = {k + '-': v + '-' for k, v in zip(_greek_letters, _greek_u)}
+_unicode_mapping['.'] = u'⋅'
 
-def to_composition(formula,
-                   prefixes=None,
-                   suffixes=('(s)', '(l)', '(g)', '(aq)')):
+
+def formula_to_composition(formula, prefixes=None,
+                           suffixes=('(s)', '(l)', '(g)', '(aq)')):
     """ Parse composition of formula representing a chemical formula
 
     Composition is represented as a dict mapping int -> int (atomic
@@ -318,9 +322,9 @@ def to_composition(formula,
 
     Examples
     --------
-    >>> to_composition('NH4+') == {0: 1, 1: 4, 7: 1}
+    >>> formula_to_composition('NH4+') == {0: 1, 1: 4, 7: 1}
     True
-    >>> to_composition('.NHO-(aq)') == {0: -1, 1: 1, 7: 1, 8: 1}
+    >>> formula_to_composition('.NHO-(aq)') == {0: -1, 1: 1, 7: 1, 8: 1}
     True
 
     """
@@ -337,53 +341,6 @@ def _subs(string, patterns):
     for patt, repl in patterns.items():
         string = string.replace(patt, repl)
     return string
-
-
-def to_latex(formula,
-             prefixes=None,
-             suffixes=('(s)', '(l)', '(g)', '(aq)'),
-             intercept=None):
-    r""" Convert formula string to latex representation
-
-    Parameters
-    ----------
-    formula: str
-        Chemical formula, e.g. 'H2O', 'Fe/3+', 'Cl-'
-    prefixes: dict
-        Prefix transofmrations, default: greek letters and .
-    suffixes: tuple of strings
-        Suffixes to keep, e.g. ('(g)', '(s)')
-
-    Examples
-    --------
-    >>> to_latex('NH4+')
-    'NH_{4}^{+}'
-    >>> to_latex('Fe(CN)6+2')
-    'Fe(CN)_{6}^{2+}'
-    >>> to_latex('Fe(CN)6+2(aq)')
-    'Fe(CN)_{6}^{2+}(aq)'
-    >>> to_latex('.NHO-(aq)')
-    '^\\bullet NHO^{-}(aq)'
-    >>> to_latex('alpha-FeOOH(s)')
-    '\\alpha-FeOOH(s)'
-
-    """
-    if prefixes is None:
-        prefixes = _latex_mapping
-    parts = _formula_to_parts(formula, prefixes.keys(), suffixes)
-
-    string = re.sub(r'([0-9]+)', r'_{\1}', parts[0])
-    if parts[1] is not None:
-        chg = _get_charge(parts[1])
-        if chg < 0:
-            token = '-' if chg == -1 else '%d-' % -chg
-        if chg > 0:
-            token = '+' if chg == 1 else '%d+' % chg
-        string += '^{%s}' % token
-    if len(parts) > 4:
-        raise ValueError("Incorrect formula")
-    pre_str = ''.join(map(lambda x: _subs(x, prefixes), parts[2]))
-    return pre_str + string + ''.join(parts[3])
 
 
 def _parse_multiplicity(strings, substance_keys=None):
@@ -448,7 +405,10 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None):
     try:
         stoich, param, kwargs = map(str.strip, line.rstrip('\n').split(';'))
     except ValueError:
-        stoich, param = map(str.strip, line.rstrip('\n').split(';'))
+        if ';' in line:
+            stoich, param = map(str.strip, line.rstrip('\n').split(';'))
+        else:
+            stoich, param = line.strip(), 'None'
         kwargs = {}
     else:
         kwargs = eval('dict('+kwargs+')', globals_)
@@ -466,7 +426,8 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None):
         if side[-1].startswith('('):
             if not side[-1].endswith(')'):
                 raise ValueError("Bad format (missing closing paren)")
-            inact.append(_parse_multiplicity(side[-1][1:-1].split(' + '), substance_keys))
+            inact.append(_parse_multiplicity(side[-1][1:-1].split(' + '),
+                                             substance_keys))
             act.append(_parse_multiplicity(side[:-1], substance_keys))
         else:
             inact.append({})
@@ -475,3 +436,100 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None):
     # stoich coeff -> dict
     return Cls(act[0], act[1], param, inact_reac=inact[0],
                inact_prod=inact[1], **kwargs)
+
+
+def _formula_to_format(sub, sup, formula, prefixes=None,
+                       suffixes=('(s)', '(l)', '(g)', '(aq)'),
+                       intercept=None):
+    parts = _formula_to_parts(formula, prefixes.keys(), suffixes)
+    string = re.sub(r'([0-9]+)', lambda m: sub(m.group(1)), parts[0])
+    if parts[1] is not None:
+        chg = _get_charge(parts[1])
+        if chg < 0:
+            token = '-' if chg == -1 else '%d-' % -chg
+        if chg > 0:
+            token = '+' if chg == 1 else '%d+' % chg
+        string += sup(token)
+    if len(parts) > 4:
+        raise ValueError("Incorrect formula")
+    pre_str = ''.join(map(lambda x: _subs(x, prefixes), parts[2]))
+    return pre_str + string + ''.join(parts[3])
+
+
+def formula_to_latex(formula, prefixes=None, **kwargs):
+    r""" Convert formula string to latex representation
+
+    Parameters
+    ----------
+    formula: str
+        Chemical formula, e.g. 'H2O', 'Fe+3', 'Cl-'
+    prefixes: dict
+        Prefix transofmrations, default: greek letters and .
+    suffixes: tuple of strings
+        Suffixes to keep, e.g. ('(g)', '(s)')
+
+    Examples
+    --------
+    >>> formula_to_latex('NH4+')
+    'NH_{4}^{+}'
+    >>> formula_to_latex('Fe(CN)6+2')
+    'Fe(CN)_{6}^{2+}'
+    >>> formula_to_latex('Fe(CN)6+2(aq)')
+    'Fe(CN)_{6}^{2+}(aq)'
+    >>> formula_to_latex('.NHO-(aq)')
+    '^\\bullet NHO^{-}(aq)'
+    >>> formula_to_latex('alpha-FeOOH(s)')
+    '\\alpha-FeOOH(s)'
+
+    """
+    if prefixes is None:
+        prefixes = _latex_mapping
+    return _formula_to_format(lambda x: '_{%s}' % x, lambda x: '^{%s}' % x,
+                              formula, prefixes)
+
+_unicode_sub = {}
+
+for k, v in enumerate(u"₀₁₂₃₄₅₆₇₈₉"):
+    _unicode_sub[str(k)] = v
+
+_unicode_sup = {
+    '+': u'⁺',
+    '-': u'⁻',
+}
+
+for k, v in enumerate(u"⁰¹²³⁴⁵⁶⁷⁸⁹"):
+    _unicode_sup[str(k)] = v
+
+
+def formula_to_unicode(formula, prefixes=None, **kwargs):
+    u""" Convert formula string to unicode string representation
+
+    Parameters
+    ----------
+    formula: str
+        Chemical formula, e.g. 'H2O', 'Fe+3', 'Cl-'
+    prefixes: dict
+        Prefix transofmrations, default: greek letters and .
+    suffixes: tuple of strings
+        Suffixes to keep, e.g. ('(g)', '(s)')
+
+    Examples
+    --------
+    >>> formula_to_unicode('NH4+') == u'NH₄⁺'
+    True
+    >>> formula_to_unicode('Fe(CN)6+2') == u'Fe(CN)₆²⁺'
+    True
+    >>> formula_to_unicode('Fe(CN)6+2(aq)') == u'Fe(CN)₆²⁺(aq)'
+    True
+    >>> formula_to_unicode('.NHO-(aq)') == u'⋅NHO⁻(aq)'
+    True
+    >>> formula_to_unicode('alpha-FeOOH(s)') == u'α-FeOOH(s)'
+    True
+
+    """
+    if prefixes is None:
+        prefixes = _unicode_mapping
+
+    return _formula_to_format(lambda x: ''.join(_unicode_sub[str(_)] for _ in x),
+                              lambda x: ''.join(_unicode_sup[str(_)] for _ in x),
+                              formula, prefixes)

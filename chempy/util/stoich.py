@@ -32,7 +32,7 @@ def get_coeff_mtx(substances, stoichs):
     return A
 
 
-def decompose_yields(yields, stoichs, atol=1e-10):
+def decompose_yields(yields, rxns, atol=1e-10):
     """ Decomposes yields into mass-action reactions
 
     This function offers a way to express a reaction with non-integer
@@ -48,12 +48,21 @@ def decompose_yields(yields, stoichs, atol=1e-10):
     ----------
     yields: OrderedDict
         specie names as keys and yields as values
-    stoichs: iterable dictionary pairs
-        dict keys must match those of `yields`each pair
+    rxns: iterable :class:`Reaction` instances
+        dict keys must match those of ``yields`` each pair
         of dictionaries gives stoichiometry
         (1st is reactant, 2nd is products)
     atol: float
         absolute tolerance for residuals
+
+
+    Examples
+    --------
+    >>> from chempy import Reaction
+    >>> h2a = Reaction({'H2O': 1}, {'H2': 1, 'O': 1})
+    >>> h2b = Reaction({'H2O': 1}, {'H2': 1, 'H2O2': 1}, inact_reac={'H2O': 1})
+    >>> decompose_yields({'H2': 3, 'O': 2, 'H2O2': 1}, [h2a, h2b])
+    array([ 2.,  1.])
 
     Raises
     ------
@@ -67,19 +76,17 @@ def decompose_yields(yields, stoichs, atol=1e-10):
     1-dimensional array of effective rate coefficients.
 
     """
+    from chempy import ReactionSystem
     # Sanity check:
-    for ys in yields.keys():
-        present = False
-        for reac, prod in stoichs:
-            if ys in reac or ys in prod:
-                present = True
-        assert present
-
-    sbstncs = yields.keys()
-    y = np.array(list(yields.values()))
-    A = get_coeff_mtx(sbstncs, stoichs)
-    k, residuals, rank, s = np.linalg.lstsq(A, y)
+    rxn_keys = set.union(*(rxn.keys() for rxn in rxns))
+    for key in yields.keys():
+        if key not in rxn_keys:
+            raise ValueError("Substance key: %s not in reactions" % key)
+    rsys = ReactionSystem(rxns, rxn_keys)
+    A = rsys.net_stoichs(yields.keys())
+    b = list(yields.values())
+    x, residuals, rank, s = np.linalg.lstsq(A.T, b)
     if len(residuals) > 0:
         if np.any(residuals > atol):
             raise ValueError("atol not satisfied")
-    return k
+    return x

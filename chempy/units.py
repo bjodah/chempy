@@ -12,6 +12,8 @@ only use the `chempy.units` module (in case ``ChemPy`` changes this backend).
 """
 from __future__ import (absolute_import, division, print_function)
 
+from operator import mul
+from functools import reduce
 # Currently we use quantities for units. This may change, therefore use this
 # file for all units. A requirement is first-class numpy support.
 
@@ -89,6 +91,13 @@ else:
         'luminous_intensity': default_units.candela,
         'amount': default_units.mole
     }
+
+
+def magnitude(value):
+    try:
+        return value.magnitude
+    except AttributeError:
+        return value
 
 
 def get_derived_unit(registry, key):
@@ -236,6 +245,38 @@ def to_unitless(value, new_unit=None):
             return np.asarray(result)
     except TypeError:
         return np.array([to_unitless(elem, new_unit) for elem in value])
+
+
+def get_physical_quantity(value):
+    if is_unitless(value):
+        return {}
+    _quantities_mapping = {
+        pq.UnitLength: 'length',
+        pq.UnitMass: 'mass',
+        pq.UnitTime: 'time',
+        pq.UnitCurrent: 'current',
+        pq.UnitTemperature: 'temperature',
+        pq.UnitLuminousIntensity: 'luminous_intensity',
+        pq.UnitSubstance: 'amount'
+    }
+    return {_quantities_mapping[k.__class__]: v for k, v
+            in value.simplified.dimensionality.items()}
+
+
+def _get_unit_from_registry(dimensionality, registry):
+    return reduce(mul, [registry[k]**v for k, v in dimensionality.items()])
+
+
+def default_unit_in_registry(value, registry):
+    _dimensionality = get_physical_quantity(value)
+    if _dimensionality == {}:
+        return 1
+    return _get_unit_from_registry(_dimensionality, registry)
+
+
+def unitless_in_registry(value, registry):
+    _default_unit = default_unit_in_registry(value, registry)
+    return to_unitless(value, _default_unit)
 
 
 # NumPy like functions for compatibility:
