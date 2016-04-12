@@ -1,6 +1,16 @@
 v0.3.6
 ======
-- Substance got a new method: molar_mass
+- Substance got a new method: molar_mass, and a new attribute: unicode_name
+- .util.parsing.to_latex was renamed to formula_to_latex.
+- New function util.parsing.formula_to_unicode
+- ReactionSystem.__init__ got a new kwarg: substance_factory
+- ReactionSystem raises ValueError if it contains duplicate instances of Reaction
+- ReactionSystem got a new method: as_per_substance_dict (inverse of as_per_substance_array)
+- .kinetics.ode.law_of_mass_action_rates was moved to rates (alias deprecated)
+- fix in .properties.sulfuric_acid_density_myhre_1998.density_from_concentration for input with units
+- enhancements to .util.deprecation.Deprecation
+- .util.stoich.decompose_yields now takes iterable of Reaction instances as second arg.
+- .util.table.rsys2tablines now pretty-prints ref={'doi': 'abc123'} too.
 - ``chempy.util.stoich.decompose_yields`` now takes reactions instead of
   iterable of dicts (backward incompatible change).
 

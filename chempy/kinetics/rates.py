@@ -6,15 +6,12 @@ from operator import mul, add
 
 import numpy as np
 
-from ..util.pyutil import defaultnamedtuple, deprecated
-
 
 def _eval_k(k, state):
     is_func = callable(k) and not k.__class__.__name__ == 'Symbol'
     return k(state) if is_func else k
 
 
-@deprecated()
 def law_of_mass_action_rates(conc, rsys, params=None, state=None):
     """ Returns a generator of reaction rate expressions
 
@@ -70,7 +67,28 @@ class _RateExpr(object):
         self._nscalars = self._get_nscalars()
         self._accum_nscalars = np.cumsum([0] + self._nscalars)
 
-    def _get_nscalars(self):
+    def _sub_params(self, i, params):
+        if params is None:
+            return None
+        else:
+            return params[self._accum_nscalars[i]:self._accum_nscalars[i+1]]
+
+    def rebuild(self, params=None):
+        args = []
+        for i, arg in enumerate(self.args):
+            if isinstance(arg, _RateExpr):
+                args.append(arg.rebuild(self._sub_params(i, params)))
+            else:
+                if params is None:
+                    args.append(arg)
+                else:
+                    if len(params) != 1:
+                        raise ValueError("Incorrect length of params")
+                    args.append(params[0])
+
+        return self.__class__(args, self.hard_args, self.ref)
+
+    def _get_nscalars(self):  # how many scalars does this RateExpr consume
         nscalars = []
         for arg in self.args:
             if isinstance(arg, _RateExpr):
@@ -82,11 +100,7 @@ class _RateExpr(object):
     def eval_arg(self, rsys, ri, concs, i, params=None):
         arg = self.args[i]
         if isinstance(arg, _RateExpr):
-            if params is None:
-                p = None
-            else:
-                p = params[self._accum_nscalars[i]:self._accum_nscalars[i+1]]
-            return arg.eval(rsys, ri, concs, p)
+            return arg.eval(rsys, ri, concs, self._sub_params(i, params))
         else:
             if params is None:
                 return arg
@@ -95,8 +109,17 @@ class _RateExpr(object):
                     raise ValueError("Incorrect length of params")
                 return params[0]
 
-    def eval(self, rsys, ri, concs, params=None):
+    def eval(self, rsys, ri, concs, params=None):  # to be overrided
         raise NotImplementedError
+
+    def get_params(self):
+        params = []
+        for arg in self.args:
+            if isinstance(arg, _RateExpr):
+                params.extend(arg.get_params())
+            else:
+                params.append(arg)
+        return params
 
 
 class MassAction(_RateExpr):
@@ -135,46 +158,3 @@ class Quotient(_RateExpr):
     def eval(self, rsys, ri, concs, params=None):
         return (self.eval_arg(rsys, ri, concs, 0, params) /
                 self.eval_arg(rsys, ri, concs, 1, params))
-
-
-class _MassAction(defaultnamedtuple('MassAction', 'k ref', [None])):
-
-    def expr(self, ri, rsys, concs, state=None, params=None):
-        if params is not None:
-            param = params[0]
-        else:
-            param = self.k
-        if hasattr(param, 'expr'):
-            param = param.expr(ri, rsys, concs, state, params)
-        return _eval_k(param, state) * reduce(
-            mul, [concs[rsys.as_substance_index(k)]**v for
-                  k, v in rsys.rxns[ri].reac.items()])
-
-
-class _GeneralPow(defaultnamedtuple('GeneralPow', 'k powers ref', [None])):
-    def expr(self, ri, rsys, concs, state=None, params=None):
-        if params is None:
-            rateconst, powers = self.k, self.powers
-        else:
-            rateconst, powers = params
-        return _eval_k(rateconst, state) * reduce(
-            mul, [concs[rsys.as_substance_index(base_key)]**power for
-                  base_key, power in powers.items()])
-
-
-class _Sum(defaultnamedtuple('Quotient', 'terms ref', [None])):
-    def expr(self, ri, rsys, concs, state=None, params=None):
-        if params is None:
-            params = self.terms
-        return reduce(add, [term.expr(ri, rsys, concs, state) for
-                            term in params])
-
-
-class _Quotient(defaultnamedtuple('Quotient', 'numer denom ref', [None])):
-    def expr(self, ri, rsys, concs, state=None, params=None):
-        if params is None:
-            numerator, denominator = self.numer, self.denom
-        else:
-            numerator, denominator = params
-        return (numerator.expr(ri, rsys, concs, state) /
-                denominator.expr(ri, rsys, concs, state))

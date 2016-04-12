@@ -6,11 +6,16 @@ evolution of concentrations in reaction systems.
 """
 from __future__ import (absolute_import, division, print_function)
 
-import numpy as np
+from chempy.units import (
+    get_derived_unit, to_unitless, default_unit_in_registry
+)
 
-from chempy.units import get_derived_unit, to_unitless
+from ..util.pyutil import deprecated
 
-from .rates import _RateExpr, MassAction, law_of_mass_action_rates
+from .rates import _RateExpr, MassAction, law_of_mass_action_rates as _lomar
+
+law_of_mass_action_rates = deprecated(
+    use_instead='.rates.law_of_mass_action_rates')(_lomar)
 
 
 def dCdt(rsys, rates):
@@ -79,15 +84,26 @@ def get_odesys(rsys, include_params=False, SymbolicSys=None,
     if 'names' not in kwargs:
         kwargs['names'] = list(rsys.substances.keys())
 
+    rate_exprs = []
     if unit_registry is not None:
         # We need to make rsys_params unitless and create
         # a post- & pre-processor for SymbolicSys
+
+        rsys_params = []
+        p_units = []
+        for ri, rxn in enumerate(rsys.rxns):
+            rate_expr = rxn.param
+            if not isinstance(rate_expr, _RateExpr):
+                rate_expr = MassAction([rate_expr])  # default
+            _params = rate_expr.get_params()
+            _p_units = [default_unit_in_registry(_, unit_registry) for _ in _params]
+            p_units.extend(_p_units)
+            _rsys_params = [to_unitless(p, unit) for p, unit in zip(_params, _p_units)]
+            rsys_params.extend(_rsys_params)
+            rate_exprs.append(rate_expr.rebuild(_rsys_params))
+
         time_unit = get_derived_unit(unit_registry, 'time')
         conc_unit = get_derived_unit(unit_registry, 'concentration')
-        p_units = list(law_of_mass_action_rates(_Always(1/conc_unit), rsys,
-                                                _Always(conc_unit/time_unit), state))
-        rsys_params = [elem(state) if callable(elem) else to_unitless(elem, p_unit) for elem, p_unit
-                       in zip(rsys.params(), p_units)]
 
         def pre_processor(x, y, p):
             return to_unitless(x, time_unit), to_unitless(y, conc_unit), [
@@ -105,22 +121,21 @@ def get_odesys(rsys, include_params=False, SymbolicSys=None,
         kwargs['pre_processors'] = [pre_processor]
         kwargs['post_processors'] = [post_processor]
     else:
+        for ri, rxn in enumerate(rsys.rxns):
+            param = rxn.param
+            if isinstance(param, _RateExpr):
+                rate_exprs.append(param)
+            else:
+                rate_exprs.append(MassAction([param]))
         rsys_params = rsys.params()
-
-    _nscalars = [rxn.param.nargs if isinstance(rxn.param, _RateExpr) else 1 for
-                 rxn in rsys.rxns]
-    _accum_n_params = np.cumsum([0]+_nscalars)
 
     def dydt(t, y, p):
         rates = []
-        for ri, rxn in enumerate(rsys.rxns):
-            param = rxn.param
-            if not hasattr(param, 'eval'):
-                param = MassAction([param])  # default
-            # id0 = _accum_n_params[ri]
-            # id1 = _accum_n_params[ri+1]
-            # rsys_params[id0:id1]
-            rates.append(param.eval(rsys, ri, y, None))
+        for ri, rate_expr in enumerate(rate_exprs):
+            if unit_registry is None:
+                rates.append(rate_expr.eval(rsys, ri, y, None))
+            else:
+                rates.append(rate_expr.eval(rsys, ri, y, None))
         return dCdt(rsys, rates)
 
     return SymbolicSys.from_callback(

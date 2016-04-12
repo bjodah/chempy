@@ -46,7 +46,7 @@ class Substance(object):
 
     Examples
     --------
-    >>> ammonium = Substance('NH4+', 1, 'NH_4^+', composition={7:1, 1: 4},
+    >>> ammonium = Substance('NH4+', 1, 'NH_4^+', composition={7: 1, 1: 4},
     ...     other_properties={'mass': 18.0385, 'pKa': 9.24})
     >>> ammonium.name
     'NH4+'
