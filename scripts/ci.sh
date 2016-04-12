@@ -1,4 +1,10 @@
 #!/bin/bash -xeu
+# Test package without any 3rd party libraries (only python stdlib):
+pip install virtualenv
+python -m virtualenv venv
+set +u
+(source ./venv/bin/activate; python -m pip install pytest; python -m pytest chempy)
+
 PKG_NAME=${1:-${CI_REPO##*/}}
 if [[ "$CI_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then
     eval export ${PKG_NAME^^}_RELEASE_VERSION=\$CI_BRANCH
