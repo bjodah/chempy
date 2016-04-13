@@ -1,5 +1,6 @@
 v0.3.6
 ======
+- Equilibrium got a new method: cancel and a new staticmethod: eliminate
 - Reaction now raises ValueError if the Reaction has a zero net effect.
 - It is now possible to use (parts of) chempy even when only Python stdlib is available
 - Substance got a new method: molar_mass, and a new attribute: unicode_name

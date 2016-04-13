@@ -81,6 +81,9 @@ def test_Reaction():
 
     assert r3.keys() == {Hp, OHm, H2O}
 
+    with pytest.raises(ValueError):
+        Reaction({Hp: -1, OHm: -1}, {H2O: -1})
+
 
 @requires(parsing_library, units_library)
 def test_Substance__molar_mass():
@@ -196,10 +199,10 @@ def test_Reaction__idempotency():
 
 
 @requires('sympy')
-def test_ReactionSystem__coeff():
+def test_Equilibrium__eliminate():
     e1 = Equilibrium({'A': 1, 'B': 2}, {'C': 3})
     e2 = Equilibrium({'D': 5, 'B': 7}, {'E': 11})
-    coeff = Equilibrium.coeff([e1, e2], 'B')
+    coeff = Equilibrium.eliminate([e1, e2], 'B')
     assert coeff == [7, -2]
 
     e3 = coeff[0]*e1 + coeff[1]*e2
@@ -210,3 +213,11 @@ def test_ReactionSystem__coeff():
 
     assert (-e1).reac == {'C': 3}
     assert (e2*-3).reac == {'E': 33}
+
+
+def test_Equilibrium__cancel():
+    # 2B + C -> E
+    e1 = Equilibrium({'A': 26, 'B': 20, 'C': 7}, {'D': 4, 'E': 7})
+    e2 = Equilibrium({'A': 13, 'B': 3}, {'D': 2})
+    coeff = e1.cancel(e2)
+    assert coeff == -2

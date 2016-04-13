@@ -32,3 +32,22 @@ except ImportError:
                 res *= b**e
             result.append(res)
         return result
+
+
+def intdiv(p, q):
+    """ Integer divsions which rounds toward zero
+
+    Examples
+    --------
+    >>> intdiv(3, 2)
+    1
+    >>> intdiv(-3, 2)
+    -1
+    >>> -3 // 2
+    -2
+
+    """
+    r = p // q
+    if r < 0 and q*r != p:
+        r += 1
+    return r

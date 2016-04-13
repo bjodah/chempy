@@ -16,6 +16,7 @@ from .util.parsing import (
 )
 from .util.pyutil import defaultnamedtuple, deprecated
 from .units import to_unitless, default_constants, default_units
+from ._util import intdiv
 
 
 class Substance(object):
@@ -69,7 +70,9 @@ class Substance(object):
 
     """
 
-    attrs = ('name', 'latex_name', 'unicode_name', 'composition', 'other_properties')
+    attrs = (
+        'name', 'latex_name', 'unicode_name', 'composition', 'other_properties'
+    )
 
     @property
     def charge(self):
@@ -352,6 +355,7 @@ class Reaction(object):
         self.ref = ref
         self.other_properties = other_properties or {}
         self._check_idempotency()
+        self._check_neg_coeff()
 
     @classmethod
     def from_string(cls, string, substance_keys, globals_=None):
@@ -388,6 +392,12 @@ class Reaction(object):
     def _check_idempotency(self):
         if not any(self.net_stoich(self.keys())):
             raise ValueError("The reactants cancel the products")
+
+    def _check_neg_coeff(self):
+        for cont in (self.reac, self.prod, self.inact_reac, self.inact_prod):
+            for v in cont.values():
+                if v < 0:
+                    raise ValueError("Negative coefficient")
 
     def __eq__(lhs, rhs):
         if not isinstance(lhs, Reaction) or not isinstance(rhs, Reaction):
@@ -790,7 +800,24 @@ class Equilibrium(Reaction):
         return lhs + -1*rhs
 
     @staticmethod
-    def coeff(rxns, wrt):
+    def eliminate(rxns, wrt):
+        """ Linear combination coefficients for elimination of a substance
+
+        Parameters
+        ----------
+        rxns : iterable of Equilibrium instances
+        wrt : str (substance key)
+
+        Examples
+        --------
+        >>> e1 = Equilibrium({'Cd+2': 4, 'H2O': 4}, {'Cd4(OH)4+4': 1, 'H+': 4}, 10**-32.5)
+        >>> e2 = Equilibrium({'Cd(OH)2(s)': 1}, {'Cd+2': 1, 'OH-': 2}, 10**-14.4)
+        >>> Equilibrium.eliminate([e1, e2], 'Cd+2')
+        [1, 4]
+        >>> print(1*e1 + 4*e2)
+        4 Cd(OH)2(s) + 4 H2O = 4 H+ + 8 OH- + Cd4(OH)4+4; 7.94e-91
+
+        """
         import sympy
         viol = [r.net_stoich([wrt])[0] for r in rxns]
         factors = defaultdict(int)
@@ -800,6 +827,33 @@ class Equilibrium(Reaction):
         rcd = reduce(mul, (k**v for k, v in factors.items()))
         viol[0] *= -1
         return [rcd//v for v in viol]
+
+    def cancel(self, rxn):
+        """ multiplier of how many times rxn can be added/subtracted
+
+        Parameters
+        ----------
+        rxn : Equilibrium
+
+        Examples
+        --------
+        >>> e1 = Equilibrium({'Cd(OH)2(s)': 4, 'H2O': 4},
+        ...                  {'Cd4(OH)4+4': 1, 'H+': 4, 'OH-': 8}, 7.94e-91)
+        >>> e2 = Equilibrium({'H2O': 1}, {'H+': 1, 'OH-': 1}, 10**-14)
+        >>> e1.cancel(e2)
+        -4
+        >>> print(e1 - 4*e2)
+        4 Cd(OH)2(s) = 4 OH- + Cd4(OH)4+4; 7.94e-35
+
+        """
+        keys = rxn.keys()
+        s1 = self.net_stoich(keys)
+        s2 = rxn.net_stoich(keys)
+        candidate = float('inf')
+        for v1, v2 in zip(s1, s2):
+            r = intdiv(-v1, v2)
+            candidate = min(candidate, r, key=abs)
+        return candidate
 
 
 class ReactionSystem(object):
