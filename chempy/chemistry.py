@@ -12,7 +12,7 @@ from .arrhenius import arrhenius_equation
 from .util.arithmeticdict import ArithmeticDict
 from .util.parsing import (
     formula_to_composition, mass_from_composition, to_reaction,
-    formula_to_latex, formula_to_unicode
+    formula_to_latex, formula_to_unicode, formula_to_html
 )
 from .util.pyutil import defaultnamedtuple, deprecated
 from .units import to_unitless, default_constants, default_units
@@ -29,6 +29,7 @@ class Substance(object):
         will be stored in composition[0], prefer composition when possible
     latex_name: str
     unicode_name: str
+    html_name: str
     composition: dict or None (default)
         dict (int -> number) e.g. {atomic number: count}, zero has special
         meaning (net charge)
@@ -71,7 +72,8 @@ class Substance(object):
     """
 
     attrs = (
-        'name', 'latex_name', 'unicode_name', 'composition', 'other_properties'
+        'name', 'latex_name', 'unicode_name', 'html_name',
+        'composition', 'other_properties'
     )
 
     @property
@@ -106,11 +108,12 @@ class Substance(object):
         """
         return self.mass*units.g/units.mol
 
-    def __init__(self, name=None, charge=None, latex_name=None,
-                 unicode_name=None, composition=None, other_properties=None):
+    def __init__(self, name=None, charge=None, latex_name=None, unicode_name=None,
+                 html_name=None, composition=None, other_properties=None):
         self.name = name
-        self.unicode_name = unicode_name
         self.latex_name = latex_name
+        self.unicode_name = unicode_name
+        self.html_name = html_name
         self.composition = composition or {}
 
         if 0 in self.composition:
@@ -148,6 +151,7 @@ class Substance(object):
 
         return cls(formula, latex_name=formula_to_latex(formula),
                    unicode_name=formula_to_unicode(formula),
+                   html_name=formula_to_html(formula),
                    composition=formula_to_composition(formula),
                    **kwargs)
 
@@ -157,6 +161,9 @@ class Substance(object):
 
     def __str__(self):
         return str(self.name)
+
+    def _repr_html_(self):
+        return self.html_name
 
     @staticmethod
     def composition_keys(substance_iter):
@@ -296,6 +303,7 @@ class Solute(Substance):
             kwargs['precipitate'] = True
         return cls(formula, latex_name=formula_to_latex(formula),
                    unicode_name=formula_to_unicode(formula),
+                   html_name=formula_to_html(formula),
                    composition=formula_to_composition(formula),
                    **kwargs)
 
@@ -341,6 +349,7 @@ class Reaction(object):
     str_arrow = '->'
     latex_arrow = r'\rightarrow'
     unicode_arrow = u'→'
+    html_arrow = '&rarr;'
     param_char = 'k'  # convention
 
     def __init__(self, reac, prod, param=None, inact_reac=None,
@@ -528,6 +537,20 @@ class Reaction(object):
         return self._get_str('unicode_name', 'unicode_arrow', substances,
                              _str=str if sys.version_info[0] > 2 else unicode)
 
+    def html(self, substances):
+        """ Returns a HTML representation of the reaction
+
+        Examples
+        --------
+        >>> keys = 'H2O H+ OH-'.split()
+        >>> subst = {k: Substance.from_formula(k) for k in keys}
+        >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", subst)
+        >>> r.html(subst)
+        'H<sub>2</sub>O &rarr; H<sup>+</sup> + OH<sup>-</sup>'
+
+        """
+        return self._get_str('html_name', 'html_arrow', substances)
+
     def _violation(self, substances, attr):
         net = 0.0
         for substance, coeff in zip(substances.values(),
@@ -679,6 +702,7 @@ class Equilibrium(Reaction):
     str_arrow = '='
     latex_arrow = r'\rightleftharpoons'
     unicode_arrow = '⇌'
+    html_arrow = '&harr;'
     param_char = 'K'  # convention
 
     def as_reactions(self, state=None, kf=None, kb=None, units=None):
@@ -932,6 +956,9 @@ class ReactionSystem(object):
         if check_balance:
             self._balance_check()
         self._duplicate_check()
+
+    def _repr_html_(self):
+        return '<br>'.join(r.html(self.substances) for r in self.rxns)
 
     def _duplicate_check(self):
         for i1, rxn1 in enumerate(self.rxns):

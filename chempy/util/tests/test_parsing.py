@@ -6,7 +6,7 @@ import pytest
 from ..parsing import (
     formula_to_composition, relative_atomic_masses, mass_from_composition,
     to_reaction, atomic_number, formula_to_latex, formula_to_unicode,
-    parsing_library
+    formula_to_html, parsing_library
 
 )
 from ..testing import requires
@@ -158,3 +158,27 @@ def test_formula_to_unicoce():
     assert formula_to_unicode('.NO3-2') == u'⋅NO₃²⁻'
     assert formula_to_unicode('alpha-FeOOH(s)') == u'α-FeOOH(s)'
     assert formula_to_unicode('epsilon-Zn(OH)2(s)') == u'ε-Zn(OH)₂(s)'
+
+
+@requires(parsing_library)
+def test_formula_to_html():
+    assert formula_to_html('H2O') == 'H<sub>2</sub>O'
+    assert formula_to_html('C6H6/+') == 'C<sub>6</sub>H<sub>6</sub><sup>+</sup>'
+    assert formula_to_html('Fe(CN)6/3-') == 'Fe(CN)<sub>6</sub><sup>3-</sup>'
+    assert formula_to_html('Fe(CN)6-3') == 'Fe(CN)<sub>6</sub><sup>3-</sup>'
+    assert formula_to_html('C18H38/2+') == 'C<sub>18</sub>H<sub>38</sub><sup>2+</sup>'
+    assert formula_to_html('C18H38/+2') == 'C<sub>18</sub>H<sub>38</sub><sup>2+</sup>'
+    assert formula_to_html('C18H38+2') == 'C<sub>18</sub>H<sub>38</sub><sup>2+</sup>'
+    assert formula_to_html('((H2O)2OH)12') == '((H<sub>2</sub>O)<sub>2</sub>OH)<sub>12</sub>'
+    assert formula_to_html('NaCl') == 'NaCl'
+    assert formula_to_html('NaCl(s)') == 'NaCl(s)'
+    assert formula_to_html('e-(aq)') == 'e<sup>-</sup>(aq)'
+    assert formula_to_html('.NO2(g)') == r'&sdot;NO<sub>2</sub>(g)'
+    assert formula_to_html('.NH2') == r'&sdot;NH<sub>2</sub>'
+    assert formula_to_html('ONOOH') == 'ONOOH'
+    assert formula_to_html('.ONOO') == r'&sdot;ONOO'
+    assert formula_to_html('.NO3/2-') == r'&sdot;NO<sub>3</sub><sup>2-</sup>'
+    assert formula_to_html('.NO3-2') == r'&sdot;NO<sub>3</sub><sup>2-</sup>'
+    assert formula_to_html('alpha-FeOOH(s)') == r'&alpha;-FeOOH(s)'
+    assert formula_to_html('epsilon-Zn(OH)2(s)') == (
+        r'&epsilon;-Zn(OH)<sub>2</sub>(s)')

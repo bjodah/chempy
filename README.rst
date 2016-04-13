@@ -87,8 +87,8 @@ Parsing formulae
    True
    >>> print(ferricyanide.unicode_name)
    Fe(CN)₆³⁻
-   >>> print(ferricyanide.latex_name)
-   Fe(CN)_{6}^{3-}
+   >>> print(ferricyanide.latex_name + ", " + ferricyanide.html_name)
+   Fe(CN)_{6}^{3-}, Fe(CN)<sub>6</sub><sup>3-</sup>
    >>> print('%.3f' % ferricyanide.mass)
    211.955
 

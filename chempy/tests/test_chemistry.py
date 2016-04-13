@@ -36,6 +36,7 @@ def test_Substance__from_formula():
     assert H2O.composition == {1: 2, 8: 1}
     assert H2O.latex_name == 'H_{2}O'
     assert H2O.unicode_name == u'H₂O'
+    assert H2O.html_name == u'H<sub>2</sub>O'
 
 
 @requires(parsing_library)
@@ -187,6 +188,7 @@ def test_ReactioN__unicode():
     subst = {k: Substance.from_formula(k) for k in keys}
     r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
     assert r2.unicode(subst) == u'2 H₂O → 2 H₂ + O₂'
+    assert r2.html(subst) == u'2 H<sub>2</sub>O &rarr; 2 H<sub>2</sub> + O<sub>2</sub>'
 
 
 def test_Reaction__idempotency():
