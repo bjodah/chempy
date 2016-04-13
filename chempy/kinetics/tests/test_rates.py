@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function)
 
+import math
 import pytest
 
 from chempy import Reaction, ReactionSystem
 from chempy.units import units_library, default_units as u
 from chempy.util.testing import requires
-from ..rates import Quotient, Sum, GeneralPow
+from ..rates import Quotient, Sum, GeneralPow, ExpReciprocalT
 
 
 def _get_h2_br2_param(k, kprime):
@@ -72,3 +73,17 @@ def test_Quotient__units():
 
     q3 = q.rebuild([1, 2, 3])
     assert q3.get_params() == [1, 2, 3]
+
+
+#@requires('numpy')
+def test_ExpReciprocalT():
+    args = (1e10, -40e3/8.3145)
+    ert = ExpReciprocalT(args)
+    assert tuple(ert.get_params()) == args
+
+    rxn = Reaction({'A': 1}, {'B': 1}, ert)
+    rsys = ReactionSystem([rxn], 'A B')
+
+    ref = 1e10 * math.exp(-40e3/(8.3145*298.15))
+    res = ert.eval(rsys, 0, [3.0], global_p={'T': 298.15})
+    assert abs((res - ref)/ref) < 1e-14

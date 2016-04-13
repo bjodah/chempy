@@ -2,6 +2,7 @@
 from __future__ import (absolute_import, division, print_function)
 
 from functools import reduce
+import math
 from operator import mul, add
 
 
@@ -102,10 +103,12 @@ class _RateExpr(object):
                 nscalars.append(1)
         return nscalars
 
-    def eval_arg(self, rsys, ri, concs, i, params=None):
+    def eval_arg(self, rsys, ri, concs, i, params=None, global_p=None,
+                 backend=math):
         arg = self.args[i]
         if isinstance(arg, _RateExpr):
-            return arg.eval(rsys, ri, concs, self._sub_params(i, params))
+            return arg.eval(rsys, ri, concs, self._sub_params(i, params),
+                            global_p, backend)
         else:
             if params is None:
                 return arg
@@ -114,8 +117,8 @@ class _RateExpr(object):
                     raise ValueError("Incorrect length of params")
                 return params[0]
 
-    def eval(self, rsys, ri, concs, params=None):  # to be overrided
-        raise NotImplementedError
+    def eval(self, rsys, ri, concs, params=None, global_p=None, backend=math):
+        raise NotImplementedError  # to be overrided
 
     def get_params(self):
         params = []
@@ -128,38 +131,52 @@ class _RateExpr(object):
 
 
 class MassAction(_RateExpr):
-
+    """ args[0] * prod(conc[i]**order(i), for all i in reactants) """
     nargs = 1
 
-    def eval(self, rsys, ri, concs, params=None):
-        return self.eval_arg(rsys, ri, concs, 0, params) * reduce(
-            mul, [concs[rsys.as_substance_index(k)]**v for
-                  k, v in rsys.rxns[ri].reac.items()])
+    def eval(self, rsys, ri, concs, params=None, global_p=None, backend=math):
+        return (self.eval_arg(rsys, ri, concs, 0, params, global_p, backend) *
+                reduce(mul, [concs[rsys.as_substance_index(k)]**v for
+                             k, v in rsys.rxns[ri].reac.items()]))
 
 
 class GeneralPow(_RateExpr):
-
+    """ args[0] * prod(conc[idx(k)]**hard_args[k], all k in hard_args) """
     nargs = 1
 
-    def eval(self, rsys, ri, concs, params=None):
-        return self.eval_arg(rsys, ri, concs, 0, params) * reduce(
-            mul, [concs[rsys.as_substance_index(base_key)]**power for
-                  base_key, power in self.hard_args.items()])
+    def eval(self, rsys, ri, concs, params=None, global_p=None, backend=math):
+        # hard_args map substance to power
+        return (self.eval_arg(rsys, ri, concs, 0, params, global_p, backend) *
+                reduce(mul, [concs[rsys.as_substance_index(base_key)]**power
+                             for base_key, power in self.hard_args.items()]))
 
 
 class Sum(_RateExpr):
+    """ sum(args)"""
 
     nargs = -1
 
-    def eval(self, rsys, ri, concs, params=None):
-        return reduce(add, [self.eval_arg(rsys, ri, concs, idx, params) for
-                            idx in range(self.nargs)])
+    def eval(self, rsys, ri, concs, params=None, global_p=None, backend=math):
+        return reduce(add, [
+            self.eval_arg(rsys, ri, concs, idx, params, global_p, backend) for
+            idx in range(self.nargs)])
 
 
 class Quotient(_RateExpr):
-
+    """ args[0] / args[1] """
     nargs = 2
 
-    def eval(self, rsys, ri, concs, params=None):
-        return (self.eval_arg(rsys, ri, concs, 0, params) /
-                self.eval_arg(rsys, ri, concs, 1, params))
+    def eval(self, rsys, ri, concs, params=None, global_p=None, backend=math):
+        return (self.eval_arg(rsys, ri, concs, 0, params, global_p, backend) /
+                self.eval_arg(rsys, ri, concs, 1, params, global_p, backend))
+
+
+class ExpReciprocalT(_RateExpr):
+    """ args[0] * exp(args[1]/global_p[self.T]) """
+    T = 'T'
+    nargs = 2
+
+    def eval(self, rsys, ri, concs, params=None, global_p=None, backend=math):
+        return (self.eval_arg(rsys, ri, concs, 0, params, global_p, backend) *
+                backend.exp(self.eval_arg(rsys, ri, concs, 1, params, global_p,
+                                          backend) / global_p[self.T]))

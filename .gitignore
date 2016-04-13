@@ -18,3 +18,4 @@ benchmarks/results
 benchmarks/symengine/
 doc/
 examples/equilibria.pdf
+venv/
