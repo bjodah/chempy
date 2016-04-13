@@ -350,6 +350,7 @@ class Reaction(object):
         self.name = name
         self.ref = ref
         self.other_properties = other_properties or {}
+        self._check_idempotency()
 
     @classmethod
     def from_string(cls, string, substance_keys, globals_=None):
@@ -382,6 +383,10 @@ class Reaction(object):
             if ' ' in substance_keys:
                 substance_keys = substance_keys.split()
         return to_reaction(string, substance_keys, cls.str_arrow, cls, globals_)
+
+    def _check_idempotency(self):
+        if not any(self.net_stoich(self.keys())):
+            raise ValueError("The reactants cancel the products")
 
     def __eq__(lhs, rhs):
         if not isinstance(lhs, Reaction) or not isinstance(rhs, Reaction):

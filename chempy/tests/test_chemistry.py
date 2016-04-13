@@ -184,3 +184,11 @@ def test_ReactioN__unicode():
     subst = {k: Substance.from_formula(k) for k in keys}
     r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
     assert r2.unicode(subst) == u'2 H₂O → 2 H₂ + O₂'
+
+def test_Reaction__idempotency():
+    with pytest.raises(ValueError):
+        Reaction({'A': 1}, {'A': 1})
+    with pytest.raises(ValueError):
+        Reaction({}, {})
+    with pytest.raises(ValueError):
+        Reaction({'A': 1}, {'B': 1}, inact_reac={'B': 1}, inact_prod={'A': 1})
