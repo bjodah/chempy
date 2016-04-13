@@ -7,8 +7,6 @@ from operator import itemgetter
 from collections import OrderedDict
 import sys
 
-import numpy as np
-
 from .arrhenius import arrhenius_equation
 from .util.arithmeticdict import ArithmeticDict
 from .util.parsing import (
@@ -581,6 +579,8 @@ def equilibrium_quotient(concs, stoich):
     '1e-14'
 
     """
+    import numpy as np
+
     if not hasattr(concs, 'ndim') or concs.ndim == 1:
         tot = 1
     else:
@@ -869,8 +869,9 @@ class ReactionSystem(object):
         """ Returns list of per reaction ``param`` value """
         return [rxn.param for rxn in self.rxns]
 
-    def as_per_substance_array(self, cont, dtype=np.float64, unit=None):
+    def as_per_substance_array(self, cont, dtype='float64', unit=None):
         """ Turns a dict into an ordered array """
+        import numpy as np
         if unit is not None:
             cont = to_unitless(cont, unit)
         if isinstance(cont, np.ndarray):
@@ -898,6 +899,7 @@ class ReactionSystem(object):
             return list(self.substances.keys()).index(sbstnc)
 
     def _stoichs(self, attr, keys=None):
+        import numpy as np
         if keys is None:
             keys = self.substances.keys()
         # dtype: see https://github.com/sympy/sympy/issues/10295
@@ -916,6 +918,7 @@ class ReactionSystem(object):
     def stoichs(self, non_precip_rids=()):  # TODO: rename to cond_stoichs
         """ Conditional stoichiometries depending on precipitation status """
         # dtype: see https://github.com/sympy/sympy/issues/10295
+        import numpy as np
         return np.array([(
             -np.array(eq.precipitate_stoich(self.substances)[0]) if idx
             in non_precip_rids else

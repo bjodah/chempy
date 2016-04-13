@@ -6,13 +6,16 @@ from operator import attrgetter
 
 import pytest
 
-from ..units import default_units
+from ..util.testing import requires
+from ..util.parsing import parsing_library
+from ..units import default_units, units_library
 from ..chemistry import (
     Substance, Species, Reaction, ReactionSystem, ArrheniusRate,
     ArrheniusRateWithUnits, Equilibrium
 )
 
 
+@requires(parsing_library)
 def test_Substance():
     s = Substance.from_formula('H+')
     assert s.composition == {0: 1, 1: 1}
@@ -27,6 +30,7 @@ def test_Substance__2():
     assert sorted([OH_m, H2O], key=attrgetter('name')) == [H2O, OH_m]
 
 
+@requires(parsing_library)
 def test_Substance__from_formula():
     H2O = Substance.from_formula('H2O')
     assert H2O.composition == {1: 2, 8: 1}
@@ -34,6 +38,7 @@ def test_Substance__from_formula():
     assert H2O.unicode_name == u'H₂O'
 
 
+@requires(parsing_library)
 def test_Species():
     s = Species.from_formula('H2O')
     assert s.phase_idx == 0
@@ -77,12 +82,14 @@ def test_Reaction():
     assert r3.keys() == {Hp, OHm, H2O}
 
 
+@requires(parsing_library, units_library)
 def test_Substance__molar_mass():
     mw_water = Substance.from_formula('H2O').molar_mass(default_units)
     q = mw_water / ((15.9994 + 2*1.008)*default_units.gram/default_units.mol)
     assert abs(q - 1) < 1e-3
 
 
+@requires(parsing_library)
 def test_ReactionSystem():
     kw = dict(substance_factory=Substance.from_formula)
     r1 = Reaction.from_string('H2O -> H+ + OH-', 'H2O H+ OH-')
@@ -94,6 +101,7 @@ def test_ReactionSystem():
         ReactionSystem([r1, r1], 'H2O H+ OH-', **kw)
 
 
+@requires(parsing_library)
 def test_ReactionSystem__substance_factory():
     r1 = Reaction.from_string('H2O -> H+ + OH-', 'H2O H+ OH-')
     rs = ReactionSystem([r1], 'H2O H+ OH-',
@@ -106,6 +114,7 @@ def test_ReactionSystem__substance_factory():
     assert rs.substances['H+'].charge == 1
 
 
+@requires(units_library)
 def test_ReactionSystem__as_per_substance_array_dict():
     mol = default_units.mol
     m = default_units.metre
@@ -129,6 +138,7 @@ def test_ArrheniusRate():
     assert abs((k - ref)/ref) < 1e-4
 
 
+@requires(units_library)
 def test_ArrheniusRateWithUnits():
     s = default_units.second
     mol = default_units.mol
@@ -139,6 +149,7 @@ def test_ArrheniusRateWithUnits():
     assert abs((k - ref)/ref) < 1e-4
 
 
+@requires(units_library)
 def test_Equilibrium__as_reactions():
     s = default_units.second
     M = default_units.molar
@@ -150,6 +161,7 @@ def test_Equilibrium__as_reactions():
     assert abs((fw.param / M)/bw.param - 1e-14)/1e-14 < 1e-15
 
 
+@requires(parsing_library)
 def test_Reaction__from_string():
     r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H+ OH-'.split())
     assert r.reac == {'H2O': 1} and r.prod == {'H+': 1, 'OH-': 1}
@@ -158,6 +170,7 @@ def test_Reaction__from_string():
         Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H OH-'.split())
 
 
+@requires(parsing_library)
 def test_ReactioN__latex():
     keys = 'H2O H2 O2'.split()
     subst = {k: Substance.from_formula(k) for k in keys}
@@ -165,6 +178,7 @@ def test_ReactioN__latex():
     assert r2.latex(subst) == r'2 H_{2}O \rightarrow 2 H_{2} + O_{2}'
 
 
+@requires(parsing_library)
 def test_ReactioN__unicode():
     keys = u'H2O H2 O2'.split()
     subst = {k: Substance.from_formula(k) for k in keys}

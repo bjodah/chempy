@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
+from __future__ import (absolute_import, division, print_function)
+
 
 import os
 import shutil
 import tempfile
 from chempy.chemistry import Reaction, ReactionSystem, Substance
-from chempy.util.graph import rsys2dot, rsys2graph
+from ..graph import rsys2dot, rsys2graph
+from ..testing import requires
 
 
 def _get_rsys():
@@ -15,6 +18,7 @@ def _get_rsys():
     return rsys
 
 
+@requires('numpy')
 def test_rsys2dot():
     rsys = _get_rsys()
     assert list(map(str.strip, rsys2dot(rsys))) == [
@@ -29,6 +33,7 @@ def test_rsys2dot():
     ]
 
 
+@requires('numpy')
 def test_rsys2graph():
     rsys = _get_rsys()
     tempdir = tempfile.mkdtemp()

@@ -5,9 +5,11 @@ import pytest
 
 from ..parsing import (
     formula_to_composition, relative_atomic_masses, mass_from_composition,
-    to_reaction, atomic_number, formula_to_latex, formula_to_unicode
+    to_reaction, atomic_number, formula_to_latex, formula_to_unicode,
+    parsing_library
 
 )
+from ..testing import requires
 
 
 def test_atomic_number():
@@ -18,6 +20,7 @@ def test_atomic_number():
         atomic_number('unobtainium')
 
 
+@requires(parsing_library)
 def test_formula_to_composition():
     assert formula_to_composition('H2O') == {1: 2, 8: 1}
     assert formula_to_composition('Fe/3+') == {0: 3, 26: 1}
@@ -62,6 +65,12 @@ def test_relative_atomic_masses():
 
 
 def test_mass_from_composition():
+    mass = mass_from_composition({11: 1, 9: 1})
+    assert abs(41.988172443 - mass) < 1e-7
+
+
+@requires(parsing_library)
+def test_mass_from_composition__formula():
     mass = mass_from_composition(formula_to_composition('NaF'))
     assert abs(41.988172443 - mass) < 1e-7
 
@@ -69,6 +78,7 @@ def test_mass_from_composition():
     assert abs(Fminus - 18.998403163 - 5.489e-4) < 1e-7
 
 
+@requires(parsing_library)
 def test_to_reaction():
     from chempy.chemistry import Reaction, Equilibrium
     rxn = to_reaction(
@@ -102,6 +112,7 @@ def test_to_reaction():
         assert rxn2.param == 1e6
 
 
+@requires(parsing_library)
 def test_formula_to_latex():
     assert formula_to_latex('H2O') == 'H_{2}O'
     assert formula_to_latex('C6H6/+') == 'C_{6}H_{6}^{+}'
@@ -125,6 +136,7 @@ def test_formula_to_latex():
         r'\varepsilon-Zn(OH)_{2}(s)')
 
 
+@requires(parsing_library)
 def test_formula_to_unicoce():
     assert formula_to_unicode('NH4+') == u'NH₄⁺'
     assert formula_to_unicode('H2O') == u'H₂O'

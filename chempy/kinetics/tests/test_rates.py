@@ -4,7 +4,8 @@ from __future__ import (absolute_import, division, print_function)
 import pytest
 
 from chempy import Reaction, ReactionSystem
-from chempy.units import default_units as u
+from chempy.units import units_library, default_units as u
+from chempy.util.testing import requires
 from ..rates import Quotient, Sum, GeneralPow
 
 
@@ -26,6 +27,7 @@ def _get_h2_br2_rsys(k, kprime):
     return rsys
 
 
+@requires('numpy')
 def test_Quotient():
     rsys = _get_h2_br2_rsys(11, 13)
     q = rsys.rxns[0].param
@@ -47,6 +49,7 @@ def test_Quotient():
     assert q2.get_params() == [11, 1, 13]
 
 
+@requires(units_library)
 def test_Quotient__units():
     _k, _kprime = 3.5 * u.s**-1 * u.molar**-0.5, 9.2
     rsys = _get_h2_br2_rsys(_k, _kprime)

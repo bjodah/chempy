@@ -1,10 +1,4 @@
 #!/bin/bash -xeu
-# Test package without any 3rd party libraries (only python stdlib):
-pip install virtualenv
-python -m virtualenv venv
-set +u
-(source ./venv/bin/activate; python -m pip install pytest; python -m pytest chempy)
-
 PKG_NAME=${1:-${CI_REPO##*/}}
 if [[ "$CI_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then
     eval export ${PKG_NAME^^}_RELEASE_VERSION=\$CI_BRANCH
@@ -20,3 +14,9 @@ PYTHONPATH=$(pwd) PYTHON=python2.7 ./scripts/run_tests.sh
 PYTHONPATH=$(pwd) PYTHON=python3.4 ./scripts/run_tests.sh --cov $PKG_NAME --cov-report html
 ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
 ! grep "DO-NOT-MERGE!" -R . --exclude ci.sh
+
+# Test package without any 3rd party libraries (only python stdlib):
+pip install virtualenv
+python -m virtualenv venv
+set +u
+(source ./venv/bin/activate; python -m pip install pytest; python -m pytest chempy)

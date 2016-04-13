@@ -8,14 +8,12 @@ from collections import defaultdict
 import re
 import warnings
 
-from pyparsing import (
-    Forward, Group, OneOrMore, Optional, ParseResults,
-    Regex, Suppress, Word, nums
-)
+from .pyutil import ChemPyDeprecationWarning, memoize
 
-from .pyutil import ChemPyDeprecationWarning
+parsing_library = 'pyparsing'  # info used for selective testing.
 
 
+@memoize
 def _get_formula_parser():
     """ Create a forward pyparsing parser for chemical formulae
 
@@ -46,6 +44,10 @@ def _get_formula_parser():
         (see: http://blog.stackoverflow.com/2009/06/attribution-required/)
 
     """
+    _p = __import__(parsing_library)
+    Forward, Group, OneOrMore = _p.Forward, _p.Group, _p.OneOrMore
+    Optional, ParseResults, Regex = _p.Optional, _p.ParseResults, _p.Regex
+    Suppress, Word, nums = _p.Suppress, _p.Word, _p.nums
 
     LPAR, RPAR = map(Suppress, "()")
     integer = Word(nums)
@@ -102,8 +104,6 @@ def _get_formula_parser():
     formula.setParseAction(sumByElement)
 
     return formula
-
-_parser = _get_formula_parser()
 
 symbols = (
     'H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al',
@@ -286,7 +286,8 @@ def _formula_to_parts(formula, prefixes, suffixes):
 def _parse_stoich(stoich):
     if stoich == 'e':  # special case, the electron is not an element
         return {}
-    return {symbols.index(k)+1: n for k, n in _parser.parseString(stoich)}
+    return {symbols.index(k)+1: n for k, n
+            in _get_formula_parser().parseString(stoich)}
 
 _greek_letters = (
     'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta',
@@ -530,6 +531,7 @@ def formula_to_unicode(formula, prefixes=None, **kwargs):
     if prefixes is None:
         prefixes = _unicode_mapping
 
-    return _formula_to_format(lambda x: ''.join(_unicode_sub[str(_)] for _ in x),
-                              lambda x: ''.join(_unicode_sup[str(_)] for _ in x),
-                              formula, prefixes)
+    return _formula_to_format(
+        lambda x: ''.join(_unicode_sub[str(_)] for _ in x),
+        lambda x: ''.join(_unicode_sup[str(_)] for _ in x),
+        formula, prefixes)
