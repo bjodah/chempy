@@ -2,9 +2,10 @@
 
 from __future__ import division
 
+from functools import reduce
 from itertools import chain
-from operator import itemgetter
-from collections import OrderedDict
+from operator import itemgetter, mul
+from collections import OrderedDict, defaultdict
 import sys
 
 from .arrhenius import arrhenius_equation
@@ -735,12 +736,34 @@ class Equilibrium(Reaction):
             result += n
         return result
 
-    def __rmul__(lhs, rhs):  # This works on both Py2 and Py3
-        if not isinstance(rhs, int) or not isinstance(lhs, Equilibrium):
+    def __rmul__(self, other):  # This works on both Py2 and Py3
+        try:
+            other_is_int = other.is_integer
+        except AttributeError:
+            other_is_int = isinstance(other, int)
+        if not other_is_int or not isinstance(self, Equilibrium):
             return NotImplemented
-        return Equilibrium(dict(rhs*ArithmeticDict(int, lhs.reac)),
-                           dict(rhs*ArithmeticDict(int, lhs.prod)),
-                           lhs.param**rhs)
+        param = None if self.param is None else self.param**other
+        if other < 0:
+            other *= -1
+            flip = True
+        else:
+            flip = False
+        reac = dict(other*ArithmeticDict(int, self.reac))
+        prod = dict(other*ArithmeticDict(int, self.prod))
+        inact_reac = dict(other*ArithmeticDict(int, self.inact_reac))
+        inact_prod = dict(other*ArithmeticDict(int, self.inact_prod))
+        if flip:
+            reac, prod = prod, reac
+            inact_reac, inact_prod = inact_prod, inact_reac
+        return Equilibrium(reac, prod, param,
+                           inact_reac=inact_reac, inact_prod=inact_prod)
+
+    def __neg__(self):
+        return -1*self
+
+    def __mul__(self, other):
+        return other*self
 
     def __add__(lhs, rhs):
         keys = set()
@@ -757,10 +780,26 @@ class Equilibrium(Reaction):
                 prod[key] = n
             else:
                 pass  # n == 0
-        return Equilibrium(reac, prod, lhs.param * rhs.param)
+        if (lhs.param, rhs.param) == (None, None):
+            param = None
+        else:
+            param = lhs.param * rhs.param
+        return Equilibrium(reac, prod, param)
 
     def __sub__(lhs, rhs):
         return lhs + -1*rhs
+
+    @staticmethod
+    def coeff(rxns, wrt):
+        import sympy
+        viol = [r.net_stoich([wrt])[0] for r in rxns]
+        factors = defaultdict(int)
+        for v in viol:
+            for f in sympy.primefactors(v):
+                factors[f] = max(factors[f], sympy.Abs(v//f))
+        rcd = reduce(mul, (k**v for k, v in factors.items()))
+        viol[0] *= -1
+        return [rcd//v for v in viol]
 
 
 class ReactionSystem(object):
@@ -784,7 +823,7 @@ class ReactionSystem(object):
     ----------
     rxns: list of objects
         sequence of :class:`Reaction` instances
-    substances: OrderedDict
+    substances: OrderedDict or string or iterable of strings/Substance
         mapping substance name to substance index
     ns: int
         number of substances
@@ -809,6 +848,9 @@ class ReactionSystem(object):
     def __init__(self, rxns, substances, name=None, check_balance=None,
                  substance_factory=Substance):
         self.rxns = rxns
+        if substances is None:
+            substances = set.union(*[set(rxn.keys()) for rxn in self.rxns])
+
         if isinstance(substances, OrderedDict):
             self.substances = substances
         elif isinstance(substances, str):

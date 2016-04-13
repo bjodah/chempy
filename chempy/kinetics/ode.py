@@ -62,19 +62,21 @@ def get_odesys(rsys, include_params=False, SymbolicSys=None,
 
     Parameters
     ----------
-    rsys: ReactionSystem
-    include_params: bool (default: False)
+    rsys : ReactionSystem
+    include_params : bool (default: False)
         whether rate constants should be included into the rate expressions or
         left as free parameters in the :class:`pyneqsys.SymbolicSys` instance.
-    SymbolicSys: class (optional)
-        default: :class:`pyneqsys.SymbolicSys`
+    global_params : dict, (optional)
+        shared state used by rate expressions (in respective Reaction.param).
+    SymbolicSys : class (optional)
+        default : :class:`pyneqsys.SymbolicSys`
     unit_registry: dict (optional)
         see :func:`chempy.units.get_derived_units`
-    output_conc_unit: unit (Optional)
-    output_time_unit: unit (Optional)
-    state: object (optional)
+    output_conc_unit : unit (Optional)
+    output_time_unit : unit (Optional)
+    state : object (optional)
         argument for reaction parameters
-    \*\*kwargs:
+    \*\*kwargs :
         Keyword arguemnts pass on to `SymbolicSys`
 
     """

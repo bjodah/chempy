@@ -59,7 +59,8 @@ def test_Quotient__units():
 
     def _check(k, kprime, c, params=None):
         ref = k*c['H2']*c['Br2']**1.5/(c['Br2'] + kprime*c['HBr'])
-        val = q.eval(rsys, 0, rsys.as_per_substance_array(c, unit=u.molar), params=params)
+        val = q.eval(rsys, 0, rsys.as_per_substance_array(c, unit=u.molar),
+                     params=params)
         assert abs(val - ref) < 1e-15
     _check(_k, _kprime, conc)
     with pytest.raises(ValueError):
@@ -75,7 +76,6 @@ def test_Quotient__units():
     assert q3.get_params() == [1, 2, 3]
 
 
-#@requires('numpy')
 def test_ExpReciprocalT():
     args = (1e10, -40e3/8.3145)
     ert = ExpReciprocalT(args)

@@ -96,6 +96,20 @@ Parsing formulae
 as you see, in composition, the atomic numbers (and 0 for charge) is used as
 keys and the count of each kind became respective value.
 
+Balancing reactions
+~~~~~~~~~~~~~~~~~~~
+.. code:: python
+
+   >>> from chempy import Equilibrium
+   >>> r1 = Equilibrium({'MnO4-': 1, 'H+': 8, 'e-': 5}, {'Mn+2': 1, 'H2O': 4})
+   >>> r2 = Equilibrium({'O2': 1, 'H2O': 2, 'e-': 4}, {'OH-': 4})
+   >>> coeff = Equilibrium.coeff([r1, r2], 'e-')
+   >>> coeff
+   [4, -5]
+   >>> print(r1*coeff[0] + r2*coeff[1])
+   20 OH- + 32 H+ + 4 MnO4- = 26 H2O + 4 Mn+2 + 5 O2; None
+
+
 Chemical equilibria
 ~~~~~~~~~~~~~~~~~~~
 .. code:: python

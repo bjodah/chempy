@@ -185,6 +185,7 @@ def test_ReactioN__unicode():
     r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
     assert r2.unicode(subst) == u'2 H₂O → 2 H₂ + O₂'
 
+
 def test_Reaction__idempotency():
     with pytest.raises(ValueError):
         Reaction({'A': 1}, {'A': 1})
@@ -192,3 +193,20 @@ def test_Reaction__idempotency():
         Reaction({}, {})
     with pytest.raises(ValueError):
         Reaction({'A': 1}, {'B': 1}, inact_reac={'B': 1}, inact_prod={'A': 1})
+
+
+@requires('sympy')
+def test_ReactionSystem__coeff():
+    e1 = Equilibrium({'A': 1, 'B': 2}, {'C': 3})
+    e2 = Equilibrium({'D': 5, 'B': 7}, {'E': 11})
+    coeff = Equilibrium.coeff([e1, e2], 'B')
+    assert coeff == [7, -2]
+
+    e3 = coeff[0]*e1 + coeff[1]*e2
+    assert e3.net_stoich('B') == (0,)
+
+    e4 = e1*coeff[0] + coeff[1]*e2
+    assert e4.net_stoich('B') == (0,)
+
+    assert (-e1).reac == {'C': 3}
+    assert (e2*-3).reac == {'E': 33}
