@@ -4,26 +4,32 @@ from __future__ import (absolute_import, division, print_function)
 import collections
 
 import pytest
-import numpy as np
-from scipy.optimize import fsolve
+try:
+    import numpy as np
+except ImportError:
+    np, NumSysLin, NumSysLog = [None]*3
+else:
+    from scipy.optimize import fsolve
 
+    from ..equilibria import (
+        equilibrium_quotient, equilibrium_residual, get_rc_interval,
+        solve_equilibrium, prodpow, EqSystem, NumSysLin, NumSysLog
+    )
+    from .ammonical_cupric_solution import get_ammonical_cupric_eqsys
+
+from ..util.testing import requires
 from ..chemistry import (
     Substance, Reaction, Equilibrium, Species, Solute,
 )
 
-from ..equilibria import (
-    equilibrium_quotient, equilibrium_residual, get_rc_interval,
-    solve_equilibrium, prodpow, EqSystem, NumSysLin, NumSysLog
-)
 
-from .ammonical_cupric_solution import get_ammonical_cupric_eqsys
-
-
+@requires('numpy')
 def test_equilibrium_quotient():
     assert abs(equilibrium_quotient([2.3, 3.7, 5.1], (-1, -1, 1)) -
                5.1/2.3/3.7) < 1e-14
 
 
+@requires('numpy')
 def test_equilibrium_residual():
     c0 = np.array((13., 11, 17))
     stoich = np.array((-2, 3, -4))
@@ -32,6 +38,7 @@ def test_equilibrium_residual():
                (K - (13-0.2)**-2*(11 + 0.3)**3*(17 - 0.4)**-4)) < 1e-14
 
 
+@requires('numpy')
 def test_get_rc_interval():
     c = np.array((13., 11, 17))
     stoich = np.array((-2, 3, -4))
@@ -42,6 +49,7 @@ def test_get_rc_interval():
     assert abs(limits[1] - upper) < 1e-14
 
 
+@requires('numpy')
 def test_solve_equilibrium_1():
     c = np.array((13., 11, 17))
     stoich = np.array((-2, 3, -4))
@@ -54,6 +62,7 @@ def test_solve_equilibrium_1():
                        c + stoich*fsolve(f, 3.48))
 
 
+@requires('numpy')
 def test_solve_equilibrium_2():
     c = np.array([1.7e-03, 3.0e+06, 3.0e+06, 9.7e+07, 5.55e+09])
     stoich = (1, 1, 0, 0, -1)
@@ -65,6 +74,7 @@ def test_solve_equilibrium_2():
     assert np.allclose(solution, c + stoich*fsolve(f, 0.1))
 
 
+@requires('numpy')
 def test_EqSystem():
     a, b = sbstncs = Substance('a'), Substance('b')
     rxns = [Reaction({'a': 1}, {'b': 1})]
@@ -78,7 +88,9 @@ def _get_es1():
     return EqSystem(rxns, sbstncs)
 
 
-def _get_es_water(EqSys=EqSystem):
+def _get_es_water(EqSys=None):
+    if EqSys is None:
+        EqSys = EqSystem
     H2O = Substance('H2O', charge=0, composition={1: 2, 8: 1})
     OHm = Substance('OH-', charge=-1, composition={1: 1, 8: 1})
     Hp = Substance('H+', charge=1, composition={1: 1})
@@ -87,12 +99,14 @@ def _get_es_water(EqSys=EqSystem):
     return EqSys([w_auto_p], [H2O, OHm, Hp])
 
 
+@requires('numpy')
 def test_EqSystem_1():
     es = _get_es1()
     assert es.stoichs().tolist() == [[-1, 1]]
     assert es.eq_constants() == [3]
 
 
+@requires('numpy')
 def test_Equilibria_arithmetics():
     es1 = _get_es1()
     e, = es1.rxns
@@ -101,6 +115,7 @@ def test_Equilibria_arithmetics():
     assert sum2 == e2
 
 
+@requires('numpy')
 def test_Equilibria_root():
     eqsys, c0 = get_ammonical_cupric_eqsys()
     x, sol, sane = eqsys.root(c0, NumSys=(NumSysLog,))
@@ -117,6 +132,7 @@ def _solutes(Cls):
     )
 
 
+@requires('numpy')
 @pytest.mark.parametrize('Cls', [Solute, Species])
 def test_Equilibria_root_simple(Cls):
     solutes = water, hydronium, hydroxide, ammonium, ammonia = _solutes(Cls)
@@ -164,6 +180,7 @@ def _get_NaCl(Cls, **precipitate_kwargs):
     return eqsys, [s.name for s in sbstncs], cases
 
 
+@requires('numpy')
 @pytest.mark.parametrize('kwargs', [
     dict(Cls=Solute, precipitate=True),
     dict(Cls=Species, phase_idx=1)
@@ -176,6 +193,7 @@ def test_EqSystem_dissolved(kwargs):
     assert np.allclose(result, ref)
 
 
+@requires('numpy')
 @pytest.mark.parametrize('NumSys', [(NumSysLin,), (NumSysLog,),
                                     (NumSysLog, NumSysLin)])
 def test_precipitate(NumSys):

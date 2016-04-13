@@ -5,11 +5,22 @@ General utilities and exceptions.
 from __future__ import (absolute_import, division, print_function)
 
 from collections import namedtuple, Mapping
+from functools import wraps
 import os
 import warnings
 
 from .. import __url__
 from .deprecation import Deprecation
+
+
+def memoize(func):
+    @wraps(func)
+    def cb():
+        if cb.result is None:
+            cb.result = func()
+        return cb.result
+    cb.result = None
+    return cb
 
 
 def defaultnamedtuple(typename, field_names, defaults=()):

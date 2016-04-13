@@ -7,7 +7,13 @@ try:
 except ImportError:
     from math import exp as _exp
     from math import log as ln
-    _any = any
+
+    def _any(arg):
+        if arg is True:
+            return True
+        if arg is False:
+            return False
+        return any(arg)
 
 
 def water_permittivity(T=None, P=None, units=None, U=None,

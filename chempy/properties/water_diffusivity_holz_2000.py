@@ -5,7 +5,12 @@ import warnings
 try:
     from numpy import any as _any
 except ImportError:
-    _any = any
+    def _any(arg):
+        if arg is True:
+            return True
+        if arg is False:
+            return False
+        return any(arg)
 
 # Parameters from paper (SI-units):
 

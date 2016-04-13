@@ -1,18 +1,23 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function)
 
-import numpy as np
+try:
+    import numpy as np
+except ImportError:
+    np = None
 
 from chempy.chemistry import Substance, Reaction, ReactionSystem
 from chempy.units import (
-    default_units, SI_base_registry, get_derived_unit, allclose
+    default_units, SI_base_registry, get_derived_unit, allclose, units_library
 )
+from chempy.util.testing import requires
 from ..ode import get_odesys
 from ..integrated import dimerization_irrev
 
 from .test_rates import _get_h2_br2_rsys
 
 
+@requires('numpy')
 def test_get_odesys_1():
     k = .2
     a = Substance('A')
@@ -32,6 +37,7 @@ def test_get_odesys_1():
     assert np.allclose(yout, yref)
 
 
+@requires(units_library)
 def test_get_odesys__with_units():
     a = Substance('A')
     b = Substance('B')
@@ -56,6 +62,7 @@ def test_get_odesys__with_units():
     assert allclose(yout, yref*conc_unit)
 
 
+@requires(units_library)
 def test_get_odesys_2():
     M = default_units.molar
     s = default_units.second
@@ -67,6 +74,7 @@ def test_get_odesys_2():
                unit_registry=SI_base_registry, output_conc_unit=M)
 
 
+@requires('numpy')
 def test_h2_br2():
     k, kprime = 3.142, 2.718
     rsys = _get_h2_br2_rsys(k, kprime)
@@ -79,6 +87,7 @@ def test_h2_br2():
     assert np.allclose(res, ref)
 
 
+@requires(units_library)
 def test_h2_br2_with_units():
     u = default_units
     k, kprime = 3.142 * u.s**-1 * u.molar**-0.5, 2.718

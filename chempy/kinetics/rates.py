@@ -4,7 +4,12 @@ from __future__ import (absolute_import, division, print_function)
 from functools import reduce
 from operator import mul, add
 
-import numpy as np
+
+def _accumulate(iterable):
+    tot = 0
+    for elem in iterable:
+        tot += elem
+        yield tot
 
 
 def _eval_k(k, state):
@@ -65,7 +70,7 @@ class _RateExpr(object):
         self.hard_args = hard_args  # cannot be overrided during integration
         self.ref = ref  # arbitrary placeholder
         self._nscalars = self._get_nscalars()
-        self._accum_nscalars = np.cumsum([0] + self._nscalars)
+        self._accum_nscalars = [0] + list(_accumulate(self._nscalars))
 
     def _sub_params(self, i, params):
         if params is None:

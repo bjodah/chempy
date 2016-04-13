@@ -17,9 +17,11 @@ from functools import reduce
 # Currently we use quantities for units. This may change, therefore use this
 # file for all units. A requirement is first-class numpy support.
 
-import numpy as np
+units_library = 'quantities'  # info used for selective testing.
+
+
 try:
-    import quantities as pq
+    pq = __import__(units_library)
 except ImportError:
     UncertainQuantity = None
     default_constants = None
@@ -228,6 +230,7 @@ def to_unitless(value, new_unit=None):
     '1e+09'
 
     """
+    import numpy as np
     if new_unit is None:
         new_unit = pq.dimensionless
     if isinstance(value, (list, tuple)):
@@ -300,12 +303,14 @@ def allclose(a, b, rtol=1e-8, atol=None):
     if n == 1:
         return d < lim
     else:
+        import numpy as np
         return np.all(_d < _lim for _d, _lim in zip(d, lim))
 
 
 def linspace(start, stop, num=50):
     """ Analogous to ``numpy.linspace``. """
     # work around for quantities v0.10.1 and NumPy
+    import numpy as np
     unit = unit_of(start)
     start_ = to_unitless(start, unit)
     stop_ = to_unitless(stop, unit)

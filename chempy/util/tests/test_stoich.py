@@ -1,13 +1,19 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function)
 
-import numpy as np
+try:
+    import numpy as np
+except ImportError:
+    np = None
+else:
+    from ..stoich import (
+        get_coeff_mtx, decompose_yields,
+    )
 
-from ..stoich import (
-    get_coeff_mtx, decompose_yields,
-)
+from ..testing import requires
 
 
+@requires('numpy')
 def test_get_coeff_mtx():
     r = [
         ({'A': 1},       {'B': 1}),
@@ -22,6 +28,7 @@ def test_get_coeff_mtx():
     assert np.allclose(A, Aref)
 
 
+@requires('numpy')
 def test_decompose_yields_1():
     from chempy import Reaction
 
@@ -56,6 +63,7 @@ def test_decompose_yields_1():
     assert abs(G_H2O+4.64) < 1e-3
 
 
+@requires('numpy')
 def test_decompose_yields_2():
     from chempy import Reaction
     yields = {'B': 3.0, 'C': 24.0}
