@@ -21,7 +21,7 @@ from operator import mul, add
 import numpy as np
 
 from .chemistry import ReactionSystem, equilibrium_quotient
-from ._util import prodpow
+from ._util import prodpow, get_backend
 from .util.pyutil import deprecated
 
 
@@ -148,25 +148,19 @@ class _NumSys(object):
     post_processor = None
     internal_x0_cb = None
 
-    def __init__(self, eqsys, rref_equil=False, rref_preserv=False, ln=None,
-                 exp=None, precipitates=()):
-        if ln is None:
-            ln = math.log
-        if exp is None:
-            exp = math.exp
+    def __init__(self, eqsys, rref_equil=False, rref_preserv=False,
+                 backend=None, precipitates=()):
         self.eqsys = eqsys
         self.rref_equil = rref_equil
         self.rref_preserv = rref_preserv
-        self.ln = ln
-        self.exp = exp
+        self.backend = get_backend(backend)
         self.precipitates = precipitates
 
     def _get_A_ks(self, eq_params):
         non_precip_rids = self.eqsys.non_precip_rids(self.precipitates)
         return self.eqsys.stoichs_constants(
             self.eqsys.eq_constants(non_precip_rids, eq_params, self.small),
-            self.rref_equil, ln=self.ln, exp=self.exp,
-            non_precip_rids=non_precip_rids)
+            self.rref_equil, backend=self.backend, non_precip_rids=non_precip_rids)
 
     def _inits_and_eq_params(self, params):
         return params[:self.eqsys.ns], params[self.eqsys.ns:]
@@ -279,9 +273,9 @@ class NumSysLog(_NumSys):
         init_concs, eq_params = self._inits_and_eq_params(params)
         A, ks = self._get_A_ks(eq_params)
         # yvec == ln(C)
-        f_equil = mat_dot_vec(A, yvec, [-self.ln(k) for k in ks])
+        f_equil = mat_dot_vec(A, yvec, [-self.backend.log(k) for k in ks])
         B, comp_nrs = self.eqsys.composition_balance_vectors()
-        f_preserv = linear_exprs(B, list(map(self.exp, yvec)),
+        f_preserv = linear_exprs(B, list(map(self.backend.exp, yvec)),
                                  mat_dot_vec(B, init_concs),
                                  rref=self.rref_preserv)
         return f_equil + f_preserv
@@ -319,12 +313,12 @@ class EqSystem(ReactionSystem):
                 for ri in range(self.nr)]
 
     def stoichs_constants(self, eq_params, rref=False, Matrix=None,
-                          ln=None, exp=None, non_precip_rids=()):
+                          backend=None, non_precip_rids=()):
         if rref:
             from pyneqsys.symbolic import linear_rref
-            ln = ln or math.log
+            be = get_backend(backend)
             rA, rb = linear_rref(self.stoichs(non_precip_rids),
-                                 list(map(ln, eq_params)),
+                                 list(map(be.log, eq_params)),
                                  Matrix)
             exp = exp or math.exp
             return rA.tolist(), list(map(exp, rb))
@@ -356,7 +350,7 @@ class EqSystem(ReactionSystem):
             self.substances.values()) if s.phase_idx != phase_idx]
 
     @property
-    @deprecated(last_supported_version='0.3.1', will_be_missing_in='0.4.0',
+    @deprecated(last_supported_version='0.3.1', will_be_missing_in='0.5.0',
                 use_instead=other_phase_species_idxs)
     def precipitate_substance_idxs(self):
         return [idx for idx, s in enumerate(
@@ -367,7 +361,7 @@ class EqSystem(ReactionSystem):
                 if rxn.has_precipitates(self.substances)]
 
     @property
-    @deprecated(last_supported_version='0.3.1', will_be_missing_in='0.4.0',
+    @deprecated(last_supported_version='0.3.1', will_be_missing_in='0.5.0',
                 use_instead=phase_transfer_reaction_idxs)
     def precipitate_rxn_idxs(self):
         return [idx for idx, rxn in enumerate(self.rxns)
@@ -423,7 +417,7 @@ class EqSystem(ReactionSystem):
     def _SymbolicSys_from_NumSys(self, NS, conds, rref_equil, rref_preserv):
         from pyneqsys.symbolic import SymbolicSys
         import sympy as sp
-        ns = NS(self, ln=sp.log, exp=sp.exp, rref_equil=rref_equil,
+        ns = NS(self, backend=sp, rref_equil=rref_equil,
                 rref_preserv=rref_preserv, precipitates=conds)
         symb_kw = {}
         if ns.pre_processor is not None:

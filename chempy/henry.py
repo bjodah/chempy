@@ -5,11 +5,12 @@ Module for dealing with constants `Henry's law
 """
 from __future__ import absolute_import, division, print_function
 
+from ._util import get_backend
 from .util.pyutil import defaultnamedtuple, deprecated
 from .units import default_units
 
 
-def Henry_H_at_T(T, H, Tderiv, T0=None, units=None, exp=None):
+def Henry_H_at_T(T, H, Tderiv, T0=None, units=None, backend=None):
     """ Evaluate Henry's constant H at temperature T
 
     Parameters
@@ -25,23 +26,18 @@ def Henry_H_at_T(T, H, Tderiv, T0=None, units=None, exp=None):
         Reference temperature, assumed to be in Kelvin if ``units == None``
     units: object (optional)
         object with attributes: kelvin (e.g. chempy.units.default_units)
-    exp: callback (optional)
-        callback for calculating the exponential, default: numpy.exp, math.exp
+    backend : module (optional)
+        module with "exp", default: numpy, math
 
     """
-    if exp is None:
-        try:
-            from numpy import exp
-        except ImportError:
-            from math import exp
-
+    be = _get_backend(backend)
     if units is None:
         K = 1
     else:
         K = units.Kelvin
     if T0 is None:
         T0 = 298.15*K
-    return H * exp(Tderiv*(1/T - 1/T0))
+    return H * be.exp(Tderiv*(1/T - 1/T0))
 
 
 class Henry(defaultnamedtuple('Henry', 'Hcp Tderiv T0 ref', [None, None])):
@@ -71,9 +67,10 @@ class Henry(defaultnamedtuple('Henry', 'Hcp Tderiv T0 ref', [None, None])):
 
     """
 
-    def __call__(self, T, units=None, exp=None):
+    def __call__(self, T, units=None, backend=None):
         """ Evaluates Henry's constant for provided temperature """
-        return Henry_H_at_T(T, self.Hcp, self.Tderiv, self.T0, units=units)
+        return Henry_H_at_T(T, self.Hcp, self.Tderiv, self.T0,
+                            units=units, backend=backend)
 
     @deprecated('0.3.1', '0.5.0', __call__)
     def get_kH_at_T(self, *args, **kwargs):
@@ -126,6 +123,6 @@ class HenryWithUnits(Henry):
     '0.00097'
 
     """
-    def __call__(self, T, units=default_units, exp=None):
+    def __call__(self, T, units=default_units, backend=None):
         """ Evaluates Henry's constant for provided temperature """
-        return super(HenryWithUnits, self).__call__(T, units, exp)
+        return super(HenryWithUnits, self).__call__(T, units, backend)

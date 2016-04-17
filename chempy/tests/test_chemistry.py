@@ -137,7 +137,7 @@ def test_ReactionSystem__as_per_substance_array_dict():
 
 
 def test_ArrheniusRate():
-    k = ArrheniusRate(1e10, 42e3)(273.15)
+    k = ArrheniusRate(1e10, 42e3)({'T': 273.15})
     ref = 1e10 * math.exp(-42e3/(8.3145*273.15))
     assert abs((k - ref)/ref) < 1e-4
 
@@ -148,7 +148,7 @@ def test_ArrheniusRateWithUnits():
     mol = default_units.mol
     J = default_units.joule
     K = default_units.kelvin
-    k = ArrheniusRateWithUnits(1e10/s, 42e3 * J/mol)(273.15*K)
+    k = ArrheniusRateWithUnits(1e10/s, 42e3 * J/mol)({'T': 273.15*K})
     ref = 1e10/s * math.exp(-42e3/(8.3145*273.15))
     assert abs((k - ref)/ref) < 1e-4
 

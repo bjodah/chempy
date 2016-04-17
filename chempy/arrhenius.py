@@ -21,7 +21,7 @@ def _get_R(constants=None, units=None):
     return R
 
 
-def arrhenius_equation(A, Ea, T, constants=None, units=None, exp=None):
+def arrhenius_equation(A, Ea, T, constants=None, units=None, backend=None):
     """
     Returns the rate coefficient according to the Arrhenius equation
 
@@ -41,8 +41,8 @@ def arrhenius_equation(A, Ea, T, constants=None, units=None, exp=None):
             Tip: pass quantities.constants
     units: object (optional, default: None)
         attributes accessed: Joule, Kelvin and mol
-    exp: callback (optional)
-        callback for calculating the exponential, default: numpy.exp, math.exp
+    backend: module (optional)
+        module with "exp", default: numpy, math
 
     """
     if exp is None:
@@ -63,10 +63,10 @@ def fit_arrhenius_equation(k, T, kerr=None, linearized=False):
 
     Parameters
     ----------
-    k: array_like
-    T: float
-    kerr: array_like (optional)
-    linearized: bool
+    k : array_like
+    T : float
+    kerr : array_like (optional)
+    linearized : bool
 
     """
 

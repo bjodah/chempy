@@ -173,10 +173,11 @@ class Quotient(_RateExpr):
 
 class ExpReciprocalT(_RateExpr):
     """ args[0] * exp(args[1]/global_p[self.T]) """
-    T = 'T'
+    global_p_keys = ('T',)
     nargs = 2
 
     def eval(self, rsys, ri, concs, params=None, global_p=None, backend=math):
         return (self.eval_arg(rsys, ri, concs, 0, params, global_p, backend) *
-                backend.exp(self.eval_arg(rsys, ri, concs, 1, params, global_p,
-                                          backend) / global_p[self.T]))
+                backend.exp(
+                    self.eval_arg(rsys, ri, concs, 1, params, global_p,
+                                  backend) / global_p[self.global_p_keys[0]]))

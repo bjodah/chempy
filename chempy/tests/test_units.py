@@ -61,6 +61,8 @@ def test_allclose():
 def test_is_unitless():
     assert not is_unitless(1*u.second)
     assert is_unitless(1)
+    assert is_unitless({'a': 1, 'b': 2.0})
+    assert not is_unitless({'a': 2, 'b': 5.0*u.second, 'c': 3})
 
 
 @requires(units_library)

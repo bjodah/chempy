@@ -14,7 +14,7 @@ from chempy.util.testing import requires
 from ..ode import get_odesys
 from ..integrated import dimerization_irrev
 
-from .test_rates import _get_h2_br2_rsys
+from .test_rates import _get_h2_br2_rsys, _get_ExpReciprocalT_rsys_1
 
 
 @requires('numpy')
@@ -66,12 +66,19 @@ def test_get_odesys__with_units():
 def test_get_odesys_2():
     M = default_units.molar
     s = default_units.second
+    mol = default_units.mol
+    m = default_units.metre
     substances = list(map(Substance, 'H2O H+ OH-'.split()))
     dissociation = Reaction({'H2O': 1}, {'H+': 1, 'OH-': 1}, 2.47e-5/s)
     recombination = Reaction({'H+': 1, 'OH-': 1}, {'H2O': 1}, 1.37e11/M/s)
     rsys = ReactionSystem([dissociation, recombination], substances)
-    get_odesys(rsys, include_params=True,
-               unit_registry=SI_base_registry, output_conc_unit=M)
+    odesys = get_odesys(
+        rsys, include_params=True, unit_registry=SI_base_registry,
+        output_conc_unit=M)
+    c0 = {'H2O': 55.4*M, 'H+': 1e-7*M, 'OH-': 1e-4*mol/m**3}
+    fout = odesys.f_cb(-42, rsys.as_per_substance_array(c0, unit=M))
+    assert abs(fout[0] - 55.4*2.47e-5*M/s) < 1e-10*M/s
+    assert abs(fout[1] - 1e-14*1.37e11*M/s) < 1e-10*M/s
 
 
 @requires('numpy')
@@ -99,3 +106,11 @@ def test_h2_br2_with_units():
     ref = rsys.as_per_substance_array({'H2': -r, 'Br2': -r, 'HBr': 2*r})
     res = odesys.f_cb(0, rsys.as_per_substance_array(c0, unit=u.molar))
     assert allclose(ref, res)
+
+def test_ode_with_global_parameters():
+    rsys = _get_ExpReciprocalT_rsys_1()
+    odesys = get_odesys(rsys, include_params=True)
+    fout = odesys.f_cb(-37, rsys.as_per_substance_array({'A': 3, 'B': 5}),
+                       {'T': 298.15})
+    ref = 1e10*exp(-40e3/8.3145/298.15)
+    assert abs((fout[0] - ref)/ref) < 1e-14

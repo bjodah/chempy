@@ -76,14 +76,19 @@ def test_Quotient__units():
     assert q3.get_params() == [1, 2, 3]
 
 
-def test_ExpReciprocalT():
-    args = (1e10, -40e3/8.3145)
+def _get_ExpReciprocalT_rsys_1(A=1e10, Ea_over_R=40e3/8.3145):
+    args = (A, -Ea_over_R)
     ert = ExpReciprocalT(args)
     assert tuple(ert.get_params()) == args
 
     rxn = Reaction({'A': 1}, {'B': 1}, ert)
     rsys = ReactionSystem([rxn], 'A B')
+    return rsys
 
+
+def test_ExpReciprocalT():
+    rsys = _get_ExpReciprocalT_rsys_1()
+    ert = rsys.rxns[0].param
     ref = 1e10 * math.exp(-40e3/(8.3145*298.15))
     res = ert.eval(rsys, 0, [3.0], global_p={'T': 298.15})
     assert abs((res - ref)/ref) < 1e-14

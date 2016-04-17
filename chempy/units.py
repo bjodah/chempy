@@ -14,6 +14,8 @@ from __future__ import (absolute_import, division, print_function)
 
 from operator import mul
 from functools import reduce
+
+from ._util import NameSpace
 # Currently we use quantities for units. This may change, therefore use this
 # file for all units. A requirement is first-class numpy support.
 
@@ -33,33 +35,7 @@ else:
     # chemistry
     default_constants = pq.constants
 
-    class _NameSpace:
-        def __init__(self, default):
-            self._NameSpace_default = default
-            self._NameSpace_attr_store = {}
-
-        def __getattr__(self, attr):
-            if attr.startswith('_NameSpace_'):
-                return self.__dict__[attr]
-            else:
-                try:
-                    return self._NameSpace_attr_store[attr]
-                except KeyError:
-                    return getattr(self._NameSpace_default, attr)
-
-        def __setattr__(self, attr, val):
-            if attr.startswith('_NameSpace_'):
-                self.__dict__[attr] = val
-            else:
-                self._NameSpace_attr_store[attr] = val
-
-        def as_dict(self):
-            result = {k: v for k, v in self._NameSpace_default.__dict__.items()
-                      if not k.startswith('_')}
-            result.update(self._NameSpace_attr_store)
-            return result
-
-    default_units = _NameSpace(pq)
+    default_units = NameSpace(pq)
     default_units.decimetre = pq.UnitQuantity(
         'decimetre',  default_units.m / 10.0, u_symbol='dm')
     if not hasattr(default_units, 'molar'):
@@ -196,6 +172,8 @@ def is_unitless(expr):
     """
     if hasattr(expr, 'dimensionality'):
         return expr.dimensionality == pq.dimensionless.dimensionality
+    if isinstance(expr, dict):
+        return all(is_unitless(_) for _ in expr.values())
     return True
 
 

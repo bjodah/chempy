@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-
-from __future__ import division
+from __future__ import (absolute_import, division, print_function)
 
 from functools import reduce
 from itertools import chain
@@ -17,7 +16,7 @@ from .util.parsing import (
 from .util.pyutil import defaultnamedtuple, deprecated
 from .units import to_unitless, default_constants, default_units
 from ._util import intdiv
-
+from .kinetics.rates_sym import RateExpr
 
 class Substance(object):
     """ Class representing a chemical substance
@@ -191,7 +190,7 @@ class Species(Substance):
         self.phase_idx = phase_idx
 
     @property
-    @deprecated(last_supported_version='0.3.0', will_be_missing_in='0.4.0')
+    @deprecated(last_supported_version='0.3.0', will_be_missing_in='0.5.0')
     def precipitate(self):
         """ deprecated attribute, provided for compatibility for now """
         return self.phase_idx > 0
@@ -283,7 +282,7 @@ class Species(Substance):
 
 
 @deprecated(last_supported_version='0.3.0',
-            will_be_missing_in='0.4.0', use_instead=Species)
+            will_be_missing_in='0.5.0', use_instead=Species)
 class Solute(Substance):
     """ [DEPRECATED] Use `.Species` instead
 
@@ -333,16 +332,31 @@ class Reaction(object):
 
     Parameters
     ----------
-    reac: dict (str -> int)
-    prod: dict (str -> int)
-    param: float or callable
-    inact_reac: dict (optional)
-    inact_prod: dict (optional)
-    name: str (optional)
-    k: deprecated (alias for param)
-    ref: object
+    reac : dict (str -> int)
+    prod : dict (str -> int)
+    param : float or callable
+    inact_reac : dict (optional)
+    inact_prod : dict (optional)
+    name : str (optional)
+    k : deprecated (alias for param)
+    ref : object
         reference
-    other_properties: dict (optional)
+    other_properties : dict (optional)
+    checks : iterable of str
+        raises value error if any method check_%s returns False
+        for all %s in checks.
+
+    Examples
+    --------
+    >>> r = Reaction({'H2': 2, 'O2': 1}, {'H2O': 2})
+    >>> r.keys() == {'H2', 'O2', 'H2O'}
+    True
+    >>> r.order()
+    3
+    >>> r.net_stoich(['H2', 'H2O', 'O2'])
+    (-2, 2, -1)
+    >>> print(r)
+    2 H2 + O2 -> H2O; None
 
     """
 
@@ -352,9 +366,10 @@ class Reaction(object):
     html_arrow = '&rarr;'
     param_char = 'k'  # convention
 
-    def __init__(self, reac, prod, param=None, inact_reac=None,
-                 inact_prod=None, name=None, ref=None,
-                 other_properties=None):
+    def __init__(
+            self, reac, prod, param=None, inact_reac=None, inact_prod=None,
+            name=None, ref=None, other_properties=None,
+            checks=('any_effect', 'all_positive', 'all_integral')):
         self.reac = reac
         self.prod = prod
         self.param = param
@@ -363,8 +378,13 @@ class Reaction(object):
         self.name = name
         self.ref = ref
         self.other_properties = other_properties or {}
-        self._check_idempotency()
-        self._check_neg_coeff()
+
+        if isinstance(self.param, RateExpr) and self.param.rxn is None:
+            self.param.rxn = self  # register instance in rate expression
+
+        for check in checks:
+            if not getattr(self, 'check_'+check)():
+                raise ValueError("Check failed %s" % check)
 
     @classmethod
     def from_string(cls, string, substance_keys, globals_=None):
@@ -398,15 +418,29 @@ class Reaction(object):
                 substance_keys = substance_keys.split()
         return to_reaction(string, substance_keys, cls.str_arrow, cls, globals_)
 
-    def _check_idempotency(self):
+    def check_any_effect(self):
+        """ Checks if the reaction has any effect """
         if not any(self.net_stoich(self.keys())):
-            raise ValueError("The reactants cancel the products")
+            return False
+        return True
+            #raise ValueError("The reactants exactly cancel the products")
 
-    def _check_neg_coeff(self):
+    def check_all_positive(self):
+        """ Checks if all stoichiometric coefficients are positive """
         for cont in (self.reac, self.prod, self.inact_reac, self.inact_prod):
             for v in cont.values():
                 if v < 0:
-                    raise ValueError("Negative coefficient")
+                    return False # raise ValueError("Negative coefficient")
+            return True
+
+    def check_all_integral(self):
+        """ Checks if all stoichiometric coefficents are integers """
+        for cont in (self.reac, self.prod, self.inact_reac, self.inact_prod):
+            for v in cont.values():
+                if v != type(v)(int(v)):
+                   return False # raise ValueError("Non-integer coefficient")
+        return True
+
 
     def __eq__(lhs, rhs):
         if not isinstance(lhs, Reaction) or not isinstance(rhs, Reaction):
@@ -601,6 +635,17 @@ class Reaction(object):
                 net[idx] += substance.composition.get(key, 0) * coeff
         return net
 
+    def _get_param_cb(self, rate_const_keys=None):
+        """ Used by chempy.kinetics.ode_sym """
+        try:
+            return self.param.from_rxn(self, rate_const_keys=rate_const_keys)
+        except AttributeError:
+            if callable(self.param):
+                return self.param
+            else:
+                return MassAction(self.param).from_rxn(self, rate_const_keys)
+
+
 
 def equilibrium_quotient(concs, stoich):
     """ Calculates the equilibrium quotient of an equilbrium
@@ -631,8 +676,8 @@ def equilibrium_quotient(concs, stoich):
     return tot
 
 
-class ArrheniusRate(defaultnamedtuple('ArrheniusRate', 'A Ea ref', [None])):
-    """ Kinetic data in the form of an Arrhenius parametrization
+class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
+    """ Kinetic data in the form of an Arrhenius parameterisation
 
     Parameters
     ----------
@@ -650,10 +695,32 @@ class ArrheniusRate(defaultnamedtuple('ArrheniusRate', 'A Ea ref', [None])):
     '9.8245e+05'
 
     """
-    def __call__(self, T, constants=None, units=None, exp=None):
-        """ See :func:`chempy.arrhenius.arrhenius_equation`. """
+
+    def _state_variables(self):
+        return set(['templerature'])
+
+    def __call__(self, state, constants=None, units=None, backend=None):
+        """ Evaluates the arrhenius equation for a specified state
+
+        Parameters
+        ----------
+        state: dict or float
+            if dict: must contain the key 'temperature'
+        constants: module (optional)
+        units: module (optional)
+        backend: module (default: math)
+
+        See also
+        --------
+        See :func:`chempy.arrhenius.arrhenius_equation`.
+
+        """
+        try:
+            T = state['temperature']
+        except TypeError:
+            T = state
         return arrhenius_equation(self.A, self.Ea, T, constants=constants,
-                                  units=units, exp=exp)
+                                  units=units, backend=backend)
 
     @staticmethod
     def _fmt(arg, precision, tex):
@@ -685,12 +752,12 @@ class ArrheniusRate(defaultnamedtuple('ArrheniusRate', 'A Ea ref', [None])):
         return self.equation_as_string('{0:.5g}')
 
 
-class ArrheniusRateWithUnits(ArrheniusRate):
-    def __call__(self, T, constants=default_constants, units=default_units,
+class ArrheniusParamWithUnits(ArrheniusParam):
+    def __call__(self, state, constants=default_constants, units=default_units,
                  exp=None):
         """ See :func:`chempy.arrhenius.arrhenius_equation`. """
         return super(ArrheniusRateWithUnits, self).__call__(
-            T, constants, units, exp)
+            state, constants, units, exp)
 
 
 class Equilibrium(Reaction):

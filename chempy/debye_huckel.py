@@ -6,9 +6,9 @@ This modules collects expressions for the Debye-Hückel constants.
 from __future__ import (absolute_import, division, print_function)
 
 from .core import _ActivityProductBase, ionic_strength
+from ._util import get_backend
 
-
-def A(eps_r, T, rho, b0=1, constants=None, units=None, one=1):
+def A(eps_r, T, rho, b0=1, constants=None, units=None, backend=None):
     """
     Debye Huckel constant A
 
@@ -41,7 +41,8 @@ def A(eps_r, T, rho, b0=1, constants=None, units=None, one=1):
     Atkins, De Paula, Physical Chemistry, 8th edition
 
     """
-
+    be = get_backend(backend)
+    one = be.pi**0
     if constants is None:
         combined = 132871.85866393594
         if units is not None:
@@ -59,7 +60,7 @@ def A(eps_r, T, rho, b0=1, constants=None, units=None, one=1):
     return A
 
 
-def B(eps_r, T, rho, b0=1, constants=None, units=None, one=1):
+def B(eps_r, T, rho, b0=1, constants=None, units=None, backend=None):
     """
     Extended Debye-Huckel parameter B
 
@@ -87,7 +88,8 @@ def B(eps_r, T, rho, b0=1, constants=None, units=None, one=1):
     Debye Huckel B constant (default in m**-1)
 
     """
-
+    be = get_backend(backend)
+    one = be.pi**0
     if constants is None:
         combined = 15903203868.740343
         if units is not None:
@@ -103,66 +105,58 @@ def B(eps_r, T, rho, b0=1, constants=None, units=None, one=1):
     return B
 
 
-def limiting_log_gamma(I, z, A, I0=1, one=1):
+def limiting_log_gamma(I, z, A, I0=1, backend=None):
     """ Debye-Hyckel limiting formula """
-    # `one` allows passing of e.g. one=sympy.S(1)
+    be = get_backend(backend)
+    one = be.pi**0
     return -A*z**2*(I/I0)**(one/2)
 
 
-def extended_log_gamma(I, z, a, A, B, C=0, I0=1, one=1):
+def extended_log_gamma(I, z, a, A, B, C=0, I0=1, backend=None):
     """ Debye-Huckel extended formula """
-    # `one` allows passing of e.g. one=sympy.S(1)
+    be = get_backend(backend)
+    one = be.pi**0
     I_I0 = I/I0
     sqrt_I_I0 = (I_I0)**(one/2)
     return -A*z**2 * sqrt_I_I0/(1 + B*a*sqrt_I_I0) + C*I_I0
 
 
-def davies_log_gamma(I, z, A, C=-0.3, I0=1, one=1):
+def davies_log_gamma(I, z, A, C=-0.3, I0=1, backend=None):
     """ Davies formula """
+    be = get_backend(backend)
+    one = be.pi**0
     I_I0 = I/I0
     sqrt_I_I0 = (I_I0)**(one/2)
     return -A * z**2 * (sqrt_I_I0/(1 + sqrt_I_I0) + C*I_I0)
 
 
-def limiting_activity_product(I, stoich, z, T, eps_r, rho, exp=None):
+def limiting_activity_product(I, stoich, z, T, eps_r, rho, backend=None):
     """ Product of activity coefficients based on DH limiting law. """
-    if exp is None:
-        try:
-            from numpy import exp
-        except ImportError:
-            from math import exp
+    be = get_backend(backend)
     Aval = A(eps_r, T, rho)
     tot = 0
     for idx, nr in enumerate(stoich):
         tot += nr*limiting_log_gamma(I, z[idx], Aval)
-    return exp(tot)
+    return be.exp(tot)
 
 
-def extended_activity_product(I, stoich, z, a, T, eps_r, rho, C=0, exp=None):
-    if exp is None:
-        try:
-            from numpy import exp
-        except ImportError:
-            from math import exp
+def extended_activity_product(I, stoich, z, a, T, eps_r, rho, C=0, backend=None):
+    be = get_backend(backend)
     Aval = A(eps_r, T, rho)
     Bval = B(eps_r, T, rho)
     tot = 0
     for idx, nr in enumerate(stoich):
         tot += nr*extended_log_gamma(I, z[idx], a[idx], Aval, Bval, C)
-    return exp(tot)
+    return be.exp(tot)
 
 
-def davies_activity_product(I, stoich, z, a, T, eps_r, rho, C=-0.3, exp=None):
-    if exp is None:
-        try:
-            from numpy import exp
-        except ImportError:
-            from math import exp
+def davies_activity_product(I, stoich, z, a, T, eps_r, rho, C=-0.3, backend=None):
+    be = get_backend(backend)
     Aval = A(eps_r, T, rho)
     tot = 0
     for idx, nr in enumerate(stoich):
         tot += nr*davies_log_gamma(I, z[idx], Aval, C)
-    return exp(tot)
+    return be.exp(tot)
 
 
 class LimitingDebyeHuckelActivityProduct(_ActivityProductBase):

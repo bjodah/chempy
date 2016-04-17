@@ -6,54 +6,7 @@ evolution of concentrations in reaction systems.
 """
 from __future__ import (absolute_import, division, print_function)
 
-from chempy.units import (
-    get_derived_unit, to_unitless, default_unit_in_registry
-)
-
-from ..util.pyutil import deprecated
-
-from .rates import _RateExpr, MassAction, law_of_mass_action_rates as _lomar
-
-law_of_mass_action_rates = deprecated(
-    use_instead='.rates.law_of_mass_action_rates')(_lomar)
-
-
-def dCdt(rsys, rates):
-    """ Returns a list of the time derivatives of the concentrations
-
-    Parameters
-    ----------
-    rsys: ReactionSystem instance
-    rates: array_like
-        rates (to be weighted by stoichiometries) of the reactions
-        in ``rsys``
-
-    Examples
-    --------
-    >>> from chempy import ReactionSystem, Reaction
-    >>> line, keys = 'H2O -> H+ + OH- ; 1e-4', 'H2O H+ OH-'
-    >>> rsys = ReactionSystem([Reaction.from_string(line, keys)], keys)
-    >>> dCdt(rsys, [0.0054])
-    [-0.0054, 0.0054, 0.0054]
-
-    """
-    f = [0]*rsys.ns
-    net_stoichs = rsys.net_stoichs()
-    for idx_s in range(rsys.ns):
-        for idx_r in range(rsys.nr):
-            f[idx_s] += net_stoichs[idx_r, idx_s]*rates[idx_r]
-    return f
-
-
-class _Always(object):
-    __slots__ = ('value')
-
-    def __init__(self, value):
-        self.value = value
-
-    def __getitem__(self, key):
-        return self.value
-
+from .ode import dCdt
 
 def get_odesys(rsys, include_params=False, global_params=None,
                SymbolicSys=None,
@@ -84,15 +37,18 @@ def get_odesys(rsys, include_params=False, global_params=None,
     if SymbolicSys is None:
         from pyodesys.symbolic import SymbolicSys
 
+    substance_keys = list(rsys.substances.keys())
+
     if 'names' not in kwargs:
-        kwargs['names'] = list(rsys.substances.keys())
+        kwargs['names'] = substance_keys
 
-    rate_exprs = []
-    if unit_registry is not None:
-
+    if unit_registry is None:
+        rck = None if include_params else rsys.
+        rate_exprs = [rxn._get_param_cb(rck) for rxn in rsys.rxns]
+    else:
         # We need to make rsys_params unitless and create
         # a post- & pre-processor for SymbolicSys
-        rsys_params = []
+        rate_exprs = []
         p_units = []
         for ri, rxn in enumerate(rsys.rxns):
             rate_expr = rxn.param
@@ -102,7 +58,6 @@ def get_odesys(rsys, include_params=False, global_params=None,
             _p_units = [default_unit_in_registry(_, unit_registry) for _ in _params]
             p_units.extend(_p_units)
             _rsys_params = [to_unitless(p, unit) for p, unit in zip(_params, _p_units)]
-            rsys_params.extend(_rsys_params)
             rate_exprs.append(rate_expr.rebuild(_rsys_params))
 
         time_unit = get_derived_unit(unit_registry, 'time')
@@ -123,20 +78,22 @@ def get_odesys(rsys, include_params=False, global_params=None,
                                 in zip(p, p_units)]
         kwargs['pre_processors'] = [pre_processor]
         kwargs['post_processors'] = [post_processor]
-    else:
-        for ri, rxn in enumerate(rsys.rxns):
-            param = rxn.param
-            if isinstance(param, _RateExpr):
-                rate_exprs.append(param)
-            else:
-                rate_exprs.append(MassAction([param]))
+
+
+    param_keys = chain(ratex.arg_keys for ratex in rate_exprs)
+    param_defaults = chain(ratex.args for ratex in rate_exprs)
+
+    state_keys = set.union(*(ratex.state_keys for ratex in rate_exprs))
+    nstate = len(state_keys)
 
     def dydt(t, y, p, backend=math):
         rates = []
-        nargs_seen = 0
-        for ri, rate_expr in enumerate(rate_exprs):
-            rates.append(rate_expr.eval(rsys, ri, y, None, backend=backend))
-        return dCdt(rsys, rates)
+        variables = dict(chain(
+            zip(substance_keys, y),
+            zip(state_keys, p[:len(state_keys)]),
+            zip(param_keys, param_defaults) if include_params else zip(param_keys, p[len(state_keys):])
+        ))
+        return dCdt(rsys, [rat(variables, backend=backend) for rat in rate_exprs])
 
     return SymbolicSys.from_callback(
-        dydt, rsys.ns, 0 if include_params else rsys.nr, **kwargs)
+        dydt, len(substance_keys), len(state_keys) + (0 if include_params else len(param_keys)), **kwargs)
