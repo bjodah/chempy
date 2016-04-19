@@ -526,15 +526,17 @@ class Reaction(object):
         _str = kwargs.get('_str', str)
         return _str("{}{} {} {}{}").format(*self._get_str_parts(*args, **kwargs))
 
-    def __str__(self):
+    def _str_param(self, fmt='%.3g'):
         try:
-            str_param = '%.3g %s' % (self.param, self.param.dimensionality)
+            return fmt + ' %s' % (self.param, self.param.dimensionality)
         except AttributeError:
             try:
-                str_param = '%.3g' % self.param
+                return fmt % self.param
             except TypeError:
-                str_param = str(self.param)
-        s = '; ' + str_param
+                return str(self.param)
+
+    def __str__(self):
+        s = '; ' + self._str_param()
         return self._get_str('name', 'str_arrow', {
             k: k for k in chain(self.reac.keys(), self.prod.keys(),
                                 self.inact_reac.keys(),
@@ -1005,7 +1007,9 @@ class ReactionSystem(object):
         self._duplicate_check()
 
     def _repr_html_(self):
-        return '<br>'.join(r.html(self.substances) for r in self.rxns)
+        def _format(r):
+            return r.html(self.substances) + '; ' + r._str_param()
+        return '<br>'.join(map(_format, self.rxns))
 
     def _duplicate_check(self):
         for i1, rxn1 in enumerate(self.rxns):

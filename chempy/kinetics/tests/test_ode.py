@@ -18,7 +18,7 @@ from ..ode import get_odesys
 from ..integrated import dimerization_irrev
 
 
-@requires('numpy')
+@requires('numpy', 'pyodesys')
 def test_get_odesys_1():
     k = .2
     a = Substance('A')
@@ -38,7 +38,7 @@ def test_get_odesys_1():
     assert np.allclose(yout, yref)
 
 
-@requires(units_library)
+@requires(units_library, 'pyodesys')
 def test_get_odesys__with_units():
     a = Substance('A')
     b = Substance('B')
@@ -63,7 +63,7 @@ def test_get_odesys__with_units():
     assert allclose(yout, yref*conc_unit)
 
 
-@requires(units_library)
+@requires(units_library, 'pyodesys')
 def test_get_odesys_2():
     M = default_units.molar
     s = default_units.second
@@ -91,7 +91,7 @@ def test_get_odesys_2():
     assert abs(fout[2] - r1 + r2) < 1e-10
 
 
-@requires('numpy')
+@requires('numpy', 'pyodesys')
 def test_SpecialFraction():
     k, kprime = 3.142, 2.718
     rsys = _get_SpecialFraction_rsys(k, kprime)
@@ -104,7 +104,7 @@ def test_SpecialFraction():
     assert np.allclose(res, ref)
 
 
-@requires(units_library)
+@requires(units_library, 'pyodesys')
 def test_SpecialFraction_with_units():
     u = default_units
     k, kprime = 3.142 * u.s**-1 * u.molar**-0.5, 2.718
@@ -118,6 +118,7 @@ def test_SpecialFraction_with_units():
     assert allclose(ref, res)
 
 
+@requires('pyodesys')
 def test_ode_with_global_parameters():
     ratex = ArrheniusMassAction([1e10, 40e3/8.3145])
     rxn = Reaction({'A': 1}, {'B': 1}, ratex)

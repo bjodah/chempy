@@ -38,10 +38,14 @@ class requires(object):
             except ImportError:
                 self.missing.append(req.project_name)
             else:
-                ver = parse_version(mod.__version__)
-                for rel, vstr in req.specs:
-                    if not _relop[rel](ver, parse_version(vstr)):
-                        self.incomp.append(req)
+                try:
+                    ver = parse_version(mod.__version__)
+                except AttributeError:
+                    pass
+                else:
+                    for rel, vstr in req.specs:
+                        if not _relop[rel](ver, parse_version(vstr)):
+                            self.incomp.append(str(req))
 
     def __call__(self, cb):
         r = 'Unfulfilled requirements.'
