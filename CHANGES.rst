@@ -1,7 +1,7 @@
 v0.4.0
 ======
 - kwargs one=, exp=, ln= changed throughout to use backend=None (backen=math)
-- .chemistry.ArrheniusRate renamed (and changed) to .chemistry.ArrheniusParam
+- .chemistry.ArrheniusRate moved (and changed) to .arrhenius.ArrheniusParam
 - Equilibrium got a new method: cancel and a new staticmethod: eliminate
 - Reaction now raises ValueError if the Reaction has a zero net effect.
 - It is now possible to use (parts of) chempy even when only Python stdlib is available

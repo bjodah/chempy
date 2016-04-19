@@ -7,15 +7,14 @@ from operator import itemgetter, mul
 from collections import OrderedDict, defaultdict
 import sys
 
-from .arrhenius import arrhenius_equation
 from .util.arithmeticdict import ArithmeticDict
 from .util.parsing import (
     formula_to_composition, mass_from_composition, to_reaction,
     formula_to_latex, formula_to_unicode, formula_to_html
 )
-from .util.pyutil import defaultnamedtuple, deprecated
-from .units import to_unitless, default_constants, default_units
+from .units import to_unitless
 from ._util import intdiv
+from .util.pyutil import deprecated
 
 
 class Substance(object):
@@ -664,82 +663,6 @@ def equilibrium_quotient(concs, stoich):
     for nr, conc in zip(stoich, concs):
         tot *= conc**nr
     return tot
-
-
-class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
-    """ Kinetic data in the form of an Arrhenius parameterisation
-
-    Parameters
-    ----------
-    Ea: float
-        activation energy
-    A: float
-        preexponential prefactor (Arrhenius type eq.)
-    ref: object (default: None)
-        arbitrary reference (e.g. string representing citation key)
-
-    Examples
-    --------
-    >>> k = ArrheniusParam(1e13, 40e3)
-    >>> '%.5g' % k(298.15)
-    '9.8245e+05'
-
-    """
-
-    def __call__(self, T, constants=None, units=None, backend=None):
-        """ Evaluates the arrhenius equation for a specified state
-
-        Parameters
-        ----------
-        T: float
-        constants: module (optional)
-        units: module (optional)
-        backend: module (default: math)
-
-        See also
-        --------
-        See :func:`chempy.arrhenius.arrhenius_equation`.
-
-        """
-        return arrhenius_equation(self.A, self.Ea, T, constants=constants,
-                                  units=units, backend=backend)
-
-    @staticmethod
-    def _fmt(arg, precision, tex):
-        if tex:
-            unit_str = arg.dimensionality.latex.strip('$')
-        else:
-            from quantities.markup import config
-            attr = 'unicode' if config.use_unicode else 'string'
-            unit_str = getattr(arg.dimensionality, attr)
-        return precision.format(float(arg.magnitude)) + " " + unit_str
-
-    def format(self, precision, tex=False):
-        try:
-            str_A = self._fmt(self.A, precision, tex)
-            str_Ea = self._fmt(self.Ea, precision, tex)
-        except:
-            str_A = precision.format(self.A)
-            str_Ea = precision.format(self.Ea)
-        return str_A, str_Ea
-
-    def equation_as_string(self, precision, tex=False):
-        if tex:
-            return r"{}\exp \left(\frac{{{}}}{{RT}} \right)".format(
-                *self.format(precision, tex))
-        else:
-            return "{}*exp({}/(R*T))".format(*self.format(precision, tex))
-
-    def __str__(self):
-        return self.equation_as_string('{0:.5g}')
-
-
-class ArrheniusParamWithUnits(ArrheniusParam):
-    def __call__(self, state, constants=default_constants, units=default_units,
-                 exp=None):
-        """ See :func:`chempy.arrhenius.arrhenius_equation`. """
-        return super(ArrheniusParamWithUnits, self).__call__(
-            state, constants, units, exp)
 
 
 class Equilibrium(Reaction):
