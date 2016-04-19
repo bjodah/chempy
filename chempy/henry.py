@@ -30,7 +30,7 @@ def Henry_H_at_T(T, H, Tderiv, T0=None, units=None, backend=None):
         module with "exp", default: numpy, math
 
     """
-    be = _get_backend(backend)
+    be = get_backend(backend)
     if units is None:
         K = 1
     else:

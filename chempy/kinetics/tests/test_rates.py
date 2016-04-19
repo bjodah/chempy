@@ -2,93 +2,101 @@
 from __future__ import (absolute_import, division, print_function)
 
 import math
-import pytest
 
 from chempy import Reaction, ReactionSystem
 from chempy.units import units_library, default_units as u
 from chempy.util.testing import requires
-from ..rates import Quotient, Sum, GeneralPow, ExpReciprocalT
+from ..rates import RateExpr, MassAction, ArrheniusMassAction
 
 
-def _get_h2_br2_param(k, kprime):
-    # Example from Atkins, De Paula, Physical Chemistry
-    # H2 + Br2 -> 2HBr
-    # ½ dHBr/dt = k[H2][Br2]**(3/2) / ([Br2] + k'[HBr])
-    return Quotient([
-        GeneralPow([k], {'H2': 1, 'Br2': 3/2}),
-        Sum([GeneralPow([1], {'Br2': 1}),
-             GeneralPow([kprime], {'HBr': 1})])
-    ])
+class SpecialFraction(RateExpr):
+    """
+    Example from Atkins, De Paula, Physical Chemistry
+    H2 + Br2 -> 2HBr
+    ½ dHBr/dt = k[H2][Br2]**(3/2) / ([Br2] + k'[HBr])
+    """
+    def __call__(self, variables, args=None, backend=math):
+        args = args or self.args
+        two = 2 * backend.pi**0
+        k = self.arg(variables, args, 0)
+        kp = self.arg(variables, args, 1)
+        H2, Br2, HBr = variables['H2'], variables['Br2'], variables['HBr']
+        return k*H2*Br2**(3/two) / (Br2 + kp*HBr)
 
 
-def _get_h2_br2_rsys(k, kprime):
-    param = _get_h2_br2_param(k, kprime)
-    rxn = Reaction({'H2': 1, 'Br2': 1}, {'HBr': 2}, param)
-    rsys = ReactionSystem([rxn], 'H2 Br2 HBr')
-    return rsys
+def _get_SpecialFraction_rsys(k, kprime):
+    ratex = SpecialFraction([k, kprime])
+    rxn = Reaction({'H2': 1, 'Br2': 1}, {'HBr': 2}, ratex)
+    return ReactionSystem([rxn], 'H2 Br2 HBr')
 
 
 @requires('numpy')
-def test_Quotient():
-    rsys = _get_h2_br2_rsys(11, 13)
-    q = rsys.rxns[0].param
-
-    assert q.get_params() == [11, 1, 13]
+def test_specialfraction_rateexpr():
+    rsys = _get_SpecialFraction_rsys(11, 13)
+    p = rsys.rxns[0].param
 
     conc = {'H2': 2, 'Br2': 3, 'HBr': 5}
 
-    def _check(k, kprime, c, params=None):
+    def _check(k, kprime, c):
         ref = k*c['H2']*c['Br2']**1.5/(c['Br2'] + kprime*c['HBr'])
-        val = q.eval(rsys, 0, rsys.as_per_substance_array(c), params=params)
-        assert abs(val - ref) < 1e-15
+        assert abs(p(c) - ref) < 1e-15
 
     _check(11, 13, conc)
-    _check(11, 13, conc, [11, 1, 13])
-    _check(2, 7, conc, [2, 1, 7])
 
-    q2 = q.rebuild()
-    assert q2.get_params() == [11, 1, 13]
+
+def test_MassAction():
+    ma = MassAction([3.14])
+    Reaction({'A': 2, 'B': 1}, {'C': 1}, ma, {'B': 1})
+    assert abs(ma({'A': 11, 'B': 13, 'C': 17}) - 3.14*13*11**2) < 1e-14
+    assert abs(ma({'A': 11, 'B': 13, 'C': 17}, [2.72]) - 2.72*13*11**2) < 1e-12
+
+
+def test_ArrheniusMassAction():
+    A, Ea_over_R = 1.2e11, 40e3/8.3145
+    ama = ArrheniusMassAction([A, Ea_over_R])
+    Reaction({'A': 2, 'B': 1}, {'C': 1}, ama, {'B': 1})
+    T_ = 'temperature'
+
+    def ref(v):
+        return 1.2e11*math.exp(-Ea_over_R/v[T_])*v['B']*v['A']**2
+
+    for params in [(11., 13., 17., 311.2),
+                   (12, 8, 5, 270)]:
+        var = dict(zip(['A', 'B', 'C', T_], params))
+        r = ref(var)
+        assert abs((ama(var) - r)/r) < 1e-14
 
 
 @requires(units_library)
-def test_Quotient__units():
+def test_specialfraction_rateexpr__units():
     _k, _kprime = 3.5 * u.s**-1 * u.molar**-0.5, 9.2
-    rsys = _get_h2_br2_rsys(_k, _kprime)
-    q = rsys.rxns[0].param
-    conc = {'H2': 2*u.molar, 'Br2': 3*u.molar, 'HBr': 5*u.molar}
+    rsys = _get_SpecialFraction_rsys(_k, _kprime)
+    p = rsys.rxns[0].param
 
-    def _check(k, kprime, c, params=None):
+    conc = {'H2': 2*u.molar, 'Br2': 3000*u.mol/u.m**3, 'HBr': 5*u.molar}
+
+    def _check(k, kprime, c, args=None):
         ref = k*c['H2']*c['Br2']**1.5/(c['Br2'] + kprime*c['HBr'])
-        val = q.eval(rsys, 0, rsys.as_per_substance_array(c, unit=u.molar),
-                     params=params)
-        assert abs(val - ref) < 1e-15
+        assert abs(p(c, args) - ref) < 1e-15*u.molar/u.second
+
     _check(_k, _kprime, conc)
-    with pytest.raises(ValueError):
-        _check(_k, _kprime*u.second, conc)
-    _check(_k, _kprime, conc, [_k, 1, _kprime])
     alt_k, alt_kprime = 2*u.s**-1*u.molar**-0.5, 5
-    _check(alt_k, alt_kprime, conc, [alt_k, 1, alt_kprime])
-
-    q2 = q.rebuild()
-    assert q2.get_params() == [_k, 1, _kprime]
-
-    q3 = q.rebuild([1, 2, 3])
-    assert q3.get_params() == [1, 2, 3]
+    _check(alt_k, alt_kprime, conc, [alt_k, alt_kprime])
 
 
-def _get_ExpReciprocalT_rsys_1(A=1e10, Ea_over_R=40e3/8.3145):
-    args = (A, -Ea_over_R)
-    ert = ExpReciprocalT(args)
-    assert tuple(ert.get_params()) == args
+@requires(units_library)
+def test_ArrheniusMassAction__units():
+    A, Ea_over_R = 1.2e11/u.molar**2/u.second, 40e3/8.3145*u.kelvin
+    ama = ArrheniusMassAction([A, Ea_over_R])
+    Reaction({'A': 2, 'B': 1}, {'C': 1}, ama, {'B': 1})
+    T_ = 'temperature'
 
-    rxn = Reaction({'A': 1}, {'B': 1}, ert)
-    rsys = ReactionSystem([rxn], 'A B')
-    return rsys
+    def ref(v):
+        return 1.2e11/u.molar**2/u.second*math.exp(
+            -Ea_over_R/v[T_])*v['B']*v['A']**2
 
-
-def test_ExpReciprocalT():
-    rsys = _get_ExpReciprocalT_rsys_1()
-    ert = rsys.rxns[0].param
-    ref = 1e10 * math.exp(-40e3/(8.3145*298.15))
-    res = ert.eval(rsys, 0, [3.0], global_p={'T': 298.15})
-    assert abs((res - ref)/ref) < 1e-14
+    for params in [(11.*u.molar, 13.*u.molar, 17.*u.molar, 311.2*u.kelvin),
+                   (12*u.molar, 8*u.molar, 5*u.molar, 270*u.kelvin)]:
+        var = dict(zip(['A', 'B', 'C', T_], params))
+        r = ref(var)
+        assert abs((ama(var) - r)/r) < 1e-14

@@ -8,13 +8,14 @@ except ImportError:
 
 from chempy.chemistry import Substance, Reaction, ReactionSystem
 from chempy.units import (
-    default_units, SI_base_registry, get_derived_unit, allclose, units_library
+    default_units, SI_base_registry, get_derived_unit, allclose, units_library,
+    to_unitless
 )
 from chempy.util.testing import requires
+from .test_rates import _get_SpecialFraction_rsys
+from ..rates import ArrheniusMassAction
 from ..ode import get_odesys
 from ..integrated import dimerization_irrev
-
-from .test_rates import _get_h2_br2_rsys, _get_ExpReciprocalT_rsys_1
 
 
 @requires('numpy')
@@ -76,15 +77,24 @@ def test_get_odesys_2():
         rsys, include_params=True, unit_registry=SI_base_registry,
         output_conc_unit=M)
     c0 = {'H2O': 55.4*M, 'H+': 1e-7*M, 'OH-': 1e-4*mol/m**3}
-    fout = odesys.f_cb(-42, rsys.as_per_substance_array(c0, unit=M))
-    assert abs(fout[0] - 55.4*2.47e-5*M/s) < 1e-10*M/s
-    assert abs(fout[1] - 1e-14*1.37e11*M/s) < 1e-10*M/s
+    x, y, p = odesys.pre_process(-42*default_units.second,
+                                 rsys.as_per_substance_array(c0, unit=M))
+    fout = odesys.f_cb(x, y, p)
+
+    time_unit = get_derived_unit(SI_base_registry, 'time')
+    conc_unit = get_derived_unit(SI_base_registry, 'concentration')
+
+    r1 = to_unitless(55.4*2.47e-5*M/s, conc_unit/time_unit)
+    r2 = to_unitless(1e-14*1.37e11*M/s, conc_unit/time_unit)
+    assert abs(fout[0] - r2 + r1) < 1e-10
+    assert abs(fout[1] - r1 + r2) < 1e-10
+    assert abs(fout[2] - r1 + r2) < 1e-10
 
 
 @requires('numpy')
-def test_h2_br2():
+def test_SpecialFraction():
     k, kprime = 3.142, 2.718
-    rsys = _get_h2_br2_rsys(k, kprime)
+    rsys = _get_SpecialFraction_rsys(k, kprime)
 
     odesys = get_odesys(rsys, include_params=True)
     c0 = {'H2': 13, 'Br2': 17, 'HBr': 19}
@@ -95,10 +105,10 @@ def test_h2_br2():
 
 
 @requires(units_library)
-def test_h2_br2_with_units():
+def test_SpecialFraction_with_units():
     u = default_units
     k, kprime = 3.142 * u.s**-1 * u.molar**-0.5, 2.718
-    rsys = _get_h2_br2_rsys(k, kprime)
+    rsys = _get_SpecialFraction_rsys(k, kprime)
     odesys = get_odesys(rsys, include_params=True,
                         unit_registry=SI_base_registry)
     c0 = {'H2': 13*u.molar, 'Br2': 16*u.molar, 'HBr': 19*u.molar}
@@ -107,10 +117,15 @@ def test_h2_br2_with_units():
     res = odesys.f_cb(0, rsys.as_per_substance_array(c0, unit=u.molar))
     assert allclose(ref, res)
 
+
 def test_ode_with_global_parameters():
-    rsys = _get_ExpReciprocalT_rsys_1()
+    ratex = ArrheniusMassAction([1e10, 40e3/8.3145])
+    rxn = Reaction({'A': 1}, {'B': 1}, ratex)
+    rsys = ReactionSystem([rxn], 'A B')
     odesys = get_odesys(rsys, include_params=True)
-    fout = odesys.f_cb(-37, rsys.as_per_substance_array({'A': 3, 'B': 5}),
-                       {'T': 298.15})
-    ref = 1e10*exp(-40e3/8.3145/298.15)
-    assert abs((fout[0] - ref)/ref) < 1e-14
+    conc = {'A': 3, 'B': 5}
+    x, y, p = odesys.pre_process(-37, conc, {'temperature': 298.15})
+    fout = odesys.f_cb(x, y, p)
+    ref = 3*1e10*np.exp(-40e3/8.3145/298.15)
+    assert abs((fout[0] + ref)/ref) < 1e-14
+    assert abs((fout[1] - ref)/ref) < 1e-14

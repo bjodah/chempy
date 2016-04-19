@@ -10,8 +10,8 @@ from ..util.testing import requires
 from ..util.parsing import parsing_library
 from ..units import default_units, units_library
 from ..chemistry import (
-    Substance, Species, Reaction, ReactionSystem, ArrheniusRate,
-    ArrheniusRateWithUnits, Equilibrium
+    Substance, Species, Reaction, ReactionSystem, ArrheniusParam,
+    ArrheniusParamWithUnits, Equilibrium
 )
 
 
@@ -136,19 +136,19 @@ def test_ReactionSystem__as_per_substance_array_dict():
     assert rs.as_per_substance_dict([42]) == {'H2O': 42}
 
 
-def test_ArrheniusRate():
-    k = ArrheniusRate(1e10, 42e3)({'T': 273.15})
+def test_ArrheniusParam():
+    k = ArrheniusParam(1e10, 42e3)(273.15)
     ref = 1e10 * math.exp(-42e3/(8.3145*273.15))
     assert abs((k - ref)/ref) < 1e-4
 
 
 @requires(units_library)
-def test_ArrheniusRateWithUnits():
+def test_ArrheniusParamWithUnits():
     s = default_units.second
     mol = default_units.mol
     J = default_units.joule
     K = default_units.kelvin
-    k = ArrheniusRateWithUnits(1e10/s, 42e3 * J/mol)({'T': 273.15*K})
+    k = ArrheniusParamWithUnits(1e10/s, 42e3 * J/mol)(273.15*K)
     ref = 1e10/s * math.exp(-42e3/(8.3145*273.15))
     assert abs((k - ref)/ref) < 1e-4
 

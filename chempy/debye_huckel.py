@@ -8,6 +8,7 @@ from __future__ import (absolute_import, division, print_function)
 from .core import _ActivityProductBase, ionic_strength
 from ._util import get_backend
 
+
 def A(eps_r, T, rho, b0=1, constants=None, units=None, backend=None):
     """
     Debye Huckel constant A

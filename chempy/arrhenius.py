@@ -7,6 +7,8 @@ Contains functions for the `Arrhenius equation
 """
 from __future__ import (absolute_import, division, print_function)
 
+from ._util import get_backend
+
 
 def _get_R(constants=None, units=None):
     if constants is None:
@@ -45,17 +47,13 @@ def arrhenius_equation(A, Ea, T, constants=None, units=None, backend=None):
         module with "exp", default: numpy, math
 
     """
-    if exp is None:
-        try:
-            from numpy import exp
-        except ImportError:
-            from math import exp
+    be = get_backend(backend)
     R = _get_R(constants, units)
     try:
         RT = (R*T).rescale(Ea.dimensionality)
     except AttributeError:
         RT = R*T
-    return A*exp(-Ea/RT)
+    return A*be.exp(-Ea/RT)
 
 
 def fit_arrhenius_equation(k, T, kerr=None, linearized=False):

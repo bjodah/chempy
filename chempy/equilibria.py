@@ -320,8 +320,7 @@ class EqSystem(ReactionSystem):
             rA, rb = linear_rref(self.stoichs(non_precip_rids),
                                  list(map(be.log, eq_params)),
                                  Matrix)
-            exp = exp or math.exp
-            return rA.tolist(), list(map(exp, rb))
+            return rA.tolist(), list(map(be.exp, rb))
         else:
             return (self.stoichs(non_precip_rids),
                     eq_params)

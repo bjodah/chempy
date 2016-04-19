@@ -16,7 +16,7 @@ from .util.parsing import (
 from .util.pyutil import defaultnamedtuple, deprecated
 from .units import to_unitless, default_constants, default_units
 from ._util import intdiv
-from .kinetics.rates_sym import RateExpr
+
 
 class Substance(object):
     """ Class representing a chemical substance
@@ -356,7 +356,7 @@ class Reaction(object):
     >>> r.net_stoich(['H2', 'H2O', 'O2'])
     (-2, 2, -1)
     >>> print(r)
-    2 H2 + O2 -> H2O; None
+    2 H2 + O2 -> 2 H2O; None
 
     """
 
@@ -379,6 +379,7 @@ class Reaction(object):
         self.ref = ref
         self.other_properties = other_properties or {}
 
+        from .kinetics.rates import RateExpr
         if isinstance(self.param, RateExpr) and self.param.rxn is None:
             self.param.rxn = self  # register instance in rate expression
 
@@ -423,14 +424,13 @@ class Reaction(object):
         if not any(self.net_stoich(self.keys())):
             return False
         return True
-            #raise ValueError("The reactants exactly cancel the products")
 
     def check_all_positive(self):
         """ Checks if all stoichiometric coefficients are positive """
         for cont in (self.reac, self.prod, self.inact_reac, self.inact_prod):
             for v in cont.values():
                 if v < 0:
-                    return False # raise ValueError("Negative coefficient")
+                    return False
             return True
 
     def check_all_integral(self):
@@ -438,9 +438,8 @@ class Reaction(object):
         for cont in (self.reac, self.prod, self.inact_reac, self.inact_prod):
             for v in cont.values():
                 if v != type(v)(int(v)):
-                   return False # raise ValueError("Non-integer coefficient")
+                    return False
         return True
-
 
     def __eq__(lhs, rhs):
         if not isinstance(lhs, Reaction) or not isinstance(rhs, Reaction):
@@ -635,17 +634,6 @@ class Reaction(object):
                 net[idx] += substance.composition.get(key, 0) * coeff
         return net
 
-    def _get_param_cb(self, rate_const_keys=None):
-        """ Used by chempy.kinetics.ode_sym """
-        try:
-            return self.param.from_rxn(self, rate_const_keys=rate_const_keys)
-        except AttributeError:
-            if callable(self.param):
-                return self.param
-            else:
-                return MassAction(self.param).from_rxn(self, rate_const_keys)
-
-
 
 def equilibrium_quotient(concs, stoich):
     """ Calculates the equilibrium quotient of an equilbrium
@@ -690,22 +678,18 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
 
     Examples
     --------
-    >>> k = ArrheniusRate(1e13, 40e3)
+    >>> k = ArrheniusParam(1e13, 40e3)
     >>> '%.5g' % k(298.15)
     '9.8245e+05'
 
     """
 
-    def _state_variables(self):
-        return set(['templerature'])
-
-    def __call__(self, state, constants=None, units=None, backend=None):
+    def __call__(self, T, constants=None, units=None, backend=None):
         """ Evaluates the arrhenius equation for a specified state
 
         Parameters
         ----------
-        state: dict or float
-            if dict: must contain the key 'temperature'
+        T: float
         constants: module (optional)
         units: module (optional)
         backend: module (default: math)
@@ -715,10 +699,6 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
         See :func:`chempy.arrhenius.arrhenius_equation`.
 
         """
-        try:
-            T = state['temperature']
-        except TypeError:
-            T = state
         return arrhenius_equation(self.A, self.Ea, T, constants=constants,
                                   units=units, backend=backend)
 
@@ -756,7 +736,7 @@ class ArrheniusParamWithUnits(ArrheniusParam):
     def __call__(self, state, constants=default_constants, units=default_units,
                  exp=None):
         """ See :func:`chempy.arrhenius.arrhenius_equation`. """
-        return super(ArrheniusRateWithUnits, self).__call__(
+        return super(ArrheniusParamWithUnits, self).__call__(
             state, constants, units, exp)
 
 
