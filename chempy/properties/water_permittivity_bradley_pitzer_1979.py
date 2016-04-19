@@ -1,43 +1,34 @@
+# -*- coding: utf-8 -*-
+from __future__ import (absolute_import, division, print_function)
+
+
 import warnings
 
-try:
-    from numpy import exp as _exp
-    from numpy import log as ln
-    from numpy import any as _any
-except ImportError:
-    from math import exp as _exp
-    from math import log as ln
-
-    def _any(arg):
-        if arg is True:
-            return True
-        if arg is False:
-            return False
-        return any(arg)
+from .._util import _any, get_backend
 
 
 def water_permittivity(T=None, P=None, units=None, U=None,
-                       just_return_U=False, warn=True, exp=None):
+                       just_return_U=False, warn=True, backend=None):
     """
     Relative permittivity of water as function of temperature (K)
     and pressure (bar).
 
     Parameters
     ----------
-    T: float
+    T : float
         Temperature (default: 298.15 Kelvin)
-    P: float
+    P : float
         Pressure (default: 1 bar)
-    units: object (optional)
+    units : object (optional)
         object with attributes: Kelvin, bar
-    U: array_like (optional)
+    U : array_like (optional)
         9 parameters to the equation.
-    just_return_U: bool (optional, default: False)
+    just_return_U : bool (optional, default: False)
         Do not compute relative permittivity, just return the parameters ``U``.
-    warn: bool (default: True)
+    warn : bool (default: True)
         Emit UserWarning when outside temperature/pressure range.
-    exp: callback (default: None)
-        Custom callback for evaluating the exponential function
+    backend : module (default: None)
+        modules which contains "exp", default: numpy, math
 
     Returns
     -------
@@ -52,6 +43,7 @@ def water_permittivity(T=None, P=None, units=None, U=None,
         http://pubs.acs.org/doi/abs/10.1021/j100475a009
         DOI: 10.1021/j100475a009
     """
+    be = get_backend(backend)
     if units is None:
         K = 1
         bar = 1
@@ -85,12 +77,10 @@ def water_permittivity(T=None, P=None, units=None, U=None,
                 else:
                     if _any(P > 5000*bar):
                         warnings.warn("Outside pressure range (5000 bar)")
-    if exp is None:
-        exp = _exp
     B = U[6] + U[7]/T + U[8]*T
     C = U[3] + U[4]/(U[5] + T)
-    eps1000 = U[0]*exp(U[1]*T + U[2]*T**2)
-    return eps1000 + C*ln((B+P)/(B + 1000.0*bar))
+    eps1000 = U[0]*be.exp(U[1]*T + U[2]*T**2)
+    return eps1000 + C*be.log((B+P)/(B + 1000.0*bar))
 
 
 # generated at doi2bib.org:

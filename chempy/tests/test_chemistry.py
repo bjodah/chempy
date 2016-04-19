@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function)
 
-import math
 from operator import attrgetter
 
 import pytest
@@ -10,8 +9,7 @@ from ..util.testing import requires
 from ..util.parsing import parsing_library
 from ..units import default_units, units_library
 from ..chemistry import (
-    Substance, Species, Reaction, ReactionSystem, ArrheniusRate,
-    ArrheniusRateWithUnits, Equilibrium
+    Substance, Species, Reaction, ReactionSystem, Equilibrium
 )
 
 
@@ -36,6 +34,7 @@ def test_Substance__from_formula():
     assert H2O.composition == {1: 2, 8: 1}
     assert H2O.latex_name == 'H_{2}O'
     assert H2O.unicode_name == u'H₂O'
+    assert H2O.html_name == u'H<sub>2</sub>O'
 
 
 @requires(parsing_library)
@@ -80,6 +79,9 @@ def test_Reaction():
     assert r3.charge_neutrality_violation(substance_dict) != 0
 
     assert r3.keys() == {Hp, OHm, H2O}
+
+    with pytest.raises(ValueError):
+        Reaction({Hp: -1, OHm: -1}, {H2O: -1})
 
 
 @requires(parsing_library, units_library)
@@ -132,23 +134,6 @@ def test_ReactionSystem__as_per_substance_array_dict():
     assert rs.as_per_substance_dict([42]) == {'H2O': 42}
 
 
-def test_ArrheniusRate():
-    k = ArrheniusRate(1e10, 42e3)(273.15)
-    ref = 1e10 * math.exp(-42e3/(8.3145*273.15))
-    assert abs((k - ref)/ref) < 1e-4
-
-
-@requires(units_library)
-def test_ArrheniusRateWithUnits():
-    s = default_units.second
-    mol = default_units.mol
-    J = default_units.joule
-    K = default_units.kelvin
-    k = ArrheniusRateWithUnits(1e10/s, 42e3 * J/mol)(273.15*K)
-    ref = 1e10/s * math.exp(-42e3/(8.3145*273.15))
-    assert abs((k - ref)/ref) < 1e-4
-
-
 @requires(units_library)
 def test_Equilibrium__as_reactions():
     s = default_units.second
@@ -184,3 +169,38 @@ def test_ReactioN__unicode():
     subst = {k: Substance.from_formula(k) for k in keys}
     r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
     assert r2.unicode(subst) == u'2 H₂O → 2 H₂ + O₂'
+    assert r2.html(subst) == u'2 H<sub>2</sub>O &rarr; 2 H<sub>2</sub> + O<sub>2</sub>'
+
+
+def test_Reaction__idempotency():
+    with pytest.raises(ValueError):
+        Reaction({'A': 1}, {'A': 1})
+    with pytest.raises(ValueError):
+        Reaction({}, {})
+    with pytest.raises(ValueError):
+        Reaction({'A': 1}, {'B': 1}, inact_reac={'B': 1}, inact_prod={'A': 1})
+
+
+@requires('sympy')
+def test_Equilibrium__eliminate():
+    e1 = Equilibrium({'A': 1, 'B': 2}, {'C': 3})
+    e2 = Equilibrium({'D': 5, 'B': 7}, {'E': 11})
+    coeff = Equilibrium.eliminate([e1, e2], 'B')
+    assert coeff == [7, -2]
+
+    e3 = coeff[0]*e1 + coeff[1]*e2
+    assert e3.net_stoich('B') == (0,)
+
+    e4 = e1*coeff[0] + coeff[1]*e2
+    assert e4.net_stoich('B') == (0,)
+
+    assert (-e1).reac == {'C': 3}
+    assert (e2*-3).reac == {'E': 33}
+
+
+def test_Equilibrium__cancel():
+    # 2B + C -> E
+    e1 = Equilibrium({'A': 26, 'B': 20, 'C': 7}, {'D': 4, 'E': 7})
+    e2 = Equilibrium({'A': 13, 'B': 3}, {'D': 2})
+    coeff = e1.cancel(e2)
+    assert coeff == -2

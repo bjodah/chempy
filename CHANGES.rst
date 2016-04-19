@@ -1,8 +1,13 @@
-v0.3.6
+v0.4.0
 ======
-- Substance got a new method: molar_mass, and a new attribute: unicode_name
+- kwargs one=, exp=, ln= changed throughout to use backend=None (backen=math)
+- .chemistry.ArrheniusRate moved (and changed) to .arrhenius.ArrheniusParam
+- Equilibrium got a new method: cancel and a new staticmethod: eliminate
+- Reaction now raises ValueError if the Reaction has a zero net effect.
+- It is now possible to use (parts of) chempy even when only Python stdlib is available
+- Substance got a new method: molar_mass, and a two new attributes: unicode_name, html_name
 - .util.parsing.to_latex was renamed to formula_to_latex.
-- New function util.parsing.formula_to_unicode
+- New functions in util.parsing: formula_to_unicode, formula_to_html
 - ReactionSystem.__init__ got a new kwarg: substance_factory
 - ReactionSystem raises ValueError if it contains duplicate instances of Reaction
 - ReactionSystem got a new method: as_per_substance_dict (inverse of as_per_substance_array)

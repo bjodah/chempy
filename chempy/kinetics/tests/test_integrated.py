@@ -21,7 +21,7 @@ else:
 @requires('sympy')
 def test_pseudo_irrev():
     f = pseudo_irrev(t, kf, P0, -t0, excess_C, limiting_C, eps_l,
-                     exp=sympy.exp).subs(excl_params)
+                     backend=sympy).subs(excl_params)
     dfdt = f.diff(t)
     num_dfdt = dfdt.subs(subsd)
     assert (num_dfdt - (
@@ -32,7 +32,7 @@ def test_pseudo_irrev():
 @requires('sympy')
 def test_pseudo_rev():
     f = pseudo_rev(t, kf, P0, -t0, excess_C, limiting_C, eps_l,
-                   beta, exp=sympy.exp).subs(excl_params)
+                   beta, backend=sympy).subs(excl_params)
     dfdt = f.diff(t)
     num_dfdt = dfdt.subs(subsd)
     assert (num_dfdt - (
@@ -43,7 +43,7 @@ def test_pseudo_rev():
 @requires('sympy')
 def test_binary_irrev():
     f = binary_irrev(t, kf, P0, -t0, excess_C, limiting_C, eps_l,
-                     exp=sympy.exp).subs(excl_params)
+                     backend=sympy).subs(excl_params)
     dfdt = f.diff(t)
     num_dfdt = dfdt.subs(subsd)
     assert (num_dfdt - (
@@ -54,7 +54,7 @@ def test_binary_irrev():
 @requires('sympy')
 def test_binary_rev():
     f = binary_rev(t, kf, P0, -t0, excess_C, limiting_C, eps_l,
-                   beta, exp=sympy.exp).subs(excl_params)
+                   beta, backend=sympy).subs(excl_params)
     dfdt = f.diff(t)
     num_dfdt = dfdt.subs(subsd)
     ans = kf*(limiting_C - f)*(excess_C - f) - kf/beta*f

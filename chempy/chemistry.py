@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
+from __future__ import (absolute_import, division, print_function)
 
-from __future__ import division
-
+from functools import reduce
 from itertools import chain
-from operator import itemgetter
-from collections import OrderedDict
+from operator import itemgetter, mul
+from collections import OrderedDict, defaultdict
 import sys
 
-from .arrhenius import arrhenius_equation
 from .util.arithmeticdict import ArithmeticDict
 from .util.parsing import (
     formula_to_composition, mass_from_composition, to_reaction,
-    formula_to_latex, formula_to_unicode
+    formula_to_latex, formula_to_unicode, formula_to_html
 )
-from .util.pyutil import defaultnamedtuple, deprecated
-from .units import to_unitless, default_constants, default_units
+from .units import to_unitless
+from ._util import intdiv
+from .util.pyutil import deprecated
 
 
 class Substance(object):
@@ -27,6 +27,7 @@ class Substance(object):
         will be stored in composition[0], prefer composition when possible
     latex_name: str
     unicode_name: str
+    html_name: str
     composition: dict or None (default)
         dict (int -> number) e.g. {atomic number: count}, zero has special
         meaning (net charge)
@@ -68,7 +69,10 @@ class Substance(object):
 
     """
 
-    attrs = ('name', 'latex_name', 'unicode_name', 'composition', 'other_properties')
+    attrs = (
+        'name', 'latex_name', 'unicode_name', 'html_name',
+        'composition', 'other_properties'
+    )
 
     @property
     def charge(self):
@@ -102,11 +106,12 @@ class Substance(object):
         """
         return self.mass*units.g/units.mol
 
-    def __init__(self, name=None, charge=None, latex_name=None,
-                 unicode_name=None, composition=None, other_properties=None):
+    def __init__(self, name=None, charge=None, latex_name=None, unicode_name=None,
+                 html_name=None, composition=None, other_properties=None):
         self.name = name
-        self.unicode_name = unicode_name
         self.latex_name = latex_name
+        self.unicode_name = unicode_name
+        self.html_name = html_name
         self.composition = composition or {}
 
         if 0 in self.composition:
@@ -144,6 +149,7 @@ class Substance(object):
 
         return cls(formula, latex_name=formula_to_latex(formula),
                    unicode_name=formula_to_unicode(formula),
+                   html_name=formula_to_html(formula),
                    composition=formula_to_composition(formula),
                    **kwargs)
 
@@ -153,6 +159,9 @@ class Substance(object):
 
     def __str__(self):
         return str(self.name)
+
+    def _repr_html_(self):
+        return self.html_name
 
     @staticmethod
     def composition_keys(substance_iter):
@@ -180,7 +189,7 @@ class Species(Substance):
         self.phase_idx = phase_idx
 
     @property
-    @deprecated(last_supported_version='0.3.0', will_be_missing_in='0.4.0')
+    @deprecated(last_supported_version='0.3.0', will_be_missing_in='0.5.0')
     def precipitate(self):
         """ deprecated attribute, provided for compatibility for now """
         return self.phase_idx > 0
@@ -272,7 +281,7 @@ class Species(Substance):
 
 
 @deprecated(last_supported_version='0.3.0',
-            will_be_missing_in='0.4.0', use_instead=Species)
+            will_be_missing_in='0.5.0', use_instead=Species)
 class Solute(Substance):
     """ [DEPRECATED] Use `.Species` instead
 
@@ -292,6 +301,7 @@ class Solute(Substance):
             kwargs['precipitate'] = True
         return cls(formula, latex_name=formula_to_latex(formula),
                    unicode_name=formula_to_unicode(formula),
+                   html_name=formula_to_html(formula),
                    composition=formula_to_composition(formula),
                    **kwargs)
 
@@ -321,27 +331,44 @@ class Reaction(object):
 
     Parameters
     ----------
-    reac: dict (str -> int)
-    prod: dict (str -> int)
-    param: float or callable
-    inact_reac: dict (optional)
-    inact_prod: dict (optional)
-    name: str (optional)
-    k: deprecated (alias for param)
-    ref: object
+    reac : dict (str -> int)
+    prod : dict (str -> int)
+    param : float or callable
+    inact_reac : dict (optional)
+    inact_prod : dict (optional)
+    name : str (optional)
+    k : deprecated (alias for param)
+    ref : object
         reference
-    other_properties: dict (optional)
+    other_properties : dict (optional)
+    checks : iterable of str
+        raises value error if any method check_%s returns False
+        for all %s in checks.
+
+    Examples
+    --------
+    >>> r = Reaction({'H2': 2, 'O2': 1}, {'H2O': 2})
+    >>> r.keys() == {'H2', 'O2', 'H2O'}
+    True
+    >>> r.order()
+    3
+    >>> r.net_stoich(['H2', 'H2O', 'O2'])
+    (-2, 2, -1)
+    >>> print(r)
+    2 H2 + O2 -> 2 H2O; None
 
     """
 
     str_arrow = '->'
     latex_arrow = r'\rightarrow'
     unicode_arrow = u'→'
+    html_arrow = '&rarr;'
     param_char = 'k'  # convention
 
-    def __init__(self, reac, prod, param=None, inact_reac=None,
-                 inact_prod=None, name=None, ref=None,
-                 other_properties=None):
+    def __init__(
+            self, reac, prod, param=None, inact_reac=None, inact_prod=None,
+            name=None, ref=None, other_properties=None,
+            checks=('any_effect', 'all_positive', 'all_integral')):
         self.reac = reac
         self.prod = prod
         self.param = param
@@ -350,6 +377,14 @@ class Reaction(object):
         self.name = name
         self.ref = ref
         self.other_properties = other_properties or {}
+
+        from .kinetics.rates import RateExpr
+        if isinstance(self.param, RateExpr) and self.param.rxn is None:
+            self.param.rxn = self  # register instance in rate expression
+
+        for check in checks:
+            if not getattr(self, 'check_'+check)():
+                raise ValueError("Check failed %s" % check)
 
     @classmethod
     def from_string(cls, string, substance_keys, globals_=None):
@@ -382,6 +417,28 @@ class Reaction(object):
             if ' ' in substance_keys:
                 substance_keys = substance_keys.split()
         return to_reaction(string, substance_keys, cls.str_arrow, cls, globals_)
+
+    def check_any_effect(self):
+        """ Checks if the reaction has any effect """
+        if not any(self.net_stoich(self.keys())):
+            return False
+        return True
+
+    def check_all_positive(self):
+        """ Checks if all stoichiometric coefficients are positive """
+        for cont in (self.reac, self.prod, self.inact_reac, self.inact_prod):
+            for v in cont.values():
+                if v < 0:
+                    return False
+            return True
+
+    def check_all_integral(self):
+        """ Checks if all stoichiometric coefficents are integers """
+        for cont in (self.reac, self.prod, self.inact_reac, self.inact_prod):
+            for v in cont.values():
+                if v != type(v)(int(v)):
+                    return False
+        return True
 
     def __eq__(lhs, rhs):
         if not isinstance(lhs, Reaction) or not isinstance(rhs, Reaction):
@@ -468,15 +525,17 @@ class Reaction(object):
         _str = kwargs.get('_str', str)
         return _str("{}{} {} {}{}").format(*self._get_str_parts(*args, **kwargs))
 
-    def __str__(self):
+    def _str_param(self, fmt='%.3g'):
         try:
-            str_param = '%.3g %s' % (self.param, self.param.dimensionality)
+            return fmt + ' %s' % (self.param, self.param.dimensionality)
         except AttributeError:
             try:
-                str_param = '%.3g' % self.param
+                return fmt % self.param
             except TypeError:
-                str_param = str(self.param)
-        s = '; ' + str_param
+                return str(self.param)
+
+    def __str__(self):
+        s = '; ' + self._str_param()
         return self._get_str('name', 'str_arrow', {
             k: k for k in chain(self.reac.keys(), self.prod.keys(),
                                 self.inact_reac.keys(),
@@ -511,6 +570,20 @@ class Reaction(object):
         """
         return self._get_str('unicode_name', 'unicode_arrow', substances,
                              _str=str if sys.version_info[0] > 2 else unicode)
+
+    def html(self, substances):
+        """ Returns a HTML representation of the reaction
+
+        Examples
+        --------
+        >>> keys = 'H2O H+ OH-'.split()
+        >>> subst = {k: Substance.from_formula(k) for k in keys}
+        >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", subst)
+        >>> r.html(subst)
+        'H<sub>2</sub>O &rarr; H<sup>+</sup> + OH<sup>-</sup>'
+
+        """
+        return self._get_str('html_name', 'html_arrow', substances)
 
     def _violation(self, substances, attr):
         net = 0.0
@@ -592,68 +665,6 @@ def equilibrium_quotient(concs, stoich):
     return tot
 
 
-class ArrheniusRate(defaultnamedtuple('ArrheniusRate', 'A Ea ref', [None])):
-    """ Kinetic data in the form of an Arrhenius parametrization
-
-    Parameters
-    ----------
-    Ea: float
-        activation energy
-    A: float
-        preexponential prefactor (Arrhenius type eq.)
-    ref: object (default: None)
-        arbitrary reference (e.g. string representing citation key)
-
-    Examples
-    --------
-    >>> k = ArrheniusRate(1e13, 40e3)
-    >>> '%.5g' % k(298.15)
-    '9.8245e+05'
-
-    """
-    def __call__(self, T, constants=None, units=None, exp=None):
-        """ See :func:`chempy.arrhenius.arrhenius_equation`. """
-        return arrhenius_equation(self.A, self.Ea, T, constants=constants,
-                                  units=units, exp=exp)
-
-    @staticmethod
-    def _fmt(arg, precision, tex):
-        if tex:
-            unit_str = arg.dimensionality.latex.strip('$')
-        else:
-            from quantities.markup import config
-            attr = 'unicode' if config.use_unicode else 'string'
-            unit_str = getattr(arg.dimensionality, attr)
-        return precision.format(float(arg.magnitude)) + " " + unit_str
-
-    def format(self, precision, tex=False):
-        try:
-            str_A = self._fmt(self.A, precision, tex)
-            str_Ea = self._fmt(self.Ea, precision, tex)
-        except:
-            str_A = precision.format(self.A)
-            str_Ea = precision.format(self.Ea)
-        return str_A, str_Ea
-
-    def equation_as_string(self, precision, tex=False):
-        if tex:
-            return r"{}\exp \left(\frac{{{}}}{{RT}} \right)".format(
-                *self.format(precision, tex))
-        else:
-            return "{}*exp({}/(R*T))".format(*self.format(precision, tex))
-
-    def __str__(self):
-        return self.equation_as_string('{0:.5g}')
-
-
-class ArrheniusRateWithUnits(ArrheniusRate):
-    def __call__(self, T, constants=default_constants, units=default_units,
-                 exp=None):
-        """ See :func:`chempy.arrhenius.arrhenius_equation`. """
-        return super(ArrheniusRateWithUnits, self).__call__(
-            T, constants, units, exp)
-
-
 class Equilibrium(Reaction):
     """ Represents an equilibrium reaction
 
@@ -663,6 +674,7 @@ class Equilibrium(Reaction):
     str_arrow = '='
     latex_arrow = r'\rightleftharpoons'
     unicode_arrow = '⇌'
+    html_arrow = '&harr;'
     param_char = 'K'  # convention
 
     def as_reactions(self, state=None, kf=None, kb=None, units=None):
@@ -730,12 +742,34 @@ class Equilibrium(Reaction):
             result += n
         return result
 
-    def __rmul__(lhs, rhs):  # This works on both Py2 and Py3
-        if not isinstance(rhs, int) or not isinstance(lhs, Equilibrium):
+    def __rmul__(self, other):  # This works on both Py2 and Py3
+        try:
+            other_is_int = other.is_integer
+        except AttributeError:
+            other_is_int = isinstance(other, int)
+        if not other_is_int or not isinstance(self, Equilibrium):
             return NotImplemented
-        return Equilibrium(dict(rhs*ArithmeticDict(int, lhs.reac)),
-                           dict(rhs*ArithmeticDict(int, lhs.prod)),
-                           lhs.param**rhs)
+        param = None if self.param is None else self.param**other
+        if other < 0:
+            other *= -1
+            flip = True
+        else:
+            flip = False
+        reac = dict(other*ArithmeticDict(int, self.reac))
+        prod = dict(other*ArithmeticDict(int, self.prod))
+        inact_reac = dict(other*ArithmeticDict(int, self.inact_reac))
+        inact_prod = dict(other*ArithmeticDict(int, self.inact_prod))
+        if flip:
+            reac, prod = prod, reac
+            inact_reac, inact_prod = inact_prod, inact_reac
+        return Equilibrium(reac, prod, param,
+                           inact_reac=inact_reac, inact_prod=inact_prod)
+
+    def __neg__(self):
+        return -1*self
+
+    def __mul__(self, other):
+        return other*self
 
     def __add__(lhs, rhs):
         keys = set()
@@ -752,10 +786,70 @@ class Equilibrium(Reaction):
                 prod[key] = n
             else:
                 pass  # n == 0
-        return Equilibrium(reac, prod, lhs.param * rhs.param)
+        if (lhs.param, rhs.param) == (None, None):
+            param = None
+        else:
+            param = lhs.param * rhs.param
+        return Equilibrium(reac, prod, param)
 
     def __sub__(lhs, rhs):
         return lhs + -1*rhs
+
+    @staticmethod
+    def eliminate(rxns, wrt):
+        """ Linear combination coefficients for elimination of a substance
+
+        Parameters
+        ----------
+        rxns : iterable of Equilibrium instances
+        wrt : str (substance key)
+
+        Examples
+        --------
+        >>> e1 = Equilibrium({'Cd+2': 4, 'H2O': 4}, {'Cd4(OH)4+4': 1, 'H+': 4}, 10**-32.5)
+        >>> e2 = Equilibrium({'Cd(OH)2(s)': 1}, {'Cd+2': 1, 'OH-': 2}, 10**-14.4)
+        >>> Equilibrium.eliminate([e1, e2], 'Cd+2')
+        [1, 4]
+        >>> print(1*e1 + 4*e2)
+        4 Cd(OH)2(s) + 4 H2O = 4 H+ + 8 OH- + Cd4(OH)4+4; 7.94e-91
+
+        """
+        import sympy
+        viol = [r.net_stoich([wrt])[0] for r in rxns]
+        factors = defaultdict(int)
+        for v in viol:
+            for f in sympy.primefactors(v):
+                factors[f] = max(factors[f], sympy.Abs(v//f))
+        rcd = reduce(mul, (k**v for k, v in factors.items()))
+        viol[0] *= -1
+        return [rcd//v for v in viol]
+
+    def cancel(self, rxn):
+        """ multiplier of how many times rxn can be added/subtracted
+
+        Parameters
+        ----------
+        rxn : Equilibrium
+
+        Examples
+        --------
+        >>> e1 = Equilibrium({'Cd(OH)2(s)': 4, 'H2O': 4},
+        ...                  {'Cd4(OH)4+4': 1, 'H+': 4, 'OH-': 8}, 7.94e-91)
+        >>> e2 = Equilibrium({'H2O': 1}, {'H+': 1, 'OH-': 1}, 10**-14)
+        >>> e1.cancel(e2)
+        -4
+        >>> print(e1 - 4*e2)
+        4 Cd(OH)2(s) = 4 OH- + Cd4(OH)4+4; 7.94e-35
+
+        """
+        keys = rxn.keys()
+        s1 = self.net_stoich(keys)
+        s2 = rxn.net_stoich(keys)
+        candidate = float('inf')
+        for v1, v2 in zip(s1, s2):
+            r = intdiv(-v1, v2)
+            candidate = min(candidate, r, key=abs)
+        return candidate
 
 
 class ReactionSystem(object):
@@ -779,7 +873,7 @@ class ReactionSystem(object):
     ----------
     rxns: list of objects
         sequence of :class:`Reaction` instances
-    substances: OrderedDict
+    substances: OrderedDict or string or iterable of strings/Substance
         mapping substance name to substance index
     ns: int
         number of substances
@@ -804,6 +898,9 @@ class ReactionSystem(object):
     def __init__(self, rxns, substances, name=None, check_balance=None,
                  substance_factory=Substance):
         self.rxns = rxns
+        if substances is None:
+            substances = set.union(*[set(rxn.keys()) for rxn in self.rxns])
+
         if isinstance(substances, OrderedDict):
             self.substances = substances
         elif isinstance(substances, str):
@@ -831,6 +928,11 @@ class ReactionSystem(object):
         if check_balance:
             self._balance_check()
         self._duplicate_check()
+
+    def _repr_html_(self):
+        def _format(r):
+            return r.html(self.substances) + '; ' + r._str_param()
+        return '<br>'.join(map(_format, self.rxns))
 
     def _duplicate_check(self):
         for i1, rxn1 in enumerate(self.rxns):
