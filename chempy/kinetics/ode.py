@@ -78,32 +78,15 @@ def get_odesys(rsys, include_params=False, substitutions=None,
     if 'names' not in kwargs:
         kwargs['names'] = list(rsys.substances.values())  # pyodesys>=0.5.3
 
-    if unit_registry is None:
-        def _param(rxn):
-            if isinstance(rxn.param, RateExpr):
-                return rxn.param
-            else:
-                try:
-                    return rxn.param._as_RateExpr(rxn)
-                except AttributeError:
-                    return MassAction([rxn.param], rxn)
-        r_exprs = [_param(rxn) for rxn in rsys.rxns]
-    else:
-        # We need to make rsys_params unitless and create
-        # a post- & pre-processor for SymbolicSys
-        r_exprs = []
-        p_units = []
-        for ri, rxn in enumerate(rsys.rxns):
-            rate_expr = rxn.param
-            if not isinstance(rate_expr, RateExpr):
-                rate_expr = MassAction([rate_expr], rxn)  # default
-            _p = rate_expr.args
-
-            _pu = [default_unit_in_registry(_, unit_registry) for _ in _p]
-            p_units.extend(_pu)
-            _rsys_params = [to_unitless(p, unit) for p, unit in zip(_p, _pu)]
-            r_exprs.append(rate_expr.__class__(
-                _rsys_params, rxn, rate_expr.arg_keys, rate_expr.ref))
+    def _param(rxn):
+        if isinstance(rxn.param, RateExpr):
+            return rxn.param
+        else:
+            try:
+                return rxn.param._as_RateExpr(rxn)
+            except AttributeError:
+                return MassAction([rxn.param], rxn)
+    r_exprs = [_param(rxn) for rxn in rsys.rxns]
 
     _original_state_keys = set.union(*(set(ratex.state_keys) for ratex in r_exprs))
     _from_subst = set()
@@ -122,6 +105,7 @@ def get_odesys(rsys, include_params=False, substitutions=None,
         else:
             _passive_subst[key] = v
     state_keys = list(filter(lambda x: x not in substitutions, _original_state_keys.union(_from_subst)))
+
 
     param_keys = []
     p_defaults = []
@@ -149,10 +133,24 @@ def get_odesys(rsys, include_params=False, substitutions=None,
                 dict(zip(state_keys+param_keys, p))
             )
     else:
+        # We need to make rsys_params unitless and create
+        # a pre- & post-processor for SymbolicSys
+        p_units = [get_derived_unit(unit_registry, k) for k in state_keys]
+        new_r_exprs = []
+        for ratex in r_exprs:
+            _pu = [default_unit_in_registry(_, unit_registry) for _ in ratex.args]
+            p_units.extend(_pu)
+            _rsys_params = [to_unitless(p, unit) for p, unit in zip(ratex.args, _pu)]
+            new_r_exprs.append(ratex.__class__(
+                _rsys_params, ratex.rxn, ratex.arg_keys, ratex.ref))
+        r_exprs = new_r_exprs
+
+
         time_unit = get_derived_unit(unit_registry, 'time')
         conc_unit = get_derived_unit(unit_registry, 'concentration')
 
         def pre_processor(x, y, p):
+            print(x, y, p, p_units, state_keys, param_keys)  # DO-NOT-MERGE!
             return (
                 to_unitless(x, time_unit),
                 rsys.as_per_substance_array(to_unitless(y, conc_unit)),

@@ -9,8 +9,8 @@ except ImportError:
 from chempy.arrhenius import ArrheniusParam
 from chempy.chemistry import Substance, Reaction, ReactionSystem
 from chempy.units import (
-    default_units, SI_base_registry, get_derived_unit, allclose, units_library,
-    to_unitless
+    SI_base_registry, get_derived_unit, allclose, units_library,
+    to_unitless, default_units as u
 )
 from chempy.util.testing import requires
 from .test_rates import _get_SpecialFraction_rsys
@@ -43,18 +43,18 @@ def test_get_odesys_1():
 def test_get_odesys__with_units():
     a = Substance('A')
     b = Substance('B')
-    molar = default_units.molar
-    second = default_units.second
+    molar = u.molar
+    second = u.second
     r = Reaction({'A': 2}, {'B': 1}, param=1e-3/molar/second)
     rsys = ReactionSystem([r], [a, b])
     odesys = get_odesys(rsys, include_params=True,
                         unit_registry=SI_base_registry)
     c0 = {
-        'A': 13*default_units.mol / default_units.metre**3,
-        'B': .2 * default_units.molar
+        'A': 13*u.mol / u.metre**3,
+        'B': .2 * u.molar
     }
     conc_unit = get_derived_unit(SI_base_registry, 'concentration')
-    t = np.linspace(0, 10)*default_units.hour
+    t = np.linspace(0, 10)*u.hour
     xout, yout, info = odesys.integrate(
         t, rsys.as_per_substance_array(c0, unit=conc_unit))
     Aref = dimerization_irrev(3600, 1e-6, 13.0)
@@ -66,10 +66,10 @@ def test_get_odesys__with_units():
 
 @requires(units_library, 'pyodesys')
 def test_get_odesys_2():
-    M = default_units.molar
-    s = default_units.second
-    mol = default_units.mol
-    m = default_units.metre
+    M = u.molar
+    s = u.second
+    mol = u.mol
+    m = u.metre
     substances = list(map(Substance, 'H2O H+ OH-'.split()))
     dissociation = Reaction({'H2O': 1}, {'H+': 1, 'OH-': 1}, 2.47e-5/s)
     recombination = Reaction({'H+': 1, 'OH-': 1}, {'H2O': 1}, 1.37e11/M/s)
@@ -78,7 +78,7 @@ def test_get_odesys_2():
         rsys, include_params=True, unit_registry=SI_base_registry,
         output_conc_unit=M)
     c0 = {'H2O': 55.4*M, 'H+': 1e-7*M, 'OH-': 1e-4*mol/m**3}
-    x, y, p = odesys.pre_process(-42*default_units.second,
+    x, y, p = odesys.pre_process(-42*u.second,
                                  rsys.as_per_substance_array(c0, unit=M))
     fout = odesys.f_cb(x, y, p)
 
@@ -107,7 +107,6 @@ def test_SpecialFraction():
 
 @requires(units_library, 'pyodesys')
 def test_SpecialFraction_with_units():
-    u = default_units
     k, kprime = 3.142 * u.s**-1 * u.molar**-0.5, 2.718
     rsys = _get_SpecialFraction_rsys(k, kprime)
     odesys = get_odesys(rsys, include_params=True,
@@ -161,10 +160,28 @@ def test_get_ode__Radiolytic():
     assert np.all(abs((fout - ref)/ref) < 1e-14)
 
 
+@requires('pyodesys', units_library)
+def test_get_ode__Radiolytic__units():
+    rad = Radiolytic([2.4e-7*u.mol/u.joule])
+    rxn = Reaction({'A': 4, 'B': 1}, {'C': 3, 'D': 2}, rad)
+    rsys = ReactionSystem([rxn], 'A B C D')
+    odesys = get_odesys(rsys, include_params=True,
+                        unit_registry=SI_base_registry)
+    conc = {'A': 3*u.molar, 'B': 5*u.molar, 'C': 11*u.molar, 'D': 13*u.molar}
+    x, y, p = odesys.pre_process(-37*u.second, conc, {
+        'doserate': 0.4*u.gray/u.second,
+        'density': 0.998*u.kg/u.decimetre**3
+    })
+    fout = odesys.f_cb(x, y, p)
+    r = 2.4e-7*0.4*0.998 * u.molar/u.second
+    ref = [-4*r, -r, 3*r, 2*r]
+    assert np.all(abs((fout - ref)/ref) < 1e-14)
+
+
 @requires('pyodesys')
 def test_get_ode__Radiolytic__substitutions():
     def density(var, backend=None):
-        return 1 - 1e-3*(var['temperature']-273.15)  # silly
+        return 1 - 1e-3*(var['temperature'] - 273.15)  # silly
     rad = Radiolytic([2.4e-7])
     rxn = Reaction({'A': 4, 'B': 1}, {'C': 3, 'D': 2}, rad)
     rsys = ReactionSystem([rxn], 'A B C D')
@@ -174,5 +191,23 @@ def test_get_ode__Radiolytic__substitutions():
     x, y, p = odesys.pre_process(-37, conc, {'doserate': 0.4, 'temperature': 298.15})
     fout = odesys.f_cb(x, y, p)
     r = 2.4e-7*0.4*density({'temperature': 298.15})
+    ref = [-4*r, -r, 3*r, 2*r]
+    assert np.all(abs((fout - ref)/ref) < 1e-14)
+
+
+@requires('pyodesys', units_library)
+def test_get_ode__Radiolytic__substitutions():
+    def density(var, backend=None):
+        drhodT = -1e-3 * u.kg / u.decimetre**3
+        return 1*u.kg/u.decimetre**3 + drhodT*(var['temperature'] - 273.15*u.kelvin)  # silly
+    rad = Radiolytic([2.4e-7*u.mol/u.joule])
+    rxn = Reaction({'A': 4, 'B': 1}, {'C': 3, 'D': 2}, rad)
+    rsys = ReactionSystem([rxn], 'A B C D')
+    odesys = get_odesys(rsys, include_params=True,
+                        substitutions={'density': (['temperature'], density)})
+    conc = {'A': 3*u.molar, 'B': 5*u.molar, 'C': 11*u.molar, 'D': 13*u.molar}
+    x, y, p = odesys.pre_process(-37*u.second, conc, {'doserate': 0.4*u.gray/u.second, 'temperature': 298.15*u.kelvin})
+    fout = odesys.f_cb(x, y, p)
+    r = 2.4e-7*0.4*0.975*u.molar/u.second
     ref = [-4*r, -r, 3*r, 2*r]
     assert np.all(abs((fout - ref)/ref) < 1e-14)

@@ -113,6 +113,8 @@ def get_derived_unit(registry, key):
         'density': registry['mass']/registry['length']**3,
     }
     derived['radiolytic_yield'] = registry['amount']/derived['energy']
+    derived['doserate'] = derived['energy']/registry['mass']/registry['time']
+
     try:
         return derived[key]
     except KeyError:
