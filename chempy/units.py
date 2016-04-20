@@ -218,6 +218,8 @@ def to_unitless(value, new_unit=None):
         for k in new_value:
             new_value[k] = to_unitless(new_value[k], new_unit)
         return new_value
+    if isinstance(value, (int, float)) and new_unit in (1, None):
+        return value
     try:
         result = (value*pq.dimensionless/new_unit).rescale(pq.dimensionless)
         if result.ndim == 0:
@@ -293,3 +295,20 @@ def linspace(start, stop, num=50):
     start_ = to_unitless(start, unit)
     stop_ = to_unitless(stop, unit)
     return np.linspace(start_, stop_, num)*unit
+
+def _sum(iterable):
+    try:
+        result = next(iterable)
+    except TypeError:
+        result = iterable[0]
+        for elem in iterable[1:]:
+            result += elem
+        return result
+    else:
+        try:
+            while True:
+                result += next(iterable)
+        except StopIteration:
+            return result
+        else:
+            raise ValueError("Not sure how this point was reached")

@@ -13,7 +13,7 @@ from ..units import (
     SI_base_registry, unitless_in_registry, get_physical_quantity,
     to_unitless, magnitude, default_unit_in_registry,
     unit_of, unit_registry_to_human_readable, units_library,
-    unit_registry_from_human_readable, default_units as u
+    unit_registry_from_human_readable, _sum, default_units as u
 )
 
 
@@ -241,3 +241,9 @@ def test_default_unit_in_registry():
 
     assert default_unit_in_registry(3, SI_base_registry) == 1
     assert default_unit_in_registry(3.0, SI_base_registry) == 1
+
+
+@requires(units_library)
+def test__sum():
+    # sum() does not work here...
+    assert (_sum([0.1*u.metre, 1*u.decimetre]) - 2*u.decimetre)/u.metre == 0
