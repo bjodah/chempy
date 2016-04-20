@@ -45,6 +45,16 @@ class ArrheniusMassAction(MassAction):
             variables, (k,), backend=backend)
 
 
+class Radiolytic(RateExpr):
+    """ Arguments: yield [amount/volume] """
+
+    state_keys = ('doserate', 'density')
+
+    def __call__(self, variables, args=None, backend=math):
+        g = self.arg(variables, args, 0)
+        return g*variables['doserate']*variables['density']
+
+
 def law_of_mass_action_rates(conc, rsys, variables=None):
     """ Returns a generator of reaction rate expressions
 

@@ -1002,7 +1002,7 @@ class ReactionSystem(object):
 
     def _duplicate_check(self):
         for i1, rxn1 in enumerate(self.rxns):
-            for i2, rxn2 in enumerate(self.rxns[i1+1:]):
+            for i2, rxn2 in enumerate(self.rxns[i1+1:], i1+1):
                 if rxn1 == rxn2:
                     raise ValueError("Duplicate reactions %d & %d" % (i1, i2))
 

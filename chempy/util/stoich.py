@@ -86,7 +86,7 @@ def decompose_yields(yields, rxns, atol=1e-10):
     rsys = ReactionSystem(rxns, rxn_keys)
     A = rsys.net_stoichs(yields.keys())
     b = list(yields.values())
-    unit = unit_of(b[0])
+    unit = unit_of(b[0], simplified=True)
     x, residuals, rank, s = np.linalg.lstsq(A.T, to_unitless(b, unit))
     if len(residuals) > 0:
         if np.any(residuals > atol):

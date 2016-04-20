@@ -177,7 +177,7 @@ def is_unitless(expr):
     return True
 
 
-def unit_of(expr):
+def unit_of(expr, simplified=False):
     """ Returns the unit of a quantity
 
     Examples
@@ -189,7 +189,10 @@ def unit_of(expr):
 
     """
     try:
-        return expr.units
+        if simplified:
+            return expr.units.simplified
+        else:
+            return expr.units
     except AttributeError:
         return 1
 

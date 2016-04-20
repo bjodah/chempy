@@ -14,7 +14,7 @@ from chempy.units import (
 )
 from chempy.util.testing import requires
 from .test_rates import _get_SpecialFraction_rsys
-from ..rates import ArrheniusMassAction
+from ..rates import ArrheniusMassAction, Radiolytic
 from ..ode import get_odesys
 from ..integrated import dimerization_irrev
 
@@ -145,3 +145,17 @@ def test_get_ode__ArrheniusParam():
     ref = 3*1e10*np.exp(-40e3/8.314472/200)
     assert abs((fout[0] + ref)/ref) < 1e-14
     assert abs((fout[1] - ref)/ref) < 1e-14
+
+
+@requires('pyodesys')
+def test_get_ode__Radiolytic():
+    rad = Radiolytic([2.4e-7])
+    rxn = Reaction({'A': 4, 'B': 1}, {'C': 3, 'D': 2}, rad)
+    rsys = ReactionSystem([rxn], 'A B C D')
+    odesys = get_odesys(rsys, include_params=True)
+    conc = {'A': 3, 'B': 5, 'C': 11, 'D': 13}
+    x, y, p = odesys.pre_process(-37, conc, {'doserate': 0.4, 'density': 0.998})
+    fout = odesys.f_cb(x, y, p)
+    r = 2.4e-7*0.4*0.998
+    ref = [-4*r, -r, 3*r, 2*r]
+    assert np.all(abs((fout - ref)/ref) < 1e-14)

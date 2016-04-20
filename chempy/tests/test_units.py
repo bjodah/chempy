@@ -69,6 +69,8 @@ def test_is_unitless():
 def test_unit_of():
     assert unit_of(0.1*u.metre/u.second) == u.metre/u.second
     assert unit_of(7) == 1
+    assert unit_of(u.gray).dimensionality == u.gray.dimensionality
+    assert unit_of(u.gray, simplified=True).dimensionality == (u.joule/u.kg).simplified.dimensionality
 
 
 @requires(units_library)

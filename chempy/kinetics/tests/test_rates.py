@@ -4,9 +4,9 @@ from __future__ import (absolute_import, division, print_function)
 import math
 
 from chempy import Reaction, ReactionSystem
-from chempy.units import units_library, default_units as u
+from chempy.units import to_unitless, units_library, default_units as u
 from chempy.util.testing import requires
-from ..rates import RateExpr, MassAction, ArrheniusMassAction
+from ..rates import RateExpr, MassAction, ArrheniusMassAction, Radiolytic
 
 
 class SpecialFraction(RateExpr):
@@ -100,3 +100,21 @@ def test_ArrheniusMassAction__units():
         var = dict(zip(['A', 'B', 'C', T_], params))
         r = ref(var)
         assert abs((ama(var) - r)/r) < 1e-14
+
+
+def test_Radiolytic():
+    r = Radiolytic([2.1e-7])
+    res = r({'doserate': 0.15, 'density': 0.998})
+    assert abs(res - 0.15*0.998*2.1e-7) < 1e-15
+
+
+@requires(units_library)
+def test_Radiolytic__units():
+
+    def _check(r):
+        res = r({'doserate': 0.15*u.gray/u.second, 'density': 0.998*u.kg/u.decimetre**3})
+        ref = 0.15*0.998*2.1e-7*u.molar/u.second
+        assert abs(to_unitless((res - ref)/ref)) < 1e-15
+
+    _check(Radiolytic([2.1e-7*u.mol/u.joule]))
+    _check(Radiolytic([2.0261921896167396*u.per100eV]))
