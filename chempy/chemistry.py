@@ -527,7 +527,7 @@ class Reaction(object):
 
     def _str_param(self, fmt='%.3g'):
         try:
-            return fmt + ' %s' % (self.param, self.param.dimensionality)
+            return (fmt + ' %s') % (self.param, self.param.dimensionality)
         except AttributeError:
             try:
                 return fmt % self.param
