@@ -525,14 +525,17 @@ class Reaction(object):
         _str = kwargs.get('_str', str)
         return _str("{}{} {} {}{}").format(*self._get_str_parts(*args, **kwargs))
 
-    def _str_param(self, fmt='%.3g'):
+    def _str_param(self, magnitude_fmt=lambda x: '%.3g' % x, unit_fmt=str, _str=str):
         try:
-            return (fmt + ' %s') % (self.param, self.param.dimensionality)
+            magnitude_str = magnitude_fmt(self.param.magnitude)
+            unit_str = unit_fmt(self.param.dimensionality)
         except AttributeError:
             try:
-                return fmt % self.param
+                return magnitude_fmt(self.param)
             except TypeError:
                 return str(self.param)
+        else:
+            return magnitude_str + _str(' ') + unit_str
 
     def __str__(self):
         s = '; ' + self._str_param()
@@ -542,21 +545,38 @@ class Reaction(object):
                                 self.inact_prod.keys())
         }) + s
 
-    def latex(self, substances):
-        """ Returns a LaTeX representation of the reaction
+    def latex(self, substances, with_param=False, magnitude_fmt=lambda m: r'\num{%s}' % m):
+        r""" Returns a LaTeX representation of the reaction
+
+        Parameters
+        ----------
+        substances: dict
+            mapping substance keys to Substance instances
+        with_param: bool
+            whether to print the parameter (default: False)
+        magnitude_fmt: callback
+            how to format the number (default requires siunitx's num)
 
         Examples
         --------
         >>> keys = 'H2O H+ OH-'.split()
         >>> subst = {k: Substance.from_formula(k) for k in keys}
         >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", subst)
-        >>> r.latex(subst) == r'H_{2}O \\rightarrow H^{+} + OH^{-}'
+        >>> r.latex(subst) == r'H_{2}O \rightarrow H^{+} + OH^{-}'
+        True
+        >>> r2 = Reaction.from_string("H2O -> H+ + OH-; 1e-8/molar/second", subst)
+        >>> ref = r'H_{2}O \rightarrow H^{+} + OH^{-}; 1\cdot 10^{-8} $\mathrm{\frac{1}{(s{\cdot}M)}}$'
+        >>> r2.latex(subst, with_param=True) == ref
         True
 
         """
-        return self._get_str('latex_name', 'latex_arrow', substances)
+        res = self._get_str('latex_name', 'latex_arrow', substances)
+        if with_param and self.param is not None:
+            from .util.parsing import _number_to_scientific_latex as _fmt
+            res += '; %s' % self._str_param(magnitude_fmt=_fmt, unit_fmt=lambda dim: dim.latex)
+        return res
 
-    def unicode(self, substances):
+    def unicode(self, substances, with_param=False):
         u""" Returns a unicode string representation of the reaction
 
         Examples
@@ -566,12 +586,24 @@ class Reaction(object):
         >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", subst)
         >>> r.unicode(subst) == u'H₂O → H⁺ + OH⁻'
         True
+        >>> r2 = Reaction.from_string("H2O -> H+ + OH-; 1e-8/molar/second", subst)
+        >>> r2.unicode(subst, with_param=True) == u'H₂O → H⁺ + OH⁻; 1·10⁻⁸ 1/(s·M)'
+        True
 
         """
-        return self._get_str('unicode_name', 'unicode_arrow', substances,
-                             _str=str if sys.version_info[0] > 2 else unicode)
+        res = self._get_str('unicode_name', 'unicode_arrow', substances,
+                            _str=str if sys.version_info[0] > 2 else unicode)
+        if with_param and self.param is not None:
+            from .util.parsing import _number_to_scientific_unicode
+            res += u'; ' + self._str_param(
+                magnitude_fmt=_number_to_scientific_unicode,
+                unit_fmt=lambda dim: (
+                    dim.unicode if sys.version_info[0] > 2
+                    else dim.unicode.decode(encoding='utf-8')
+                ), _str=str if sys.version_info[0] > 2 else unicode)
+        return res
 
-    def html(self, substances):
+    def html(self, substances, with_param=False):
         """ Returns a HTML representation of the reaction
 
         Examples
@@ -581,9 +613,16 @@ class Reaction(object):
         >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", subst)
         >>> r.html(subst)
         'H<sub>2</sub>O &rarr; H<sup>+</sup> + OH<sup>-</sup>'
+        >>> r2 = Reaction.from_string("H2O -> H+ + OH-; 1e-8/molar/second", subst)
+        >>> r2.html(subst, with_param=True)
+        'H<sub>2</sub>O &rarr; H<sup>+</sup> + OH<sup>-</sup>&#59; 1&sdot;10<sup>-8</sup> 1/(s*M)'
 
         """
-        return self._get_str('html_name', 'html_arrow', substances)
+        res = self._get_str('html_name', 'html_arrow', substances)
+        if with_param and self.param is not None:
+            from .util.parsing import _number_to_scientific_html as _fmt
+            res += '&#59; ' + self._str_param(magnitude_fmt=_fmt)
+        return res
 
     def _violation(self, substances, attr):
         net = 0.0
@@ -858,26 +897,26 @@ class ReactionSystem(object):
 
     Parameters
     ----------
-    rxns: sequence
+    rxns : sequence
          sequence of :py:class:`Reaction` instances
-    substances: OrderedDict
-         mapping str -> Substance instances
-    name: string (optional)
+    substances : OrderedDict or string or None
+         mapping str -> Substance instances, None => deduced from reactions.
+    name : string (optional)
          Name of ReactionSystem (e.g. model name / citation key)
-    check_balance: bool (default: None)
+    check_balance : bool (default: None)
         if None => True if all substances has composition attribute.
-    substance_factory: callback
+    substance_factory : callback
         e.g. :meth:`Substance.from_formula`
 
     Attributes
     ----------
-    rxns: list of objects
+    rxns : list of objects
         sequence of :class:`Reaction` instances
-    substances: OrderedDict or string or iterable of strings/Substance
+    substances : OrderedDict or string or iterable of strings/Substance
         mapping substance name to substance index
-    ns: int
+    ns : int
         number of substances
-    nr: int
+    nr : int
         number of reactions
 
     Examples

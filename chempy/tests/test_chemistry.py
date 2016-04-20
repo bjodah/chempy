@@ -83,7 +83,10 @@ def test_Reaction():
     with pytest.raises(ValueError):
         Reaction({Hp: -1, OHm: -1}, {H2O: -1})
 
-    r4 = Reaction({Hp: 2, OHm: 1}, {H2O: 2}, 42.0)
+
+@requires(parsing_library)
+def test_Reaction_parsing():
+    r4 = Reaction({'H+': 2, 'OH-': 1}, {'H2O': 2}, 42.0)
     assert Reaction.from_string(str(r4), 'H+ OH- H2O') == r4
 
 

@@ -491,6 +491,24 @@ def formula_to_latex(formula, prefixes=None, **kwargs):
     return _formula_to_format(lambda x: '_{%s}' % x, lambda x: '^{%s}' % x,
                               formula, prefixes)
 
+
+def _number_to_scientific_latex(number, fmt='%.3g'):
+    r"""
+    Examples
+    --------
+    >>> _number_to_scientific_latex(3.14) == '3.14'
+    True
+    >>> _number_to_scientific_latex(3.14159265e-7)
+    '3.14\\cdot 10^{-7}'
+
+    """
+    s = fmt % number
+    if 'e' in s:
+        prefix, suffix = s.split('e')
+        return prefix + r'\cdot 10^{%s}' % str(int(suffix))
+    else:
+        return s
+
 _unicode_sub = {}
 
 for k, v in enumerate(u"₀₁₂₃₄₅₆₇₈₉"):
@@ -540,6 +558,24 @@ def formula_to_unicode(formula, prefixes=None, **kwargs):
         formula, prefixes)
 
 
+def _number_to_scientific_unicode(number, fmt='%.3g'):
+    u"""
+    Examples
+    --------
+    >>> _number_to_scientific_unicode(3.14) == u'3.14'
+    True
+    >>> _number_to_scientific_unicode(3.14159265e-7) == u'3.14·10⁻⁷'
+    True
+
+    """
+    s = fmt % number
+    if 'e' in s:
+        prefix, suffix = s.split('e')
+        return prefix + u'·10' + u''.join(map(_unicode_sup.get, str(int(suffix))))
+    else:
+        return s
+
+
 def formula_to_html(formula, prefixes=None, **kwargs):
     u""" Convert formula string to html string representation
 
@@ -571,3 +607,21 @@ def formula_to_html(formula, prefixes=None, **kwargs):
     return _formula_to_format(lambda x: '<sub>%s</sub>' % x,
                               lambda x: '<sup>%s</sup>' % x,
                               formula, prefixes)
+
+
+def _number_to_scientific_html(number, fmt='%.3g'):
+    """
+    Examples
+    --------
+    >>> _number_to_scientific_html(3.14) == '3.14'
+    True
+    >>> _number_to_scientific_html(3.14159265e-7)
+    '3.14&sdot;10<sup>-7</sup>'
+
+    """
+    s = fmt % number
+    if 'e' in s:
+        prefix, suffix = s.split('e')
+        return prefix + '&sdot;10<sup>' + str(int(suffix)) + '</sup>'
+    else:
+        return s
