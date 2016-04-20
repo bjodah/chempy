@@ -557,7 +557,7 @@ class Reaction(object):
         return self._get_str('latex_name', 'latex_arrow', substances)
 
     def unicode(self, substances):
-        u""" Returns a LaTeX representation of the reaction
+        u""" Returns a unicode string representation of the reaction
 
         Examples
         --------
