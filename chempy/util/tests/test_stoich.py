@@ -92,7 +92,6 @@ def test_decompose_yields__units_1():
 
     assert allclose(k, k_ref)
 
-
     G_H2O = [rxn.net_stoich(['H2O'])[0]*k[i] for i, rxn in enumerate(rxns)]
     ref = 4.64*u.per100eV
     assert abs((_sum(G_H2O)+ref)/ref) < 1e-3

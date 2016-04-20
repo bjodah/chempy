@@ -6,6 +6,7 @@ try:
 except ImportError:
     np = None
 
+from chempy.arrhenius import ArrheniusParam
 from chempy.chemistry import Substance, Reaction, ReactionSystem
 from chempy.units import (
     default_units, SI_base_registry, get_derived_unit, allclose, units_library,
@@ -128,5 +129,19 @@ def test_ode_with_global_parameters():
     x, y, p = odesys.pre_process(-37, conc, {'temperature': 298.15})
     fout = odesys.f_cb(x, y, p)
     ref = 3*1e10*np.exp(-40e3/8.3145/298.15)
+    assert abs((fout[0] + ref)/ref) < 1e-14
+    assert abs((fout[1] - ref)/ref) < 1e-14
+
+
+@requires('pyodesys')
+def test_get_ode__ArrheniusParam():
+    ap = ArrheniusParam(1e10, 40e3)
+    rxn = Reaction({'A': 1}, {'B': 1}, ap)
+    rsys = ReactionSystem([rxn], 'A B')
+    odesys = get_odesys(rsys, include_params=True)
+    conc = {'A': 3, 'B': 5}
+    x, y, p = odesys.pre_process(-37, conc, {'temperature': 200})
+    fout = odesys.f_cb(x, y, p)
+    ref = 3*1e10*np.exp(-40e3/8.314472/200)
     assert abs((fout[0] + ref)/ref) < 1e-14
     assert abs((fout[1] - ref)/ref) < 1e-14

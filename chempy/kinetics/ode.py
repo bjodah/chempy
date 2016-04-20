@@ -82,7 +82,10 @@ def get_odesys(rsys, include_params=False, global_params=None,
             if isinstance(rxn.param, RateExpr):
                 return rxn.param
             else:
-                return MassAction([rxn.param], rxn)
+                try:
+                    return rxn.param._as_RateExpr(rxn)
+                except AttributeError:
+                    return MassAction([rxn.param], rxn)
         r_exprs = [_param(rxn) for rxn in rsys.rxns]
     else:
         # We need to make rsys_params unitless and create

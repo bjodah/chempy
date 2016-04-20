@@ -296,6 +296,7 @@ def linspace(start, stop, num=50):
     stop_ = to_unitless(stop, unit)
     return np.linspace(start_, stop_, num)*unit
 
+
 def _sum(iterable):
     try:
         result = next(iterable)

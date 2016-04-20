@@ -8,6 +8,7 @@ from __future__ import (absolute_import, division, print_function)
 import numpy as np
 from chempy.units import unit_of, to_unitless
 
+
 def get_coeff_mtx(substances, stoichs):
     """
     Create a net stoichiometry matrix from reactions
