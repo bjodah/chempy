@@ -159,3 +159,20 @@ def test_get_ode__Radiolytic():
     r = 2.4e-7*0.4*0.998
     ref = [-4*r, -r, 3*r, 2*r]
     assert np.all(abs((fout - ref)/ref) < 1e-14)
+
+
+@requires('pyodesys')
+def test_get_ode__Radiolytic__substitutions():
+    def density(var, backend=None):
+        return 1 - 1e-3*(var['temperature']-273.15)  # silly
+    rad = Radiolytic([2.4e-7])
+    rxn = Reaction({'A': 4, 'B': 1}, {'C': 3, 'D': 2}, rad)
+    rsys = ReactionSystem([rxn], 'A B C D')
+    odesys = get_odesys(rsys, include_params=True,
+                        substitutions={'density': (['temperature'], density)})
+    conc = {'A': 3, 'B': 5, 'C': 11, 'D': 13}
+    x, y, p = odesys.pre_process(-37, conc, {'doserate': 0.4, 'temperature': 298.15})
+    fout = odesys.f_cb(x, y, p)
+    r = 2.4e-7*0.4*density({'temperature': 298.15})
+    ref = [-4*r, -r, 3*r, 2*r]
+    assert np.all(abs((fout - ref)/ref) < 1e-14)

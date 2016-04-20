@@ -45,7 +45,7 @@ def dCdt(rsys, rates):
     return f
 
 
-def get_odesys(rsys, include_params=False, global_params=None,
+def get_odesys(rsys, include_params=False, substitutions=None,
                SymbolicSys=None,
                unit_registry=None, output_conc_unit=None,
                output_time_unit=None, **kwargs):
@@ -57,8 +57,9 @@ def get_odesys(rsys, include_params=False, global_params=None,
     include_params : bool (default: False)
         whether rate constants should be included into the rate expressions or
         left as free parameters in the :class:`pyneqsys.SymbolicSys` instance.
-    global_params : dict, (optional)
-        shared state used by rate expressions (in respective Reaction.param).
+    substitutions : dict, optional
+        variable substitutions used by rate expressions (in respective Reaction.param).
+        values are allowed to be tuple like: (new_vars, callback)
     SymbolicSys : class (optional)
         default : :class:`pyneqsys.SymbolicSys`
     unit_registry: dict (optional)
@@ -104,7 +105,23 @@ def get_odesys(rsys, include_params=False, global_params=None,
             r_exprs.append(rate_expr.__class__(
                 _rsys_params, rxn, rate_expr.arg_keys, rate_expr.ref))
 
-    state_keys = list(set.union(*(set(ratex.state_keys) for ratex in r_exprs)))
+    _original_state_keys = set.union(*(set(ratex.state_keys) for ratex in r_exprs))
+    _from_subst = set()
+    _active_subst = {}
+    _passive_subst = {}
+    substitutions = substitutions or {}
+    for key, v in substitutions.items():
+        if key not in _original_state_keys:
+            raise ValueError("Substitution: '%s' does not appear in any rate expressions.")
+        if isinstance(v, tuple):
+            if len(v) != 2:
+                raise ValueError("Requires length 2 tuple")
+            new, cb = v
+            _from_subst.update(new)
+            _active_subst[key] = cb
+        else:
+            _passive_subst[key] = v
+    state_keys = list(filter(lambda x: x not in substitutions, _original_state_keys.union(_from_subst)))
 
     param_keys = []
     p_defaults = []
@@ -161,6 +178,9 @@ def get_odesys(rsys, include_params=False, global_params=None,
             zip(state_keys, p[:len(state_keys)]),
             zip(param_keys, p[len(state_keys):])
         ))
+        for k, act in _active_subst.items():
+            variables[k] = act(variables, backend=backend)
+        variables.update(_passive_subst)
         return dCdt(rsys, [rat(variables, backend=backend) for rat in r_exprs])
 
     return SymbolicSys.from_callback(
