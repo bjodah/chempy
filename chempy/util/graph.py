@@ -9,7 +9,7 @@ import tempfile
 
 
 def rsys2dot(rsys, tex=False, rprefix='r', rref0=1,
-             nodeparams='[label={} shape=diamond]'):
+             nodeparams='[label="{}" shape=diamond]', colors=('maroon', 'darkgreen')):
     """
     Returns list of lines of DOT (graph description language)
     formated graph.
@@ -38,8 +38,9 @@ def rsys2dot(rsys, tex=False, rprefix='r', rref0=1,
     def add_vertex(key, num, reac):
         snum = str(num) if num > 1 else ''
         name = getattr(rsys.substances[key], 'latex_name' if tex else 'name')
-        lines.append(ind + '"{}" -> "{}" [label ="{}"];\n'.format(
-            *((name, rid, snum) if reac else (rid, name, snum))
+        lines.append(ind + '"{}" -> "{}" [label ="{}",color={},fontcolor={}];\n'.format(
+            *((name, rid, snum, colors[0], colors[0]) if reac else
+              (rid, name, snum, colors[1], colors[1]))
         ))
 
     all_reac_stoichs = rsys.all_reac_stoichs()
@@ -48,7 +49,7 @@ def rsys2dot(rsys, tex=False, rprefix='r', rref0=1,
     for ri, rxn in enumerate(rsys.rxns):
         rid = rprefix + str(ri+rref0)
         lines.append(ind + '{')
-        lines.append(ind*2 + 'node ' + nodeparams.format(rid))
+        lines.append(ind*2 + 'node ' + nodeparams.format(rxn.name or rid))
         lines.append(ind*2 + rid)
         lines.append(ind + '}\n')
         for idx, key in enumerate(rsys.substances):

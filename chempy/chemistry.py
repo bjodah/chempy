@@ -355,7 +355,7 @@ class Reaction(object):
     >>> r.net_stoich(['H2', 'H2O', 'O2'])
     (-2, 2, -1)
     >>> print(r)
-    2 H2 + O2 -> 2 H2O; None
+    2 H2 + O2 -> 2 H2O
 
     """
 
@@ -505,10 +505,14 @@ class Reaction(object):
         return False
 
     def _get_str_parts(self, name_attr, arrow_attr, substances, _str=str):
+        def not_None(arg, default):
+            if arg is None:
+                return default
+            return arg
         nullstr, space = _str(''), _str(' ')
         reac, prod, i_reac, i_prod = [[
-            ((_str(v)+space) if v > 1 else nullstr) + _str(getattr(
-                substances[k], name_attr, k))
+            ((_str(v)+space) if v > 1 else nullstr) + _str(not_None(getattr(
+                substances[k], name_attr, k), k))
             for k, v in filter(itemgetter(1), d.items())
         ] for d in (self.reac, self.prod, self.inact_reac,
                     self.inact_prod)]
@@ -537,13 +541,36 @@ class Reaction(object):
         else:
             return magnitude_str + _str(' ') + unit_str
 
+    def string(self, substances=None, with_param=False, magnitude_fmt=lambda m: r'\num{%s}' % m):
+        """ Returns a string representation of the reaction
+
+        Parameters
+        ----------
+        substances: dict
+            mapping substance keys to Substance instances
+        with_param: bool
+            whether to print the parameter (default: False)
+
+        Examples
+        --------
+        >>> r = Reaction({'H+': 1, 'Cl-': 1}, {'HCl': 1}, 1e10)
+        >>> r.string(with_param=False)
+        'Cl- + H+ -> HCl'
+
+        """
+        if substances is None:
+            substances = {
+                k: k for k in chain(self.reac.keys(), self.prod.keys(),
+                                    self.inact_reac.keys(),
+                                    self.inact_prod.keys())
+            }
+        res = self._get_str('name', 'str_arrow', substances)
+        if with_param and self.param is not None:
+            res += '; ' + self._str_param()
+        return res
+
     def __str__(self):
-        s = '; ' + self._str_param()
-        return self._get_str('name', 'str_arrow', {
-            k: k for k in chain(self.reac.keys(), self.prod.keys(),
-                                self.inact_reac.keys(),
-                                self.inact_prod.keys())
-        }) + s
+        return self.string(with_param=True)
 
     def latex(self, substances, with_param=False, magnitude_fmt=lambda m: r'\num{%s}' % m):
         r""" Returns a LaTeX representation of the reaction
@@ -970,7 +997,7 @@ class ReactionSystem(object):
 
     def _repr_html_(self):
         def _format(r):
-            return r.html(self.substances) + '; ' + r._str_param()
+            return r.html(self.substances, with_param=True)
         return '<br>'.join(map(_format, self.rxns))
 
     def _duplicate_check(self):

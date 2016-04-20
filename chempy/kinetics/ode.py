@@ -75,7 +75,7 @@ def get_odesys(rsys, include_params=False, global_params=None,
     substance_keys = list(rsys.substances.keys())
 
     if 'names' not in kwargs:
-        kwargs['names'] = rsys.substances.values()  # pyodesys>=0.5.3
+        kwargs['names'] = list(rsys.substances.values())  # pyodesys>=0.5.3
 
     if unit_registry is None:
         def _param(rxn):
