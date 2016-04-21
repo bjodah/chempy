@@ -3,38 +3,74 @@ from __future__ import (absolute_import, division, print_function)
 
 import math
 from chempy import Substance
+from chempy.units import (
+    units_library, default_constants, Backend, to_unitless,
+    SI_base_registry, default_units as u
+)
 from chempy.util.testing import requires
 
 from ..expr import Expr
+from ..parsing import parsing_library
 
-def _get_cv():
+
+def _get_cv(kelvin=1, gram=1, mol=1):
     class HeatCapacity(Expr):
         parameter_keys = ('temperature',)
-        kw = ('substance',)
+        kw = {'substance': None}
 
     class EinsteinSolid(HeatCapacity):
         """ arguments: einstein temperature """
         def __call__(self, variables, args=None, backend=math):
             molar_mass = self.substance.mass
-            eps = self.arg(variables, args, 0)  # einstein_temperature
-            R = 8.3145
+            TE = self.arg(variables, args, 0)  # einstein_temperature
+            R = variables['R']
             T = variables['temperature']
             # Canoncial ensemble:
-            molar_c_v = 3*R*(eps/(2*R*T))**2 * backend.sinh(eps/(2*R*T))**-2
+            molar_c_v = 3*R*(TE/(2*T))**2 * backend.sinh(TE/(2*T))**-2
             return molar_c_v/molar_mass
 
-    Al = Substance.from_formula('Al', other_properties={'DebyeT': 428})
-    Be = Substance.from_formula('Be', other_properties={'DebyeT': 1440})
-    einT = lambda s: 0.806*s.other_properties['DebyeT']
+    Al = Substance.from_formula('Al', other_properties={'DebyeT': 428*kelvin})
+    Be = Substance.from_formula('Be', other_properties={'DebyeT': 1440*kelvin})
+    Al.mass *= gram/mol
+    Be.mass *= gram/mol
+
+    def einT(s):
+        return 0.806*s.other_properties['DebyeT']
     return {s.name: EinsteinSolid([einT(s)], substance=s) for s in (Al, Be)}
 
+
+@requires(parsing_library)
 def test_Expr():
     cv = _get_cv()
-    assert abs(cv['Al']({'temperature': 273.15}) - 0.9226900642408176) < 1e-14
+    _ref = 0.8108020083055849
+    assert abs(cv['Al']({'temperature': 273.15, 'R': 8.3145}) - _ref) < 1e-14
+
 
 @requires('sympy')
 def test_Expr_symbolic():
     import sympy
     cv = _get_cv()
-    sexpr = cv['Be']({'temperature': sympy.Symbol('T')}, backend=sympy)
-    assert sexpr.free_symbols == set([sympy.Symbol('T')])
+    R, T = sympy.symbols('R T')
+    sexpr = cv['Be']({'temperature': T, 'R': R}, backend=sympy)
+    assert sexpr.free_symbols == set([T, R])
+
+
+@requires(units_library)
+def test_Expr_units():
+    cv = _get_cv(u.kelvin, u.gram, u.mol)
+    R = default_constants.molar_gas_constant.rescale(u.joule/u.mol/u.kelvin)
+
+    def _check(T=273.15*u.kelvin):
+        result = cv['Be']({'temperature': T, 'R': R}, backend=Backend())
+        ref = 0.7342617587256584*u.joule/u.gram/u.kelvin
+        assert abs(to_unitless((result - ref)/ref)) < 1e-10
+    _check()
+    _check(491.67*u.rankine)
+
+
+@requires(units_library)
+def test_Expr__dedimensionalisation():
+    cv = _get_cv(u.kelvin, u.gram, u.mol)
+    units, expr = cv['Be']._dedimensionalisation(SI_base_registry)
+    assert units == [u.kelvin]
+    assert expr.args == [0.806*1440]

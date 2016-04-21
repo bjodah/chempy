@@ -2,16 +2,18 @@
 from __future__ import (absolute_import, division, print_function)
 
 from collections import defaultdict
+
 try:
     import numpy as np
 except ImportError:
     np = None
+import pytest
 
 from ..util.testing import requires
 from ..units import (
     allclose, get_derived_unit, is_unitless, linspace,
     SI_base_registry, unitless_in_registry, get_physical_quantity,
-    to_unitless, magnitude, default_unit_in_registry,
+    to_unitless, magnitude, default_unit_in_registry, Backend,
     unit_of, unit_registry_to_human_readable, units_library,
     unit_registry_from_human_readable, _sum, default_units as u
 )
@@ -70,7 +72,8 @@ def test_unit_of():
     assert unit_of(0.1*u.metre/u.second) == u.metre/u.second
     assert unit_of(7) == 1
     assert unit_of(u.gray).dimensionality == u.gray.dimensionality
-    assert unit_of(u.gray, simplified=True).dimensionality == (u.joule/u.kg).simplified.dimensionality
+    ref = (u.joule/u.kg).simplified.dimensionality
+    assert unit_of(u.gray, simplified=True).dimensionality == ref
 
 
 @requires(units_library)
@@ -249,3 +252,18 @@ def test_default_unit_in_registry():
 def test__sum():
     # sum() does not work here...
     assert (_sum([0.1*u.metre, 1*u.decimetre]) - 2*u.decimetre)/u.metre == 0
+
+
+@requires(units_library)
+def test_Backend():
+    b = Backend()
+    with pytest.raises(ValueError):
+        b.exp(-3*u.metre)
+    assert abs(b.exp(1234*u.metre/u.kilometre) - b.exp(1.234)) < 1e-14
+
+
+@requires(units_library, 'numpy')
+def test_Backend__numpy():
+    import numpy as np
+    b = Backend(np)
+    b.sum([1000*u.metre/u.kilometre, 1], axis=0) == 2.0

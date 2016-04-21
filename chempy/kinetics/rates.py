@@ -2,12 +2,12 @@
 from __future__ import (absolute_import, division, print_function)
 
 import math
-from .expr import Expr
+from ..util.expr import Expr
 
 
 class RateExpr(Expr):
 
-    kw = ('rxn', 'ref')
+    kw = {'rxn': None, 'ref': None}
 
 
 class MassAction(RateExpr):

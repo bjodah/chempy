@@ -16,17 +16,17 @@ class Expr(object):
     --------
     >>> class HeatCapacity(Expr):
     ...     parameter_keys = ('temperature',)
-    ...     kw = ('substance',)
+    ...     kw = {'substance': None}
     ...
     >>> import math
     >>> class EinsteinSolid(HeatCapacity):
     ...     """ arguments: einstein temperature """
     ...     def __call__(self, variables, args=None, backend=math):
     ...         molar_mass = self.substance.mass
-    ...         eps = self.arg(variables, args, 0)  # einstein_temperature
+    ...         TE = self.arg(variables, args, 0)  # einstein_temperature
     ...         R = variables['R']
     ...         T = variables['temperature']
-    ...         molar_c_v = 3*R*(eps/(2*R*T))**2 * backend.sinh(eps/(2*R*T))**-2
+    ...         molar_c_v = 3*R*(TE/(2*T))**2 * backend.sinh(TE/(2*T))**-2
     ...         return molar_c_v/molar_mass
     ...
     >>> from chempy import Substance
@@ -35,23 +35,23 @@ class Expr(object):
     >>> einT = lambda s: 0.806*s.other_properties['DebyeT']
     >>> cv = {s.name: EinsteinSolid([einT(s)], substance=s) for s in (Al, Be)}
     >>> print('%.4f' % cv['Al']({'temperature': 273.15, 'R': 8.3145}))  # J/(g*K)
-    0.9227
+    0.8108
     >>> import sympy
-    >>> print(cv['Be']({'temperature': sympy.Symbol('T'), 'R'=sympy.Symbol('E')}, backend=sympy))
-    13483.113390338/(T**2*sinh(69.796139274761/T)**2)
+    >>> print(cv['Be']({'temperature': sympy.Symbol('T'), 'R': sympy.Symbol('R')}, backend=sympy))
+    112105.346283965*R/(T**2*sinh(580.32/T)**2)
 
     '''
 
     parameter_keys = ()
-    kw = ()
+    kw = None
 
     def __init__(self, args, arg_keys=None, **kwargs):
         self.args = args
         self.arg_keys = arg_keys
-        for k, v in kwargs.items():
-            if k not in self.kw:
-                raise ValueError("Unexpected keyword argument %s" % k)
-            setattr(self, k, v)
+        for k, v in (self.kw or {}).items():
+            setattr(self, k, kwargs.pop(k, v))
+        if kwargs:
+            raise ValueError("Unexpected keyword arguments %s" % kwargs)
 
     def __call__(self, variables, args=None, backend=None):
         raise NotImplementedError("Subclass and implement __call__")
@@ -65,3 +65,9 @@ class Expr(object):
 
     def all_args(self, variables, args):
         return [self.arg(variables, args, i) for i in range(len(self.args))]
+
+    def _dedimensionalisation(self, unit_registry):
+        from ..units import default_unit_in_registry, to_unitless
+        units = [default_unit_in_registry(arg, unit_registry) for arg in self.args]
+        unitless_args = [to_unitless(arg, unit) for arg, unit in zip(self.args, units)]
+        return units, self.__class__(unitless_args, self.arg_keys, **{k: getattr(self, k) for k in self.kw})

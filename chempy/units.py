@@ -213,7 +213,6 @@ def to_unitless(value, new_unit=None):
     '1e+09'
 
     """
-    print(type(value), value, type(new_unit), new_unit)  # DO-NOT-MERGE!
     import numpy as np
     if new_unit is None:
         new_unit = pq.dimensionless
@@ -321,3 +320,56 @@ def _sum(iterable):
             return result
         else:
             raise ValueError("Not sure how this point was reached")
+
+
+class Backend(object):
+    """ Wrapper around modules such as numpy and math
+
+    Instances of Backend wraps a module, e.g. `numpy` and ensures that
+    arguments passed on are unitless.
+
+    Parameters
+    ----------
+    underlying_backend : module, str or tuple of str
+        e.g. 'numpy' or ('sympy', 'math')
+
+    Examples
+    --------
+    >>> import math
+    >>> km, m = default_units.kilometre, default_units.metre
+    >>> math.exp(3*km) == math.exp(3*m)
+    True
+    >>> be = Backend('math')
+    >>> be.exp(3*km)
+    Traceback (most recent call last):
+        ...
+    ValueError: Unable to convert between units of "km" and "dimensionless"
+    >>> import numpy as np
+    >>> np.sum([1000*pq.metre/pq.kilometre, 1])
+    1001.0
+    >>> be_np = Backend(np)
+    >>> be_np.sum([[1000*pq.metre/pq.kilometre, 1], [3, 4]], axis=1)
+    array([ 2.,  7.])
+
+    """
+
+    def __init__(self, underlying_backend=('numpy', 'math')):
+        if isinstance(underlying_backend, tuple):
+            for name in underlying_backend:
+                try:
+                    self.be = __import__(name)
+                except ImportError:
+                    continue
+                else:
+                    break
+            else:
+                raise ValueError("Could not import any of %s" %
+                                 str(underlying_backend))
+        elif isinstance(underlying_backend, str):
+            self.be = __import__(underlying_backend)
+        else:
+            self.be = underlying_backend
+
+    def __getattr__(self, attr):
+        cb = getattr(self.be, attr)
+        return lambda *args, **kwargs: cb(*map(to_unitless, args), **kwargs)

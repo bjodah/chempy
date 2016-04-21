@@ -93,6 +93,10 @@ class Substance(object):
             if self.composition is not None:
                 return mass_from_composition(self.composition)
 
+    @mass.setter
+    def mass(self, value):
+        self.other_properties['mass'] = value
+
     def molar_mass(self, units):
         """ Returns the molar mass (with units) of the substance
 

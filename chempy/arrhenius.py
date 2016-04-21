@@ -131,7 +131,7 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
 
     def _as_RateExpr(self, rxn, arg_keys=None, constants=None, units=None):
         from .kinetics.rates import ArrheniusMassAction as AMA
-        return AMA([self.A, self.Ea/_get_R(constants, units)], rxn, arg_keys, ref=self.ref)
+        return AMA([self.A, self.Ea/_get_R(constants, units)], arg_keys, rxn=rxn, ref=self.ref)
 
     @staticmethod
     def _fmt(arg, precision, tex):
