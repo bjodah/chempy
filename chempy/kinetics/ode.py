@@ -9,8 +9,9 @@ from __future__ import (absolute_import, division, print_function)
 from itertools import chain
 import math
 
-from ..units import default_unit_in_registry, to_unitless, get_derived_unit
+from ..units import to_unitless, get_derived_unit
 from ..util.pyutil import deprecated
+from ..util.expr import Expr
 from .rates import RateExpr, MassAction, law_of_mass_action_rates as _lomar
 
 
@@ -45,7 +46,7 @@ def dCdt(rsys, rates):
     return f
 
 
-def get_odesys(rsys, include_params=False, global_params=None,
+def get_odesys(rsys, include_params=False, substitutions=None,
                SymbolicSys=None,
                unit_registry=None, output_conc_unit=None,
                output_time_unit=None, **kwargs):
@@ -57,8 +58,9 @@ def get_odesys(rsys, include_params=False, global_params=None,
     include_params : bool (default: False)
         whether rate constants should be included into the rate expressions or
         left as free parameters in the :class:`pyneqsys.SymbolicSys` instance.
-    global_params : dict, (optional)
-        shared state used by rate expressions (in respective Reaction.param).
+    substitutions : dict, optional
+        variable substitutions used by rate expressions (in respective Reaction.param).
+        values are allowed to be tuple like: (new_vars, callback)
     SymbolicSys : class (optional)
         default : :class:`pyneqsys.SymbolicSys`
     unit_registry: dict (optional)
@@ -75,43 +77,42 @@ def get_odesys(rsys, include_params=False, global_params=None,
     substance_keys = list(rsys.substances.keys())
 
     if 'names' not in kwargs:
-        kwargs['names'] = substance_keys
+        kwargs['names'] = list(rsys.substances.values())  # pyodesys>=0.5.3
 
-    if unit_registry is None:
-        def _param(rxn):
-            if isinstance(rxn.param, RateExpr):
-                return rxn.param
-            else:
-                return MassAction([rxn.param], rxn)
-        r_exprs = [_param(rxn) for rxn in rsys.rxns]
-    else:
-        # We need to make rsys_params unitless and create
-        # a post- & pre-processor for SymbolicSys
-        r_exprs = []
-        p_units = []
-        for ri, rxn in enumerate(rsys.rxns):
-            rate_expr = rxn.param
-            if not isinstance(rate_expr, RateExpr):
-                rate_expr = MassAction([rate_expr], rxn)  # default
-            _p = rate_expr.args
+    def _param(rxn):
+        if isinstance(rxn.param, RateExpr):
+            return rxn.param
+        else:
+            try:
+                return rxn.param._as_RateExpr(rxn)
+            except AttributeError:
+                return MassAction([rxn.param], rxn=rxn)
+    r_exprs = [_param(rxn) for rxn in rsys.rxns]
 
-            _pu = [default_unit_in_registry(_, unit_registry) for _ in _p]
-            p_units.extend(_pu)
-            _rsys_params = [to_unitless(p, unit) for p, unit in zip(_p, _pu)]
-            r_exprs.append(rate_expr.__class__(
-                _rsys_params, rxn, rate_expr.arg_keys, rate_expr.ref))
+    _original_param_keys = set.union(*(set(ratex.parameter_keys) for ratex in r_exprs))
+    _from_subst = set()
+    _active_subst = {}
+    _passive_subst = {}
+    substitutions = substitutions or {}
+    for key, v in substitutions.items():
+        if key not in _original_param_keys:
+            raise ValueError("Substitution: '%s' does not appear in any rate expressions.")
+        if isinstance(v, Expr):
+            _from_subst.update(v.parameter_keys)
+            _active_subst[key] = v
+        else:
+            _passive_subst[key] = v
+    param_keys = list(filter(lambda x: x not in substitutions, _original_param_keys.union(_from_subst)))
 
-    state_keys = list(set.union(*(set(ratex.state_keys) for ratex in r_exprs)))
-
-    param_keys = []
+    arg_keys = []
     p_defaults = []
     if not include_params:
         for ratex in r_exprs:
             if ratex.arg_keys is not None:
-                param_keys.extend(ratex.arg_keys)
+                arg_keys.extend(ratex.arg_keys)
                 p_defaults.extend(ratex.args)
 
-    # param_keys = chain(ratex.arg_keys for ratex in r_exprs)
+    # arg_keys = chain(ratex.arg_keys for ratex in r_exprs)
     # p_defaults = chain(ratex.args for ratex in r_exprs)
 
     if unit_registry is None:
@@ -119,24 +120,38 @@ def get_odesys(rsys, include_params=False, global_params=None,
             return (
                 x,
                 rsys.as_per_substance_array(y),
-                [p[k] for k in state_keys] + [p[k] for k in param_keys]
+                [p[k] for k in param_keys] + [p[k] for k in arg_keys]
             )
 
         def post_processor(x, y, p):
             return (
                 x,
                 y,  # dict(zip(substance_keys, y)),
-                dict(zip(state_keys+param_keys, p))
+                dict(zip(param_keys+arg_keys, p))
             )
     else:
+        # We need to make rsys_params unitless and create
+        # a pre- & post-processor for SymbolicSys
+        print(param_keys)  # DO-NOT-MERGE!
+        p_units = [get_derived_unit(unit_registry, k) for k in param_keys]
+        print(p_units)  # DO-NOT-MERGE!
+        new_r_exprs = []
+        for ratex in r_exprs:
+            _pu, _new_rates = ratex._dedimensionalisation(unit_registry)
+            p_units.extend(_pu)
+            new_r_exprs.append(_new_rates)
+        r_exprs = new_r_exprs
+
         time_unit = get_derived_unit(unit_registry, 'time')
         conc_unit = get_derived_unit(unit_registry, 'concentration')
 
         def pre_processor(x, y, p):
+            print(x, y, p, p_units, param_keys, arg_keys)  # DO-NOT-MERGE!
             return (
                 to_unitless(x, time_unit),
                 rsys.as_per_substance_array(to_unitless(y, conc_unit)),
-                [to_unitless(elem, p_unit) for elem, p_unit in zip(p, p_units)]
+                # [to_unitless(elem, p_unit) for elem, p_unit in zip(p, p_units)]
+                [to_unitless(p[k], p_unit) for k, p_unit in zip(chain(param_keys, arg_keys), p_units)]
             )
 
         def post_processor(x, y, p):
@@ -146,8 +161,7 @@ def get_odesys(rsys, include_params=False, global_params=None,
             conc = y*conc_unit
             if output_conc_unit is not None:
                 conc = conc.rescale(output_conc_unit)
-            return time, conc, [elem*p_unit for elem, p_unit
-                                in zip(p, p_units)]
+            return time, conc, [elem*p_unit for elem, p_unit in zip(p, p_units)]
 
     kwargs['pre_processors'] = [pre_processor] + kwargs.get('pre_processors', [])
     kwargs['post_processors'] = kwargs.get('post_processors', []) + [post_processor]
@@ -155,12 +169,17 @@ def get_odesys(rsys, include_params=False, global_params=None,
     def dydt(t, y, p, backend=math):
         variables = dict(chain(
             zip(substance_keys, y),
-            zip(state_keys, p[:len(state_keys)]),
-            zip(param_keys, p[len(state_keys):])
+            zip(param_keys, p[:len(param_keys)]),
+            zip(arg_keys, p[len(param_keys):])
         ))
+        for k, act in _active_subst.items():
+            if unit_registry is not None:
+                _, act = act._dedimensionalisation(unit_registry)
+            variables[k] = act(variables, backend=backend)
+        variables.update(_passive_subst)
         return dCdt(rsys, [rat(variables, backend=backend) for rat in r_exprs])
 
     return SymbolicSys.from_callback(
         dydt, len(substance_keys),
-        len(state_keys) + (0 if include_params else len(param_keys)),
+        len(param_keys) + (0 if include_params else len(arg_keys)),
         **kwargs)

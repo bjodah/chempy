@@ -113,6 +113,8 @@ def get_derived_unit(registry, key):
         'density': registry['mass']/registry['length']**3,
     }
     derived['radiolytic_yield'] = registry['amount']/derived['energy']
+    derived['doserate'] = derived['energy']/registry['mass']/registry['time']
+
     try:
         return derived[key]
     except KeyError:
@@ -177,7 +179,7 @@ def is_unitless(expr):
     return True
 
 
-def unit_of(expr):
+def unit_of(expr, simplified=False):
     """ Returns the unit of a quantity
 
     Examples
@@ -189,7 +191,10 @@ def unit_of(expr):
 
     """
     try:
-        return expr.units
+        if simplified:
+            return expr.units.simplified
+        else:
+            return expr.units
     except AttributeError:
         return 1
 
@@ -215,9 +220,13 @@ def to_unitless(value, new_unit=None):
         return np.array([to_unitless(elem, new_unit) for elem in value])
     if isinstance(value, dict):
         new_value = value.copy()
-        for k in new_value:
-            new_value[k] = to_unitless(new_value[k], new_unit)
+        for k in value:
+            new_value[k] = to_unitless(value[k], new_unit)
         return new_value
+    if isinstance(value, (int, float)) and new_unit in (1, None):
+        return value
+    if isinstance(value, str):
+        raise ValueError("str not supported")
     try:
         result = (value*pq.dimensionless/new_unit).rescale(pq.dimensionless)
         if result.ndim == 0:
@@ -293,3 +302,74 @@ def linspace(start, stop, num=50):
     start_ = to_unitless(start, unit)
     stop_ = to_unitless(stop, unit)
     return np.linspace(start_, stop_, num)*unit
+
+
+def _sum(iterable):
+    try:
+        result = next(iterable)
+    except TypeError:
+        result = iterable[0]
+        for elem in iterable[1:]:
+            result += elem
+        return result
+    else:
+        try:
+            while True:
+                result += next(iterable)
+        except StopIteration:
+            return result
+        else:
+            raise ValueError("Not sure how this point was reached")
+
+
+class Backend(object):
+    """ Wrapper around modules such as numpy and math
+
+    Instances of Backend wraps a module, e.g. `numpy` and ensures that
+    arguments passed on are unitless.
+
+    Parameters
+    ----------
+    underlying_backend : module, str or tuple of str
+        e.g. 'numpy' or ('sympy', 'math')
+
+    Examples
+    --------
+    >>> import math
+    >>> km, m = default_units.kilometre, default_units.metre
+    >>> math.exp(3*km) == math.exp(3*m)
+    True
+    >>> be = Backend('math')
+    >>> be.exp(3*km)
+    Traceback (most recent call last):
+        ...
+    ValueError: Unable to convert between units of "km" and "dimensionless"
+    >>> import numpy as np
+    >>> np.sum([1000*pq.metre/pq.kilometre, 1])
+    1001.0
+    >>> be_np = Backend(np)
+    >>> be_np.sum([[1000*pq.metre/pq.kilometre, 1], [3, 4]], axis=1)
+    array([ 2.,  7.])
+
+    """
+
+    def __init__(self, underlying_backend=('numpy', 'math')):
+        if isinstance(underlying_backend, tuple):
+            for name in underlying_backend:
+                try:
+                    self.be = __import__(name)
+                except ImportError:
+                    continue
+                else:
+                    break
+            else:
+                raise ValueError("Could not import any of %s" %
+                                 str(underlying_backend))
+        elif isinstance(underlying_backend, str):
+            self.be = __import__(underlying_backend)
+        else:
+            self.be = underlying_backend
+
+    def __getattr__(self, attr):
+        cb = getattr(self.be, attr)
+        return lambda *args, **kwargs: cb(*map(to_unitless, args), **kwargs)

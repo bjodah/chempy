@@ -129,6 +129,10 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
         return arrhenius_equation(self.A, self.Ea, T, constants=constants,
                                   units=units, backend=backend)
 
+    def _as_RateExpr(self, rxn, arg_keys=None, constants=None, units=None):
+        from .kinetics.rates import ArrheniusMassAction as AMA
+        return AMA([self.A, self.Ea/_get_R(constants, units)], arg_keys, rxn=rxn, ref=self.ref)
+
     @staticmethod
     def _fmt(arg, precision, tex):
         if tex:
@@ -161,7 +165,10 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
 
 class ArrheniusParamWithUnits(ArrheniusParam):
     def __call__(self, state, constants=default_constants, units=default_units,
-                 exp=None):
+                 backend=None):
         """ See :func:`chempy.arrhenius.arrhenius_equation`. """
         return super(ArrheniusParamWithUnits, self).__call__(
-            state, constants, units, exp)
+            state, constants, units, backend)
+
+    def _as_RateExpr(self, rxn, arg_keys=None, constants=default_constants, units=default_units):
+        return super(ArrheniusParamWithUnits, self)._as_RateExpr(rxn, arg_keys, constants, units)

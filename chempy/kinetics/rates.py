@@ -2,27 +2,12 @@
 from __future__ import (absolute_import, division, print_function)
 
 import math
+from ..util.expr import Expr
 
 
-class RateExpr(object):
+class RateExpr(Expr):
 
-    state_keys = ()
-
-    def __init__(self, args, rxn=None, arg_keys=None, ref=None):
-        self.args = args
-        self.rxn = rxn
-        self.arg_keys = arg_keys
-        self.ref = ref
-
-    def __call__(self, variables, args=None, backend=math):
-        raise NotImplementedError
-
-    def arg(self, variables, args, index):
-        args = args or self.args
-        if self.arg_keys is None:
-            return args[index]
-        else:
-            return variables.get(self.arg_keys[index], args[index])
+    kw = {'rxn': None, 'ref': None}
 
 
 class MassAction(RateExpr):
@@ -36,13 +21,23 @@ class MassAction(RateExpr):
 
 class ArrheniusMassAction(MassAction):
     """ Arguments: A, Ea_over_R """
-    state_keys = ('temperature',)
+    parameter_keys = ('temperature',)
 
     def __call__(self, variables, args=None, backend=math):
-        A, Ea_over_R = (self.arg(variables, args, _) for _ in range(2))
+        A, Ea_over_R = self.all_args(variables, args)
         k = A*backend.exp(-Ea_over_R/variables['temperature'])
         return super(ArrheniusMassAction, self).__call__(
             variables, (k,), backend=backend)
+
+
+class Radiolytic(RateExpr):
+    """ Arguments: yield [amount/volume] """
+
+    parameter_keys = ('doserate', 'density')
+
+    def __call__(self, variables, args=None, backend=math):
+        g = self.arg(variables, args, 0)
+        return g*variables['doserate']*variables['density']
 
 
 def law_of_mass_action_rates(conc, rsys, variables=None):

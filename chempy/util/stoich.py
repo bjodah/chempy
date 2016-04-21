@@ -6,6 +6,7 @@ Utility functions related to stoichiometry.
 from __future__ import (absolute_import, division, print_function)
 
 import numpy as np
+from chempy.units import unit_of, to_unitless
 
 
 def get_coeff_mtx(substances, stoichs):
@@ -85,8 +86,9 @@ def decompose_yields(yields, rxns, atol=1e-10):
     rsys = ReactionSystem(rxns, rxn_keys)
     A = rsys.net_stoichs(yields.keys())
     b = list(yields.values())
-    x, residuals, rank, s = np.linalg.lstsq(A.T, b)
+    unit = unit_of(b[0], simplified=True)
+    x, residuals, rank, s = np.linalg.lstsq(A.T, to_unitless(b, unit))
     if len(residuals) > 0:
         if np.any(residuals > atol):
             raise ValueError("atol not satisfied")
-    return x
+    return x*unit
