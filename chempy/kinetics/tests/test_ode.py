@@ -152,8 +152,8 @@ def test_get_ode__Radiolytic():
     rxn = Reaction({'A': 4, 'B': 1}, {'C': 3, 'D': 2}, rad)
     rsys = ReactionSystem([rxn], 'A B C D')
     odesys = get_odesys(rsys, include_params=True)
-    conc = {'A': 3, 'B': 5, 'C': 11, 'D': 13}
-    x, y, p = odesys.pre_process(-37, conc, {'doserate': 0.4, 'density': 0.998})
+    c = {'A': 3, 'B': 5, 'C': 11, 'D': 13}
+    x, y, p = odesys.pre_process(-37, c, {'doserate': 0.4, 'density': 0.998})
     fout = odesys.f_cb(x, y, p)
     r = 2.4e-7*0.4*0.998
     ref = [-4*r, -r, 3*r, 2*r]
@@ -178,8 +178,18 @@ def test_get_ode__Radiolytic__units():
     assert np.all(abs((fout - ref)/ref) < 1e-14)
 
 
+
+class Density(Expr):
+    """ Arguments: rho0 drhodT T0 """
+    parameter_keys = ('temperature',)
+    kw = ('units',)
+    def __call__(self, variables, args=None, backend=None):
+        rho0, drhodT, T0 = self.all_args(variables, args)
+        return rho0 + drhodT*(variables['temperature'] - T0)
+
 @requires('pyodesys')
 def test_get_ode__Radiolytic__substitutions():
+    substance_rho = Density([1, -1e-3, 273.15])
     def density(var, backend=None):
         return 1 - 1e-3*(var['temperature'] - 273.15)  # silly
     rad = Radiolytic([2.4e-7])
@@ -188,7 +198,8 @@ def test_get_ode__Radiolytic__substitutions():
     odesys = get_odesys(rsys, include_params=True,
                         substitutions={'density': (['temperature'], density)})
     conc = {'A': 3, 'B': 5, 'C': 11, 'D': 13}
-    x, y, p = odesys.pre_process(-37, conc, {'doserate': 0.4, 'temperature': 298.15})
+    state = {'doserate': 0.4, 'temperature': 298.15}
+    x, y, p = odesys.pre_process(-37, conc, state)
     fout = odesys.f_cb(x, y, p)
     r = 2.4e-7*0.4*density({'temperature': 298.15})
     ref = [-4*r, -r, 3*r, 2*r]
@@ -197,14 +208,14 @@ def test_get_ode__Radiolytic__substitutions():
 
 @requires('pyodesys', units_library)
 def test_get_ode__Radiolytic__substitutions():
-    def density(var, backend=None):
-        drhodT = -1e-3 * u.kg / u.decimetre**3
-        return 1*u.kg/u.decimetre**3 + drhodT*(var['temperature'] - 273.15*u.kelvin)  # silly
     rad = Radiolytic([2.4e-7*u.mol/u.joule])
     rxn = Reaction({'A': 4, 'B': 1}, {'C': 3, 'D': 2}, rad)
     rsys = ReactionSystem([rxn], 'A B C D')
+    g_dm3 = u.mol.gram/u.decimetre**3
+    kg_dm3 = u.mol.kg/u.decimetre**3
+    substance_rho = Density([1*kg_dm3, -1*g_dm3/u.kelvin, 273.15*u.kelvin])
     odesys = get_odesys(rsys, include_params=True,
-                        substitutions={'density': (['temperature'], density)})
+                        substitutions={'density': substance_rho})
     conc = {'A': 3*u.molar, 'B': 5*u.molar, 'C': 11*u.molar, 'D': 13*u.molar}
     x, y, p = odesys.pre_process(-37*u.second, conc, {'doserate': 0.4*u.gray/u.second, 'temperature': 298.15*u.kelvin})
     fout = odesys.f_cb(x, y, p)

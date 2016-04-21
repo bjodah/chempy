@@ -213,6 +213,7 @@ def to_unitless(value, new_unit=None):
     '1e+09'
 
     """
+    print(type(value), value, type(new_unit), new_unit)  # DO-NOT-MERGE!
     import numpy as np
     if new_unit is None:
         new_unit = pq.dimensionless
@@ -220,11 +221,13 @@ def to_unitless(value, new_unit=None):
         return np.array([to_unitless(elem, new_unit) for elem in value])
     if isinstance(value, dict):
         new_value = value.copy()
-        for k in new_value:
-            new_value[k] = to_unitless(new_value[k], new_unit)
+        for k in value:
+            new_value[k] = to_unitless(value[k], new_unit)
         return new_value
     if isinstance(value, (int, float)) and new_unit in (1, None):
         return value
+    if isinstance(value, str):
+        raise ValueError("str not supported")
     try:
         result = (value*pq.dimensionless/new_unit).rescale(pq.dimensionless)
         if result.ndim == 0:

@@ -106,7 +106,6 @@ def get_odesys(rsys, include_params=False, substitutions=None,
             _passive_subst[key] = v
     state_keys = list(filter(lambda x: x not in substitutions, _original_state_keys.union(_from_subst)))
 
-
     param_keys = []
     p_defaults = []
     if not include_params:
@@ -135,7 +134,9 @@ def get_odesys(rsys, include_params=False, substitutions=None,
     else:
         # We need to make rsys_params unitless and create
         # a pre- & post-processor for SymbolicSys
+        print(state_keys)  # DO-NOT-MERGE!
         p_units = [get_derived_unit(unit_registry, k) for k in state_keys]
+        print(p_units)  # DO-NOT-MERGE!
         new_r_exprs = []
         for ratex in r_exprs:
             _pu = [default_unit_in_registry(_, unit_registry) for _ in ratex.args]
@@ -145,7 +146,6 @@ def get_odesys(rsys, include_params=False, substitutions=None,
                 _rsys_params, ratex.rxn, ratex.arg_keys, ratex.ref))
         r_exprs = new_r_exprs
 
-
         time_unit = get_derived_unit(unit_registry, 'time')
         conc_unit = get_derived_unit(unit_registry, 'concentration')
 
@@ -154,7 +154,8 @@ def get_odesys(rsys, include_params=False, substitutions=None,
             return (
                 to_unitless(x, time_unit),
                 rsys.as_per_substance_array(to_unitless(y, conc_unit)),
-                [to_unitless(elem, p_unit) for elem, p_unit in zip(p, p_units)]
+                # [to_unitless(elem, p_unit) for elem, p_unit in zip(p, p_units)]
+                [to_unitless(p[k], p_unit) for k, p_unit in zip(chain(state_keys, param_keys), p_units)]
             )
 
         def post_processor(x, y, p):
