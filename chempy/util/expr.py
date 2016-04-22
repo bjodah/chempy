@@ -8,6 +8,8 @@ pay to allow for this is a somewhat contrived syntax
 """
 from __future__ import (absolute_import, division, print_function)
 
+from itertools import chain
+
 
 class Expr(object):
     '''
@@ -55,6 +57,22 @@ class Expr(object):
 
     def __call__(self, variables, args=None, backend=None):
         raise NotImplementedError("Subclass and implement __call__")
+
+    def _str(self, arg_fmt, arg_keys_fmt=str):
+        args_kwargs_strs = [', '.join(chain(
+            map(arg_fmt, self.args),
+            [arg_keys_fmt(self.arg_keys)] if self.arg_keys is not None else []
+        ))]
+        print_kw = {k: getattr(self, k) for k in self.kw if getattr(self, k) != self.kw[k]}
+        if print_kw:
+            args_kwargs_strs += [', '.join('{}={}'.format(k, v) for k, v in print_kw.items())]
+        return "{}({})".format(self.__class__.__name__, ', '.join(args_kwargs_strs))
+
+    def __repr__(self):
+        return self._str(repr)
+
+    def string(self, arg_fmt=str):
+        return self._str(arg_fmt)
 
     def arg(self, variables, args, index):
         args = args or self.args

@@ -6,7 +6,10 @@ import math
 from chempy import Reaction, ReactionSystem
 from chempy.units import to_unitless, units_library, default_units as u
 from chempy.util.testing import requires
-from ..rates import RateExpr, MassAction, ArrheniusMassAction, Radiolytic
+from ..rates import (
+    RateExpr, MassAction, ArrheniusMassAction, Radiolytic, TPolyMassAction,
+    RTPolyMassAction, Log10TPolyMassAction, TPolyInLog10MassAction
+)
 
 
 class SpecialFraction(RateExpr):
@@ -112,9 +115,43 @@ def test_Radiolytic():
 def test_Radiolytic__units():
 
     def _check(r):
-        res = r({'doserate': 0.15*u.gray/u.second, 'density': 0.998*u.kg/u.decimetre**3})
+        res = r({'doserate': 0.15*u.gray/u.second,
+                 'density': 0.998*u.kg/u.decimetre**3})
         ref = 0.15*0.998*2.1e-7*u.molar/u.second
         assert abs(to_unitless((res - ref)/ref)) < 1e-15
 
     _check(Radiolytic([2.1e-7*u.mol/u.joule]))
     _check(Radiolytic([2.0261921896167396*u.per100eV]))
+
+
+def test_TPolyMassAction():
+    r = TPolyMassAction([273.15, 7, .2, .03, .004])
+    Reaction({'A': 2, 'B': 1}, {'C': 1}, r, {'B': 1})
+    res = r({'A': 11, 'B': 13, 'temperature': 298.15})
+    ref = 7 + .2*25 + 0.03 * 25**2 + 0.004 * 25**3
+    assert abs(res - ref*13*11**2) < 1e-15
+
+
+def test_RTPolyMassAction():
+    r = RTPolyMassAction([273.15, 7, .2, .03, .004])
+    Reaction({'A': 2, 'B': 1}, {'C': 1}, r, {'B': 1})
+    res = r({'A': 11, 'B': 13, 'temperature': 298.15})
+    ref = 7 + .2/25 + 0.03 / 25**2 + 0.004 / 25**3
+    assert abs(res - ref*13*11**2) < 1e-15
+
+
+def test_Log10TPolyMassAction():
+    r = Log10TPolyMassAction([273.15, .7, .02, .003, .0004])
+    Reaction({'A': 2, 'B': 1}, {'C': 1}, r, {'B': 1})
+    res = r({'A': 11, 'B': 13, 'temperature': 298.15})
+    ref = 10**(.7 + .02*25 + 0.003 * 25**2 + 0.0004 * 25**3)
+    assert abs(res - ref*13*11**2) < 1e-15
+
+
+def test_TPolyInLog10MassAction():
+    r = TPolyInLog10MassAction([2, 0.3, .2, .03, .004])
+    Reaction({'A': 2, 'B': 1}, {'C': 1}, r, {'B': 1})
+    res = r({'A': 11, 'B': 13, 'temperature': 298.15})
+    _T = math.log10(298.15) - 2
+    ref = .3 + .2*_T + 0.03 * _T**2 + 0.004 * _T**3
+    assert abs(res - ref*13*11**2) < 1e-15

@@ -55,6 +55,9 @@ def get_odesys(rsys, include_params=False, substitutions=None,
     Parameters
     ----------
     rsys : ReactionSystem
+        note that if :attr:`param` if not RateExpr it will be inspected for
+        :meth:`_as_RateExpr`, lacking such it will be used to construct a
+        :class:`MassAction` instance.
     include_params : bool (default: False)
         whether rate constants should be included into the rate expressions or
         left as free parameters in the :class:`pyneqsys.SymbolicSys` instance.
@@ -132,9 +135,7 @@ def get_odesys(rsys, include_params=False, substitutions=None,
     else:
         # We need to make rsys_params unitless and create
         # a pre- & post-processor for SymbolicSys
-        print(param_keys)  # DO-NOT-MERGE!
         p_units = [get_derived_unit(unit_registry, k) for k in param_keys]
-        print(p_units)  # DO-NOT-MERGE!
         new_r_exprs = []
         for ratex in r_exprs:
             _pu, _new_rates = ratex._dedimensionalisation(unit_registry)
@@ -146,7 +147,6 @@ def get_odesys(rsys, include_params=False, substitutions=None,
         conc_unit = get_derived_unit(unit_registry, 'concentration')
 
         def pre_processor(x, y, p):
-            print(x, y, p, p_units, param_keys, arg_keys)  # DO-NOT-MERGE!
             return (
                 to_unitless(x, time_unit),
                 rsys.as_per_substance_array(to_unitless(y, conc_unit)),
