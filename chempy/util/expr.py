@@ -89,3 +89,27 @@ class Expr(object):
         units = [default_unit_in_registry(arg, unit_registry) for arg in self.args]
         unitless_args = [to_unitless(arg, unit) for arg, unit in zip(self.args, units)]
         return units, self.__class__(unitless_args, self.arg_keys, **{k: getattr(self, k) for k in self.kw})
+
+
+def mk_Poly(parameter, reciprocal=False):
+    class Poly(Expr):
+        def eval_poly(self, variables, args=None, backend=None):
+            all_args = self.all_args(variables, args)
+            offset, coeffs = all_args[0], all_args[1:]
+            _x0 = variables[parameter] - offset
+            _x = _x0/_x0
+            k = None
+            for coeff in coeffs:
+                if k is None:
+                    k = coeff*_x
+                else:
+                    k += coeff*_x
+
+                if reciprocal is True:
+                    _x /= _x0
+                elif reciprocal is False:
+                    _x *= _x0
+                else:
+                    raise NotImplementedError
+            return k
+    return Poly

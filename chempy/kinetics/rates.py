@@ -2,7 +2,7 @@
 from __future__ import (absolute_import, division, print_function)
 
 import math
-from ..util.expr import Expr
+from ..util.expr import Expr, mk_Poly
 
 
 class RateExpr(Expr):
@@ -41,35 +41,24 @@ class Radiolytic(RateExpr):
         g = self.arg(variables, args, 0)
         return g*variables['doserate']*variables['density']
 
+TPoly = mk_Poly('temperature')
+RTPoly = mk_Poly('temperature', reciprocal=True)
 
-class TPolyMassAction(MassAction):
+
+class TPolyMassAction(TPoly, MassAction):
     """ Arguments: temperature_offset, c0, c1, ... """
     parameter_keys = ('temperature',)
-    _reciprocal = False
 
     def rate_coeff(self, variables, args, backend):
-        all_args = self.all_args(variables, args)
-        offset, coeffs = all_args[0], all_args[1:]
-        _x0 = variables['temperature'] - offset
-        _x = _x0/_x0
-        k = None
-        for coeff in coeffs:
-            if k is None:
-                k = coeff*_x
-            else:
-                k += coeff*_x
-
-            if self._reciprocal is True:
-                _x /= _x0
-            elif self._reciprocal is False:
-                _x *= _x0
-            else:
-                raise NotImplementedError
-        return k
+        return self.eval_poly(variables, args, backend)
 
 
-class RTPolyMassAction(TPolyMassAction):
-    _reciprocal = True
+class RTPolyMassAction(RTPoly, MassAction):
+    """ Arguments: temperature_offset, c0, c1, ... """
+    parameter_keys = ('temperature',)
+
+    def rate_coeff(self, variables, args, backend):
+        return self.eval_poly(variables, args, backend)
 
 
 class Log10TPolyMassAction(TPolyMassAction):

@@ -9,7 +9,7 @@ from chempy.units import (
 )
 from chempy.util.testing import requires
 
-from ..expr import Expr
+from ..expr import Expr, mk_Poly
 from ..parsing import parsing_library
 
 
@@ -74,3 +74,9 @@ def test_Expr__dedimensionalisation():
     units, expr = cv['Be']._dedimensionalisation(SI_base_registry)
     assert units == [u.kelvin]
     assert expr.args == [0.806*1440]
+
+
+def test_mk_Poly():
+    Poly = mk_Poly('T', reciprocal=True)
+    p = Poly([3, 2, 5, 7, 8, 2, 9])
+    assert p.eval_poly({'T': 13}) == 2.57829
