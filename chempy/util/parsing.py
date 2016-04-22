@@ -500,14 +500,22 @@ def _number_to_scientific_latex(number, fmt='%.3g'):
     True
     >>> _number_to_scientific_latex(3.14159265e-7)
     '3.14\\cdot 10^{-7}'
+    >>> import quantities as pq
+    >>> _number_to_scientific_latex(2**0.5 * pq.m / pq.s)
+    '1.41 \\mathrm{\\frac{m}{s}}'
 
     """
+    try:
+        unit = ' ' + number.dimensionality.latex.strip('$')
+        number = number.magnitude
+    except AttributeError:
+        unit = ''
     s = fmt % number
     if 'e' in s:
         prefix, suffix = s.split('e')
-        return prefix + r'\cdot 10^{%s}' % str(int(suffix))
+        return prefix + r'\cdot 10^{%s}' % str(int(suffix)) + unit
     else:
-        return s
+        return s + unit
 
 _unicode_sub = {}
 
@@ -566,14 +574,22 @@ def _number_to_scientific_unicode(number, fmt='%.3g'):
     True
     >>> _number_to_scientific_unicode(3.14159265e-7) == u'3.14·10⁻⁷'
     True
+    >>> import quantities as pq
+    >>> _number_to_scientific_html(2**0.5 * pq.m / pq.s)
+    '1.41 m/s'
 
     """
+    try:
+        unit = ' ' + number.dimensionality.unicode
+        number = number.magnitude
+    except AttributeError:
+        unit = ''
     s = fmt % number
     if 'e' in s:
         prefix, suffix = s.split('e')
-        return prefix + u'·10' + u''.join(map(_unicode_sup.get, str(int(suffix))))
+        return prefix + u'·10' + u''.join(map(_unicode_sup.get, str(int(suffix)))) + unit
     else:
-        return s
+        return s + unit
 
 
 def formula_to_html(formula, prefixes=None, **kwargs):
@@ -617,11 +633,19 @@ def _number_to_scientific_html(number, fmt='%.3g'):
     True
     >>> _number_to_scientific_html(3.14159265e-7)
     '3.14&sdot;10<sup>-7</sup>'
+    >>> import quantities as pq
+    >>> _number_to_scientific_html(2**0.5 * pq.m / pq.s)
+    '1.41 m/s'
 
     """
+    try:
+        unit = ' ' + str(number.dimensionality)
+        number = number.magnitude
+    except AttributeError:
+        unit = ''
     s = fmt % number
     if 'e' in s:
         prefix, suffix = s.split('e')
-        return prefix + '&sdot;10<sup>' + str(int(suffix)) + '</sup>'
+        return prefix + '&sdot;10<sup>' + str(int(suffix)) + '</sup>' + unit
     else:
-        return s
+        return s + unit

@@ -652,7 +652,11 @@ class Reaction(object):
         res = self._get_str('html_name', 'html_arrow', substances)
         if with_param and self.param is not None:
             from .util.parsing import _number_to_scientific_html as _fmt
-            res += '&#59; ' + self._str_param(magnitude_fmt=_fmt)
+            res += '&#59; '
+            try:
+                res += self.param.string(_fmt)
+            except AttributeError:
+                res += self._str_param(magnitude_fmt=_fmt)
         return res
 
     def _violation(self, substances, attr):
