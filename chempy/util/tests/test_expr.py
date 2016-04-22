@@ -2,6 +2,9 @@
 from __future__ import (absolute_import, division, print_function)
 
 import math
+
+import pytest
+
 from chempy import Substance
 from chempy.units import (
     units_library, default_constants, Backend, to_unitless,
@@ -20,6 +23,8 @@ def _get_cv(kelvin=1, gram=1, mol=1):
 
     class EinsteinSolid(HeatCapacity):
         """ arguments: einstein temperature """
+        nargs = 1
+
         def __call__(self, variables, args=None, backend=math):
             molar_mass = self.substance.mass
             TE = self.arg(variables, args, 0)  # einstein_temperature
@@ -44,6 +49,14 @@ def test_Expr():
     cv = _get_cv()
     _ref = 0.8108020083055849
     assert abs(cv['Al']({'temperature': 273.15, 'R': 8.3145}) - _ref) < 1e-14
+
+
+def test_nargs():
+    class A(Expr):
+        nargs = 1
+
+    with pytest.raises(ValueError):
+        A([1, 2])
 
 
 @requires('sympy')

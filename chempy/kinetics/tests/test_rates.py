@@ -8,7 +8,7 @@ from chempy.units import Backend, to_unitless, units_library, default_units as u
 from chempy.util.testing import requires
 from ..rates import (
     RateExpr, MassAction, ArrheniusMassAction, Radiolytic, TPolyMassAction,
-    RTPolyMassAction, Log10TPolyMassAction, TPolyInLog10MassAction
+    RTPolyMassAction, Log10TPolyMassAction, TPolyInLog10MassAction, TPolyRadiolytic
 )
 
 
@@ -200,3 +200,22 @@ def test_TPolyInLog10MassAction__units():
     _T = math.log10(298.15) - 2
     ref = .3 + .2*_T + 0.03 * _T**2 + 0.004 * _T**3
     assert abs(res - ref*13*11**2*Mps) < 1e-15
+
+
+def test_TPolyRadiolytic():
+    r = TPolyRadiolytic([273.15, 1.85e-7, 1e-9])
+    res = r({'doserate': 0.15, 'density': 0.998, 'temperature': 298.15})
+    assert abs(res - 0.15*0.998*2.1e-7) < 1e-15
+
+
+@requires(units_library)
+def test_TPolyRadiolytic__units():
+
+    def _check(r):
+        res = r({'doserate': 0.15*u.gray/u.second,
+                 'density': 0.998*u.kg/u.decimetre**3,
+                 'temperature': 298.15*u.K})
+        ref = 0.15*0.998*2.1e-7*u.molar/u.second
+        assert abs(to_unitless((res - ref)/ref)) < 1e-15
+
+    _check(TPolyRadiolytic([273.15*u.K, 1.85e-7*u.mol/u.joule, 1e-9*u.mol/u.joule/u.K]))

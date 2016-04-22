@@ -46,8 +46,11 @@ class Expr(object):
 
     parameter_keys = ()
     kw = None
+    nargs = None
 
     def __init__(self, args, arg_keys=None, **kwargs):
+        if self.nargs is not None and len(args) != self.nargs:
+            raise ValueError("Incorrect number of arguments: %d (expected %d)" % (len(args), self.nargs))
         self.args = args
         self.arg_keys = arg_keys
         for k, v in (self.kw or {}).items():

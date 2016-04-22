@@ -12,6 +12,7 @@ class RateExpr(Expr):
 
 class MassAction(RateExpr):
     """ Arguments: k """
+    nargs = 1
 
     def rate_coeff(self, variables, args, backend):  # for subclasses
         return self.arg(variables, args, 0)
@@ -26,6 +27,7 @@ class MassAction(RateExpr):
 class ArrheniusMassAction(MassAction):
     """ Arguments: A, Ea_over_R """
     parameter_keys = ('temperature',)
+    nargs = 2
 
     def rate_coeff(self, variables, args, backend):
         A, Ea_over_R = self.all_args(variables, args)
@@ -36,18 +38,29 @@ class Radiolytic(RateExpr):
     """ Arguments: yield [amount/volume] """
 
     parameter_keys = ('doserate', 'density')
+    nargs = 1
+
+    def g_value(self, variables, args, backend):  # for subclasses
+        return self.arg(variables, args, 0)
 
     def __call__(self, variables, args=None, backend=math):
-        g = self.arg(variables, args, 0)
-        return g*variables['doserate']*variables['density']
+        return self.g_value(variables, args, 0)*variables['doserate']*variables['density']
 
 TPoly = mk_Poly('temperature')
 RTPoly = mk_Poly('temperature', reciprocal=True)
 
 
+class TPolyRadiolytic(TPoly, Radiolytic):
+    nargs = None
+
+    def g_value(self, variables, args, backend):
+        return self.eval_poly(variables, args, backend)
+
+
 class TPolyMassAction(TPoly, MassAction):
     """ Arguments: temperature_offset, c0, c1, ... """
     parameter_keys = ('temperature',)
+    nargs = None
 
     def rate_coeff(self, variables, args, backend):
         return self.eval_poly(variables, args, backend)
@@ -56,6 +69,7 @@ class TPolyMassAction(TPoly, MassAction):
 class RTPolyMassAction(RTPoly, MassAction):
     """ Arguments: temperature_offset, c0, c1, ... """
     parameter_keys = ('temperature',)
+    nargs = None
 
     def rate_coeff(self, variables, args, backend):
         return self.eval_poly(variables, args, backend)
@@ -63,6 +77,8 @@ class RTPolyMassAction(RTPoly, MassAction):
 
 class Log10TPolyMassAction(TPolyMassAction):
     """ Arguments: k_unit, temperature_offset, c0, c1, ... """
+    nargs = None
+
     def rate_coeff(self, variables, args, backend):
         k_unit = self.arg(variables, args, 0)
         return 10**super(Log10TPolyMassAction, self).rate_coeff(
@@ -71,6 +87,8 @@ class Log10TPolyMassAction(TPolyMassAction):
 
 class TPolyInLog10MassAction(TPolyMassAction):
     """ Arguments: T_unit, temperature_offset, c0, c1, ... """
+    nargs = None
+
     def __call__(self, variables, args=None, backend=math):
         T_unit = self.arg(variables, args, 0)
         new_vars = variables.copy()
