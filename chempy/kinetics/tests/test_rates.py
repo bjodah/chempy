@@ -4,7 +4,7 @@ from __future__ import (absolute_import, division, print_function)
 import math
 
 from chempy import Reaction, ReactionSystem
-from chempy.units import to_unitless, units_library, default_units as u
+from chempy.units import Backend, to_unitless, units_library, default_units as u
 from chempy.util.testing import requires
 from ..rates import (
     RateExpr, MassAction, ArrheniusMassAction, Radiolytic, TPolyMassAction,
@@ -132,6 +132,17 @@ def test_TPolyMassAction():
     assert abs(res - ref*13*11**2) < 1e-15
 
 
+@requires(units_library)
+def test_TPolyMassAction__units():
+    Mps = u.molar/u.second
+    kunit = 1/u.molar**2/u.second
+    r = TPolyMassAction([273.15*u.K, 7*kunit, .2*kunit/u.K, .03*kunit/u.K**2, .004*kunit/u.K**3])
+    Reaction({'A': 2, 'B': 1}, {'C': 1}, r, {'B': 1})
+    res = r({'A': 11*u.molar, 'B': 13*u.molar, 'temperature': 298.15*u.K})
+    ref = 7 + .2*25 + 0.03 * 25**2 + 0.004 * 25**3
+    assert abs(res - ref*13*11**2*Mps) < 1e-15
+
+
 def test_RTPolyMassAction():
     r = RTPolyMassAction([273.15, 7, .2, .03, .004])
     Reaction({'A': 2, 'B': 1}, {'C': 1}, r, {'B': 1})
@@ -140,18 +151,52 @@ def test_RTPolyMassAction():
     assert abs(res - ref*13*11**2) < 1e-15
 
 
+@requires(units_library)
+def test_RTPolyMassAction__units():
+    Mps = u.molar/u.second
+    kunit = 1/u.molar**2/u.second
+    r = RTPolyMassAction([273.15*u.K, 7*kunit, .2*kunit*u.K, .03*kunit*u.K**2, .004*kunit*u.K**3])
+    Reaction({'A': 2, 'B': 1}, {'C': 1}, r, {'B': 1})
+    res = r({'A': 11*u.molar, 'B': 13*u.molar, 'temperature': 298.15*u.K})
+    ref = 7 + .2/25 + 0.03 / 25**2 + 0.004 / 25**3
+    assert abs(res - ref*13*11**2*Mps) < 1e-15
+
+
 def test_Log10TPolyMassAction():
-    r = Log10TPolyMassAction([273.15, .7, .02, .003, .0004])
+    r = Log10TPolyMassAction([1, 273.15, .7, .02, .003, .0004])
     Reaction({'A': 2, 'B': 1}, {'C': 1}, r, {'B': 1})
     res = r({'A': 11, 'B': 13, 'temperature': 298.15})
     ref = 10**(.7 + .02*25 + 0.003 * 25**2 + 0.0004 * 25**3)
     assert abs(res - ref*13*11**2) < 1e-15
 
 
+@requires(units_library)
+def test_Log10TPolyMassAction__units():
+    Mps = u.molar/u.second
+    kunit = 1/u.molar**2/u.second
+    r = Log10TPolyMassAction([kunit, 273.15*u.K, .7, .02/u.K, .003/u.K**2, .0004/u.K**3])
+    Reaction({'A': 2, 'B': 1}, {'C': 1}, r, {'B': 1})
+    res = r({'A': 11*u.molar, 'B': 13*u.molar, 'temperature': 298.15*u.K})
+    ref = 10**(.7 + .02*25 + 0.003 * 25**2 + 0.0004 * 25**3)
+    assert abs(res - ref*13*11**2*Mps) < 1e-15
+
+
 def test_TPolyInLog10MassAction():
-    r = TPolyInLog10MassAction([2, 0.3, .2, .03, .004])
+    r = TPolyInLog10MassAction([1, 2, 0.3, .2, .03, .004])
     Reaction({'A': 2, 'B': 1}, {'C': 1}, r, {'B': 1})
     res = r({'A': 11, 'B': 13, 'temperature': 298.15})
     _T = math.log10(298.15) - 2
     ref = .3 + .2*_T + 0.03 * _T**2 + 0.004 * _T**3
     assert abs(res - ref*13*11**2) < 1e-15
+
+
+@requires(units_library)
+def test_TPolyInLog10MassAction__units():
+    Mps = u.molar/u.second
+    kunit = 1/u.molar**2/u.second
+    r = TPolyInLog10MassAction([u.K, 2, 0.3*kunit, .2*kunit, .03*kunit, .004*kunit])
+    Reaction({'A': 2, 'B': 1}, {'C': 1}, r, {'B': 1})
+    res = r({'A': 11*u.molar, 'B': 13*u.molar, 'temperature': 298.15*u.K}, backend=Backend())
+    _T = math.log10(298.15) - 2
+    ref = .3 + .2*_T + 0.03 * _T**2 + 0.004 * _T**3
+    assert abs(res - ref*13*11**2*Mps) < 1e-15

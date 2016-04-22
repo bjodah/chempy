@@ -51,10 +51,14 @@ class TPolyMassAction(MassAction):
         all_args = self.all_args(variables, args)
         offset, coeffs = all_args[0], all_args[1:]
         _x0 = variables['temperature'] - offset
-        _x = 1
-        k = 0
+        _x = _x0/_x0
+        k = None
         for coeff in coeffs:
-            k += coeff*_x
+            if k is None:
+                k = coeff*_x
+            else:
+                k += coeff*_x
+
             if self._reciprocal is True:
                 _x /= _x0
             elif self._reciprocal is False:
@@ -69,17 +73,21 @@ class RTPolyMassAction(TPolyMassAction):
 
 
 class Log10TPolyMassAction(TPolyMassAction):
+    """ Arguments: k_unit, temperature_offset, c0, c1, ... """
     def rate_coeff(self, variables, args, backend):
+        k_unit = self.arg(variables, args, 0)
         return 10**super(Log10TPolyMassAction, self).rate_coeff(
-            variables, args, backend)
+            variables, self.all_args(variables, args)[1:], backend)*k_unit
 
 
 class TPolyInLog10MassAction(TPolyMassAction):
+    """ Arguments: T_unit, temperature_offset, c0, c1, ... """
     def __call__(self, variables, args=None, backend=math):
+        T_unit = self.arg(variables, args, 0)
         new_vars = variables.copy()
-        new_vars['temperature'] = backend.log10(variables['temperature'])
+        new_vars['temperature'] = backend.log10(variables['temperature'] / T_unit)
         return super(TPolyInLog10MassAction, self).__call__(
-            new_vars, args, backend=backend)
+            new_vars, self.all_args(variables, args)[1:], backend=backend)
 
 
 def law_of_mass_action_rates(conc, rsys, variables=None):

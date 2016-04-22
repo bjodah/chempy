@@ -82,7 +82,7 @@ class Expr(object):
             return variables.get(self.arg_keys[index], args[index])
 
     def all_args(self, variables, args):
-        return [self.arg(variables, args, i) for i in range(len(self.args))]
+        return [self.arg(variables, args, i) for i in range(len(args or self.args))]
 
     def _dedimensionalisation(self, unit_registry):
         from ..units import default_unit_in_registry, to_unitless
