@@ -1126,3 +1126,65 @@ class ReactionSystem(object):
             if rxn.charge_neutrality_violation(self.substances) != 0:
                 return False
         return True
+
+    def composition_balance_vectors(self):
+        subs = self.substances.values()
+        ck = Substance.composition_keys(subs)
+        return [[s.composition.get(k, 0) for s in subs] for k in ck], ck
+
+
+def balance_stoichiometry(reactants, products, substances=None,
+                          substance_factory=Substance.from_formula):
+    """ Balances stoichiometric coefficients of a reaction
+
+    Parameters
+    ----------
+    reactants: iterable of reactant keys
+    products: iterable of product keys
+    substances: OrderedDict or string or None
+        mapping reactant/product keys to instances of :class:`Substance`
+    substance_factory: callback
+
+    Examples
+    --------
+    >>> ref = {'C2H2': 2, 'O2': 3}, {'CO': 4, 'H2O': 2}
+    >>> balance_stoichiometry({'C2H2', 'O2'}, {'CO', 'H2O'}) == ref
+    True
+
+    """
+    from sympy import Matrix
+    _intersect = set.intersection(reactants, products)
+    if _intersect:
+        raise ValueError("Substances on both sides: %s" % str(_intersect))
+    if substances is None:
+        substances = OrderedDict([(k, substance_factory(k)) for k
+                                  in chain(reactants, products)])
+    subst_vals = tuple(substances.values())
+
+    ck = Substance.composition_keys(subst_vals)
+    nreac = len(reactants)
+
+    def _get(s, k, i):
+        return s.composition.get(k, 0) * (-1 if i < nreac else 1)
+
+    A = Matrix([[_get(s, k, i) for i, s in enumerate(subst_vals)] for k in ck])
+
+    # A:                 x:   b:
+    #      O2  CO  H2O       C2H2
+    # C    0    1   0    x0   2
+    # H    0    0   2    x1   2
+    # O   -2    1   1    x2   0
+
+    x = Matrix([1] + list(Matrix(A[:, 1:]).LUsolve(Matrix(-A[:, 0]))))
+    while True:
+        for elem in x:
+            if not elem.is_integer:
+                numer, denom = elem.as_numer_denom()
+                x *= denom
+                break
+        else:
+            break
+    return (
+        {k: n for k, n in zip(substances.keys()[:nreac], x[:nreac])},
+        {k: n for k, n in zip(substances.keys()[nreac:], x[nreac:])}
+    )

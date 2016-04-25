@@ -9,7 +9,8 @@ from ..util.testing import requires
 from ..util.parsing import parsing_library
 from ..units import default_units, units_library
 from ..chemistry import (
-    Substance, Species, Reaction, ReactionSystem, Equilibrium
+    Substance, Species, Reaction, ReactionSystem, Equilibrium,
+    balance_stoichiometry
 )
 
 
@@ -177,7 +178,8 @@ def test_ReactioN__unicode():
     subst = {k: Substance.from_formula(k) for k in keys}
     r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
     assert r2.unicode(subst) == u'2 H₂O → 2 H₂ + O₂'
-    assert r2.html(subst) == u'2 H<sub>2</sub>O &rarr; 2 H<sub>2</sub> + O<sub>2</sub>'
+    assert r2.html(subst) == \
+        u'2 H<sub>2</sub>O &rarr; 2 H<sub>2</sub> + O<sub>2</sub>'
 
 
 def test_Reaction__idempotency():
@@ -212,3 +214,14 @@ def test_Equilibrium__cancel():
     e2 = Equilibrium({'A': 13, 'B': 3}, {'D': 2})
     coeff = e1.cancel(e2)
     assert coeff == -2
+
+
+def test_balance_stoichiometry():
+    # 4 NH4ClO4 -> 2 N2 + 4 HCl + 6H2O + 5O2
+    # 4 Al + 3O2 -> 2Al2O3
+    # ---------------------------------------
+    # 6 NH4ClO4 + 10 Al + -> 3 N2 + 6 HCl + 9 H2O + 5 Al2O3
+    reac, prod = balance_stoichiometry({'NH4ClO4', 'Al'},
+                                       {'Al2O3', 'HCl', 'H2O', 'N2'})
+    assert reac == {'NH4ClO4': 6, 'Al': 10}
+    assert prod == {'Al2O3': 5, 'HCl': 6, 'H2O': 9, 'N2': 3}

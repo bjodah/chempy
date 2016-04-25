@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function)
 
+from functools import reduce
+from operator import mul, add
+
 try:
     import numpy as np
     from numpy import any as _any
@@ -101,3 +104,22 @@ class NameSpace:
 class AttributeDict(object):
     def __init__(self, d):
         self.__dict__.update(d)
+
+
+def reducemap(args, reduce_op, map_op):
+    return reduce(reduce_op, map(map_op, *args))
+
+
+def vec_dot_vec(vec1, vec2):
+    # return np.dot(vec1, vec2)
+    # return np.add.reduce(np.multiply(vec1, vec2))
+    return reducemap((vec1, vec2), add, mul)
+
+
+def mat_dot_vec(iter_mat, iter_vec, iter_term=None):  # pure python (slow)
+    if iter_term is None:
+        return [vec_dot_vec(row, iter_vec) for row in iter_mat]
+    else:
+        # daxpy
+        return [vec_dot_vec(row, iter_vec) + term for row, term
+                in zip(iter_mat, iter_term)]

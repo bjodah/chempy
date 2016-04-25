@@ -14,34 +14,13 @@ from __future__ import division, absolute_import
 import math
 import warnings
 from collections import defaultdict
-from functools import reduce
-from operator import mul, add
 
 
 import numpy as np
 
 from .chemistry import ReactionSystem, equilibrium_quotient
-from ._util import prodpow, get_backend
+from ._util import prodpow, get_backend, mat_dot_vec
 from .util.pyutil import deprecated
-
-
-def reducemap(args, reduce_op, map_op):
-    return reduce(reduce_op, map(map_op, *args))
-
-
-def vec_dot_vec(vec1, vec2):
-    # return np.dot(vec1, vec2)
-    # return np.add.reduce(np.multiply(vec1, vec2))
-    return reducemap((vec1, vec2), add, mul)
-
-
-def mat_dot_vec(iter_mat, iter_vec, iter_term=None):  # pure python (slow)
-    if iter_term is None:
-        return [vec_dot_vec(row, iter_vec) for row in iter_mat]
-    else:
-        # daxpy
-        return [vec_dot_vec(row, iter_vec) + term for row, term
-                in zip(iter_mat, iter_term)]
 
 
 def equilibrium_residual(rc, c0, stoich, K, activity_product=None):
@@ -324,18 +303,6 @@ class EqSystem(ReactionSystem):
         else:
             return (self.stoichs(non_precip_rids),
                     eq_params)
-
-    def composition_balance_vectors(self):
-        composition_keys = set()
-        for s in self.substances.values():
-            for key in s.composition:
-                composition_keys.add(key)
-        vs = []
-        sorted_composition_keys = sorted(composition_keys)
-        for key in sorted_composition_keys:
-            vs.append([s.composition.get(key, 0)
-                       for s in self.substances.values()])
-        return vs, sorted_composition_keys
 
     def composition_conservation(self, concs, init_concs):
         composition_vecs, comp_keys = self.composition_balance_vectors()
