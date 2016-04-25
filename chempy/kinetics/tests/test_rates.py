@@ -3,7 +3,7 @@ from __future__ import (absolute_import, division, print_function)
 
 import math
 
-from chempy import Reaction, ReactionSystem
+from chempy import Reaction, ReactionSystem, Substance
 from chempy.units import Backend, to_unitless, units_library, default_units as u
 from chempy.util.testing import requires
 from ..rates import (
@@ -219,3 +219,12 @@ def test_TPolyRadiolytic__units():
         assert abs(to_unitless((res - ref)/ref)) < 1e-15
 
     _check(TPolyRadiolytic([273.15*u.K, 1.85e-7*u.mol/u.joule, 1e-9*u.mol/u.joule/u.K]))
+
+
+@requires(units_library)
+def test_Radioyltic__Reaction_html():
+    rate = Radiolytic([2.1*u.per100eV])
+    rxn = Reaction({}, {'H': 1}, rate)
+    H = Substance.from_formula('H')
+    html = rxn.html({'H': H}, with_param=True)
+    assert html == ' &rarr; H&#59; %s' % str(rate)

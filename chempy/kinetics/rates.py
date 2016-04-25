@@ -35,7 +35,7 @@ class ArrheniusMassAction(MassAction):
 
 
 class Radiolytic(RateExpr):
-    """ Arguments: yield [amount/volume] """
+    """ Arguments: radiolytic_yield [amount/energy] """
 
     parameter_keys = ('doserate', 'density')
     nargs = 1
@@ -52,6 +52,7 @@ RTPoly = mk_Poly('temperature', reciprocal=True)
 
 class TPolyRadiolytic(TPoly, Radiolytic):
     nargs = None
+    parameter_keys = Radiolytic.parameter_keys + ('temperature',)
 
     def g_value(self, variables, args, backend):
         return self.eval_poly(variables, args, backend)

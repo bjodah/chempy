@@ -83,6 +83,8 @@ def test_Reaction():
     with pytest.raises(ValueError):
         Reaction({Hp: -1, OHm: -1}, {H2O: -1})
 
+    assert r1 == Reaction({'H+', 'OH-'}, {'H2O'})
+
 
 @requires(parsing_library)
 def test_Reaction_parsing():

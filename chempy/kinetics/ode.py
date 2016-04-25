@@ -73,6 +73,25 @@ def get_odesys(rsys, include_params=False, substitutions=None,
     \*\*kwargs :
         Keyword arguemnts pass on to `SymbolicSys`
 
+    Returns
+    -------
+    pyodesys.symbolic.SymbolicSys
+    param_keys
+    arg_keys
+    p_units
+
+    Examples
+    --------
+    >>> from chempy import Equilibrium, ReactionSystem
+    >>> eq = Equilibrium({'Fe+3', 'SCN-'}, {'FeSCN+2'}, 10**2)
+    >>> substances = 'Fe+3 SCN- FeSCN+2'.split()
+    >>> rsys = ReactionSystem(eq.as_reactions(kf=3.0), substances)
+    >>> odesys = get_odesys(rsys)[0]
+    >>> init_conc = {'Fe+3': 1.0, 'SCN-': .3, 'FeSCN+2': 0}
+    >>> tout, Cout, info = odesys.integrate(5, init_conc)
+    >>> Cout[-1, :].round(4)
+    array([ 0.7042,  0.0042,  0.2958])
+
     """
     if SymbolicSys is None:
         from pyodesys.symbolic import SymbolicSys
@@ -115,9 +134,6 @@ def get_odesys(rsys, include_params=False, substitutions=None,
                 arg_keys.extend(ratex.arg_keys)
                 p_defaults.extend(ratex.args)
 
-    # arg_keys = chain(ratex.arg_keys for ratex in r_exprs)
-    # p_defaults = chain(ratex.args for ratex in r_exprs)
-
     if unit_registry is None:
         def pre_processor(x, y, p):
             return (
@@ -132,6 +148,7 @@ def get_odesys(rsys, include_params=False, substitutions=None,
                 y,  # dict(zip(substance_keys, y)),
                 dict(zip(param_keys+arg_keys, p))
             )
+        p_units = [None]*(len(param_keys) + len(arg_keys))
     else:
         # We need to make rsys_params unitless and create
         # a pre- & post-processor for SymbolicSys
@@ -150,7 +167,6 @@ def get_odesys(rsys, include_params=False, substitutions=None,
             return (
                 to_unitless(x, time_unit),
                 rsys.as_per_substance_array(to_unitless(y, conc_unit)),
-                # [to_unitless(elem, p_unit) for elem, p_unit in zip(p, p_units)]
                 [to_unitless(p[k], p_unit) for k, p_unit in zip(chain(param_keys, arg_keys), p_units)]
             )
 
@@ -182,4 +198,4 @@ def get_odesys(rsys, include_params=False, substitutions=None,
     return SymbolicSys.from_callback(
         dydt, len(substance_keys),
         len(param_keys) + (0 if include_params else len(arg_keys)),
-        **kwargs)
+        **kwargs), param_keys, arg_keys, p_units

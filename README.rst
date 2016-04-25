@@ -126,8 +126,8 @@ Chemical equilibria
 
    >>> from chempy import Equilibrium
    >>> from chempy.chemistry import Species
-   >>> water_autop = Equilibrium({'H2O': 1}, {'H+': 1, 'OH-': 1}, 10**-14)
-   >>> ammonia_prot = Equilibrium({'NH4+': 1}, {'NH3': 1, 'H+': 1}, 10**-9.24)
+   >>> water_autop = Equilibrium({'H2O'}, {'H+', 'OH-'}, 10**-14)
+   >>> ammonia_prot = Equilibrium({'NH4+'}, {'NH3', 'H+'}, 10**-9.24)
    >>> from chempy.equilibria import EqSystem
    >>> substances = map(Species.from_formula, 'H2O OH- H+ NH3 NH4+'.split())
    >>> eqsys = EqSystem([water_autop, ammonia_prot], substances)

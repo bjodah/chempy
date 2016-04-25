@@ -336,7 +336,9 @@ class Reaction(object):
     Parameters
     ----------
     reac : dict (str -> int)
+        if reac is a set multiplicities are assumed to be 1
     prod : dict (str -> int)
+        if reac is a set multiplicities are assumed to be 1
     param : float or callable
     inact_reac : dict (optional)
     inact_prod : dict (optional)
@@ -373,6 +375,10 @@ class Reaction(object):
             self, reac, prod, param=None, inact_reac=None, inact_prod=None,
             name=None, ref=None, other_properties=None,
             checks=('any_effect', 'all_positive', 'all_integral')):
+        if isinstance(reac, set):
+            reac = {k: 1 for k in reac}
+        if isinstance(prod, set):
+            prod = {k: 1 for k in prod}
         self.reac = reac
         self.prod = prod
         self.param = param
@@ -658,6 +664,9 @@ class Reaction(object):
             except AttributeError:
                 res += self._str_param(magnitude_fmt=_fmt)
         return res
+
+    def _repr_html_(self):
+        return self.html({k: k for k in self.keys()})
 
     def _violation(self, substances, attr):
         net = 0.0
@@ -1000,21 +1009,23 @@ class ReactionSystem(object):
             else:
                 check_balance = True
         if check_balance:
-            self._balance_check()
-        self._duplicate_check()
+            self.check_balance()
+        self.check_duplicate()
 
     def _repr_html_(self):
         def _format(r):
             return r.html(self.substances, with_param=True)
         return '<br>'.join(map(_format, self.rxns))
 
-    def _duplicate_check(self):
+    def check_duplicate(self):
+        """ Raies ValueError if there are duplicates in self.rxns """
         for i1, rxn1 in enumerate(self.rxns):
             for i2, rxn2 in enumerate(self.rxns[i1+1:], i1+1):
                 if rxn1 == rxn2:
                     raise ValueError("Duplicate reactions %d & %d" % (i1, i2))
 
-    def _balance_check(self):
+    def check_balance(self):
+        """ Raies ValueError there are unbalanecd reactions in self.rxns """
         for rxn in self.rxns:
             for net in rxn.composition_violation(self.substances):
                 if net != 0:

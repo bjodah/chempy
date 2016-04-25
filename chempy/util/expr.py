@@ -61,13 +61,19 @@ class Expr(object):
     def __call__(self, variables, args=None, backend=None):
         raise NotImplementedError("Subclass and implement __call__")
 
-    def _str(self, arg_fmt, arg_keys_fmt=str):
+    def _str(self, arg_fmt, arg_keys_fmt=str, with_kw=False):
+        if len(self.args) == 0:
+            args_str = ''
+        elif len(self.args) == 1:
+            args_str = '%s,' % self.args[0]
+        else:
+            args_str = '%s' % ', '.join(map(arg_fmt, self.args))
         args_kwargs_strs = [', '.join(chain(
-            map(arg_fmt, self.args),
+            ['(%s)' % args_str],
             [arg_keys_fmt(self.arg_keys)] if self.arg_keys is not None else []
         ))]
         print_kw = {k: getattr(self, k) for k in self.kw if getattr(self, k) != self.kw[k]}
-        if print_kw:
+        if with_kw and print_kw:
             args_kwargs_strs += [', '.join('{}={}'.format(k, v) for k, v in print_kw.items())]
         return "{}({})".format(self.__class__.__name__, ', '.join(args_kwargs_strs))
 
