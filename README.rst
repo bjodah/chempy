@@ -96,6 +96,19 @@ Parsing formulae
 as you see, in composition, the atomic numbers (and 0 for charge) is used as
 keys and the count of each kind became respective value.
 
+Balancing stiochiometry of a chemical reaction
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. code:: python
+
+   >>> from chempy import balance_stoichiometry
+   >>> reac, prod = balance_stoichiometry({'C7H5(NO2)3', 'NH4NO3'}, {'CO', 'H2O', 'N2'})
+   >>> from pprint import pprint
+   >>> pprint(reac)
+   {'C7H5(NO2)3': 2, 'NH4NO3': 7}
+   >>> pprint(prod)
+   {'CO': 14, 'H2O': 19, 'N2': 10}
+
+
 Balancing reactions
 ~~~~~~~~~~~~~~~~~~~
 .. code:: python

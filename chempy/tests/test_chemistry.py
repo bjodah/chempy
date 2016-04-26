@@ -225,3 +225,6 @@ def test_balance_stoichiometry():
                                        {'Al2O3', 'HCl', 'H2O', 'N2'})
     assert reac == {'NH4ClO4': 6, 'Al': 10}
     assert prod == {'Al2O3': 5, 'HCl': 6, 'H2O': 9, 'N2': 3}
+
+    with pytest.raises(ValueError):
+        reac, prod = balance_stoichiometry({'C7H5(NO2)3', 'Al', 'NH4NO3'}, {'CO', 'H2O', 'N2'})

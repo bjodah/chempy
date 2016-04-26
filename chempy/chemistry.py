@@ -1153,12 +1153,14 @@ def balance_stoichiometry(reactants, products, substances=None,
 
     """
     from sympy import Matrix
+
     _intersect = set.intersection(reactants, products)
     if _intersect:
         raise ValueError("Substances on both sides: %s" % str(_intersect))
     if substances is None:
         substances = OrderedDict([(k, substance_factory(k)) for k
                                   in chain(reactants, products)])
+    subst_keys = list(substances.keys())
     subst_vals = tuple(substances.values())
 
     ck = Substance.composition_keys(subst_vals)
@@ -1168,14 +1170,15 @@ def balance_stoichiometry(reactants, products, substances=None,
         return s.composition.get(k, 0) * (-1 if i < nreac else 1)
 
     A = Matrix([[_get(s, k, i) for i, s in enumerate(subst_vals)] for k in ck])
+    A_aug, pivot = A.rref()
 
     # A:                 x:   b:
     #      O2  CO  H2O       C2H2
     # C    0    1   0    x0   2
     # H    0    0   2    x1   2
     # O   -2    1   1    x2   0
-
-    x = Matrix([1] + list(Matrix(A[:, 1:]).LUsolve(Matrix(-A[:, 0]))))
+    x_aug = Matrix(A_aug[:, 1:]).LUsolve(Matrix(-A_aug[:, 0]))
+    x = Matrix([1] + [x_aug[i] for i in pivot])
     while True:
         for elem in x:
             if not elem.is_integer:
@@ -1184,7 +1187,9 @@ def balance_stoichiometry(reactants, products, substances=None,
                 break
         else:
             break
+    if 0 in x:
+        raise ValueError("Unable to balance stoichiometry (did you forget a product?)")
     return (
-        {k: n for k, n in zip(substances.keys()[:nreac], x[:nreac])},
-        {k: n for k, n in zip(substances.keys()[nreac:], x[nreac:])}
+        {k: n for k, n in zip(subst_keys[:nreac], x[:nreac])},
+        {k: n for k, n in zip(subst_keys[nreac:], x[nreac:])}
     )
