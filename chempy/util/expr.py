@@ -22,7 +22,7 @@ class Expr(object):
     ...
     >>> import math
     >>> class EinsteinSolid(HeatCapacity):
-    ...     """ arguments: einstein temperature """
+    ...     """ arguments: einstein_temperature """
     ...     def __call__(self, variables, args=None, backend=math):
     ...         molar_mass = self.substance.mass
     ...         TE = self.arg(variables, args, 0)  # einstein_temperature
@@ -51,6 +51,9 @@ class Expr(object):
     def __init__(self, args, arg_keys=None, **kwargs):
         if self.nargs is not None and len(args) != self.nargs:
             raise ValueError("Incorrect number of arguments: %d (expected %d)" % (len(args), self.nargs))
+        if arg_keys is not None and self.nargs is not None and len(arg_keys) != self.nargs:
+            raise ValueError("Incorrect number of arg_keys: %d (expected %d)" % (len(arg_keys), self.nargs))
+
         self.args = args
         self.arg_keys = arg_keys
         for k, v in (self.kw or {}).items():

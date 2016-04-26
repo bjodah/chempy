@@ -93,3 +93,31 @@ def test_mk_Poly():
     Poly = mk_Poly('T', reciprocal=True)
     p = Poly([3, 2, 5, 7, 8, 2, 9])
     assert p.eval_poly({'T': 13}) == 2.57829
+
+
+def test_Expr__nargs():
+
+    class Linear(Expr):
+        """ Arguments: p0, p1 """
+        nargs = 2
+        parameter_keys = ('x',)
+
+        def __call__(self, variables, args=None, backend=None):
+            p0, p1 = self.all_args(variables, args)
+            return p0 + p1*variables['x']
+
+    l1 = Linear([3, 2])
+    assert l1(dict(x=5)) == 13
+    with pytest.raises(ValueError):
+        Linear([3])
+    with pytest.raises(ValueError):
+        Linear([3, 2, 1])
+
+    l2 = Linear([3, 2], ['a', 'b'])
+    with pytest.raises(ValueError):
+        Linear([3, 2], ['a'])
+    with pytest.raises(ValueError):
+        Linear([3, 2], ['a', 'b', 'c'])
+
+    assert l2(dict(x=5)) == 13
+    assert l2(dict(x=5), [11, 13]) == 11 + 13*5

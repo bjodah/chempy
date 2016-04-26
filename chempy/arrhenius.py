@@ -91,6 +91,16 @@ def fit_arrhenius_equation(k, T, kerr=None, linearized=False):
     return popt, pcov
 
 
+def _fmt(arg, precision, tex):
+    if tex:
+        unit_str = arg.dimensionality.latex.strip('$')
+    else:
+        from quantities.markup import config
+        attr = 'unicode' if config.use_unicode else 'string'
+        unit_str = getattr(arg.dimensionality, attr)
+    return precision.format(float(arg.magnitude)) + " " + unit_str
+
+
 class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
     """ Kinetic data in the form of an Arrhenius parameterisation
 
@@ -133,20 +143,10 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
         from .kinetics.rates import ArrheniusMassAction as AMA
         return AMA([self.A, self.Ea/_get_R(constants, units)], arg_keys, rxn=rxn, ref=self.ref)
 
-    @staticmethod
-    def _fmt(arg, precision, tex):
-        if tex:
-            unit_str = arg.dimensionality.latex.strip('$')
-        else:
-            from quantities.markup import config
-            attr = 'unicode' if config.use_unicode else 'string'
-            unit_str = getattr(arg.dimensionality, attr)
-        return precision.format(float(arg.magnitude)) + " " + unit_str
-
     def format(self, precision, tex=False):
         try:
-            str_A = self._fmt(self.A, precision, tex)
-            str_Ea = self._fmt(self.Ea, precision, tex)
+            str_A = _fmt(self.A, precision, tex)
+            str_Ea = _fmt(self.Ea, precision, tex)
         except:
             str_A = precision.format(self.A)
             str_Ea = precision.format(self.Ea)
@@ -154,7 +154,7 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
 
     def equation_as_string(self, precision, tex=False):
         if tex:
-            return r"{}\exp \left(\frac{{{}}}{{RT}} \right)".format(
+            return r"{}\exp \left(-\frac{{{}}}{{RT}} \right)".format(
                 *self.format(precision, tex))
         else:
             return "{}*exp({}/(R*T))".format(*self.format(precision, tex))

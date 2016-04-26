@@ -1011,6 +1011,7 @@ class ReactionSystem(object):
         if check_balance:
             self.check_balance()
         self.check_duplicate()
+        self.check_duplicate_rxn_names()
 
     def _repr_html_(self):
         def _format(r):
@@ -1023,6 +1024,17 @@ class ReactionSystem(object):
             for i2, rxn2 in enumerate(self.rxns[i1+1:], i1+1):
                 if rxn1 == rxn2:
                     raise ValueError("Duplicate reactions %d & %d" % (i1, i2))
+
+    def check_duplicate_rxn_names(self):
+        names_seen = {}
+        for idx, rxn in enumerate(self.rxns):
+            if rxn.name is None:
+                continue
+            if rxn.name in names_seen:
+                raise ValueError("Reactions with duplicate names (%s): %d & %d"
+                                 % (rxn.name, names_seen[rxn.name], idx))
+            else:
+                names_seen[rxn.name] = idx
 
     def check_balance(self):
         """ Raies ValueError there are unbalanecd reactions in self.rxns """

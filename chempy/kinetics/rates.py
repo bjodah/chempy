@@ -34,6 +34,14 @@ class ArrheniusMassAction(MassAction):
         return A*backend.exp(-Ea_over_R/variables['temperature'])
 
 
+class EyringMassAction(ArrheniusMassAction):
+    """ Arguments: kB_h_times_exp_dS_R, dH_over_R """
+    def rate_coeff(self, variables, args, backend):
+        kB_h_times_exp_dS_R, dH_over_R = self.all_args(variables, args)
+        T = variables['temperature']
+        return T * kB_h_times_exp_dS_R * backend.exp(-dH_over_R/T)
+
+
 class Radiolytic(RateExpr):
     """ Arguments: radiolytic_yield [amount/energy] """
 

@@ -17,14 +17,15 @@ from chempy.units import to_unitless, linspace
 
 
 def integration_with_sliders(rsys, tend, c0, parameters, fig_kwargs=None,
-                             unit_registry=None, output_conc_unit=None, output_time_unit=None):
-    """
-
-    """
+                             unit_registry=None, output_conc_unit=None,
+                             output_time_unit=None, slider_kwargs=None):
+    if slider_kwargs is None:
+        slider_kwargs = {}
     odesys, state_keys, rarg_keys, p_units = get_odesys(
         rsys, unit_registry=unit_registry,
         output_conc_unit=output_conc_unit,
         output_time_unit=output_time_unit)[:4]
+    print(odesys.exprs)
     if output_conc_unit is None:
         output_conc_unit = 1
     if output_time_unit is None:
@@ -58,12 +59,17 @@ def integration_with_sliders(rsys, tend, c0, parameters, fig_kwargs=None,
     c0_widgets = OrderedDict([
         (k, Slider(
             title=k if output_conc_unit is 1 else k + ' / ' + output_conc_unit.dimensionality.unicode,
-            value=_C(k), start=_C(k)/2, end=_C(k)*2, step=_C(k)/10))
+            value=_C(k), **slider_kwargs.get(k, dict(start=_C(k)/2, end=_C(k)*2, step=_C(k)/10))))
         for k in rsys.substances])
+
+    def _dict_to_unitless(d, u):
+        return {k: to_unitless(v, u) for k, v in d.items()}
 
     param_widgets = OrderedDict([
         (k, Slider(title=k if u is None else k + ' / ' + u.dimensionality.unicode,
-                   value=v, start=v/10, end=v*10, step=v/10))
+                   value=v, **_dict_to_unitless(
+                       slider_kwargs.get(k, dict(start=v/10, end=v*10, step=v/10)),
+                       u)))
         for k, v, u in zip(param_keys, p_ul, p_units)])
     all_widgets = list(chain(c0_widgets.values(), param_widgets.values()))
 
