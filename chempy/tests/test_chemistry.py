@@ -216,6 +216,7 @@ def test_Equilibrium__cancel():
     assert coeff == -2
 
 
+@requires('sympy')
 def test_balance_stoichiometry():
     # 4 NH4ClO4 -> 2 N2 + 4 HCl + 6H2O + 5O2
     # 4 Al + 3O2 -> 2Al2O3
