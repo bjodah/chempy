@@ -106,9 +106,11 @@ def get_odesys(rsys, include_params=False, substitutions=None,
             return rxn.param
         else:
             try:
-                return rxn.param._as_RateExpr(rxn)
+                convertible = rxn.param._as_RateExpr
             except AttributeError:
                 return MassAction([rxn.param], rxn=rxn)
+            else:
+                return convertible(rxn)
     r_exprs = [_param(rxn) for rxn in rsys.rxns]
 
     _original_param_keys = set.union(*(set(ratex.parameter_keys) for ratex in r_exprs))
