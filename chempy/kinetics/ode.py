@@ -11,7 +11,7 @@ import math
 
 from ..units import to_unitless, get_derived_unit
 from ..util.pyutil import deprecated
-from ..util.expr import Expr
+from ..util._expr import Expr
 from .rates import RateExpr, MassAction, law_of_mass_action_rates as _lomar
 
 

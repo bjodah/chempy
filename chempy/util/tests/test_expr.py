@@ -12,7 +12,7 @@ from chempy.units import (
 )
 from chempy.util.testing import requires
 
-from ..expr import Expr, mk_Poly, PiecewisePoly
+from .._expr import Expr, mk_Poly, mk_PiecewisePoly
 from ..parsing import parsing_library
 
 
@@ -25,9 +25,9 @@ def _get_cv(kelvin=1, gram=1, mol=1):
         """ arguments: einstein temperature """
         nargs = 1
 
-        def __call__(self, variables, args=None, backend=math):
+        def __call__(self, variables, backend=math):
             molar_mass = self.substance.mass
-            TE = self.arg(variables, args, 0)  # einstein_temperature
+            TE = self.arg(variables, 0)  # einstein_temperature
             R = variables['R']
             T = variables['temperature']
             # Canoncial ensemble:
@@ -103,8 +103,8 @@ def test_Expr__nargs():
         nargs = 2
         parameter_keys = ('x',)
 
-        def __call__(self, variables, args=None, backend=None):
-            p0, p1 = self.all_args(variables, args)
+        def __call__(self, variables, backend=None):
+            p0, p1 = self.all_args(variables)
             return p0 + p1*variables['x']
 
     l1 = Linear([3, 2])
@@ -121,7 +121,7 @@ def test_Expr__nargs():
         Linear([3, 2], ['a', 'b', 'c'])
 
     assert l2(dict(x=5)) == 13
-    assert l2(dict(x=5), [11, 13]) == 11 + 13*5
+    assert l2(dict(x=5, a=11, b=13)) == 11 + 13*5
 
 
 def test_PiecewisePoly():
@@ -133,13 +133,14 @@ def test_PiecewisePoly():
     p2 = Poly([0, 3, -.1])
     assert p2.eval_poly({'temperature': 10}) == 2
 
-    pw = PiecewisePoly([[(0, 10), (10, 20)], [p1, p2]])
-    assert pw.eval_poly({'temperature': 5}) == 1.5
-    assert pw.eval_poly({'temperature': 15}) == 1.5
-    assert pw.parameter_keys == ('temperature',)
+    TPiecewisePoly = mk_PiecewisePoly('temperature')
+    tpwp = TPiecewisePoly.from_polynomials([(0, 10), (10, 20)], [p1, p2])
+    assert tpwp.eval_poly({'temperature': 5}) == 1.5
+    assert tpwp.eval_poly({'temperature': 15}) == 1.5
+    assert tpwp.parameter_keys == ('temperature',)
 
     with pytest.raises(ValueError):
-        pw.eval_poly({'temperature': 21})
+        tpwp.eval_poly({'temperature': 21})
 
 
 @requires('sympy')
@@ -148,11 +149,16 @@ def test_PiecewisePoly__sympy():
     Poly = mk_Poly('T')
     p1 = Poly([0, 1, 0.1])
     p2 = Poly([0, 3, -.1])
-    pwp = PiecewisePoly([[(0, 10), (10, 20)], [p1, p2]])
+
+    TPiecewisePoly = mk_PiecewisePoly('temperature')
+    tpwp = TPiecewisePoly([2, 2, 0, 10, 2, 10, 20, 0, 1, 0.1, 0, 3, -.1])
     x = sp.Symbol('x')
-    res = pwp.eval_poly({'T': x}, backend=sp)
+    res = tpwp.eval_poly({'temperature': x}, backend=sp)
     assert isinstance(res, sp.Piecewise)
     assert res.args[0][0] == 1+0.1*x
     assert res.args[0][1] == sp.And(0 <= x, x <= 10)
     assert res.args[1][0] == 3-0.1*x
     assert res.args[1][1] == sp.And(10 <= x, x <= 20)
+
+    with pytest.raises(ValueError):
+        tpwp.from_polynomials([(0, 10), (10, 20)], [p1, p2])

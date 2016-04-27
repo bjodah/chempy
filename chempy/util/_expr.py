@@ -8,7 +8,9 @@ pay to allow for this is a somewhat contrived syntax
 """
 from __future__ import (absolute_import, division, print_function)
 
+from functools import reduce
 from itertools import chain
+from operator import add
 
 
 class Expr(object):
@@ -23,9 +25,9 @@ class Expr(object):
     >>> import math
     >>> class EinsteinSolid(HeatCapacity):
     ...     """ arguments: einstein_temperature """
-    ...     def __call__(self, variables, args=None, backend=math):
+    ...     def __call__(self, variables, backend=math):
     ...         molar_mass = self.substance.mass
-    ...         TE = self.arg(variables, args, 0)  # einstein_temperature
+    ...         TE = self.arg(variables, 0)  # einstein_temperature
     ...         R = variables['R']
     ...         T = variables['temperature']
     ...         molar_c_v = 3*R*(TE/(2*T))**2 * backend.sinh(TE/(2*T))**-2
@@ -61,7 +63,7 @@ class Expr(object):
         if kwargs:
             raise ValueError("Unexpected keyword arguments %s" % kwargs)
 
-    def __call__(self, variables, args=None, backend=None):
+    def __call__(self, variables, backend=None):
         raise NotImplementedError("Subclass and implement __call__")
 
     def _str(self, arg_fmt, arg_keys_fmt=str, with_kw=False):
@@ -86,15 +88,14 @@ class Expr(object):
     def string(self, arg_fmt=str):
         return self._str(arg_fmt)
 
-    def arg(self, variables, args, index):
-        args = args or self.args
+    def arg(self, variables, index):
         if self.arg_keys is None:
-            return args[index]
+            return self.args[index]
         else:
-            return variables.get(self.arg_keys[index], args[index])
+            return variables.get(self.arg_keys[index], self.args[index])
 
-    def all_args(self, variables, args):
-        return [self.arg(variables, args, i) for i in range(len(args or self.args))]
+    def all_args(self, variables):
+        return [self.arg(variables, i) for i in range(len(self.args))]
 
     def _dedimensionalisation(self, unit_registry):
         from ..units import default_unit_in_registry, to_unitless
@@ -103,8 +104,25 @@ class Expr(object):
         return units, self.__class__(unitless_args, self.arg_keys, **{k: getattr(self, k) for k in self.kw})
 
 
+def _eval_poly(x, offset, coeffs, reciprocal=False):
+    _x0 = x - offset
+    _x = _x0/_x0
+    res = None
+    for coeff in coeffs:
+        if res is None:
+            res = coeff*_x
+        else:
+            res += coeff*_x
+
+        if reciprocal:
+            _x /= _x0
+        else:
+            _x *= _x0
+    return res
+
+
 def mk_Poly(parameter, reciprocal=False):
-    """ Classfactory of Expr subclass for (shifted) polynomial
+    """ Class factory of Expr subclass for (shifted) polynomial
 
     Parameters
     ----------
@@ -128,55 +146,64 @@ def mk_Poly(parameter, reciprocal=False):
 
     """
     class Poly(Expr):
-
+        """ Args: shift, p0, p1, ... """
         parameter_keys = (parameter,)
 
-        def eval_poly(self, variables, args=None, backend=None):
-            all_args = self.all_args(variables, args)
-            offset, coeffs = all_args[0], all_args[1:]
-            _x0 = variables[parameter] - offset
-            _x = _x0/_x0
-            k = None
-            for coeff in coeffs:
-                if k is None:
-                    k = coeff*_x
-                else:
-                    k += coeff*_x
-
-                if reciprocal is True:
-                    _x /= _x0
-                elif reciprocal is False:
-                    _x *= _x0
-                else:
-                    raise NotImplementedError
-            return k
+        def eval_poly(self, variables, backend=None, skip=0):
+            all_args = self.all_args(variables)
+            x = variables[parameter]
+            offset, coeffs = all_args[skip], all_args[skip+1:]
+            return _eval_poly(x, offset, coeffs, reciprocal)
     return Poly
 
 
-class PiecewisePoly(Expr):
+def mk_PiecewisePoly(parameter, reciprocal=False):
+    """ Class factory of Expr subclass for piecewise (shifted) polynomial """
+    class PiecewisePoly(Expr):
+        """ Args: npolys, ncoeff0, lower0, upper0, ncoeff1, ..., shift0, p0_0, p0_1, ... shiftn, p0_n, p1_n, ... """
+        parameter_keys = (parameter,)
 
-    def __init__(self, args, arg_keys=None, **kwargs):
-        bounds, polys = args
-        if not all(p.parameter_keys == polys[0].parameter_keys for p in polys):
-            raise ValueError("Mixed parameter_keys")
-        super(PiecewisePoly, self).__init__(args, arg_keys, **kwargs)
-        self.parameter_keys = polys[0].parameter_keys
-        self.bounds = bounds
-        self.polys = polys
+        def eval_poly(self, variables, backend=None):
+            all_args = self.all_args(variables)
+            npoly = all_args[0]
+            arg_idx = 1
+            poly_args = []
+            meta = []
+            for poly_idx in range(npoly):
+                meta.append(all_args[arg_idx:arg_idx+3])
+                ncoeff = all_args[arg_idx]
+                lower = all_args[arg_idx+1]
+                upper = all_args[arg_idx+2]
+                arg_idx += 3
+            for poly_idx in range(npoly):
+                narg = 1+meta[poly_idx][0]
+                poly_args.append(all_args[arg_idx:arg_idx+narg])
+                arg_idx += narg
+            if arg_idx != len(all_args):
+                raise Exception("Bug in PiecewisePoly.eval_poly")
 
-    def eval_poly(self, variables, args=None, backend=None):
-        bounds, polys = self.all_args(variables, args)
-        x = variables[self.parameter_keys[0]]
-        if args is not None:
-            raise NotImplementedError("args not flattened")  # nargs == None
-        try:
-            pw = backend.Piecewise
-        except AttributeError:
-            for (lower, upper), p in zip(bounds, polys):
-                if lower <= x <= upper:
-                    return p.eval_poly(variables, args, backend)
+            x = variables[parameter]
+            try:
+                pw = backend.Piecewise
+            except AttributeError:
+                for (ncoeff, lower, upper), args in zip(meta, poly_args):
+                    if lower <= x <= upper:
+                        return _eval_poly(x, args[0], args[1:], reciprocal)
+                else:
+                    raise ValueError("not within any bounds: %s" % str(x))
             else:
-                raise ValueError("not within any bounds: %s" % str(x))
-        else:
-            return pw(*[(p.eval_poly(variables, args, backend), backend.And(l <= x, x <= u)) for (l, u), p
-                        in zip(bounds, polys)])
+                return pw(*[(_eval_poly(x, a[0], a[1:], reciprocal),
+                             backend.And(l <= x, x <= u)) for (n, l, u), a in zip(meta, poly_args)])
+
+        @classmethod
+        def from_polynomials(cls, bounds, polys):
+            if any(p.parameter_keys != (parameter,) for p in polys):
+                raise ValueError("Mixed parameter_keys")
+            npolys = len(polys)
+            if len(bounds) != npolys:
+                raise ValueError("Length mismatch")
+
+            meta = reduce(add, [[len(p.args)-1, l, u] for (l, u), p in zip(bounds, polys)])
+            p_args = reduce(add, [p.args for p in polys])
+            return cls([npolys] + meta + p_args)
+    return PiecewisePoly

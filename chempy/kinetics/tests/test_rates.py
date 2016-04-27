@@ -21,17 +21,16 @@ class SpecialFraction(RateExpr):
     H2 + Br2 -> 2HBr
     ½ dHBr/dt = k[H2][Br2]**(3/2) / ([Br2] + k'[HBr])
     """
-    def __call__(self, variables, args=None, backend=math):
-        args = args or self.args
+    def __call__(self, variables, backend=math):
         two = 2 * backend.pi**0
-        k = self.arg(variables, args, 0)
-        kp = self.arg(variables, args, 1)
+        k = self.arg(variables, 0)
+        kp = self.arg(variables, 1)
         H2, Br2, HBr = variables['H2'], variables['Br2'], variables['HBr']
         return k*H2*Br2**(3/two) / (Br2 + kp*HBr)
 
 
 def _get_SpecialFraction_rsys(k, kprime):
-    ratex = SpecialFraction([k, kprime])
+    ratex = SpecialFraction([k, kprime], ['k_HBr', 'kprime_HBr'])
     rxn = Reaction({'H2': 1, 'Br2': 1}, {'HBr': 2}, ratex)
     return ReactionSystem([rxn], 'H2 Br2 HBr')
 
@@ -51,10 +50,10 @@ def test_specialfraction_rateexpr():
 
 
 def test_MassAction():
-    ma = MassAction([3.14])
+    ma = MassAction([3.14], ['my_rate'])
     Reaction({'A': 2, 'B': 1}, {'C': 1}, ma, {'B': 1})
     assert abs(ma({'A': 11, 'B': 13, 'C': 17}) - 3.14*13*11**2) < 1e-14
-    assert abs(ma({'A': 11, 'B': 13, 'C': 17}, [2.72]) - 2.72*13*11**2) < 1e-12
+    assert abs(ma({'A': 11, 'B': 13, 'C': 17, 'my_rate': 2.72}) - 2.72*13*11**2) < 1e-12
 
 
 def test_ArrheniusMassAction():
@@ -81,13 +80,14 @@ def test_specialfraction_rateexpr__units():
 
     conc = {'H2': 2*u.molar, 'Br2': 3000*u.mol/u.m**3, 'HBr': 5*u.molar}
 
-    def _check(k, kprime, c, args=None):
+    def _check(k, kprime, c):
         ref = k*c['H2']*c['Br2']**1.5/(c['Br2'] + kprime*c['HBr'])
-        assert abs(p(c, args) - ref) < 1e-15*u.molar/u.second
+        assert abs(p(c) - ref) < 1e-15*u.molar/u.second
 
     _check(_k, _kprime, conc)
     alt_k, alt_kprime = 2*u.s**-1*u.molar**-0.5, 5
-    _check(alt_k, alt_kprime, conc, [alt_k, alt_kprime])
+    _check(alt_k, alt_kprime, dict(list(conc.items()) + [
+        ('k_HBr', alt_k), ('kprime_HBr', alt_kprime)]))
 
 
 @requires(units_library)
@@ -246,13 +246,13 @@ def test_Radioyltic__Reaction_html():
 def test_PiecewiseTPolyMassAction():
     tp1 = TPoly([0, 10, 0.1])
     tp2 = TPoly([273.15, 37.315, -0.1])
-    pwp = PiecewiseTPolyMassAction([[(0, 273.15), (273.15, 373.15)], [tp1, tp2]])
+    pwp = PiecewiseTPolyMassAction.from_polynomials([(0, 273.15), (273.15, 373.15)], [tp1, tp2])
     Reaction({'A': 2, 'B': 1}, {'C': 1}, pwp, {'B': 1})
     res1 = pwp({'A': 11, 'B': 13, 'temperature': 198.15})
     ref1 = 11*11*13*29.815
     assert abs((res1-ref1)/ref1) < 1e-14
     res2 = pwp({'A': 11, 'B': 13, 'temperature': 298.15})
-    ref2 = 37.315 - 25*0.1
+    ref2 = 11*11*13*(37.315 - 25*0.1)
     assert abs((res2-ref2)/ref2) < 1e-14
     with pytest.raises(ValueError):
         pwp({'A': 11, 'B': 13, 'temperature': 398.15})

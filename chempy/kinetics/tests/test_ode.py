@@ -12,7 +12,7 @@ from chempy.units import (
     SI_base_registry, get_derived_unit, allclose, units_library,
     to_unitless, default_units as u
 )
-from chempy.util.expr import Expr
+from chempy.util._expr import Expr
 from chempy.util.testing import requires
 from .test_rates import _get_SpecialFraction_rsys
 from ..rates import ArrheniusMassAction, Radiolytic
@@ -184,8 +184,8 @@ class Density(Expr):
     parameter_keys = ('temperature',)
     kw = {}
 
-    def __call__(self, variables, args=None, backend=None):
-        rho0, drhodT, T0 = self.all_args(variables, args)
+    def __call__(self, variables, backend=None):
+        rho0, drhodT, T0 = self.all_args(variables)
         return rho0 + drhodT*(variables['temperature'] - T0)
 
 

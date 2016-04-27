@@ -3,7 +3,7 @@ from __future__ import (absolute_import, division, print_function)
 
 import math
 
-from ..util.expr import Expr, mk_Poly, PiecewisePoly
+from ..util._expr import Expr, mk_Poly, mk_PiecewisePoly
 
 
 class RateExpr(Expr):
@@ -15,11 +15,11 @@ class MassAction(RateExpr):
     """ Arguments: k """
     nargs = 1
 
-    def rate_coeff(self, variables, args, backend):  # for subclasses
-        return self.arg(variables, args, 0)
+    def rate_coeff(self, variables, backend):  # for subclasses
+        return self.arg(variables, 0)
 
-    def __call__(self, variables, args=None, backend=math):
-        prod = self.rate_coeff(variables, args, backend)
+    def __call__(self, variables, backend=math):
+        prod = self.rate_coeff(variables, backend)
         for k, v in self.rxn.reac.items():
             prod *= variables[k]**v
         return prod
@@ -30,15 +30,15 @@ class ArrheniusMassAction(MassAction):
     parameter_keys = ('temperature',)
     nargs = 2
 
-    def rate_coeff(self, variables, args, backend):
-        A, Ea_over_R = self.all_args(variables, args)
+    def rate_coeff(self, variables, backend):
+        A, Ea_over_R = self.all_args(variables)
         return A*backend.exp(-Ea_over_R/variables['temperature'])
 
 
 class EyringMassAction(ArrheniusMassAction):
     """ Arguments: kB_h_times_exp_dS_R, dH_over_R """
-    def rate_coeff(self, variables, args, backend):
-        kB_h_times_exp_dS_R, dH_over_R = self.all_args(variables, args)
+    def rate_coeff(self, variables, backend):
+        kB_h_times_exp_dS_R, dH_over_R = self.all_args(variables)
         T = variables['temperature']
         return T * kB_h_times_exp_dS_R * backend.exp(-dH_over_R/T)
 
@@ -49,11 +49,11 @@ class Radiolytic(RateExpr):
     parameter_keys = ('doserate', 'density')
     nargs = 1
 
-    def g_value(self, variables, args, backend):  # for subclasses
-        return self.arg(variables, args, 0)
+    def g_value(self, variables, backend):  # for subclasses
+        return self.arg(variables, 0)
 
-    def __call__(self, variables, args=None, backend=math):
-        return self.g_value(variables, args, 0)*variables['doserate']*variables['density']
+    def __call__(self, variables, backend=math):
+        return self.g_value(variables, 0)*variables['doserate']*variables['density']
 
 
 TPoly = mk_Poly('temperature')
@@ -65,20 +65,27 @@ class TPolyMassAction(TPoly, MassAction):
     nargs = None
     parameter_keys = TPoly.parameter_keys
 
-    def rate_coeff(self, variables, args, backend):
-        return self.eval_poly(variables, args, backend)
+    def rate_coeff(self, variables, backend):
+        return self.eval_poly(variables, backend)
 
 
-class PiecewiseTPolyMassAction(MassAction, PiecewisePoly):
+TPiecewisePoly = mk_PiecewisePoly('temperature')
+
+
+class PiecewiseTPolyMassAction(TPiecewisePoly, MassAction):
     nargs = None
+    parameter_keys = TPoly.parameter_keys
+
+    def rate_coeff(self, variables, backend):
+        return self.eval_poly(variables, backend)
 
 
 class TPolyRadiolytic(TPoly, Radiolytic):
     nargs = None
     parameter_keys = Radiolytic.parameter_keys + TPoly.parameter_keys
 
-    def g_value(self, variables, args, backend):
-        return self.eval_poly(variables, args, backend)
+    def g_value(self, variables, backend):
+        return self.eval_poly(variables, backend)
 
 
 class RTPolyMassAction(RTPoly, MassAction):
@@ -86,30 +93,30 @@ class RTPolyMassAction(RTPoly, MassAction):
     parameter_keys = RTPoly.parameter_keys
     nargs = None
 
-    def rate_coeff(self, variables, args, backend):
-        return self.eval_poly(variables, args, backend)
+    def rate_coeff(self, variables, backend):
+        return self.eval_poly(variables, backend)
 
 
-class Log10TPolyMassAction(TPolyMassAction):
+class Log10TPolyMassAction(TPoly, MassAction):
     """ Arguments: k_unit, temperature_offset, c0, c1, ... """
     nargs = None
+    parameter_keys = TPoly.parameter_keys
 
-    def rate_coeff(self, variables, args, backend):
-        k_unit = self.arg(variables, args, 0)
-        return 10**super(Log10TPolyMassAction, self).rate_coeff(
-            variables, self.all_args(variables, args)[1:], backend)*k_unit
+    def rate_coeff(self, variables, backend):
+        k_unit = self.arg(variables, 0)
+        return 10**self.eval_poly(variables, backend, skip=1)*k_unit
 
 
-class TPolyInLog10MassAction(TPolyMassAction):
+class TPolyInLog10MassAction(TPoly, MassAction):
     """ Arguments: T_unit, temperature_offset, c0, c1, ... """
     nargs = None
+    parameter_keys = TPoly.parameter_keys
 
-    def __call__(self, variables, args=None, backend=math):
-        T_unit = self.arg(variables, args, 0)
+    def rate_coeff(self, variables, backend=math):
+        T_unit = self.arg(variables, 0)
         new_vars = variables.copy()
         new_vars['temperature'] = backend.log10(variables['temperature'] / T_unit)
-        return super(TPolyInLog10MassAction, self).__call__(
-            new_vars, self.all_args(variables, args)[1:], backend=backend)
+        return self.eval_poly(new_vars, backend=backend, skip=1)
 
 
 def law_of_mass_action_rates(conc, rsys, variables=None):
