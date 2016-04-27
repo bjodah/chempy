@@ -148,11 +148,12 @@ def mk_Poly(parameter, reciprocal=False):
     class Poly(Expr):
         """ Args: shift, p0, p1, ... """
         parameter_keys = (parameter,)
+        skip_poly = 0
 
-        def eval_poly(self, variables, backend=None, skip=0):
+        def eval_poly(self, variables, backend=None):
             all_args = self.all_args(variables)
             x = variables[parameter]
-            offset, coeffs = all_args[skip], all_args[skip+1:]
+            offset, coeffs = all_args[self.skip_poly], all_args[self.skip_poly+1:]
             return _eval_poly(x, offset, coeffs, reciprocal)
     return Poly
 
@@ -162,9 +163,10 @@ def mk_PiecewisePoly(parameter, reciprocal=False):
     class PiecewisePoly(Expr):
         """ Args: npolys, ncoeff0, lower0, upper0, ncoeff1, ..., shift0, p0_0, p0_1, ... shiftn, p0_n, p1_n, ... """
         parameter_keys = (parameter,)
+        skip_poly = 0
 
         def eval_poly(self, variables, backend=None):
-            all_args = self.all_args(variables)
+            all_args = self.all_args(variables)[self.skip_poly:]
             npoly = all_args[0]
             arg_idx = 1
             poly_args = []
@@ -196,14 +198,14 @@ def mk_PiecewisePoly(parameter, reciprocal=False):
                              backend.And(l <= x, x <= u)) for (n, l, u), a in zip(meta, poly_args)])
 
         @classmethod
-        def from_polynomials(cls, bounds, polys):
+        def from_polynomials(cls, bounds, polys, inject=[]):
             if any(p.parameter_keys != (parameter,) for p in polys):
                 raise ValueError("Mixed parameter_keys")
             npolys = len(polys)
             if len(bounds) != npolys:
                 raise ValueError("Length mismatch")
 
-            meta = reduce(add, [[len(p.args)-1, l, u] for (l, u), p in zip(bounds, polys)])
-            p_args = reduce(add, [p.args for p in polys])
-            return cls([npolys] + meta + p_args)
+            meta = reduce(add, [[len(p.args[p.skip_poly:])-1, l, u] for (l, u), p in zip(bounds, polys)])
+            p_args = reduce(add, [p.args[p.skip_poly:] for p in polys])
+            return cls(inject + [npolys] + meta + p_args)
     return PiecewisePoly
