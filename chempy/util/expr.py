@@ -104,7 +104,33 @@ class Expr(object):
 
 
 def mk_Poly(parameter, reciprocal=False):
+    """ Classfactory of Expr subclass for (shifted) polynomial
+
+    Parameters
+    ----------
+    parameter: str
+        name of paramter
+    reciprocal: bool
+        whether the polynomial is in the reciprocal of the parameter
+
+    Returns
+    -------
+    Expr subclass for a shifted polynomial with the args: offset, p0, p1, ...
+    the class has the method "eval_poly" with same signature as __call__
+
+
+    Examples
+    --------
+    >>> P = mk_Poly('x')
+    >>> p = P([3, 5, 7, 2])
+    >>> p.eval_poly({'x': 13}) == 5 + 7*(13-3) + 2*(13-3)**2
+    True
+
+    """
     class Poly(Expr):
+
+        parameter_keys = (parameter,)
+
         def eval_poly(self, variables, args=None, backend=None):
             all_args = self.all_args(variables, args)
             offset, coeffs = all_args[0], all_args[1:]
@@ -125,3 +151,32 @@ def mk_Poly(parameter, reciprocal=False):
                     raise NotImplementedError
             return k
     return Poly
+
+
+class PiecewisePoly(Expr):
+
+    def __init__(self, args, arg_keys=None, **kwargs):
+        bounds, polys = args
+        if not all(p.parameter_keys == polys[0].parameter_keys for p in polys):
+            raise ValueError("Mixed parameter_keys")
+        super(PiecewisePoly, self).__init__(args, arg_keys, **kwargs)
+        self.parameter_keys = polys[0].parameter_keys
+        self.bounds = bounds
+        self.polys = polys
+
+    def eval_poly(self, variables, args=None, backend=None):
+        bounds, polys = self.all_args(variables, args)
+        x = variables[self.parameter_keys[0]]
+        if args is not None:
+            raise NotImplementedError("args not flattened")  # nargs == None
+        try:
+            pw = backend.Piecewise
+        except AttributeError:
+            for (lower, upper), p in zip(bounds, polys):
+                if lower <= x <= upper:
+                    return p.eval_poly(variables, args, backend)
+            else:
+                raise ValueError("not within any bounds: %s" % str(x))
+        else:
+            return pw(*[(p.eval_poly(variables, args, backend), backend.And(l <= x, x <= u)) for (l, u), p
+                        in zip(bounds, polys)])

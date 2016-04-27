@@ -12,7 +12,7 @@ from chempy.units import (
 )
 from chempy.util.testing import requires
 
-from ..expr import Expr, mk_Poly
+from ..expr import Expr, mk_Poly, PiecewisePoly
 from ..parsing import parsing_library
 
 
@@ -93,6 +93,7 @@ def test_mk_Poly():
     Poly = mk_Poly('T', reciprocal=True)
     p = Poly([3, 2, 5, 7, 8, 2, 9])
     assert p.eval_poly({'T': 13}) == 2.57829
+    assert p.parameter_keys == ('T',)
 
 
 def test_Expr__nargs():
@@ -121,3 +122,37 @@ def test_Expr__nargs():
 
     assert l2(dict(x=5)) == 13
     assert l2(dict(x=5), [11, 13]) == 11 + 13*5
+
+
+def test_PiecewisePoly():
+    Poly = mk_Poly('temperature')
+
+    p1 = Poly([0, 1, 0.1])
+    assert p1.eval_poly({'temperature': 10}) == 2
+
+    p2 = Poly([0, 3, -.1])
+    assert p2.eval_poly({'temperature': 10}) == 2
+
+    pw = PiecewisePoly([[(0, 10), (10, 20)], [p1, p2]])
+    assert pw.eval_poly({'temperature': 5}) == 1.5
+    assert pw.eval_poly({'temperature': 15}) == 1.5
+    assert pw.parameter_keys == ('temperature',)
+
+    with pytest.raises(ValueError):
+        pw.eval_poly({'temperature': 21})
+
+
+@requires('sympy')
+def test_PiecewisePoly__sympy():
+    import sympy as sp
+    Poly = mk_Poly('T')
+    p1 = Poly([0, 1, 0.1])
+    p2 = Poly([0, 3, -.1])
+    pwp = PiecewisePoly([[(0, 10), (10, 20)], [p1, p2]])
+    x = sp.Symbol('x')
+    res = pwp.eval_poly({'T': x}, backend=sp)
+    assert isinstance(res, sp.Piecewise)
+    assert res.args[0][0] == 1+0.1*x
+    assert res.args[0][1] == sp.And(0 <= x, x <= 10)
+    assert res.args[1][0] == 3-0.1*x
+    assert res.args[1][1] == sp.And(10 <= x, x <= 20)

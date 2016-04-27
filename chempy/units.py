@@ -228,7 +228,13 @@ def to_unitless(value, new_unit=None):
     if isinstance(value, str):
         raise ValueError("str not supported")
     try:
-        result = (value*pq.dimensionless/new_unit).rescale(pq.dimensionless)
+        try:
+            result = (value*pq.dimensionless/new_unit).rescale(pq.dimensionless)
+        except AttributeError:
+            if new_unit == pq.dimensionless:
+                return value
+            else:
+                raise
         if result.ndim == 0:
             return float(result)
         else:
@@ -371,5 +377,8 @@ class Backend(object):
             self.be = underlying_backend
 
     def __getattr__(self, attr):
-        cb = getattr(self.be, attr)
-        return lambda *args, **kwargs: cb(*map(to_unitless, args), **kwargs)
+        be_attr = getattr(self.be, attr)
+        if callable(be_attr):
+            return lambda *args, **kwargs: be_attr(*map(to_unitless, args), **kwargs)
+        else:
+            return be_attr

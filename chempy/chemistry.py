@@ -340,6 +340,9 @@ class Reaction(object):
     prod : dict (str -> int)
         if reac is a set multiplicities are assumed to be 1
     param : float or callable
+        Special case (side-effect): if param is a subclass of
+        :class:`.kinetics.rates.RateExpr` and its :attr:`rxn`
+        is `None` it will be set to `self`.
     inact_reac : dict (optional)
     inact_prod : dict (optional)
     name : str (optional)

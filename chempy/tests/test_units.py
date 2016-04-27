@@ -100,6 +100,14 @@ def test_to_unitless():
                            u.metre**3/u.mole/u.second) - 3e-3) < 1e-12
 
 
+@requires(units_library, 'sympy')
+def test_to_unitless__sympy():
+    import sympy as sp
+    assert sp.cos(to_unitless(sp.pi)) == -1
+    with pytest.raises(AttributeError):
+        to_unitless(sp.pi, u.second)
+
+
 @requires(units_library)
 def test_linspace():
     ls = linspace(2*u.second, 3*u.second)
@@ -267,3 +275,15 @@ def test_Backend__numpy():
     import numpy as np
     b = Backend(np)
     b.sum([1000*u.metre/u.kilometre, 1], axis=0) == 2.0
+
+    with pytest.raises(AttributeError):
+        b.Piecewise
+
+
+@requires('sympy')
+def test_Backend__sympy():
+    b = Backend('sympy')
+    b.sin(b.pi) == 0
+
+    with pytest.raises(AttributeError):
+        b.min

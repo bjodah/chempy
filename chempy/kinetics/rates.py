@@ -2,7 +2,8 @@
 from __future__ import (absolute_import, division, print_function)
 
 import math
-from ..util.expr import Expr, mk_Poly
+
+from ..util.expr import Expr, mk_Poly, PiecewisePoly
 
 
 class RateExpr(Expr):
@@ -54,30 +55,35 @@ class Radiolytic(RateExpr):
     def __call__(self, variables, args=None, backend=math):
         return self.g_value(variables, args, 0)*variables['doserate']*variables['density']
 
+
 TPoly = mk_Poly('temperature')
 RTPoly = mk_Poly('temperature', reciprocal=True)
 
 
-class TPolyRadiolytic(TPoly, Radiolytic):
-    nargs = None
-    parameter_keys = Radiolytic.parameter_keys + ('temperature',)
-
-    def g_value(self, variables, args, backend):
-        return self.eval_poly(variables, args, backend)
-
-
 class TPolyMassAction(TPoly, MassAction):
     """ Arguments: temperature_offset, c0, c1, ... """
-    parameter_keys = ('temperature',)
     nargs = None
+    parameter_keys = TPoly.parameter_keys
 
     def rate_coeff(self, variables, args, backend):
         return self.eval_poly(variables, args, backend)
 
 
+class PiecewiseTPolyMassAction(MassAction, PiecewisePoly):
+    nargs = None
+
+
+class TPolyRadiolytic(TPoly, Radiolytic):
+    nargs = None
+    parameter_keys = Radiolytic.parameter_keys + TPoly.parameter_keys
+
+    def g_value(self, variables, args, backend):
+        return self.eval_poly(variables, args, backend)
+
+
 class RTPolyMassAction(RTPoly, MassAction):
     """ Arguments: temperature_offset, c0, c1, ... """
-    parameter_keys = ('temperature',)
+    parameter_keys = RTPoly.parameter_keys
     nargs = None
 
     def rate_coeff(self, variables, args, backend):

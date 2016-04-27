@@ -3,12 +3,15 @@ from __future__ import (absolute_import, division, print_function)
 
 import math
 
+import pytest
+
 from chempy import Reaction, ReactionSystem, Substance
 from chempy.units import Backend, to_unitless, units_library, default_units as u
 from chempy.util.testing import requires
 from ..rates import (
     RateExpr, MassAction, ArrheniusMassAction, Radiolytic, TPolyMassAction,
-    RTPolyMassAction, Log10TPolyMassAction, TPolyInLog10MassAction, TPolyRadiolytic
+    RTPolyMassAction, Log10TPolyMassAction, TPolyInLog10MassAction, TPolyRadiolytic,
+    TPoly, PiecewiseTPolyMassAction
 )
 
 
@@ -132,6 +135,16 @@ def test_TPolyMassAction():
     assert abs(res - ref*13*11**2) < 1e-15
 
 
+def test_TPolyMassAction__2():
+    rate = TPolyMassAction([100, 2, 5, 7])
+    assert rate.args == [100, 2, 5, 7]
+    Reaction({'A': 2, 'B': 1}, {'P': 1}, rate)
+    res = rate({'A': 11, 'B': 13, 'temperature': 273.15})
+    x = 273.15-100
+    ref = 11*11*13*(2 + 5*x + 7*x**2)
+    assert abs((res - ref)/ref) < 1e-14
+
+
 @requires(units_library)
 def test_TPolyMassAction__units():
     Mps = u.molar/u.second
@@ -228,3 +241,28 @@ def test_Radioyltic__Reaction_html():
     H = Substance.from_formula('H')
     html = rxn.html({'H': H}, with_param=True)
     assert html == ' &rarr; H&#59; %s' % str(rate)
+
+
+def test_PiecewiseTPolyMassAction():
+    tp1 = TPoly([0, 10, 0.1])
+    tp2 = TPoly([273.15, 37.315, -0.1])
+    pwp = PiecewiseTPolyMassAction([[(0, 273.15), (273.15, 373.15)], [tp1, tp2]])
+    Reaction({'A': 2, 'B': 1}, {'C': 1}, pwp, {'B': 1})
+    res1 = pwp({'A': 11, 'B': 13, 'temperature': 198.15})
+    ref1 = 11*11*13*29.815
+    assert abs((res1-ref1)/ref1) < 1e-14
+    res2 = pwp({'A': 11, 'B': 13, 'temperature': 298.15})
+    ref2 = 37.315 - 25*0.1
+    assert abs((res2-ref2)/ref2) < 1e-14
+    with pytest.raises(ValueError):
+        pwp({'A': 11, 'B': 13, 'temperature': 398.15})
+
+
+@requires(units_library)
+def test_PiecewiseTPolyMassAction__units():
+    pass
+
+
+@requires('sympy')
+def test_PiecewiseTPolyMassAction__sympy():
+    pass
