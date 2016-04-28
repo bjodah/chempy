@@ -8,7 +8,9 @@ units library of SymPy (quantities). Consider the API to be provisional.
 
 from __future__ import (absolute_import, division, print_function)
 
+from itertools import chain
 import math
+
 
 from ..util._expr import Expr, mk_Poly, mk_PiecewisePoly
 
@@ -103,9 +105,8 @@ class MassAction(RateExpr):
 
 
 class ArrheniusMassAction(MassAction):
-    """ Arguments: A, Ea_over_R """
+    argument_names = ('A', 'Ea_over_R')
     parameter_keys = ('temperature',)
-    nargs = 2
 
     def rate_coeff(self, variables, backend):
         A, Ea_over_R = self.all_args(variables)
@@ -132,6 +133,8 @@ class Radiolytic(RateExpr):
     def __call__(self, variables, backend=math):
         return self.g_value(variables, 0)*variables['doserate']*variables['density']
 
+
+# Below this point classes are to be considered provisional
 
 TPoly = mk_Poly('temperature')
 RTPoly = mk_Poly('temperature', reciprocal=True)
@@ -236,15 +239,19 @@ def law_of_mass_action_rates(conc, rsys, variables=None):
     --------
     >>> from chempy import ReactionSystem, Reaction
     >>> line, keys = 'H2O -> H+ + OH- ; 1e-4', 'H2O H+ OH-'
-    >>> rsys = ReactionSystem([Reaction.from_string(line, keys)], keys)
+    >>> rxn = Reaction.from_string(line, keys)
+    >>> rsys = ReactionSystem([rxn], keys)
     >>> next(law_of_mass_action_rates([55.4, 1e-7, 1e-7], rsys))
     0.00554
+    >>> rxn.param = ArrheniusMassAction({'A': 1e10, 'Ea_over_R': 9314}, rxn=rxn)
+    >>> print('%.5g' % next(law_of_mass_action_rates([55.4, 1e-7, 1e-7], rsys, {'temperature': 293})))
+    0.0086693
 
     """
     for idx_r, rxn in enumerate(rsys.rxns):
         if isinstance(rxn.param, RateExpr):
             if isinstance(rxn.param, MassAction):
-                yield rxn.param(variables)
+                yield rxn.param(dict(chain(variables.items(), zip(rsys.substances.keys(), conc))))
             else:
                 raise ValueError("Not mass-action rate in reaction %d" % idx_r)
         else:

@@ -20,6 +20,15 @@ class Expr(object):
     be evaluated with some shared state (parameter_keys). The backend kwarg
     in call enables use of e.g. math, numpy or sympy interchangeably.
 
+    Parameters
+    ----------
+    args : tuple/list of scalars or dict mapping name to scalar
+        When dict it is converted to a list using self.argument_names or self.arg_keys
+    arg_keys : iterable of strings
+        Unique names (among all instances) for late overriding
+    \*\*kwargs :
+        keyword arguments intercepted in subclasses (directed by :attr:`kw`)
+
     Examples
     --------
     >>> class HeatCapacity(Expr):
@@ -28,12 +37,12 @@ class Expr(object):
     ...
     >>> import math
     >>> class EinsteinSolid(HeatCapacity):
-    ...     """ arguments: einstein_temperature """
+    ...     argument_names = ('einstein_temperature',)
     ...     def __call__(self, variables, backend=math):
     ...         molar_mass = self.substance.mass
-    ...         TE = self.arg(variables, 0)  # einstein_temperature
-    ...         R = variables['R']
-    ...         T = variables['temperature']
+    ...         TE = self.arg(variables, 'einstein_temperature')  # einstein_temperature
+    ...         R = variables['R']  # shared "state"
+    ...         T = variables['temperature']  # shared state
     ...         molar_c_v = 3*R*(TE/(2*T))**2 * backend.sinh(TE/(2*T))**-2
     ...         return molar_c_v/molar_mass
     ...
@@ -50,6 +59,9 @@ class Expr(object):
 
     Attributes
     ----------
+    argument_names : tuple of strings, optional
+        For documentation and referencing positional arguments in self.args
+        If set, it takes precedence over nargs.
     parameter_keys : tuple of strings
     kw : dict or None
         kwargs to be intercepted in __init__ and set as attributes
@@ -57,18 +69,24 @@ class Expr(object):
         number of arguments (`None` signifies any number)
     '''
 
+    argument_names = None
     parameter_keys = ()
     kw = None
     nargs = None
 
     def __init__(self, args, arg_keys=None, **kwargs):
+        if self.argument_names is not None:
+            self.nargs = len(self.argument_names)
         if self.nargs is not None and len(args) != self.nargs:
             raise ValueError("Incorrect number of arguments: %d (expected %d)" % (len(args), self.nargs))
         if arg_keys is not None and self.nargs is not None and len(arg_keys) != self.nargs:
             raise ValueError("Incorrect number of arg_keys: %d (expected %d)" % (len(arg_keys), self.nargs))
+        self.arg_keys = arg_keys
+
+        if isinstance(args, dict):
+            args = [args[k] for k in self.argument_names or self.arg_keys]
 
         self.args = args
-        self.arg_keys = arg_keys
         for k, v in (self.kw or {}).items():
             setattr(self, k, kwargs.pop(k, v))
         if kwargs:
@@ -100,6 +118,8 @@ class Expr(object):
         return self._str(arg_fmt)
 
     def arg(self, variables, index):
+        if isinstance(index, str):
+            index = self.argument_names.index(index)
         if self.arg_keys is None:
             return self.args[index]
         else:

@@ -110,6 +110,9 @@ def test_ArrheniusMassAction():
         r = ref(var)
         assert abs((ama(var) - r)/r) < 1e-14
 
+    with pytest.raises(ValueError):
+        ArrheniusMassAction([A, Ea_over_R, A])
+
 
 @requires(units_library)
 def test_specialfraction_rateexpr__units():
