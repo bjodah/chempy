@@ -14,7 +14,11 @@ from operator import add
 
 
 class Expr(object):
-    '''
+    ''' Baseclass for Expressions corresponding to physical quantitites.
+
+    The design assumes that a large group of different Expr subclasses may
+    be evaluated with some shared state (parameter_keys). The backend kwarg
+    in call enables use of e.g. math, numpy or sympy interchangeably.
 
     Examples
     --------
@@ -44,6 +48,13 @@ class Expr(object):
     >>> print(cv['Be']({'temperature': sympy.Symbol('T'), 'R': sympy.Symbol('R')}, backend=sympy))
     112105.346283965*R/(T**2*sinh(580.32/T)**2)
 
+    Attributes
+    ----------
+    parameter_keys : tuple of strings
+    kw : dict or None
+        kwargs to be intercepted in __init__ and set as attributes
+    nargs : int
+        number of arguments (`None` signifies any number)
     '''
 
     parameter_keys = ()

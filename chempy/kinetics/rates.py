@@ -18,12 +18,14 @@ class RateExpr(Expr):
     kw = {'rxn': None, 'ref': None}
 
     @classmethod
-    def subclass_from_callback(cls, cb, param_keys=(), arg_keys=None):
+    def subclass_from_callback(cls, cb, cls_attrs=None):
+        """ Override RateExpr.__call__ """
         class _RateExpr(cls):
-            parameter_keys = param_keys
 
             def __call__(self, variables, backend=math):
                 return cb(variables, self.all_args(variables), backend)
+        for k, v in (cls_attrs or {}).items():
+            setattr(_RateExpr, k, v)
         return _RateExpr
 
 
@@ -39,6 +41,17 @@ class MassAction(RateExpr):
         for k, v in self.rxn.reac.items():
             prod *= variables[k]**v
         return prod
+
+    @classmethod
+    def subclass_from_callback(cls, cb, cls_attrs=None):
+        """ Override MassAction.rate_coeff """
+        class _MassAction(cls):
+
+            def rate_coeff(self, variables, backend=math):
+                return cb(variables, self.all_args(variables), backend)
+        for k, v in (cls_attrs or {}).items():
+            setattr(_MassAction, k, v)
+        return _MassAction
 
 
 class ArrheniusMassAction(MassAction):
@@ -150,9 +163,9 @@ class TPolyInLog10MassAction(TPoly, MassAction):
     skip_poly = 1  # T_unit
 
     def rate_coeff(self, variables, backend=math):
-        T_unit = self.arg(variables, 0)
+        T_u = self.arg(variables, 0)  # T_unit
         new_vars = variables.copy()
-        new_vars['temperature'] = backend.log10(variables['temperature'] / T_unit)
+        new_vars['temperature'] = backend.log10(variables['temperature'] / T_u)
         return self.eval_poly(new_vars, backend=backend)
 
 

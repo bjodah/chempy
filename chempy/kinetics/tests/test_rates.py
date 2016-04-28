@@ -49,7 +49,7 @@ def test_specialfraction_rateexpr():
     _check(11, 13, conc)
 
 
-def test_RateExpr__from_callback():
+def test_RateExpr__subclass_from_callback():
     SF = RateExpr.subclass_from_callback(
         lambda v, a, backend: a[0]*v['H2']*v['Br2']**(3/2) / (v['Br2'] + a[1]*v['HBr'])
     )
@@ -70,6 +70,26 @@ def test_MassAction():
     Reaction({'A': 2, 'B': 1}, {'C': 1}, ma, {'B': 1})
     assert abs(ma({'A': 11, 'B': 13, 'C': 17}) - 3.14*13*11**2) < 1e-14
     assert abs(ma({'A': 11, 'B': 13, 'C': 17, 'my_rate': 2.72}) - 2.72*13*11**2) < 1e-12
+
+
+def test_MassAction__subclass_from_callback():
+    def rate_coeff(variables, all_args, backend):
+        return all_args[0]*backend.exp(all_args[1]/variables['temperature'])
+    CustomMassAction = MassAction.subclass_from_callback(
+        rate_coeff, cls_attrs=dict(parameter_keys=('temperature',), nargs=2))
+    k1 = CustomMassAction([2.1e10, -5132.2], rxn=Reaction({'H2': 2, 'O2': 1}, {'H2O': 2}))
+    res = k1({'temperature': 273.15, 'H2': 7, 'O2': 13})
+    ref = 7*7*13*2.1e10*math.exp(-5132.2/273.15)
+    assert abs((res-ref)/ref) < 1e-14
+
+
+# def test_MassAction__subclass_from_callback__units():
+#     def rate_coeff(variables, all_args, backend):
+#         return arg[0]*backend.exp(arg[1]/variables['temperature'])
+#     CustomMassAction = MassAction.subclass_from_callback(
+#         rate_coeff, cls_attrs=dict(parameter_keys=('temperature',)))
+#     k1 = CustomMassAction([2.1e10, -5132.2])
+#     k1({'temperature': 273.15})
 
 
 def test_ArrheniusMassAction():
