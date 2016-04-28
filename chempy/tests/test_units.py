@@ -12,7 +12,7 @@ import pytest
 from ..util.testing import requires
 from ..units import (
     allclose, get_derived_unit, is_unitless, linspace,
-    SI_base_registry, unitless_in_registry, get_physical_quantity,
+    SI_base_registry, unitless_in_registry, format_string, get_physical_quantity,
     to_unitless, magnitude, default_unit_in_registry, Backend,
     unit_of, unit_registry_to_human_readable, units_library,
     unit_registry_from_human_readable, _sum, default_units as u
@@ -287,3 +287,9 @@ def test_Backend__sympy():
 
     with pytest.raises(AttributeError):
         b.min
+
+
+@requires(units_library)
+def test_format_string():
+    assert format_string(3*u.gram/u.metre**2) == '3 g/m**2'
+    assert format_string(3*u.gram/u.metre**2, tex=True) == r'3 \mathrm{\frac{g}{m^{2}}}'

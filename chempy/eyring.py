@@ -9,8 +9,8 @@ import math
 
 from ._util import get_backend
 from .util.pyutil import defaultnamedtuple
-from .units import default_units, Backend, default_constants
-from .arrhenius import _get_R, _fmt
+from .units import default_units, Backend, default_constants, format_string
+from .arrhenius import _get_R
 
 
 def _get_kB_over_h(constants=None, units=None):
@@ -115,8 +115,8 @@ class EyringParam(defaultnamedtuple('EyringParam', 'dH dS ref', [None])):
 
     def format(self, precision, tex=False):
         try:
-            str_A = _fmt(self.A, precision, tex)
-            str_Ea = _fmt(self.Ea, precision, tex)
+            str_A = format_string(self.A, precision, tex)
+            str_Ea = format_string(self.Ea, precision, tex)
         except:
             str_A = precision.format(self.A)
             str_Ea = precision.format(self.Ea)
@@ -132,7 +132,7 @@ class EyringParam(defaultnamedtuple('EyringParam', 'dH dS ref', [None])):
             return "kB*T/h*exp({}/R)*exp(-{}/(R*T))".format(*self.format(precision, tex))
 
     def __str__(self):
-        return self.equation_as_string('{0:.5g}')
+        return self.equation_as_string('%.5g')
 
 
 class EyringParamWithUnits(EyringParam):

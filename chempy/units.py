@@ -382,3 +382,30 @@ class Backend(object):
             return lambda *args, **kwargs: be_attr(*map(to_unitless, args), **kwargs)
         else:
             return be_attr
+
+
+def format_string(value, precision='%.5g', tex=False):
+    """ Formats a scalar with unit as a string
+
+    Parameters
+    ----------
+    value: float with unit
+    precision: str
+    tex: bool
+       LaTeX formatted or not? (no '$' signs)
+
+    Examples
+    --------
+    >>> print(format_string(0.42*default_units.mol/default_units.decimetre**3))
+    0.42 mol/decimetre**3
+    >>> print(format_string(2/default_units.s, tex=True))
+    2 \\mathrm{\\frac{1}{s}}
+
+    """
+    if tex:
+        unit_str = value.dimensionality.latex.strip('$')
+    else:
+        from quantities.markup import config
+        attr = 'unicode' if config.use_unicode else 'string'
+        unit_str = getattr(value.dimensionality, attr)
+    return precision % float(value.magnitude) + " " + unit_str

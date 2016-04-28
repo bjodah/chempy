@@ -72,11 +72,11 @@ def render_tex_to_pdf(contents, texfname, pdffname, output_dir, save):
 
     Parameters
     ----------
-    contents: str
-    texfname: path
-    pdffname: path
-    output_dir: path
-    save: path or bool or str(bool)
+    contents : str
+    texfname : path
+    pdffname : path
+    output_dir : path
+    save : path or bool or str(bool)
 
     """
     created_tempdir = False
@@ -117,22 +117,22 @@ def render_tex_to_pdf(contents, texfname, pdffname, output_dir, save):
 
 def rsys2tablines(rsys, rref0=1, coldelim=' & ',
                   tex=True, ref_fmt=None,
-                  unit_registry=None, unit_fmt='{}', k_fmt='{0:.4g}'):
+                  unit_registry=None, unit_fmt='{}', k_fmt='%.4g'):
     """
     Generates a table representation of a ReactionSystem.
 
     Parameters
     ----------
-    rsys: ReactionSystem
-    rref0: integer
+    rsys : ReactionSystem
+    rref0 : integer
         default start of index counter (default: 1)
-    coldelim: string
+    coldelim : string
         column delimiter (default: ' & ')
-    tex: bool
+    tex : bool
         use latex formated output (default: True)
-    ref_fmt: string or callable
+    ref_fmt : string or callable
         format string of ``ref`` attribute of reactions
-    unit_registry: unit registry
+    unit_registry : unit registry
         optional (default: None)
     """
     if ref_fmt is None:
@@ -163,7 +163,7 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
                                       'concentration')**(1-rxn.order()) /
                      get_derived_unit(unit_registry, 'time'))
             try:
-                k = k_fmt.format(to_unitless(rxn.param, kunit))
+                k = k_fmt % to_unitless(rxn.param, kunit)
                 k_unit_str = (kunit.dimensionality.latex if tex
                               else kunit.dimensionality)
             except:
@@ -171,7 +171,7 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
                 k_unit_str = '-'
         else:
             k_unit_str = '-'
-            k = k_fmt.format(rxn.param)
+            k = k_fmt % rxn.param
         r_str, ir_str, arrow_str, p_str, ip_str = rxn._get_str_parts(
             'latex_name' if tex else 'name',
             'latex_arrow' if tex else 'str_arrow',
@@ -199,16 +199,17 @@ def rsys2table(rsys, table_template=None, table_template_dict=None,
     (add \usepackage{booktabs} to preamble).
 
     Parameters
-    ==========
-    rsys: ReactionSystem
-    table_template: string
-    table_tempalte_dict: dict used to render table_template (excl. "body")
-    param_name: str
+    ----------
+    rsys : ReactionSystem
+    table_template : string
+    table_tempalte_dict : dict used to render table_template (excl. "body")
+    param_name : str
         Column header for parameter column
-    longtable: bool
+    longtable : bool
         use longtable in defaults. (default: False)
-    **kwargs:
+    **kwargs :
         passed onto rsys2tablines
+
     """
     siunitx = kwargs.pop('siunitx', False)
     line_term = r' \\'
@@ -235,7 +236,7 @@ def rsys2table(rsys, table_template=None, table_template_dict=None,
     if 'body' in table_template_dict:
         raise KeyError("There is already a 'body' key in table_template_dict")
     table_template_dict['body'] = (line_term + '\n').join(rsys2tablines(
-        rsys, k_fmt=r'\num{{{0:.4g}}}' if siunitx else '{0:.4g}', **kwargs)
+        rsys, k_fmt=r'\num{%.4g}' if siunitx else '%.4g', **kwargs)
     ) + line_term
 
     if table_template is None:
@@ -255,18 +256,18 @@ def rsys2pdf_table(rsys, output_dir=None, doc_template=None,
     e.g. a pdf using e.g. pdflatex.
 
     Parameters
-    ==========
-    rsys: ReactionSystem
-    output_dir: path to output directory
+    ----------
+    rsys : ReactionSystem
+    output_dir : path to output directory
         (default: system's temporary folder)
-    doc_template: string
+    doc_template : string
         LaTeX boiler plate temlpate including preamble,
         document environment etc.
-    doc_template_dict: dict (string -> string)
+    doc_template_dict : dict (string -> string)
         dict used to render temlpate (excl. 'table')
-    longtable: bool
+    longtable : bool
         use longtable in defaults. (default: False)
-    **kwargs:
+    **kwargs :
         passed on to `rsys2table`
     """
     if doc_template is None:
