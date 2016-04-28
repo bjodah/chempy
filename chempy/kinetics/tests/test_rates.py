@@ -6,7 +6,7 @@ import math
 import pytest
 
 from chempy import Reaction, ReactionSystem, Substance
-from chempy.units import Backend, to_unitless, units_library, default_units as u
+from chempy.units import allclose, Backend, to_unitless, units_library, default_units as u
 from chempy.util.testing import requires
 from ..rates import (
     RateExpr, MassAction, ArrheniusMassAction, Radiolytic, TPolyMassAction,
@@ -83,13 +83,16 @@ def test_MassAction__subclass_from_callback():
     assert abs((res-ref)/ref) < 1e-14
 
 
-# def test_MassAction__subclass_from_callback__units():
-#     def rate_coeff(variables, all_args, backend):
-#         return arg[0]*backend.exp(arg[1]/variables['temperature'])
-#     CustomMassAction = MassAction.subclass_from_callback(
-#         rate_coeff, cls_attrs=dict(parameter_keys=('temperature',)))
-#     k1 = CustomMassAction([2.1e10, -5132.2])
-#     k1({'temperature': 273.15})
+@requires(units_library)
+def test_MassAction__subclass_from_callback__units():
+    def rate_coeff(variables, all_args, backend):
+        return all_args[0]*backend.exp(all_args[1]/variables['temperature'])
+    CustomMassAction = MassAction.subclass_from_callback(
+        rate_coeff, cls_attrs=dict(parameter_keys=('temperature',), nargs=2))
+    k1 = CustomMassAction([2.1e10/u.molar**2/u.second, -5132.2*u.kelvin], rxn=Reaction({'H2': 2, 'O2': 1}, {'H2O': 2}))
+    res = k1({'temperature': 491.67*u.rankine, 'H2': 7000*u.mol/u.metre**3, 'O2': 13*u.molar}, backend=Backend())
+    ref = 7*7*13*2.1e10*math.exp(-5132.2/273.15) * u.molar/u.second
+    assert allclose(res, ref)
 
 
 def test_ArrheniusMassAction():
