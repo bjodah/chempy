@@ -135,8 +135,8 @@ def test_ode_with_global_parameters():
 
 @requires('pyodesys')
 def test_get_ode__ArrheniusParam():
-    ap = ArrheniusParam(1e10, 40e3)
-    rxn = Reaction({'A': 1}, {'B': 1}, ap)
+    rxn = Reaction({'A': 1}, {'B': 1}, None)
+    rxn.param = ArrheniusParam(1e10, 40e3)
     rsys = ReactionSystem([rxn], 'A B')
     odesys = get_odesys(rsys, include_params=True)[0]
     conc = {'A': 3, 'B': 5}

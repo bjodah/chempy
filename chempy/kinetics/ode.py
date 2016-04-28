@@ -77,7 +77,7 @@ def get_odesys(rsys, include_params=False, substitutions=None,
     -------
     pyodesys.symbolic.SymbolicSys
     param_keys
-    arg_keys
+    unique_keys
     p_units
 
     Examples
@@ -103,14 +103,18 @@ def get_odesys(rsys, include_params=False, substitutions=None,
 
     def _param(rxn):
         if isinstance(rxn.param, RateExpr):
-            return rxn.param
+            res = rxn.param
         else:
             try:
                 convertible = rxn.param._as_RateExpr
             except AttributeError:
-                return MassAction([rxn.param], rxn=rxn)
+                res = MassAction([rxn.param], rxn=rxn)
             else:
-                return convertible(rxn)
+                res = convertible(rxn)
+        # if res.param.rxn is None:
+        #     res.param.rxn = rxn
+        return res
+
     r_exprs = [_param(rxn) for rxn in rsys.rxns]
 
     _original_param_keys = set.union(*(set(ratex.parameter_keys) for ratex in r_exprs))
@@ -128,12 +132,12 @@ def get_odesys(rsys, include_params=False, substitutions=None,
             _passive_subst[key] = v
     param_keys = list(filter(lambda x: x not in substitutions, _original_param_keys.union(_from_subst)))
 
-    arg_keys = []
+    unique_keys = []
     p_defaults = []
     if not include_params:
         for ratex in r_exprs:
-            if ratex.arg_keys is not None:
-                arg_keys.extend(ratex.arg_keys)
+            if ratex.unique_keys is not None:
+                unique_keys.extend(ratex.unique_keys)
                 p_defaults.extend(ratex.args)
 
     if unit_registry is None:
@@ -141,16 +145,16 @@ def get_odesys(rsys, include_params=False, substitutions=None,
             return (
                 x,
                 rsys.as_per_substance_array(y),
-                [p[k] for k in param_keys] + [p[k] for k in arg_keys]
+                [p[k] for k in param_keys] + [p[k] for k in unique_keys]
             )
 
         def post_processor(x, y, p):
             return (
                 x,
                 y,  # dict(zip(substance_keys, y)),
-                dict(zip(param_keys+arg_keys, p))
+                dict(zip(param_keys+unique_keys, p))
             )
-        p_units = [None]*(len(param_keys) + len(arg_keys))
+        p_units = [None]*(len(param_keys) + len(unique_keys))
     else:
         # We need to make rsys_params unitless and create
         # a pre- & post-processor for SymbolicSys
@@ -169,7 +173,7 @@ def get_odesys(rsys, include_params=False, substitutions=None,
             return (
                 to_unitless(x, time_unit),
                 rsys.as_per_substance_array(to_unitless(y, conc_unit)),
-                [to_unitless(p[k], p_unit) for k, p_unit in zip(chain(param_keys, arg_keys), p_units)]
+                [to_unitless(p[k], p_unit) for k, p_unit in zip(chain(param_keys, unique_keys), p_units)]
             )
 
         def post_processor(x, y, p):
@@ -188,7 +192,7 @@ def get_odesys(rsys, include_params=False, substitutions=None,
         variables = dict(chain(
             zip(substance_keys, y),
             zip(param_keys, p[:len(param_keys)]),
-            zip(arg_keys, p[len(param_keys):])
+            zip(unique_keys, p[len(param_keys):])
         ))
         for k, act in _active_subst.items():
             if unit_registry is not None:
@@ -199,5 +203,5 @@ def get_odesys(rsys, include_params=False, substitutions=None,
 
     return SymbolicSys.from_callback(
         dydt, len(substance_keys),
-        len(param_keys) + (0 if include_params else len(arg_keys)),
-        **kwargs), param_keys, arg_keys, p_units
+        len(param_keys) + (0 if include_params else len(unique_keys)),
+        **kwargs), param_keys, unique_keys, p_units

@@ -23,8 +23,8 @@ class Expr(object):
     Parameters
     ----------
     args : tuple/list of scalars or dict mapping name to scalar
-        When dict it is converted to a list using self.argument_names or self.arg_keys
-    arg_keys : iterable of strings
+        When dict it is converted to a list using self.argument_names or self.unique_keys
+    unique_keys : iterable of strings
         Unique names (among all instances) for late overriding
     \*\*kwargs :
         keyword arguments intercepted in subclasses (directed by :attr:`kw`)
@@ -74,17 +74,17 @@ class Expr(object):
     kw = None
     nargs = None
 
-    def __init__(self, args, arg_keys=None, **kwargs):
+    def __init__(self, args, unique_keys=None, **kwargs):
         if self.argument_names is not None:
             self.nargs = len(self.argument_names)
         if self.nargs is not None and len(args) != self.nargs:
             raise ValueError("Incorrect number of arguments: %d (expected %d)" % (len(args), self.nargs))
-        if arg_keys is not None and self.nargs is not None and len(arg_keys) != self.nargs:
-            raise ValueError("Incorrect number of arg_keys: %d (expected %d)" % (len(arg_keys), self.nargs))
-        self.arg_keys = arg_keys
+        if unique_keys is not None and self.nargs is not None and len(unique_keys) != self.nargs:
+            raise ValueError("Incorrect number of unique_keys: %d (expected %d)" % (len(unique_keys), self.nargs))
+        self.unique_keys = unique_keys
 
         if isinstance(args, dict):
-            args = [args[k] for k in self.argument_names or self.arg_keys]
+            args = [args[k] for k in self.argument_names or self.unique_keys]
 
         self.args = args
         for k, v in (self.kw or {}).items():
@@ -95,7 +95,7 @@ class Expr(object):
     def __call__(self, variables, backend=None):
         raise NotImplementedError("Subclass and implement __call__")
 
-    def _str(self, arg_fmt, arg_keys_fmt=str, with_kw=False):
+    def _str(self, arg_fmt, unique_keys_fmt=str, with_kw=False):
         if len(self.args) == 0:
             args_str = ''
         elif len(self.args) == 1:
@@ -104,7 +104,7 @@ class Expr(object):
             args_str = '%s' % ', '.join(map(arg_fmt, self.args))
         args_kwargs_strs = [', '.join(chain(
             ['(%s)' % args_str],
-            [arg_keys_fmt(self.arg_keys)] if self.arg_keys is not None else []
+            [unique_keys_fmt(self.unique_keys)] if self.unique_keys is not None else []
         ))]
         print_kw = {k: getattr(self, k) for k in self.kw if getattr(self, k) != self.kw[k]}
         if with_kw and print_kw:
@@ -120,10 +120,10 @@ class Expr(object):
     def arg(self, variables, index):
         if isinstance(index, str):
             index = self.argument_names.index(index)
-        if self.arg_keys is None:
+        if self.unique_keys is None:
             return self.args[index]
         else:
-            return variables.get(self.arg_keys[index], self.args[index])
+            return variables.get(self.unique_keys[index], self.args[index])
 
     def all_args(self, variables):
         return [self.arg(variables, i) for i in range(len(self.args))]
@@ -132,7 +132,7 @@ class Expr(object):
         from ..units import default_unit_in_registry, to_unitless
         units = [default_unit_in_registry(arg, unit_registry) for arg in self.args]
         unitless_args = [to_unitless(arg, unit) for arg, unit in zip(self.args, units)]
-        return units, self.__class__(unitless_args, self.arg_keys, **{k: getattr(self, k) for k in self.kw})
+        return units, self.__class__(unitless_args, self.unique_keys, **{k: getattr(self, k) for k in self.kw})
 
 
 def _eval_poly(x, offset, coeffs, reciprocal=False):
@@ -203,10 +203,7 @@ def mk_PiecewisePoly(parameter, reciprocal=False):
             poly_args = []
             meta = []
             for poly_idx in range(npoly):
-                meta.append(all_args[arg_idx:arg_idx+3])
-                ncoeff = all_args[arg_idx]
-                lower = all_args[arg_idx+1]
-                upper = all_args[arg_idx+2]
+                meta.append(all_args[arg_idx:arg_idx+3])  # nargs, lower, upper
                 arg_idx += 3
             for poly_idx in range(npoly):
                 narg = 1+meta[poly_idx][0]
@@ -229,7 +226,7 @@ def mk_PiecewisePoly(parameter, reciprocal=False):
                              backend.And(l <= x, x <= u)) for (n, l, u), a in zip(meta, poly_args)])
 
         @classmethod
-        def from_polynomials(cls, bounds, polys, inject=[]):
+        def from_polynomials(cls, bounds, polys, inject=[], **kwargs):
             if any(p.parameter_keys != (parameter,) for p in polys):
                 raise ValueError("Mixed parameter_keys")
             npolys = len(polys)
@@ -238,5 +235,5 @@ def mk_PiecewisePoly(parameter, reciprocal=False):
 
             meta = reduce(add, [[len(p.args[p.skip_poly:])-1, l, u] for (l, u), p in zip(bounds, polys)])
             p_args = reduce(add, [p.args[p.skip_poly:] for p in polys])
-            return cls(inject + [npolys] + meta + p_args)
+            return cls(inject + [npolys] + meta + p_args, **kwargs)
     return PiecewisePoly
