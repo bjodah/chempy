@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function)
 
+from collections import OrderedDict, defaultdict
 from functools import reduce
 from itertools import chain
 from operator import itemgetter, mul
-from collections import OrderedDict, defaultdict
+import math
 import sys
 
 from .util.arithmeticdict import ArithmeticDict
@@ -402,7 +403,7 @@ class Reaction(object):
                 raise ValueError("Check failed %s" % check)
 
     @classmethod
-    def from_string(cls, string, substance_keys, globals_=None):
+    def from_string(cls, string, substance_keys=None, globals_=None):
         """ Parses a string into an instance
 
         Parameters
@@ -729,6 +730,52 @@ class Reaction(object):
             for idx, key in enumerate(composition_keys):
                 net[idx] += substance.composition.get(key, 0) * coeff
         return net
+
+    def rate_expr(self):
+        """ Turns self.param into a RateExpr instance (if not already)
+
+        Examples
+        --------
+        >>> r = Reaction.from_string('2 A + B -> 3 C; 7')
+        >>> ratex = r.rate_expr()
+        >>> ratex.args[0] == 7
+        True
+
+        """
+        from chempy.kinetics.rates import RateExpr, MassAction
+        if isinstance(self.param, RateExpr):
+            return self.param
+        else:
+            try:
+                convertible = self.param._as_RateExpr
+            except AttributeError:
+                return MassAction([self.param], rxn=self)
+            else:
+                return convertible(self)
+
+    def rate(self, variables=None, backend=math, substance_keys=None):
+        """ Evaluate the rate of a reaction
+
+        Parameters
+        ----------
+        variables: dict
+        backend: module, optional
+        substance_keys: iterable of str, optional
+
+        Examples
+        --------
+        >>> rxn = Reaction.from_string('2 H2 + O2 -> 2 H2O; 3', None)
+        >>> r = 3*5*5*7
+        >>> rxn.rate({'H2': 5, 'O2': 7}) == {'H2': -2*r, 'O2': -r, 'H2O': 2*r}
+        True
+
+        """
+        if variables is None:
+            variables = {}
+        if substance_keys is None:
+            substance_keys = self.keys()
+        r = self.rate_expr()(variables, backend)
+        return {k: r*v for k, v in zip(substance_keys, self.net_stoich(substance_keys))}
 
 
 def equilibrium_quotient(concs, stoich):

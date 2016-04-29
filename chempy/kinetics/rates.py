@@ -57,7 +57,7 @@ class RateExpr(Expr):
 
 class MassAction(RateExpr):
     """ Arguments: k """
-    nargs = 1
+    argument_names = ('rate_constant',)
 
     def rate_coeff(self, variables, backend):  # for subclasses
         return self.arg(variables, 0)
@@ -89,7 +89,7 @@ class MassAction(RateExpr):
         >>> def cb(variables, all_args, backend):
         ...     T = variables['temperature']
         ...     return 10**reduce(add, [p*T**-i for i, p in enumerate(all_args)])
-        >>> MyMassAction = MassAction.subclass_from_callback(cb, dict(parameter_keys=('temperature',), nargs=None))
+        >>> MyMassAction = MassAction.subclass_from_callback(cb, dict(parameter_keys=('temperature',), nargs=-1))
         >>> k = MyMassAction([9, 300, -75000], rxn=rxn)
         >>> print('%.5g' % k({'temperature': 293., 'e-': 1e-10}))
         1.4134e-11
@@ -122,8 +122,7 @@ class EyringMassAction(ArrheniusMassAction):
 
 
 class Radiolytic(RateExpr):
-    """ Arguments: radiolytic_yield [amount/energy] """
-
+    argument_names = ('radiolytic_yield',)  # [amount/energy]
     parameter_keys = ('doserate', 'density')
     nargs = 1
 

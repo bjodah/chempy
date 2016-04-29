@@ -7,6 +7,7 @@ import pytest
 
 from chempy import Reaction, ReactionSystem, Substance
 from chempy.units import allclose, Backend, to_unitless, units_library, default_units as u
+from chempy.util.parsing import parsing_library
 from chempy.util.testing import requires
 from ..rates import (
     RateExpr, MassAction, ArrheniusMassAction, Radiolytic, TPolyMassAction,
@@ -154,6 +155,24 @@ def test_Radiolytic():
     r = Radiolytic([2.1e-7])
     res = r({'doserate': 0.15, 'density': 0.998})
     assert abs(res - 0.15*0.998*2.1e-7) < 1e-15
+
+
+@requires(parsing_library)
+def test_Radiolytic__parsing():
+    rxn = Reaction.from_string("-> H + OH; Radiolytic({'radiolytic_yield': 2.1e-7})", None)
+    res = rxn.rate({'doserate': 0.15, 'density': 0.998})
+    ref = 0.15*0.998*2.1e-7
+    assert abs((res['H'] - ref)/ref) < 1e-15
+    assert abs((res['OH'] - ref)/ref) < 1e-15
+
+
+@requires(parsing_library, units_library)
+def test_Radiolytic__parsing__units():
+    rxn = Reaction.from_string("-> H + OH; Radiolytic({'radiolytic_yield': 2.1e-7*mol/J})", None)
+    res = rxn.rate({'doserate': 0.15*u.gray/u.s, 'density': 0.998*u.kg/u.dm3})
+    ref = 0.15*0.998*2.1e-7*u.molar/u.second
+    assert abs((res['H'] - ref)/ref) < 1e-15
+    assert abs((res['OH'] - ref)/ref) < 1e-15
 
 
 @requires(units_library)

@@ -61,12 +61,13 @@ class Expr(object):
     ----------
     argument_names : tuple of strings, optional
         For documentation and referencing positional arguments in self.args
-        If set, it takes precedence over nargs.
+        If set, and `nargs` is `None`: its length is used to set `nargs`
+        (unless argument_names ends with an Ellipsis()).
     parameter_keys : tuple of strings
     kw : dict or None
         kwargs to be intercepted in __init__ and set as attributes
     nargs : int
-        number of arguments (`None` signifies any number)
+        number of arguments (`None` signifies unset, -1 signifies any number)
     '''
 
     argument_names = None
@@ -75,9 +76,9 @@ class Expr(object):
     nargs = None
 
     def __init__(self, args, unique_keys=None, **kwargs):
-        if self.argument_names is not None:
+        if self.argument_names is not None and self.argument_names[-1] != Ellipsis and self.nargs is None:
             self.nargs = len(self.argument_names)
-        if self.nargs is not None and len(args) != self.nargs:
+        if self.nargs not in (None, -1) and len(args) != self.nargs:
             raise ValueError("Incorrect number of arguments: %d (expected %d)" % (len(args), self.nargs))
         if unique_keys is not None and self.nargs is not None and len(unique_keys) != self.nargs:
             raise ValueError("Incorrect number of unique_keys: %d (expected %d)" % (len(unique_keys), self.nargs))
@@ -178,6 +179,7 @@ def mk_Poly(parameter, reciprocal=False):
     """
     class Poly(Expr):
         """ Args: shift, p0, p1, ... """
+        argument_names = ('shift', Ellipsis)
         parameter_keys = (parameter,)
         skip_poly = 0
 
@@ -193,6 +195,7 @@ def mk_PiecewisePoly(parameter, reciprocal=False):
     """ Class factory of Expr subclass for piecewise (shifted) polynomial """
     class PiecewisePoly(Expr):
         """ Args: npolys, ncoeff0, lower0, upper0, ncoeff1, ..., shift0, p0_0, p0_1, ... shiftn, p0_n, p1_n, ... """
+        argument_names = ('npolys', Ellipsis)
         parameter_keys = (parameter,)
         skip_poly = 0
 
@@ -233,7 +236,7 @@ def mk_PiecewisePoly(parameter, reciprocal=False):
             if len(bounds) != npolys:
                 raise ValueError("Length mismatch")
 
-            meta = reduce(add, [[len(p.args[p.skip_poly:])-1, l, u] for (l, u), p in zip(bounds, polys)])
+            meta = reduce(add, [[len(p.args[p.skip_poly:]) - 1, l, u] for (l, u), p in zip(bounds, polys)])
             p_args = reduce(add, [p.args[p.skip_poly:] for p in polys])
             return cls(inject + [npolys] + meta + p_args, **kwargs)
     return PiecewisePoly

@@ -12,7 +12,7 @@ import math
 from ..units import to_unitless, get_derived_unit
 from ..util.pyutil import deprecated
 from ..util._expr import Expr
-from .rates import RateExpr, MassAction, law_of_mass_action_rates as _lomar
+from .rates import law_of_mass_action_rates as _lomar
 
 
 law_of_mass_action_rates = deprecated(
@@ -101,21 +101,7 @@ def get_odesys(rsys, include_params=False, substitutions=None,
     if 'names' not in kwargs:
         kwargs['names'] = list(rsys.substances.values())  # pyodesys>=0.5.3
 
-    def _param(rxn):
-        if isinstance(rxn.param, RateExpr):
-            res = rxn.param
-        else:
-            try:
-                convertible = rxn.param._as_RateExpr
-            except AttributeError:
-                res = MassAction([rxn.param], rxn=rxn)
-            else:
-                res = convertible(rxn)
-        # if res.param.rxn is None:
-        #     res.param.rxn = rxn
-        return res
-
-    r_exprs = [_param(rxn) for rxn in rsys.rxns]
+    r_exprs = [rxn.rate_expr() for rxn in rsys.rxns]
 
     _original_param_keys = set.union(*(set(ratex.parameter_keys) for ratex in r_exprs))
     _from_subst = set()
