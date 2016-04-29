@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 "Sandbox" module for exploring API useful for digital labbooks.
 
@@ -16,9 +17,11 @@ True
 True
 
 """
+from __future__ import (absolute_import, division, print_function)
+
 
 from .chemistry import Substance
-from .units import default_units as u
+from .units import is_unitless, default_units as u
 from .util.arithmeticdict import ArithmeticDict
 
 
@@ -26,6 +29,17 @@ class QuantityDict(ArithmeticDict):
     def __init__(self, units, *args, **kwargs):
         self.units = units
         super(QuantityDict, self).__init__(lambda: 0*self.units, *args, **kwargs)
+        self._check()
+
+    def _check(self):
+        for k, v in self.items():
+            if not is_unitless(v/self.units):
+                raise ValueError("entry for %s (%s) is not compatible with %s" % (k, v, self.units))
+
+    def __setitem__(self, key, value):
+        if not is_unitless(value/self.units):
+            raise ValueError("entry for %s (%s) is not compatible with %s" % (key, value, self.units))
+        super(QuantityDict, self).__setitem__(key, value)
 
     def copy(self):
         return self.__class__(self.units, self.items())
@@ -80,6 +94,8 @@ class AutoRegisteringSubstanceDict(object):
 class Solution(object):
 
     def __init__(self, volume, concentrations, substances=None, solvent=None):
+        if not is_unitless(volume/u.dm3):
+            raise ValueError("volume need to have a unit (e.g. dm3)")
         self.volume = volume
         self.concentrations = QuantityDict(u.molar, concentrations)
         if substances is None:
