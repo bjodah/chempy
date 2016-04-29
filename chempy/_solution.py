@@ -23,25 +23,46 @@ from .util.arithmeticdict import ArithmeticDict
 
 
 class QuantityDict(ArithmeticDict):
-    unit = None
-
-    def __init__(self, *args, **kwargs):
-        super(QuantityDict, self).__init__(lambda: 0*self.unit, *args, **kwargs)
+    def __init__(self, units, *args, **kwargs):
+        self.units = units
+        super(QuantityDict, self).__init__(lambda: 0*self.units, *args, **kwargs)
 
     def copy(self):
-        return self.__class__(self.items())
+        return self.__class__(self.units, self.items())
 
+    def __repr__(self):
+        return "{}({}, {})".format(self.__class__.__name__,
+                                   repr(self.units),
+                                   dict(self))
 
-class ConcDict(QuantityDict):
-    unit = u.molar
+    def __mul__(self, other):
+        a = self.copy()
+        a.units = a.units * getattr(other, 'units', 1)
+        a *= other
+        return a
 
+    def __truediv__(self, other):
+        a = self.copy()
+        a.units = a.units / getattr(other, 'units', 1)
+        a /= other
+        return a
 
-class AmountDict(QuantityDict):
-    unit = u.mol
+    def __floordiv__(self, other):
+        a = self.copy()
+        if getattr(other, 'units', 1) != 1:
+            raise ValueError("Floor division with quantities not defined")
+        a //= other
+        return a
 
+    def __rtruediv__(self, other):
+        """ other / self """
+        return self.__class__(getattr(other, 'units', 1)/self.units,
+                              {k: other/v for k, v in self.items()})
 
-class MassDict(QuantityDict):
-    unit = u.gram
+    def __rfloordiv__(self, other):
+        """ other // self """
+        return self.__class__(getattr(other, 'units', 1)/self.units,
+                              {k: other//v for k, v in self.items()})
 
 
 class AutoRegisteringSubstanceDict(object):
@@ -60,7 +81,7 @@ class Solution(object):
 
     def __init__(self, volume, concentrations, substances=None, solvent=None):
         self.volume = volume
-        self.concentrations = ConcDict(concentrations)
+        self.concentrations = QuantityDict(u.molar, concentrations)
         if substances is None:
             substances = AutoRegisteringSubstanceDict()
         self.substances = substances
@@ -69,10 +90,10 @@ class Solution(object):
     def __add__(self, other):
         if self.solvent != other.solvent:
             raise NotImplementedError("Mixed solvent should be represented as concentrations")
-        tot_amount = AmountDict(self.concentrations*self.volume) + AmountDict(other.concentrations*other.volume)
+        tot_amount = self.concentrations*self.volume + other.concentrations*other.volume
         tot_vol = self.volume + other.volume
-        return Solution(tot_vol, ConcDict(tot_amount / tot_vol), self.substances, self.solvent)
+        return Solution(tot_vol, tot_amount / tot_vol, self.substances, self.solvent)
 
     def dissolve(self, masses):
-        contrib = ConcDict({k: v/self.substances[k].molar_mass()/self.volume for k, v in masses.items()})
+        contrib = QuantityDict(u.molar, {k: v/self.substances[k].molar_mass()/self.volume for k, v in masses.items()})
         return Solution(self.volume, self.concentrations + contrib, self.substances, self.solvent)
