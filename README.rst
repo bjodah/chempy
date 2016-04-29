@@ -107,6 +107,13 @@ Balancing stiochiometry of a chemical reaction
    {'C7H5(NO2)3': 2, 'NH4NO3': 7}
    >>> pprint(prod)
    {'CO': 14, 'H2O': 19, 'N2': 10}
+   >>> from chempy import mass_fractions
+   >>> for fractions in map(mass_fractions, [reac, prod]):
+   ...     pprint({k: '{0:.3g} wt%'.format(v*100) for k, v in fractions.items()})
+   ...
+   {'C7H5(NO2)3': '44.8 wt%', 'NH4NO3': '55.2 wt%'}
+   {'CO': '38.7 wt%', 'H2O': '33.7 wt%', 'N2': '27.6 wt%'}
+
 
 
 Balancing reactions

@@ -1172,16 +1172,28 @@ def balance_stoichiometry(reactants, products, substances=None,
     >>> ref = {'C2H2': 2, 'O2': 3}, {'CO': 4, 'H2O': 2}
     >>> balance_stoichiometry({'C2H2', 'O2'}, {'CO', 'H2O'}) == ref
     True
+    >>> ref2 = {'H2': 1, 'O2': 1}, {'H2O2': 1}
+    >>> balance_stoichiometry('H2 O2'.split(), ['H2O2'], 'H2 O2 H2O2') == ref2
+    True
+
+
+    Returns
+    -------
+    balanced reactants : dict
+    balanced products : dict
 
     """
     from sympy import Matrix
 
-    _intersect = set.intersection(reactants, products)
+    _intersect = set.intersection(*map(set, (reactants, products)))
     if _intersect:
         raise ValueError("Substances on both sides: %s" % str(_intersect))
     if substances is None:
         substances = OrderedDict([(k, substance_factory(k)) for k
                                   in chain(reactants, products)])
+    if isinstance(substances, str):
+        substances = OrderedDict([(k, substance_factory(k)) for k
+                                  in substances.split()])
     subst_keys = list(substances.keys())
     subst_vals = tuple(substances.values())
 
@@ -1215,3 +1227,32 @@ def balance_stoichiometry(reactants, products, substances=None,
         {k: n for k, n in zip(subst_keys[:nreac], x[:nreac])},
         {k: n for k, n in zip(subst_keys[nreac:], x[nreac:])}
     )
+
+
+def mass_fractions(stoichiometries, substances=None, substance_factory=Substance.from_formula):
+    """ Calculates weight fractions of each substance in a stoichiometric dict
+
+    Parameters
+    ----------
+    stoichiometries: dict or set
+        if a set: all entries are assumed to correspond to unit multiplicity
+    substances: dict or None
+
+    Examples
+    --------
+    >>> r = mass_fractions({'H2': 1, 'O2': 1})
+    >>> mH2, mO2 = 1.008*2, 15.999*2
+    >>> abs(r['H2'] - mH2/(mH2+mO2)) < 1e-4
+    True
+    >>> abs(r['O2'] - mO2/(mH2+mO2)) < 1e-4
+    True
+    >>> mass_fractions({'H2O2'}) == {'H2O2': 1.0}
+    True
+
+    """
+    if isinstance(stoichiometries, set):
+        stoichiometries = {k: 1 for k in stoichiometries}
+    if substances is None:
+        substances = OrderedDict([(k, substance_factory(k)) for k in stoichiometries])
+    tot_mass = sum([substances[k].mass*v for k, v in stoichiometries.items()])
+    return {k: substances[k].mass*v/tot_mass for k, v in stoichiometries.items()}
