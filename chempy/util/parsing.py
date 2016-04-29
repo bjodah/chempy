@@ -355,11 +355,15 @@ def _parse_multiplicity(strings, substance_keys=None):
     True
     >>> _parse_multiplicity(['2 * H2O2', 'O2']) == {'H2O2': 2, 'O2': 1}
     True
+    >>> _parse_multiplicity(['']) == {}
+    True
 
     """
     result = {}
     for items in [re.split(' \* | ', s) for s in strings]:
         if len(items) == 1:
+            if items[0] == '':
+                continue
             result[items[0]] = 1
         elif len(items) == 2:
             result[items[1]] = int(items[0])
@@ -402,10 +406,11 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None):
     # TODO: add handling of units.
     if globals_ is None:
         import chempy
+        from chempy.kinetics import rates
         from chempy.units import default_units
-        globals_ = {'chempy': chempy, 'default_units': default_units}
+        globals_ = {k: getattr(rates, k) for k in dir(rates)}
+        globals_.update({'chempy': chempy, 'default_units': default_units})
         globals_.update(default_units.as_dict())
-
     try:
         stoich, param, kwargs = map(str.strip, line.rstrip('\n').split(';'))
     except ValueError:
@@ -500,14 +505,22 @@ def _number_to_scientific_latex(number, fmt='%.3g'):
     True
     >>> _number_to_scientific_latex(3.14159265e-7)
     '3.14\\cdot 10^{-7}'
+    >>> import quantities as pq
+    >>> _number_to_scientific_latex(2**0.5 * pq.m / pq.s)
+    '1.41 \\mathrm{\\frac{m}{s}}'
 
     """
+    try:
+        unit = ' ' + number.dimensionality.latex.strip('$')
+        number = number.magnitude
+    except AttributeError:
+        unit = ''
     s = fmt % number
     if 'e' in s:
         prefix, suffix = s.split('e')
-        return prefix + r'\cdot 10^{%s}' % str(int(suffix))
+        return prefix + r'\cdot 10^{%s}' % str(int(suffix)) + unit
     else:
-        return s
+        return s + unit
 
 _unicode_sub = {}
 
@@ -566,14 +579,22 @@ def _number_to_scientific_unicode(number, fmt='%.3g'):
     True
     >>> _number_to_scientific_unicode(3.14159265e-7) == u'3.14·10⁻⁷'
     True
+    >>> import quantities as pq
+    >>> _number_to_scientific_html(2**0.5 * pq.m / pq.s)
+    '1.41 m/s'
 
     """
+    try:
+        unit = ' ' + number.dimensionality.unicode
+        number = number.magnitude
+    except AttributeError:
+        unit = ''
     s = fmt % number
     if 'e' in s:
         prefix, suffix = s.split('e')
-        return prefix + u'·10' + u''.join(map(_unicode_sup.get, str(int(suffix))))
+        return prefix + u'·10' + u''.join(map(_unicode_sup.get, str(int(suffix)))) + unit
     else:
-        return s
+        return s + unit
 
 
 def formula_to_html(formula, prefixes=None, **kwargs):
@@ -617,11 +638,19 @@ def _number_to_scientific_html(number, fmt='%.3g'):
     True
     >>> _number_to_scientific_html(3.14159265e-7)
     '3.14&sdot;10<sup>-7</sup>'
+    >>> import quantities as pq
+    >>> _number_to_scientific_html(2**0.5 * pq.m / pq.s)
+    '1.41 m/s'
 
     """
+    try:
+        unit = ' ' + str(number.dimensionality)
+        number = number.magnitude
+    except AttributeError:
+        unit = ''
     s = fmt % number
     if 'e' in s:
         prefix, suffix = s.split('e')
-        return prefix + '&sdot;10<sup>' + str(int(suffix)) + '</sup>'
+        return prefix + '&sdot;10<sup>' + str(int(suffix)) + '</sup>' + unit
     else:
-        return s
+        return s + unit

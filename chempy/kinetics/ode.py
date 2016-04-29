@@ -10,13 +10,51 @@ from itertools import chain
 import math
 
 from ..units import to_unitless, get_derived_unit
-from ..util.pyutil import deprecated
-from ..util.expr import Expr
-from .rates import RateExpr, MassAction, law_of_mass_action_rates as _lomar
+from ..util._expr import Expr
+from .rates import RateExpr, MassAction
 
 
-law_of_mass_action_rates = deprecated(
-    use_instead='.rates.law_of_mass_action_rates')(_lomar)
+def law_of_mass_action_rates(conc, rsys, variables=None):
+    """ Returns a generator of reaction rate expressions
+
+    Rates from the law of mass action (:attr:`Reaction.inact_reac` ignored)
+    from a :class:`ReactionSystem`.
+
+    Parameters
+    ----------
+    conc : array_like
+        concentrations (floats or symbolic objects)
+    rsys : ReactionSystem instance
+        See :class:`ReactionSystem`
+    variables : dict (optional)
+        to override parameters in the rate expressions of the reactions
+
+    Examples
+    --------
+    >>> from chempy import ReactionSystem, Reaction
+    >>> line, keys = 'H2O -> H+ + OH- ; 1e-4', 'H2O H+ OH-'
+    >>> rxn = Reaction.from_string(line, keys)
+    >>> rsys = ReactionSystem([rxn], keys)
+    >>> next(law_of_mass_action_rates([55.4, 1e-7, 1e-7], rsys))
+    0.00554
+    >>> from chempy.kinetics.rates import ArrheniusMassAction
+    >>> rxn.param = ArrheniusMassAction({'A': 1e10, 'Ea_over_R': 9314}, rxn=rxn)
+    >>> print('%.5g' % next(law_of_mass_action_rates([55.4, 1e-7, 1e-7], rsys, {'temperature': 293})))
+    0.0086693
+
+    """
+    for idx_r, rxn in enumerate(rsys.rxns):
+        if isinstance(rxn.param, RateExpr):
+            if isinstance(rxn.param, MassAction):
+                yield rxn.param(dict(chain(variables.items(), zip(rsys.substances.keys(), conc))))
+            else:
+                raise ValueError("Not mass-action rate in reaction %d" % idx_r)
+        else:
+            rate = 1
+            for substance_key, coeff in rxn.reac.items():
+                s_idx = rsys.as_substance_index(substance_key)
+                rate *= conc[s_idx]**coeff
+            yield rate*rxn.param
 
 
 def dCdt(rsys, rates):
@@ -55,6 +93,9 @@ def get_odesys(rsys, include_params=False, substitutions=None,
     Parameters
     ----------
     rsys : ReactionSystem
+        note that if :attr:`param` if not RateExpr it will be inspected for
+        :meth:`_as_RateExpr`, lacking such it will be used to construct a
+        :class:`MassAction` instance.
     include_params : bool (default: False)
         whether rate constants should be included into the rate expressions or
         left as free parameters in the :class:`pyneqsys.SymbolicSys` instance.
@@ -70,6 +111,25 @@ def get_odesys(rsys, include_params=False, substitutions=None,
     \*\*kwargs :
         Keyword arguemnts pass on to `SymbolicSys`
 
+    Returns
+    -------
+    pyodesys.symbolic.SymbolicSys
+    param_keys
+    unique_keys
+    p_units
+
+    Examples
+    --------
+    >>> from chempy import Equilibrium, ReactionSystem
+    >>> eq = Equilibrium({'Fe+3', 'SCN-'}, {'FeSCN+2'}, 10**2)
+    >>> substances = 'Fe+3 SCN- FeSCN+2'.split()
+    >>> rsys = ReactionSystem(eq.as_reactions(kf=3.0), substances)
+    >>> odesys = get_odesys(rsys)[0]
+    >>> init_conc = {'Fe+3': 1.0, 'SCN-': .3, 'FeSCN+2': 0}
+    >>> tout, Cout, info = odesys.integrate(5, init_conc)
+    >>> Cout[-1, :].round(4)
+    array([ 0.7042,  0.0042,  0.2958])
+
     """
     if SymbolicSys is None:
         from pyodesys.symbolic import SymbolicSys
@@ -79,15 +139,7 @@ def get_odesys(rsys, include_params=False, substitutions=None,
     if 'names' not in kwargs:
         kwargs['names'] = list(rsys.substances.values())  # pyodesys>=0.5.3
 
-    def _param(rxn):
-        if isinstance(rxn.param, RateExpr):
-            return rxn.param
-        else:
-            try:
-                return rxn.param._as_RateExpr(rxn)
-            except AttributeError:
-                return MassAction([rxn.param], rxn=rxn)
-    r_exprs = [_param(rxn) for rxn in rsys.rxns]
+    r_exprs = [rxn.rate_expr() for rxn in rsys.rxns]
 
     _original_param_keys = set.union(*(set(ratex.parameter_keys) for ratex in r_exprs))
     _from_subst = set()
@@ -104,37 +156,33 @@ def get_odesys(rsys, include_params=False, substitutions=None,
             _passive_subst[key] = v
     param_keys = list(filter(lambda x: x not in substitutions, _original_param_keys.union(_from_subst)))
 
-    arg_keys = []
+    unique_keys = []
     p_defaults = []
     if not include_params:
         for ratex in r_exprs:
-            if ratex.arg_keys is not None:
-                arg_keys.extend(ratex.arg_keys)
+            if ratex.unique_keys is not None:
+                unique_keys.extend(ratex.unique_keys)
                 p_defaults.extend(ratex.args)
-
-    # arg_keys = chain(ratex.arg_keys for ratex in r_exprs)
-    # p_defaults = chain(ratex.args for ratex in r_exprs)
 
     if unit_registry is None:
         def pre_processor(x, y, p):
             return (
                 x,
                 rsys.as_per_substance_array(y),
-                [p[k] for k in param_keys] + [p[k] for k in arg_keys]
+                [p[k] for k in param_keys] + [p[k] for k in unique_keys]
             )
 
         def post_processor(x, y, p):
             return (
                 x,
                 y,  # dict(zip(substance_keys, y)),
-                dict(zip(param_keys+arg_keys, p))
+                dict(zip(param_keys+unique_keys, p))
             )
+        p_units = [None]*(len(param_keys) + len(unique_keys))
     else:
         # We need to make rsys_params unitless and create
         # a pre- & post-processor for SymbolicSys
-        print(param_keys)  # DO-NOT-MERGE!
         p_units = [get_derived_unit(unit_registry, k) for k in param_keys]
-        print(p_units)  # DO-NOT-MERGE!
         new_r_exprs = []
         for ratex in r_exprs:
             _pu, _new_rates = ratex._dedimensionalisation(unit_registry)
@@ -146,12 +194,10 @@ def get_odesys(rsys, include_params=False, substitutions=None,
         conc_unit = get_derived_unit(unit_registry, 'concentration')
 
         def pre_processor(x, y, p):
-            print(x, y, p, p_units, param_keys, arg_keys)  # DO-NOT-MERGE!
             return (
                 to_unitless(x, time_unit),
                 rsys.as_per_substance_array(to_unitless(y, conc_unit)),
-                # [to_unitless(elem, p_unit) for elem, p_unit in zip(p, p_units)]
-                [to_unitless(p[k], p_unit) for k, p_unit in zip(chain(param_keys, arg_keys), p_units)]
+                [to_unitless(p[k], p_unit) for k, p_unit in zip(chain(param_keys, unique_keys), p_units)]
             )
 
         def post_processor(x, y, p):
@@ -170,7 +216,7 @@ def get_odesys(rsys, include_params=False, substitutions=None,
         variables = dict(chain(
             zip(substance_keys, y),
             zip(param_keys, p[:len(param_keys)]),
-            zip(arg_keys, p[len(param_keys):])
+            zip(unique_keys, p[len(param_keys):])
         ))
         for k, act in _active_subst.items():
             if unit_registry is not None:
@@ -181,5 +227,5 @@ def get_odesys(rsys, include_params=False, substitutions=None,
 
     return SymbolicSys.from_callback(
         dydt, len(substance_keys),
-        len(param_keys) + (0 if include_params else len(arg_keys)),
-        **kwargs)
+        len(param_keys) + (0 if include_params else len(unique_keys)),
+        **kwargs), param_keys, unique_keys, p_units

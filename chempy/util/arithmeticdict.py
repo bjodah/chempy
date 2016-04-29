@@ -12,7 +12,7 @@ class ArithmeticDict(defaultdict):
     multiplication and division. If other term/factor has a :meth:`keys` method
     the arithmetics are performed on a key per key basis. If :meth:`keys` is
     missing, the operation is broadcasted onto all values.
-    Nonexisting keys are interpreted to signal a zero
+    Nonexisting keys are interpreted to signal a zero.
 
     Notes
     -----
@@ -110,25 +110,47 @@ class ArithmeticDict(defaultdict):
         return self.__class__(self.default_factory,
                               {k: other/v for k, v in self.items()})
 
-    __div__ = __truediv__  # Py2 compability
-    __idiv__ = __itruediv__  # Py2 compability
-    __rdiv__ = __rtruediv__  # Py2 compability
+    def __ifloordiv__(self, other):
+        if hasattr(other, 'keys'):
+            for k in set(chain(self.keys(), other.keys())):
+                self[k] = self[k]//other[k]
+        else:
+            for k in self:
+                self[k] //= other
+        return self
+
+    def __floordiv__(self, other):
+        a = self.copy()
+        a //= other
+        return a
+
+    def __rfloordiv__(self, other):
+        """ other // self """
+        return self.__class__(self.default_factory,
+                              {k: other//v for k, v in self.items()})
+
+    __div__ = __truediv__  # Py2 compatibility (or: import division from __future__)
+    __idiv__ = __itruediv__  # Py2 compatibility
+    __rdiv__ = __rtruediv__  # Py2 compatibility
 
     def __repr__(self):
         return "{}({}, {})".format(self.__class__.__name__,
                                    repr(self.default_factory),
                                    dict(self))
 
-    def __eq__(self, other):
+    def _element_eq(self, a, b):
+        return a == b
+
+    def _discrepancy(self, other, cb):
         default = self.default_factory()
         try:
             for k, v in self.items():
-                if v == default:
+                if cb(v, default):
                     continue
-                if v != other[k]:
+                if not cb(v, other[k]):
                     return False
             for k, v in other.items():
-                if v == default:
+                if cb(v, default):
                     continue
                 if k in self:
                     continue
@@ -136,6 +158,17 @@ class ArithmeticDict(defaultdict):
             return True
         except TypeError:
             return False
+
+    def __eq__(self, other):
+        return self._discrepancy(other, self._element_eq)
+
+    def isclose(self, other, rtol=1e-12, atol=None):
+        def _isclose(a, b):
+            if atol is not None:
+                if abs(a-b) > atol:
+                    return False
+            return abs((a-b)/b) < rtol
+        return self._discrepancy(other, _isclose)
 
     def __hash__(self):
         default = self.default_factory()

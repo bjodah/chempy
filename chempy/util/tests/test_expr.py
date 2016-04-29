@@ -2,6 +2,9 @@
 from __future__ import (absolute_import, division, print_function)
 
 import math
+
+import pytest
+
 from chempy import Substance
 from chempy.units import (
     units_library, default_constants, Backend, to_unitless,
@@ -9,7 +12,7 @@ from chempy.units import (
 )
 from chempy.util.testing import requires
 
-from ..expr import Expr
+from .._expr import Expr, mk_Poly, mk_PiecewisePoly
 from ..parsing import parsing_library
 
 
@@ -20,9 +23,11 @@ def _get_cv(kelvin=1, gram=1, mol=1):
 
     class EinsteinSolid(HeatCapacity):
         """ arguments: einstein temperature """
-        def __call__(self, variables, args=None, backend=math):
+        nargs = 1
+
+        def __call__(self, variables, backend=math):
             molar_mass = self.substance.mass
-            TE = self.arg(variables, args, 0)  # einstein_temperature
+            TE = self.arg(variables, 0)  # einstein_temperature
             R = variables['R']
             T = variables['temperature']
             # Canoncial ensemble:
@@ -44,6 +49,14 @@ def test_Expr():
     cv = _get_cv()
     _ref = 0.8108020083055849
     assert abs(cv['Al']({'temperature': 273.15, 'R': 8.3145}) - _ref) < 1e-14
+
+
+def test_nargs():
+    class A(Expr):
+        nargs = 1
+
+    with pytest.raises(ValueError):
+        A([1, 2])
 
 
 @requires('sympy')
@@ -74,3 +87,78 @@ def test_Expr__dedimensionalisation():
     units, expr = cv['Be']._dedimensionalisation(SI_base_registry)
     assert units == [u.kelvin]
     assert expr.args == [0.806*1440]
+
+
+def test_mk_Poly():
+    Poly = mk_Poly('T', reciprocal=True)
+    p = Poly([3, 2, 5, 7, 8, 2, 9])
+    assert p.eval_poly({'T': 13}) == 2.57829
+    assert p.parameter_keys == ('T',)
+
+
+def test_Expr__nargs():
+
+    class Linear(Expr):
+        """ Arguments: p0, p1 """
+        nargs = 2
+        parameter_keys = ('x',)
+
+        def __call__(self, variables, backend=None):
+            p0, p1 = self.all_args(variables)
+            return p0 + p1*variables['x']
+
+    l1 = Linear([3, 2])
+    assert l1(dict(x=5)) == 13
+    with pytest.raises(ValueError):
+        Linear([3])
+    with pytest.raises(ValueError):
+        Linear([3, 2, 1])
+
+    l2 = Linear([3, 2], ['a', 'b'])
+    with pytest.raises(ValueError):
+        Linear([3, 2], ['a'])
+    with pytest.raises(ValueError):
+        Linear([3, 2], ['a', 'b', 'c'])
+
+    assert l2(dict(x=5)) == 13
+    assert l2(dict(x=5, a=11, b=13)) == 11 + 13*5
+
+
+def test_PiecewisePoly():
+    Poly = mk_Poly('temperature')
+
+    p1 = Poly([0, 1, 0.1])
+    assert p1.eval_poly({'temperature': 10}) == 2
+
+    p2 = Poly([0, 3, -.1])
+    assert p2.eval_poly({'temperature': 10}) == 2
+
+    TPiecewisePoly = mk_PiecewisePoly('temperature')
+    tpwp = TPiecewisePoly.from_polynomials([(0, 10), (10, 20)], [p1, p2])
+    assert tpwp.eval_poly({'temperature': 5}) == 1.5
+    assert tpwp.eval_poly({'temperature': 15}) == 1.5
+    assert tpwp.parameter_keys == ('temperature',)
+
+    with pytest.raises(ValueError):
+        tpwp.eval_poly({'temperature': 21})
+
+
+@requires('sympy')
+def test_PiecewisePoly__sympy():
+    import sympy as sp
+    Poly = mk_Poly('T')
+    p1 = Poly([0, 1, 0.1])
+    p2 = Poly([0, 3, -.1])
+
+    TPiecewisePoly = mk_PiecewisePoly('temperature')
+    tpwp = TPiecewisePoly([2, 2, 0, 10, 2, 10, 20, 0, 1, 0.1, 0, 3, -.1])
+    x = sp.Symbol('x')
+    res = tpwp.eval_poly({'temperature': x}, backend=sp)
+    assert isinstance(res, sp.Piecewise)
+    assert res.args[0][0] == 1+0.1*x
+    assert res.args[0][1] == sp.And(0 <= x, x <= 10)
+    assert res.args[1][0] == 3-0.1*x
+    assert res.args[1][1] == sp.And(10 <= x, x <= 20)
+
+    with pytest.raises(ValueError):
+        tpwp.from_polynomials([(0, 10), (10, 20)], [p1, p2])

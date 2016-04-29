@@ -70,8 +70,9 @@ class ChemPyDeprecationWarning(DeprecationWarning):
 
 def deprecated(*args, **kwargs):
     """ Helper to :class:`Deprecation` for using ChemPyDeprecationWarning. """
-    return Deprecation(*args, issues_url=__url__ + '/issues/%s/',
-                       warning=ChemPyDeprecationWarning, **kwargs)
+    return Deprecation(
+        *args, issues_url=lambda s: __url__ + '/issues/' +
+        s.lstrip('gh-'), warning=ChemPyDeprecationWarning, **kwargs)
 
 warnings.simplefilter(os.environ.get('CHEMPY_DEPRECATION_FILTER', 'once'),
                       ChemPyDeprecationWarning)

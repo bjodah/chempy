@@ -12,7 +12,7 @@ import pytest
 from ..util.testing import requires
 from ..units import (
     allclose, get_derived_unit, is_unitless, linspace,
-    SI_base_registry, unitless_in_registry, get_physical_quantity,
+    SI_base_registry, unitless_in_registry, format_string, get_physical_quantity,
     to_unitless, magnitude, default_unit_in_registry, Backend,
     unit_of, unit_registry_to_human_readable, units_library,
     unit_registry_from_human_readable, _sum, default_units as u
@@ -65,6 +65,7 @@ def test_is_unitless():
     assert is_unitless(1)
     assert is_unitless({'a': 1, 'b': 2.0})
     assert not is_unitless({'a': 2, 'b': 5.0*u.second, 'c': 3})
+    assert is_unitless(7*u.molar/u.mole*u.dm3)
 
 
 @requires(units_library)
@@ -98,6 +99,14 @@ def test_to_unitless():
 
     assert abs(to_unitless(3/(u.second*u.molar),
                            u.metre**3/u.mole/u.second) - 3e-3) < 1e-12
+
+
+@requires(units_library, 'sympy')
+def test_to_unitless__sympy():
+    import sympy as sp
+    assert sp.cos(to_unitless(sp.pi)) == -1
+    with pytest.raises(AttributeError):
+        to_unitless(sp.pi, u.second)
 
 
 @requires(units_library)
@@ -267,3 +276,21 @@ def test_Backend__numpy():
     import numpy as np
     b = Backend(np)
     b.sum([1000*u.metre/u.kilometre, 1], axis=0) == 2.0
+
+    with pytest.raises(AttributeError):
+        b.Piecewise
+
+
+@requires('sympy')
+def test_Backend__sympy():
+    b = Backend('sympy')
+    b.sin(b.pi) == 0
+
+    with pytest.raises(AttributeError):
+        b.min
+
+
+@requires(units_library)
+def test_format_string():
+    assert format_string(3*u.gram/u.metre**2) == '3 g/m**2'
+    assert format_string(3*u.gram/u.metre**2, tex=True) == r'3 \mathrm{\frac{g}{m^{2}}}'

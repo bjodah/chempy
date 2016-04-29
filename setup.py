@@ -83,12 +83,12 @@ setup_kwargs = {
     'install_requires': [
         'numpy>1.7', 'scipy>=0.16.1', 'matplotlib>=1.3.1',
         'sympy>=0.7.6.1', 'quantities>=0.11.1', 'pyneqsys>=0.3.0',
-        'pyodesys>=0.5.0', 'pyparsing>=2.0.3',
+        'pyodesys>=0.5.0', 'pyparsing>=2.0.3'
         # 'dot2tex>=2.9.0'
     ],
     'extras_require': {
         'all': ['argh', 'pycvodes', 'pygslodeiv2', 'pyodeint', 'pykinsol',
-                'pytest>=2.8.1', 'pytest-pep8>=1.0.6']}
+                'pytest>=2.8.1', 'pytest-pep8>=1.0.6', 'bokeh>=0.11.1']}
 }
 
 if __name__ == '__main__':

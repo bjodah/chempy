@@ -7,9 +7,10 @@ import pytest
 
 from ..util.testing import requires
 from ..util.parsing import parsing_library
-from ..units import default_units, units_library
+from ..units import default_units, units_library, to_unitless
 from ..chemistry import (
-    Substance, Species, Reaction, ReactionSystem, Equilibrium
+    Substance, Species, Reaction, ReactionSystem, Equilibrium,
+    balance_stoichiometry
 )
 
 
@@ -83,11 +84,20 @@ def test_Reaction():
     with pytest.raises(ValueError):
         Reaction({Hp: -1, OHm: -1}, {H2O: -1})
 
+    assert r1 == Reaction({'H+', 'OH-'}, {'H2O'})
+
+    r4 = Reaction({Hp, OHm}, {H2O}, 7)
+    ref = {Hp: -3*5*7, OHm: -3*5*7, H2O: 3*5*7}
+    r4.rate({Hp: 5, OHm: 3}) == ref
+
 
 @requires(parsing_library)
 def test_Reaction_parsing():
     r4 = Reaction({'H+': 2, 'OH-': 1}, {'H2O': 2}, 42.0)
     assert Reaction.from_string(str(r4), 'H+ OH- H2O') == r4
+    assert Reaction.from_string(str(r4), None) == r4
+    r5 = Reaction.from_string('2 H2O2 -> O2 + 2 H2O; 1e-7/molar/second', 'H2O O2 H2O2')
+    assert to_unitless(r5.param, 1/default_units.molar/default_units.second) == 1e-7
 
 
 @requires(parsing_library, units_library)
@@ -175,7 +185,8 @@ def test_ReactioN__unicode():
     subst = {k: Substance.from_formula(k) for k in keys}
     r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
     assert r2.unicode(subst) == u'2 H₂O → 2 H₂ + O₂'
-    assert r2.html(subst) == u'2 H<sub>2</sub>O &rarr; 2 H<sub>2</sub> + O<sub>2</sub>'
+    assert r2.html(subst) == \
+        u'2 H<sub>2</sub>O &rarr; 2 H<sub>2</sub> + O<sub>2</sub>'
 
 
 def test_Reaction__idempotency():
@@ -210,3 +221,18 @@ def test_Equilibrium__cancel():
     e2 = Equilibrium({'A': 13, 'B': 3}, {'D': 2})
     coeff = e1.cancel(e2)
     assert coeff == -2
+
+
+@requires('sympy')
+def test_balance_stoichiometry():
+    # 4 NH4ClO4 -> 2 N2 + 4 HCl + 6H2O + 5O2
+    # 4 Al + 3O2 -> 2Al2O3
+    # ---------------------------------------
+    # 6 NH4ClO4 + 10 Al + -> 3 N2 + 6 HCl + 9 H2O + 5 Al2O3
+    reac, prod = balance_stoichiometry({'NH4ClO4', 'Al'},
+                                       {'Al2O3', 'HCl', 'H2O', 'N2'})
+    assert reac == {'NH4ClO4': 6, 'Al': 10}
+    assert prod == {'Al2O3': 5, 'HCl': 6, 'H2O': 9, 'N2': 3}
+
+    with pytest.raises(ValueError):
+        reac, prod = balance_stoichiometry({'C7H5(NO2)3', 'Al', 'NH4NO3'}, {'CO', 'H2O', 'N2'})

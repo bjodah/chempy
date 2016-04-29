@@ -38,6 +38,7 @@ else:
     default_units = NameSpace(pq)
     default_units.decimetre = pq.UnitQuantity(
         'decimetre',  default_units.m / 10.0, u_symbol='dm')
+    default_units.dm3 = default_units.decimetre**3
     if not hasattr(default_units, 'molar'):
         default_units.molar = pq.UnitQuantity(
             'M',  default_units.mole / default_units.decimetre ** 3,
@@ -173,7 +174,7 @@ def is_unitless(expr):
 
     """
     if hasattr(expr, 'dimensionality'):
-        return expr.dimensionality == pq.dimensionless.dimensionality
+        return expr.simplified.dimensionality == pq.dimensionless.dimensionality
     if isinstance(expr, dict):
         return all(is_unitless(_) for _ in expr.values())
     return True
@@ -228,7 +229,13 @@ def to_unitless(value, new_unit=None):
     if isinstance(value, str):
         raise ValueError("str not supported")
     try:
-        result = (value*pq.dimensionless/new_unit).rescale(pq.dimensionless)
+        try:
+            result = (value*pq.dimensionless/new_unit).rescale(pq.dimensionless)
+        except AttributeError:
+            if new_unit == pq.dimensionless:
+                return value
+            else:
+                raise
         if result.ndim == 0:
             return float(result)
         else:
@@ -371,5 +378,35 @@ class Backend(object):
             self.be = underlying_backend
 
     def __getattr__(self, attr):
-        cb = getattr(self.be, attr)
-        return lambda *args, **kwargs: cb(*map(to_unitless, args), **kwargs)
+        be_attr = getattr(self.be, attr)
+        if callable(be_attr):
+            return lambda *args, **kwargs: be_attr(*map(to_unitless, args), **kwargs)
+        else:
+            return be_attr
+
+
+def format_string(value, precision='%.5g', tex=False):
+    """ Formats a scalar with unit as a string
+
+    Parameters
+    ----------
+    value: float with unit
+    precision: str
+    tex: bool
+       LaTeX formatted or not? (no '$' signs)
+
+    Examples
+    --------
+    >>> print(format_string(0.42*default_units.mol/default_units.decimetre**3))
+    0.42 mol/decimetre**3
+    >>> print(format_string(2/default_units.s, tex=True))
+    2 \\mathrm{\\frac{1}{s}}
+
+    """
+    if tex:
+        unit_str = value.dimensionality.latex.strip('$')
+    else:
+        from quantities.markup import config
+        attr = 'unicode' if config.use_unicode else 'string'
+        unit_str = getattr(value.dimensionality, attr)
+    return precision % float(value.magnitude) + " " + unit_str
