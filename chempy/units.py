@@ -174,7 +174,7 @@ def is_unitless(expr):
 
     """
     if hasattr(expr, 'dimensionality'):
-        return expr.dimensionality == pq.dimensionless.dimensionality
+        return expr.simplified.dimensionality == pq.dimensionless.dimensionality
     if isinstance(expr, dict):
         return all(is_unitless(_) for _ in expr.values())
     return True

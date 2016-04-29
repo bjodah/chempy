@@ -65,6 +65,7 @@ def test_is_unitless():
     assert is_unitless(1)
     assert is_unitless({'a': 1, 'b': 2.0})
     assert not is_unitless({'a': 2, 'b': 5.0*u.second, 'c': 3})
+    assert is_unitless(7*u.molar/u.mole*u.dm3)
 
 
 @requires(units_library)
