@@ -7,7 +7,7 @@ import pytest
 
 from ..util.testing import requires
 from ..util.parsing import parsing_library
-from ..units import default_units, units_library
+from ..units import default_units, units_library, to_unitless
 from ..chemistry import (
     Substance, Species, Reaction, ReactionSystem, Equilibrium,
     balance_stoichiometry
@@ -91,6 +91,9 @@ def test_Reaction():
 def test_Reaction_parsing():
     r4 = Reaction({'H+': 2, 'OH-': 1}, {'H2O': 2}, 42.0)
     assert Reaction.from_string(str(r4), 'H+ OH- H2O') == r4
+    assert Reaction.from_string(str(r4), None) == r4
+    r5 = Reaction.from_string('2 H2O2 -> O2 + 2 H2O; 1e-7/molar/second', 'H2O O2 H2O2')
+    assert to_unitless(r5.param, 1/default_units.molar/default_units.second) == 1e-7
 
 
 @requires(parsing_library, units_library)

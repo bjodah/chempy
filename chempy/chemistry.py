@@ -407,7 +407,9 @@ class Reaction(object):
         ----------
         string : str
             string representation of the reaction
-        substance_keys : iterable of strings or string
+        substance_keys : iterable of strings or string or None
+            Used prevent e.g. misspelling.
+            if str: split is invoked, if None: no checking done
         globals_ : dict (optional)
             dict for eval for (default: None -> {'chempy': chempy})
 
@@ -419,6 +421,11 @@ class Reaction(object):
         >>> r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", 'H2O H2 O2')
         >>> r2.reac == {'H2O': 2} and r2.prod == {'H2': 2, 'O2': 1}
         True
+        >>> r3 = Reaction.from_string("A -> B; 1/second", 'A B')
+        >>> from chempy.units import to_unitless, default_units as u
+        >>> to_unitless(r3.param, u.hour**-1)
+        3600.0
+
 
         Notes
         -----
