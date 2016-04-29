@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 This module collects object representing rate expressions. It is based
-on the `chemp.util._expr` module. The API is somewhat cumbersome since
+on the ``chemp.util._expr`` module. The API is somewhat cumbersome since
 it tries to be compatible with pure python, SymPy and the underlying
-units library of SymPy (quantities). Consider the API to be provisional.
+units library of ChemPy (``quantities``). Consider the API to be provisional.
 """
 
 from __future__ import (absolute_import, division, print_function)

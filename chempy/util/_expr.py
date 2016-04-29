@@ -68,6 +68,7 @@ class Expr(object):
         kwargs to be intercepted in __init__ and set as attributes
     nargs : int
         number of arguments (`None` signifies unset, -1 signifies any number)
+
     '''
 
     argument_names = None

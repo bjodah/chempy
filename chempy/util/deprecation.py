@@ -19,10 +19,9 @@ class Deprecation(object):
     use_instead : object or str
         Function or class to use instead or descriptive string.
     issue : str
-        Issue identifier, e.g. 'gh-15' where 15 is the issue number on github.
-        Note that 'gh-' prefix is a special case and stripped away.
-    issues_url : str
-        Url temlpate, e.g. ``'https://github.com/user/repo/issues/%s/'``.
+    issues_url : callback
+        Converts issue to url, e.g. ``lambda s: 'https://github.com/user/repo/\
+issues/%s/' % s.lstrip('gh-')``.
     warning: DeprecationWarning
         Any subclass of DeprecationWarning, tip: you may invoke:
         ``warnings.simplefilter('once', MyWarning)`` at module init.
@@ -73,7 +72,7 @@ class Deprecation(object):
     _deprecations = {}
 
     def __init__(self, last_supported_version=None, will_be_missing_in=None,
-                 use_instead=None, issue=None, issues_url='%s',
+                 use_instead=None, issue=None, issues_url=None,
                  warning=DeprecationWarning):
         self.last_supported_version = last_supported_version
         self.will_be_missing_in = will_be_missing_in
@@ -95,10 +94,10 @@ class Deprecation(object):
         if self.will_be_missing_in is not None:
             msg += ', it will be missing in %s' % self.will_be_missing_in
         if self.issue is not None:
-            if self.issue.startswith('gh-'):
-                msg += ' (see %s)' % (self.issues_url % self.issue[3:])
+            if self.issues_url is not None:
+                msg += self.issues_url(self.issue)
             else:
-                msg += ' (see %s)' % (self.issues_url % self.issue)
+                msg += ' (see issue %s)' % self.issue
         if self.use_instead is not None:
             try:
                 msg += '. Use %s instead' % self.use_instead.__name__

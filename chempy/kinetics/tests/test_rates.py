@@ -169,6 +169,8 @@ def test_Radiolytic__parsing():
 @requires(parsing_library, units_library)
 def test_Radiolytic__parsing__units():
     rxn = Reaction.from_string("-> H + OH; Radiolytic({'radiolytic_yield': 2.1e-7*mol/J})", None)
+    assert rxn.reac == {}
+    assert rxn.prod == {'H': 1, 'OH': 1}
     res = rxn.rate({'doserate': 0.15*u.gray/u.s, 'density': 0.998*u.kg/u.dm3})
     ref = 0.15*0.998*2.1e-7*u.molar/u.second
     assert abs((res['H'] - ref)/ref) < 1e-15

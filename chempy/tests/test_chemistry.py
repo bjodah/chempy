@@ -86,6 +86,10 @@ def test_Reaction():
 
     assert r1 == Reaction({'H+', 'OH-'}, {'H2O'})
 
+    r4 = Reaction({Hp, OHm}, {H2O}, 7)
+    ref = {Hp: -3*5*7, OHm: -3*5*7, H2O: 3*5*7}
+    r4.rate({Hp: 5, OHm: 3}) == ref
+
 
 @requires(parsing_library)
 def test_Reaction_parsing():

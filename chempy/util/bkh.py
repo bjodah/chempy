@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Utilities for plotting with bike.
+Utilities for plotting with `bokeh <https://bokeh.pydata.org>`_.
 """
 from __future__ import (absolute_import, division, print_function)
 

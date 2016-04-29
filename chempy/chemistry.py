@@ -318,20 +318,22 @@ class Reaction(object):
 
     Consider for example:
 
-        A + R --> A + P; r = k*A*R
+        2 R --> A + P; r = k*A*R*R
 
-    this would be represented as ``Reaction({'A': 1, 'R': 1},
-    {'A': 1, 'P': 1}, param=k)``. Some reactions have a larger
+    this would be represented as ``Reaction({'A': 1, 'R': 2},
+    {'A': 2, 'P': 1}, param=k)``. Some reactions have a larger
     stoichiometric coefficient than what appears in the rate
     expression, e.g.:
 
-        5*C1 + C2 --> B; r = k*C1*C2
+        5 A + B --> C; r = k*A*B
 
     this can be represented as ``Reaction({'C1': 1, 'C2': 1},
     {'B': 1}, inact_reac={'C1': 4}, param=k)``.
 
-    The rate constant information in ``param`` may be callable (with a single
-    argument representing the state, e.g. temperature)
+    The rate constant information in ``param`` may be a subclass of
+    :class:`chempy.kinetics.rates.RateExpr` or carry a :meth:`_as_RateExpr`,
+    if neither: `param` will be assumed to be a rate constant for a mass-action
+    type of kinetic expression.
 
     Additional data may be stored in the ``other_properties`` dict.
 
@@ -356,6 +358,17 @@ class Reaction(object):
     checks : iterable of str
         raises value error if any method check_%s returns False
         for all %s in checks.
+
+    Attributes
+    ----------
+    reac: dict
+    prod: dict
+    param: object
+    inact_reac: dict
+    inact_prod: dict
+    name: str
+    ref: str
+    other_properties: dict
 
     Examples
     --------
@@ -433,7 +446,7 @@ class Reaction(object):
         Notes
         -----
         :func:`chempy.util.parsing.to_reaction` is used which in turn calls
-        eval which is a severe security concern for untrusted input.
+        :func:`eval` which is a severe security concern for untrusted input.
 
         """
         if isinstance(substance_keys, str):
