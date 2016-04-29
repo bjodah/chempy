@@ -10,13 +10,51 @@ from itertools import chain
 import math
 
 from ..units import to_unitless, get_derived_unit
-from ..util.pyutil import deprecated
 from ..util._expr import Expr
-from .rates import law_of_mass_action_rates as _lomar
+from .rates import RateExpr, MassAction
 
 
-law_of_mass_action_rates = deprecated(
-    use_instead='.rates.law_of_mass_action_rates')(_lomar)
+def law_of_mass_action_rates(conc, rsys, variables=None):
+    """ Returns a generator of reaction rate expressions
+
+    Rates from the law of mass action (:attr:`Reaction.inact_reac` ignored)
+    from a :class:`ReactionSystem`.
+
+    Parameters
+    ----------
+    conc : array_like
+        concentrations (floats or symbolic objects)
+    rsys : ReactionSystem instance
+        See :class:`ReactionSystem`
+    variables : dict (optional)
+        to override parameters in the rate expressions of the reactions
+
+    Examples
+    --------
+    >>> from chempy import ReactionSystem, Reaction
+    >>> line, keys = 'H2O -> H+ + OH- ; 1e-4', 'H2O H+ OH-'
+    >>> rxn = Reaction.from_string(line, keys)
+    >>> rsys = ReactionSystem([rxn], keys)
+    >>> next(law_of_mass_action_rates([55.4, 1e-7, 1e-7], rsys))
+    0.00554
+    >>> from chempy.kinetics.rates import ArrheniusMassAction
+    >>> rxn.param = ArrheniusMassAction({'A': 1e10, 'Ea_over_R': 9314}, rxn=rxn)
+    >>> print('%.5g' % next(law_of_mass_action_rates([55.4, 1e-7, 1e-7], rsys, {'temperature': 293})))
+    0.0086693
+
+    """
+    for idx_r, rxn in enumerate(rsys.rxns):
+        if isinstance(rxn.param, RateExpr):
+            if isinstance(rxn.param, MassAction):
+                yield rxn.param(dict(chain(variables.items(), zip(rsys.substances.keys(), conc))))
+            else:
+                raise ValueError("Not mass-action rate in reaction %d" % idx_r)
+        else:
+            rate = 1
+            for substance_key, coeff in rxn.reac.items():
+                s_idx = rsys.as_substance_index(substance_key)
+                rate *= conc[s_idx]**coeff
+            yield rate*rxn.param
 
 
 def dCdt(rsys, rates):

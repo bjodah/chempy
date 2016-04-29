@@ -355,11 +355,15 @@ def _parse_multiplicity(strings, substance_keys=None):
     True
     >>> _parse_multiplicity(['2 * H2O2', 'O2']) == {'H2O2': 2, 'O2': 1}
     True
+    >>> _parse_multiplicity(['']) == {}
+    True
 
     """
     result = {}
     for items in [re.split(' \* | ', s) for s in strings]:
         if len(items) == 1:
+            if items[0] == '':
+                continue
             result[items[0]] = 1
         elif len(items) == 2:
             result[items[1]] = int(items[0])

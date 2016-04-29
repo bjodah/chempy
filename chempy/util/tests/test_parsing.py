@@ -111,6 +111,16 @@ def test_to_reaction():
         assert rxn2.prod['OH-'] == 2
         assert rxn2.param == 1e6
 
+    r1 = to_reaction("-> H2O", None, '->', Reaction)
+    assert r1.reac == {}
+    assert r1.prod == {'H2O': 1}
+    assert r1.param is None
+
+    r2 = to_reaction("H2O ->", None, '->', Reaction)
+    assert r2.reac == {'H2O': 1}
+    assert r2.prod == {}
+    assert r2.param is None
+
 
 @requires(parsing_library)
 def test_formula_to_latex():
