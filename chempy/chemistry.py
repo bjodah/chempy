@@ -12,7 +12,7 @@ from .util.parsing import (
     formula_to_composition, mass_from_composition, to_reaction,
     formula_to_latex, formula_to_unicode, formula_to_html
 )
-from .units import to_unitless
+from .units import to_unitless, default_units
 from ._util import intdiv
 from .util.pyutil import deprecated
 
@@ -97,7 +97,7 @@ class Substance(object):
     def mass(self, value):
         self.other_properties['mass'] = value
 
-    def molar_mass(self, units):
+    def molar_mass(self, units=None):
         """ Returns the molar mass (with units) of the substance
 
         Examples
@@ -108,6 +108,8 @@ class Substance(object):
         array(18.0384511) * g/mol
 
         """
+        if units is None:
+            units = default_units
         return self.mass*units.g/units.mol
 
     def __init__(self, name=None, charge=None, latex_name=None, unicode_name=None,

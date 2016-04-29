@@ -138,16 +138,19 @@ class ArithmeticDict(defaultdict):
                                    repr(self.default_factory),
                                    dict(self))
 
-    def __eq__(self, other):
+    def _element_eq(self, a, b):
+        return a == b
+
+    def _discrepancy(self, other, cb):
         default = self.default_factory()
         try:
             for k, v in self.items():
-                if v == default:
+                if cb(v, default):
                     continue
-                if v != other[k]:
+                if not cb(v, other[k]):
                     return False
             for k, v in other.items():
-                if v == default:
+                if cb(v, default):
                     continue
                 if k in self:
                     continue
@@ -155,6 +158,17 @@ class ArithmeticDict(defaultdict):
             return True
         except TypeError:
             return False
+
+    def __eq__(self, other):
+        return self._discrepancy(other, self._element_eq)
+
+    def isclose(self, other, rtol=1e-12, atol=None):
+        def _isclose(a, b):
+            if atol is not None:
+                if abs(a-b) > atol:
+                    return False
+            return abs((a-b)/b) < rtol
+        return self._discrepancy(other, _isclose)
 
     def __hash__(self):
         default = self.default_factory()

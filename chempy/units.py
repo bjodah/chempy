@@ -38,6 +38,7 @@ else:
     default_units = NameSpace(pq)
     default_units.decimetre = pq.UnitQuantity(
         'decimetre',  default_units.m / 10.0, u_symbol='dm')
+    default_units.dm3 = default_units.decimetre**3
     if not hasattr(default_units, 'molar'):
         default_units.molar = pq.UnitQuantity(
             'M',  default_units.mole / default_units.decimetre ** 3,
