@@ -12,7 +12,7 @@ class ArithmeticDict(defaultdict):
     multiplication and division. If other term/factor has a :meth:`keys` method
     the arithmetics are performed on a key per key basis. If :meth:`keys` is
     missing, the operation is broadcasted onto all values.
-    Nonexisting keys are interpreted to signal a zero
+    Nonexisting keys are interpreted to signal a zero.
 
     Notes
     -----
@@ -110,9 +110,28 @@ class ArithmeticDict(defaultdict):
         return self.__class__(self.default_factory,
                               {k: other/v for k, v in self.items()})
 
-    __div__ = __truediv__  # Py2 compability
-    __idiv__ = __itruediv__  # Py2 compability
-    __rdiv__ = __rtruediv__  # Py2 compability
+    def __ifloordiv__(self, other):
+        if hasattr(other, 'keys'):
+            for k in set(chain(self.keys(), other.keys())):
+                self[k] = self[k]//other[k]
+        else:
+            for k in self:
+                self[k] //= other
+        return self
+
+    def __floordiv__(self, other):
+        a = self.copy()
+        a //= other
+        return a
+
+    def __rfloordiv__(self, other):
+        """ other // self """
+        return self.__class__(self.default_factory,
+                              {k: other//v for k, v in self.items()})
+
+    __div__ = __truediv__  # Py2 compatibility (or: import division from __future__)
+    __idiv__ = __itruediv__  # Py2 compatibility
+    __rdiv__ = __rtruediv__  # Py2 compatibility
 
     def __repr__(self):
         return "{}({}, {})".format(self.__class__.__name__,
