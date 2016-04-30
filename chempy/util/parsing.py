@@ -376,7 +376,7 @@ def _parse_multiplicity(strings, substance_keys=None):
     return result
 
 
-def to_reaction(line, substance_keys, token, Cls, globals_=None):
+def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
     """ Parses a string into a Reaction object and substances
 
     Reac1 + 2 Reac2 + (2 Reac1) -> Prod1 + Prod2; 10**3.7; ref='doi:12/ab'
@@ -412,17 +412,16 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None):
         globals_.update({'chempy': chempy, 'default_units': default_units})
         globals_.update(default_units.as_dict())
     try:
-        stoich, param, kwargs = map(str.strip, line.rstrip('\n').split(';'))
+        stoich, param, kw = map(str.strip, line.rstrip('\n').split(';'))
     except ValueError:
         if ';' in line:
             stoich, param = map(str.strip, line.rstrip('\n').split(';'))
         else:
             stoich, param = line.strip(), 'None'
-        kwargs = {}
     else:
-        kwargs = eval('dict('+kwargs+')', globals_)
+        kwargs.update({} if globals_ is False else eval('dict('+kw+')', globals_))
 
-    param = eval(param, globals_)
+    param = None if globals_ is False else eval(param, globals_)
 
     if token not in stoich:
         raise ValueError("Missing token: %s" % token)

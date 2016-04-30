@@ -416,18 +416,21 @@ class Reaction(object):
                 raise ValueError("Check failed %s" % check)
 
     @classmethod
-    def from_string(cls, string, substance_keys=None, globals_=None):
+    def from_string(cls, string, substance_keys=None, globals_=None, **kwargs):
         """ Parses a string into an instance
 
         Parameters
         ----------
         string : str
-            string representation of the reaction
+            String representation of the reaction.
         substance_keys : iterable of strings or string or None
             Used prevent e.g. misspelling.
-            if str: split is invoked, if None: no checking done
+            if str: split is invoked, if None: no checking done.
         globals_ : dict (optional)
-            dict for eval for (default: None -> {'chempy': chempy})
+            Dictionary for eval for (default: None -> {'chempy': chempy})
+            If ``False``: no eval will be called (useful for web-apps).
+        \*\*kwargs :
+            Passed on to constructor.
 
         Examples
         --------
@@ -452,7 +455,7 @@ class Reaction(object):
         if isinstance(substance_keys, str):
             if ' ' in substance_keys:
                 substance_keys = substance_keys.split()
-        return to_reaction(string, substance_keys, cls.str_arrow, cls, globals_)
+        return to_reaction(string, substance_keys, cls.str_arrow, cls, globals_, **kwargs)
 
     def check_any_effect(self):
         """ Checks if the reaction has any effect """

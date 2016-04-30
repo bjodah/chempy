@@ -98,6 +98,8 @@ def test_Reaction_parsing():
     assert Reaction.from_string(str(r4), None) == r4
     r5 = Reaction.from_string('2 H2O2 -> O2 + 2 H2O; 1e-7/molar/second', 'H2O O2 H2O2')
     assert to_unitless(r5.param, 1/default_units.molar/default_units.second) == 1e-7
+    r6 = Reaction.from_string('->', checks=())
+    assert r6.reac == {} and r6.prod == {}
 
 
 @requires(parsing_library, units_library)
