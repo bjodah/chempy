@@ -121,6 +121,12 @@ def test_to_reaction():
     assert r2.prod == {}
     assert r2.param is None
 
+    from chempy.kinetics.rates import MassAction
+    ma = MassAction([3.14])
+    r3 = to_reaction("H+ + OH- -> H2O", None, '->', Reaction, param=ma)
+    assert ma.rxn == r3
+    assert r3.param.args == [3.14]
+
 
 @requires(parsing_library)
 def test_formula_to_latex():

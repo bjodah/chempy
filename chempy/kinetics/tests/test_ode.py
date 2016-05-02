@@ -57,11 +57,16 @@ def test_get_odesys__with_units():
     conc_unit = get_derived_unit(SI_base_registry, 'concentration')
     t = np.linspace(0, 10)*u.hour
     xout, yout, info = odesys.integrate(
-        t, rsys.as_per_substance_array(c0, unit=conc_unit))
-    Aref = dimerization_irrev(to_unitless(xout, u.second), 1e-6, 13.0)
+        t, rsys.as_per_substance_array(c0, unit=conc_unit),
+        atol=1e-10, rtol=1e-12)
+
+    t_unitless = to_unitless(xout, u.second)
+    Aref = dimerization_irrev(t_unitless, 1e-6, 13.0)
+    # Aref = 1/(1/13 + 2*1e-6*t_unitless)
     yref = np.zeros((xout.size, 2))
     yref[:, 0] = Aref
-    yref[:, 1] = .2e-3 + 2*Aref
+    yref[:, 1] = 200 + (13-Aref)/2
+    print((yout - yref*conc_unit)/yout)
     assert allclose(yout, yref*conc_unit)
 
 
@@ -114,9 +119,11 @@ def test_SpecialFraction_with_units():
                         unit_registry=SI_base_registry)[0]
     c0 = {'H2': 13*u.molar, 'Br2': 16*u.molar, 'HBr': 19*u.molar}
     r = k*c0['H2']*c0['Br2']**(3/2)/(c0['Br2'] + kprime*c0['HBr'])
-    ref = rsys.as_per_substance_array({'H2': -r, 'Br2': -r, 'HBr': 2*r})
-    res = odesys.f_cb(0, rsys.as_per_substance_array(c0, unit=u.molar))
-    assert allclose(ref, res)
+    conc_unit = u.mol/u.metre**3
+    rate_unit = conc_unit/u.second
+    ref = rsys.as_per_substance_array({'H2': -r, 'Br2': -r, 'HBr': 2*r}, unit=rate_unit)
+    res = odesys.f_cb(0, rsys.as_per_substance_array(c0, unit=conc_unit))
+    assert allclose(to_unitless(ref, rate_unit), res)
 
 
 @requires('pyodesys')

@@ -417,11 +417,12 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
         if ';' in line:
             stoich, param = map(str.strip, line.rstrip('\n').split(';'))
         else:
-            stoich, param = line.strip(), 'None'
+            stoich, param = line.strip(), kwargs.pop('param', 'None')
     else:
         kwargs.update({} if globals_ is False else eval('dict('+kw+')', globals_))
 
-    param = None if globals_ is False else eval(param, globals_)
+    if isinstance(param, str):
+        param = None if globals_ is False else eval(param, globals_)
 
     if token not in stoich:
         raise ValueError("Missing token: %s" % token)

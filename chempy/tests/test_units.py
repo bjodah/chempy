@@ -57,6 +57,9 @@ def test_allclose():
     assert allclose(a, b)
     assert allclose([3600*u.second, 2*u.metre/u.hour],
                     [1*u.hour, 2/3600*u.metre/u.second])
+    c1 = [[3000, 4000], [3000, 4000]]*u.mol/u.metre**3
+    c2 = [[3000, 4000], [436.2, 5281.89]]*u.mol/u.metre**3
+    assert not allclose(c1, c2)
 
 
 @requires(units_library)

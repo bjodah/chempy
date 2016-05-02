@@ -54,21 +54,50 @@ class RateExpr(Expr):
         return _RateExpr
 
 
-class Radiolytic(RateExpr):
-    argument_names = ('radiolytic_yield',)  # [amount/energy]
-    parameter_keys = ('doserate', 'density')
+def mk_Radiolytic(doserate_name='doserate'):
+    """ Create a Radiolytic rate expression
 
-    def g_value(self, variables, backend):  # for subclasses
-        return self.arg(variables, 0)
+    Examples
+    --------
+    >>> RadiolyticAlpha = mk_Radiolytic('doserate_alpha')
+    >>> RadiolyticGamma = mk_Radiolytic('doserate_gamma')
+    >>> dihydrogen_alpha = RadiolyticAlpha([0.8e-7])
+    >>> dihydrogen_gamma = RadiolyticGamma([0.45e-7])
 
-    def __call__(self, variables, backend=math):
-        return self.g_value(variables, 0)*variables['doserate']*variables['density']
+    """
+    class _Radiolytic(RateExpr):
+        argument_names = ('radiolytic_yield',)  # [amount/energy]
+        parameter_keys = (doserate_name, 'density')
+
+        def g_value(self, variables, backend):  # for subclasses
+            return self.arg(variables, 0)
+
+        def __call__(self, variables, backend=math):
+            return self.g_value(variables, 0)*variables[doserate_name]*variables['density']
+    return _Radiolytic
+
+
+Radiolytic = mk_Radiolytic()
 
 
 class MassAction(RateExpr):
+    """ Rate-expression of mass-action type
+
+    Examples
+    --------
+    >>> ma = MassAction([3.14])
+    >>> ma.rate_coeff({})
+    3.14
+    >>> from chempy import Reaction
+    >>> r = Reaction.from_string('3 A -> B', param=ma)
+    >>> r.rate({'A': 2}) == {'A': -75.36, 'B': 25.12}
+    True
+
+    """
+
     argument_names = ('rate_constant',)
 
-    def rate_coeff(self, variables, backend):  # for subclasses
+    def rate_coeff(self, variables, backend=math):  # for subclasses
         return self.arg(variables, 0)
 
     def __call__(self, variables, backend=math):
@@ -117,7 +146,7 @@ class ArrheniusMassAction(MassAction):
     argument_names = ('A', 'Ea_over_R')
     parameter_keys = ('temperature',)
 
-    def rate_coeff(self, variables, backend):
+    def rate_coeff(self, variables, backend=math):
         A, Ea_over_R = self.all_args(variables)
         return A*backend.exp(-Ea_over_R/variables['temperature'])
 
@@ -125,7 +154,7 @@ class ArrheniusMassAction(MassAction):
 class EyringMassAction(ArrheniusMassAction):
     argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R')
 
-    def rate_coeff(self, variables, backend):
+    def rate_coeff(self, variables, backend=math):
         kB_h_times_exp_dS_R, dH_over_R = self.all_args(variables)
         T = variables['temperature']
         return T * kB_h_times_exp_dS_R * backend.exp(-dH_over_R/T)
