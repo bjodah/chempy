@@ -15,8 +15,8 @@ from chempy.util.bkh import integration_with_sliders
 
 
 def get_rsys(kf, kb):
-    rf = MassAction([kf], arg_keys=['kf'])
-    rb = MassAction([kb], arg_keys=['kb'])
+    rf = MassAction([kf], unique_keys=['kf'])
+    rb = MassAction([kb], unique_keys=['kb'])
     fw = Reaction({'Fe+3', 'SCN-'}, {'FeSCN+2'}, rf)
     bw = Reaction({'FeSCN+2'}, {'Fe+3', 'SCN-'}, rb)
     return ReactionSystem([fw, bw], 'Fe+3 SCN- FeSCN+2'.split())

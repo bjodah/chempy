@@ -487,6 +487,9 @@ class Reaction(object):
                 return False
         return True
 
+    def __hash__(self):
+        return sum(map(hash, (getattr(self, k) for k in ['reac', 'prod', 'param', 'inact_reac', 'inact_prod'])))
+
     def order(self):
         """ Sum of (active) reactant stoichiometries """
         return sum(self.reac.values())
@@ -760,6 +763,8 @@ class Reaction(object):
         """
         from chempy.kinetics.rates import RateExpr, MassAction
         if isinstance(self.param, RateExpr):
+            if self.param.rxn is None:
+                self.param.rxn = self
             return self.param
         else:
             try:
@@ -1129,6 +1134,20 @@ class ReactionSystem(object):
         """ Returns a tuple of the substances' names """
         return tuple(substance.name for substance in self.substances.values())
 
+    def substance_participation(self, substance_key):
+        """ Returns indices of reactions where substance_key occurs
+
+        Parameters
+        ----------
+        substance_key: str
+
+        Returns
+        -------
+        List of indices for self.rxns where `substance_key` participates
+
+        """
+        return [ri for ri, rxn in enumerate(self.rxns) if substance_key in rxn.keys()]
+
     @property
     def nr(self):
         """ Number of reactions """
@@ -1226,20 +1245,26 @@ class ReactionSystem(object):
         else:
             def _fmt(r):
                 return r.name
+        missing = [len(self.substance_participation(k)) == 0 for k in self.substances]
 
         def cell(A, ri, ci=None):
+            args = []
             if ci is not None and ri > ci:
                 r = '-'
             else:
                 if ci is None:
                     c = A[ri]
+                    color_red = missing[ri]
                 else:
                     c = A[ri][ci]
+                    color_red = missing[ri] or missing[ci]
                 if c is None:
                     r = ''
                 else:
                     r = ', '.join(_fmt(r) for r in c)
-            return '<td>%s</td>' % r
+                if color_red:
+                    args.append('style="background-color:#faa"')
+            return '<td %s>%s</td>' % (' '.join(args), r)
         return cell
 
     def _unimolecular_reactions(self):

@@ -129,11 +129,11 @@ def test_ReactionSystem__html_tables():
     rs = ReactionSystem([r1, r2])
     ut, unc = rs.unimolecular_html_table()
     assert unc == [r1]
-    assert ut == u'<table><tr><td>A</td><td><a title="A → 2 A">R2</a></td></tr></table>'
+    assert ut == u'<table><tr><td>A</td><td ><a title="A → 2 A">R2</a></td></tr></table>'
 
     bt, bnc = rs.bimolecular_html_table()
     assert bnc == [r2]
-    assert bt == u'<table><th></th><th>A</th>\n<tr><td>A</td><td><a title="2 A → A">R1</a></td></tr></table>'
+    assert bt == u'<table><th></th><th>A</th>\n<tr><td>A</td><td ><a title="2 A → A">R1</a></td></tr></table>'
 
 
 @requires(parsing_library)
