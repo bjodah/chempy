@@ -3,8 +3,8 @@ from __future__ import (absolute_import, division, print_function)
 
 from math import log as ln
 
-from ..ionic_strength import A as A_dh, B as B_dh
-from ..ionic_strength import limiting_log_gamma, _ActivityProductBase, ionic_strength
+from ..electrolytes import A as A_dh, B as B_dh
+from ..electrolytes import limiting_log_gamma, _ActivityProductBase, ionic_strength
 from ..units import (allclose, units_library,
                      default_constants as consts,
                      default_units as u)

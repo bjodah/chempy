@@ -1,5 +1,6 @@
 v0.4.0
 ======
+- .core and .debye_huckel was merged into .electrolytes
 - New functions: balance_stoichiometry, mass_fractions
 - kwargs one=, exp=, ln= changed throughout to use backend=None (backen=math)
 - .chemistry.ArrheniusRate moved (and changed) to .arrhenius.ArrheniusParam
