@@ -113,12 +113,27 @@ def test_Substance__molar_mass():
 def test_ReactionSystem():
     kw = dict(substance_factory=Substance.from_formula)
     r1 = Reaction.from_string('H2O -> H+ + OH-', 'H2O H+ OH-')
-    ReactionSystem([r1], 'H2O H+ OH-', **kw)
+    rs = ReactionSystem([r1], 'H2O H+ OH-', **kw)
     r2 = Reaction.from_string('H2O -> 2 H+ + OH-', 'H2O H+ OH-')
     with pytest.raises(ValueError):
         ReactionSystem([r2], 'H2O H+ OH-', **kw)
     with pytest.raises(ValueError):
         ReactionSystem([r1, r1], 'H2O H+ OH-', **kw)
+    assert rs.as_substance_index('H2O') == 0
+    assert rs.as_substance_index(0) == 0
+
+
+def test_ReactionSystem__html_tables():
+    r1 = Reaction({'A': 2}, {'A'}, name='R1')
+    r2 = Reaction({'A'}, {'A': 2}, name='R2')
+    rs = ReactionSystem([r1, r2])
+    ut, unc = rs.unimolecular_html_table()
+    assert unc == [r1]
+    assert ut == u'<table><tr><td>A</td><td><a title="A → 2 A">R2</a></td></tr></table>'
+
+    bt, bnc = rs.bimolecular_html_table()
+    assert bnc == [r2]
+    assert bt == u'<table><th></th><th>A</th>\n<tr><td>A</td><td><a title="2 A → A">R1</a></td></tr></table>'
 
 
 @requires(parsing_library)

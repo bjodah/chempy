@@ -1053,7 +1053,7 @@ class ReactionSystem(object):
 
     """
 
-    def __init__(self, rxns, substances, name=None, check_balance=None,
+    def __init__(self, rxns, substances=None, name=None, check_balance=None,
                  substance_factory=Substance):
         self.rxns = rxns
         if substances is None:
@@ -1165,12 +1165,12 @@ class ReactionSystem(object):
     def as_per_substance_dict(self, arr):
         return dict(zip(self.substances.keys(), arr))
 
-    def as_substance_index(self, sbstnc):
+    def as_substance_index(self, substance_key):
         """ Returns the index of a Substance in the system"""
-        if isinstance(sbstnc, int):
-            return sbstnc
+        if isinstance(substance_key, int):
+            return substance_key
         else:
-            return list(self.substances.keys()).index(sbstnc)
+            return list(self.substances.keys()).index(substance_key)
 
     def _stoichs(self, attr, keys=None):
         import numpy as np
@@ -1218,6 +1218,106 @@ class ReactionSystem(object):
         subs = self.substances.values()
         ck = Substance.composition_keys(subs)
         return [[s.composition.get(k, 0) for s in subs] for k in ck], ck
+
+    def _html_table_cell_factory(self, title=True):
+        if title:
+            def _fmt(r):
+                return '<a title="%s">%s</a>' % (r.unicode(self.substances, with_param=True), r.name)
+        else:
+            def _fmt(r):
+                return r.name
+
+        def cell(A, ri, ci=None):
+            if ci is not None and ri > ci:
+                r = '-'
+            else:
+                if ci is None:
+                    c = A[ri]
+                else:
+                    c = A[ri][ci]
+                if c is None:
+                    r = ''
+                else:
+                    r = ', '.join(_fmt(r) for r in c)
+            return '<td>%s</td>' % r
+        return cell
+
+    def _unimolecular_reactions(self):
+        A = [None]*self.ns
+        unconsidered = []
+        for r in self.rxns:
+            if r.order() == 1:
+                keys = list(r.reac.keys())
+                if len(keys) == 1:
+                    ri = self.as_substance_index(keys[0])
+                else:
+                    raise NotImplementedError("Need 1 or 2 keys")
+                if A[ri] is None:
+                    A[ri] = list()
+                A[ri].append(r)
+            else:
+                unconsidered.append(r)
+        return A, unconsidered
+
+    def unimolecular_html_table(self, title=True):
+        """ Returns a HTML table of unimolecular reactions
+
+        Parameters
+        ----------
+        title: bool
+
+        Returns
+        -------
+        string: html representation
+        list: reactions not considered
+        """
+        A, unconsidered = self._unimolecular_reactions()
+        _cell = self._html_table_cell_factory(title)
+        rows = '\n'.join('<tr><td>%s</td>%s</tr>' % (
+            (s.html_name or s.name), _cell(A, ri)
+        ) for ri, s in enumerate(self.substances.values()))
+        html = '<table>%s</table>' % rows
+        return html, unconsidered
+
+    def _bimolecular_reactions(self):
+        A = [[None]*self.ns for _ in range(self.ns)]
+        unconsidered = []
+        for r in self.rxns:
+            if r.order() == 2:
+                keys = list(r.reac.keys())
+                if len(keys) == 1:
+                    ri = ci = self.as_substance_index(keys[0])
+                elif len(keys) == 2:
+                    ri, ci = sorted(map(self.as_substance_index, keys))
+                else:
+                    raise NotImplementedError("Need 1 or 2 keys")
+                if A[ri][ci] is None:
+                    A[ri][ci] = list()
+                A[ri][ci].append(r)
+            else:
+                unconsidered.append(r)
+        return A, unconsidered
+
+    def bimolecular_html_table(self, title=True):
+        """ Returns a HTML table of bimolecular reactions
+
+        Parameters
+        ----------
+        title: bool
+
+        Returns
+        -------
+        string: html representation
+        list: reactions not considered
+        """
+        A, unconsidered = self._bimolecular_reactions()
+        header = '<th></th>' + ''.join('<th>%s</th>' % (s.html_name or s.name) for s in self.substances.values())
+        _cell = self._html_table_cell_factory(title)
+        rows = '\n'.join('<tr><td>%s</td>%s</tr>' % (
+            (s.html_name or s.name), ''.join(_cell(A, ri, ci) for ci in range(self.ns))
+        ) for ri, s in enumerate(self.substances.values()))
+        html = '<table>%s</table>' % '\n'.join([header, rows])
+        return html, unconsidered
 
 
 def balance_stoichiometry(reactants, products, substances=None,
