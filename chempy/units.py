@@ -295,10 +295,10 @@ def allclose(a, b, rtol=1e-8, atol=None):
         n = 1
 
     if n == 1:
-        return d < lim
+        return d <= lim
     else:
         import numpy as np
-        return np.all([_d < _lim for _d, _lim in zip(d, lim)])
+        return np.all([_d <= _lim for _d, _lim in zip(d, lim)])
 
 
 def linspace(start, stop, num=50):
