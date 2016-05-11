@@ -165,6 +165,15 @@ Chemical equilibria
 Please note that the API of the ``chempy.equilibria`` module is not finalized at
 the moment.
 
+Ionic strength
+~~~~~~~~~~~~~~
+.. code:: python
+
+   >>> from chempy.electrolytes import ionic_strength
+   >>> from chempy.units import default_units as u
+   >>> ionic_strength({'Fe+3': 0.050*u.molal, 'ClO4-': 0.150*u.molal}, units=u) == .3
+   True
+
 
 License
 -------

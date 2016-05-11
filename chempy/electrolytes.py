@@ -4,29 +4,57 @@ This modules collects expressions related to ionic strenght, e.g. the Debye-Hüc
 """
 from __future__ import (absolute_import, division, print_function)
 
+from collections import OrderedDict
 from ._util import get_backend
+from .chemistry import Substance
 
 
-def ionic_strength(molalities, charges, b0=1):
+def _get_b0(b0, units=None):
+    if units is not None and b0 is 1:
+        return b0*units.molal
+    else:
+        return b0
+
+
+def ionic_strength(molalities, charges=None, b0=1, units=None, substances=None,
+                   substance_factory=Substance.from_formula):
     """ Calculates the ionic strength
 
     Parameters
     ----------
-    molalities: float
-        optionally with unit (amount / mass)
-    charges: iterable of integers
-        charge of respective ion
+    molalities: array_like or dict
+        Optionally with unit (amount / mass).
+        when dict: mapping substance key to molality.
+    charges: array_like
+        Charge of respective ion, taken for substances when None.
     b0: float
-        reference molality, optionally with unit (amount / mass)
-        by IUPAC defines it as 1 mol/kg. (default: 1)
+        Reference molality, optionally with unit (amount / mass)
+        by IUPAC defines it as 1 mol/kg. (default: 1).
+    units: object (optional, default: None)
+        Attributes accessed: molal.
+    substances: dict, optional
+        Mapping of substance keys to Substance instances (used when molalities
+        is a dict).
+    substance_factory: callback
+        Used if `substances` is a string.
 
     Examples
     --------
     >>> ionic_strength([1e-3, 3e-3], [3, -1]) == .5 * (9 + 3) * 1e-3
     True
+    >>> ionic_strength({'Mg+2': 6, 'PO4-3': 4})
+    30.0
 
     """
+    b0 = _get_b0(b0, units)
     tot = 0
+    if charges is None:
+        if substances is None:
+            substances = ' '.join(molalities.keys())
+        if isinstance(substances, str):
+            substances = OrderedDict([(k, substance_factory(k)) for k
+                                      in substances.split()])
+        charges, molalities = zip(*[(substances[k].charge, v) for k, v in molalities.items()])
     if len(molalities) != len(charges):
         raise ValueError("molalities and charges of different lengths")
     for b, z in zip(molalities, charges):
