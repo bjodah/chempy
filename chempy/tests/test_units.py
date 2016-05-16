@@ -104,6 +104,8 @@ def test_to_unitless():
     assert abs(to_unitless(3/(u.second*u.molar),
                            u.metre**3/u.mole/u.second) - 3e-3) < 1e-12
 
+    assert to_unitless(2*u.dm3, u.cm3) - 2000
+
 
 @requires(units_library, 'sympy')
 def test_to_unitless__sympy():
