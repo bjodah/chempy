@@ -1385,27 +1385,70 @@ def balance_stoichiometry(reactants, products, substances=None,
         substances = OrderedDict([(k, substance_factory(k)) for k
                                   in substances.split()])
     subst_keys = list(substances.keys())
-    subst_vals = tuple(substances.values())
 
-    ck = Substance.composition_keys(subst_vals)
-    nreac = len(reactants)
+    cks = Substance.composition_keys(substances.values())
+    nsubs = len(substances)
 
-    def _get(s, k, i):
-        return s.composition.get(k, 0) * (-1 if i < nreac else 1)
+    # ?C2H2 + ?O2 -> ?CO + ?H2O
+    # Ax = 0
+    # A:                 x:
+    #
+    #   C2H2   O2  CO  H2O
+    # C  2     0    1   0    x0
+    # H  2     0    0   2    x1
+    # O  0    -2    1   1    x2
 
-    A = Matrix([[_get(s, k, i) for i, s in enumerate(subst_vals)] for k in ck])
-    A_aug, pivot = A.rref()
+    def _get(sk, ck):
+        return substances[sk].composition.get(ck, 0) * (-1 if sk in reactants else 1)
 
-    # A:                 x:   b:
+    A = Matrix([[_get(sk, ck) for sk in subst_keys] for ck in cks])
+
+    # A2 x = b
+    #
+    # A2:                 x:   b:
+    #
     #      O2  CO  H2O       C2H2
     # C    0    1   0    x0   2
     # H    0    0   2    x1   2
     # O   -2    1   1    x2   0
 
+    A_aug, pivot = A.rref()
+    if len(pivot) < nsubs-1:
+        raise ValueError("Unsatisfiable system of equations")
     x_aug = Matrix(A_aug[:len(pivot), 1:]).LUsolve(Matrix(-A_aug[:len(pivot), 0]))
-    x = Matrix([1] + [x_aug[i] for i in pivot])
+
+    # Reorder to original indices
+    x = [1]
+    for si in range(1, nsubs):
+        ai = si - 1  # augmented index
+        if ai in pivot:
+            x.append(x_aug[pivot.index(ai)])
+        else:
+            x.append(None)
+
+    # Now solve for the redundant x:s
+    for si in range(1, nsubs):
+        elem = x[si]
+        if elem is None:
+            # solve
+            col = A[:, si]
+            for ri, cell in enumerate(col):
+                if cell == 0:
+                    continue
+                others = 0
+                for ci, comp in enumerate(A[ri, :]):
+                    if ci == si:
+                        continue
+                    if x[ci] == None:
+                        raise NotImplementedError("Need a second LU solve")
+                    others += comp*x[ci]
+                x[si] = -others/cell
+                break
+
+    x = Matrix(x)
     while True:
-        for elem in x:
+        for idx in range(nsubs):
+            elem = x[idx]
             if not elem.is_integer:
                 numer, denom = elem.as_numer_denom()
                 x *= denom
@@ -1414,9 +1457,13 @@ def balance_stoichiometry(reactants, products, substances=None,
             break
     if 0 in x:
         raise ValueError("Unable to balance stoichiometry (did you forget a product?)")
+
+    def _x(k):
+        return x[subst_keys.index(k)]
+
     return (
-        {k: n for k, n in zip(subst_keys[:nreac], x[:nreac])},
-        {k: n for k, n in zip(subst_keys[nreac:], x[nreac:])}
+        {k: _x(k) for k in reactants},
+        {k: _x(k) for k in products}
     )
 
 

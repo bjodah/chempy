@@ -257,3 +257,9 @@ def test_balance_stoichiometry():
     r2, p2 = balance_stoichiometry({'Na2CO3'}, {'Na2O', 'CO2'})
     assert r2 == {'Na2CO3': 1}
     assert p2 == {'Na2O': 1, 'CO2': 1}
+
+    r3, p3 = balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2'})
+    assert r3 == {'C2H6': 2, 'O2': 7}
+    assert p3 == {'CO2': 4, 'H2O': 6}
+    with pytest.raises(ValueError):
+        reac, prod = balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'})
