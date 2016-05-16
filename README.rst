@@ -170,8 +170,7 @@ Ionic strength
 .. code:: python
 
    >>> from chempy.electrolytes import ionic_strength
-   >>> from chempy.units import default_units as u
-   >>> ionic_strength({'Fe+3': 0.050*u.molal, 'ClO4-': 0.150*u.molal}, units=u) == .3
+   >>> ionic_strength({'Fe+3': 0.050, 'ClO4-': 0.150}) == .3
    True
 
 

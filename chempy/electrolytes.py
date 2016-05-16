@@ -9,13 +9,6 @@ from ._util import get_backend
 from .chemistry import Substance
 
 
-def _get_b0(b0, units=None):
-    if units is not None and b0 is 1:
-        return b0*units.molal
-    else:
-        return b0
-
-
 def ionic_strength(molalities, charges=None, b0=1, units=None, substances=None,
                    substance_factory=Substance.from_formula):
     """ Calculates the ionic strength
@@ -27,9 +20,6 @@ def ionic_strength(molalities, charges=None, b0=1, units=None, substances=None,
         when dict: mapping substance key to molality.
     charges: array_like
         Charge of respective ion, taken for substances when None.
-    b0: float
-        Reference molality, optionally with unit (amount / mass)
-        by IUPAC defines it as 1 mol/kg. (default: 1).
     units: object (optional, default: None)
         Attributes accessed: molal.
     substances: dict, optional
@@ -46,7 +36,6 @@ def ionic_strength(molalities, charges=None, b0=1, units=None, substances=None,
     30.0
 
     """
-    b0 = _get_b0(b0, units)
     tot = 0
     if charges is None:
         if substances is None:
@@ -58,7 +47,7 @@ def ionic_strength(molalities, charges=None, b0=1, units=None, substances=None,
     if len(molalities) != len(charges):
         raise ValueError("molalities and charges of different lengths")
     for b, z in zip(molalities, charges):
-        tot += (b/b0)*z**2
+        tot += b * z**2
     return tot/2
 
 
@@ -73,6 +62,13 @@ class _ActivityProductBase(object):
         pass
 
 
+def _get_b0(b0, units=None):
+    if units is not None and b0 is 1:
+        return b0*units.molal
+    else:
+        return b0
+
+
 def A(eps_r, T, rho, b0=1, constants=None, units=None, backend=None):
     """
     Debye Huckel constant A
@@ -85,8 +81,9 @@ def A(eps_r, T, rho, b0=1, constants=None, units=None, backend=None):
         Temperature (default: assume Kelvin)
     rho: float with unit
         density (default: assume kg/m**3)
-    b0: float with unit
-        reference molality (default: assume mol/kg)
+    b0: float, optional
+        Reference molality, optionally with unit (amount / mass)
+        IUPAC defines it as 1 mol/kg. (default: 1).
     units: object (optional, default: None)
         attributes accessed: meter, Kelvin and mol
     constants: object (optional, default: None)
@@ -106,6 +103,7 @@ def A(eps_r, T, rho, b0=1, constants=None, units=None, backend=None):
     Atkins, De Paula, Physical Chemistry, 8th edition
 
     """
+    b0 = _get_b0(b0, units)
     be = get_backend(backend)
     one = be.pi**0
     if constants is None:
@@ -153,6 +151,7 @@ def B(eps_r, T, rho, b0=1, constants=None, units=None, backend=None):
     Debye Huckel B constant (default in m**-1)
 
     """
+    b0 = _get_b0(b0, units)
     be = get_backend(backend)
     one = be.pi**0
     if constants is None:
