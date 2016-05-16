@@ -1401,7 +1401,8 @@ def balance_stoichiometry(reactants, products, substances=None,
     # C    0    1   0    x0   2
     # H    0    0   2    x1   2
     # O   -2    1   1    x2   0
-    x_aug = Matrix(A_aug[:, 1:]).LUsolve(Matrix(-A_aug[:, 0]))
+
+    x_aug = Matrix(A_aug[:len(pivot), 1:]).LUsolve(Matrix(-A_aug[:len(pivot), 0]))
     x = Matrix([1] + [x_aug[i] for i in pivot])
     while True:
         for elem in x:

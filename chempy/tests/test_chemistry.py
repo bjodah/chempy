@@ -253,3 +253,7 @@ def test_balance_stoichiometry():
 
     with pytest.raises(ValueError):
         reac, prod = balance_stoichiometry({'C7H5(NO2)3', 'Al', 'NH4NO3'}, {'CO', 'H2O', 'N2'})
+
+    r2, p2 = balance_stoichiometry({'Na2CO3'}, {'Na2O', 'CO2'})
+    assert r2 == {'Na2CO3': 1}
+    assert p2 == {'Na2O': 1, 'CO2': 1}
