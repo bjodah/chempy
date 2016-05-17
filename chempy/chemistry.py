@@ -396,8 +396,12 @@ class Reaction(object):
             checks=('any_effect', 'all_positive', 'all_integral')):
         if isinstance(reac, set):
             reac = {k: 1 for k in reac}
+        if isinstance(inact_reac, set):
+            inact_reac = {k: 1 for k in inact_reac}
         if isinstance(prod, set):
             prod = {k: 1 for k in prod}
+        if isinstance(inact_prod, set):
+            inact_prod = {k: 1 for k in inact_prod}
         self.reac = reac
         self.prod = prod
         self.param = param
