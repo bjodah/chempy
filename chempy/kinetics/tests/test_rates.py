@@ -9,7 +9,7 @@ from chempy import Reaction, ReactionSystem, Substance
 from chempy.units import allclose, Backend, to_unitless, units_library, default_units as u
 from chempy.util.parsing import parsing_library
 from chempy.util.testing import requires
-from ..rates import RateExpr, MassAction, ArrheniusMassAction, Radiolytic
+from ..rates import RateExpr, MassAction, ArrheniusMassAction, Radiolytic, mk_Radiolytic
 
 
 class SpecialFraction(RateExpr):
@@ -193,3 +193,9 @@ def test_Radioyltic__Reaction_html():
     H = Substance.from_formula('H')
     html = rxn.html({'H': H}, with_param=True)
     assert html == ' &rarr; H&#59; %s' % str(rate)
+
+
+def test_mk_Radiolytic():
+    R1 = mk_Radiolytic()
+    R2 = mk_Radiolytic()
+    assert R1 is R2
