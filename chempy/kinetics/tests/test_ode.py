@@ -40,6 +40,55 @@ def test_get_odesys_1():
     assert np.allclose(yout, yref)
 
 
+@requires('numpy', 'pyodesys')
+def test_get_odesys_2():
+    g = Radiolytic([3.14])
+    a = Substance('A')
+    b = Substance('B')
+    r = Reaction({'A': 1}, {'B': 1}, param=g)
+    rsys = ReactionSystem([r], [a, b])
+    odesys = get_odesys(rsys, include_params=True)[0]
+    c0 = {
+        'A': 1.0,
+        'B': 3.0,
+    }
+    t = np.linspace(0.0, .1)
+    xout, yout, info = odesys.integrate(t, rsys.as_per_substance_array(c0), {'doserate': 2.72, 'density': .998})
+    yref = np.zeros((t.size, 2))
+    k = 3.14*2.72*.998
+    yref[:, 0] = 1 - k*t
+    yref[:, 1] = 3 + k*t
+    assert np.allclose(yout, yref)
+
+
+@requires(units_library, 'pyodesys')
+def test_get_odesys_3():
+    M = u.molar
+    s = u.second
+    mol = u.mol
+    m = u.metre
+    substances = list(map(Substance, 'H2O H+ OH-'.split()))
+    dissociation = Reaction({'H2O': 1}, {'H+': 1, 'OH-': 1}, 2.47e-5/s)
+    recombination = Reaction({'H+': 1, 'OH-': 1}, {'H2O': 1}, 1.37e11/M/s)
+    rsys = ReactionSystem([dissociation, recombination], substances)
+    odesys = get_odesys(
+        rsys, include_params=True, unit_registry=SI_base_registry,
+        output_conc_unit=M)[0]
+    c0 = {'H2O': 55.4*M, 'H+': 1e-7*M, 'OH-': 1e-4*mol/m**3}
+    x, y, p = odesys.pre_process(-42*u.second,
+                                 rsys.as_per_substance_array(c0, unit=M))
+    fout = odesys.f_cb(x, y, p)
+
+    time_unit = get_derived_unit(SI_base_registry, 'time')
+    conc_unit = get_derived_unit(SI_base_registry, 'concentration')
+
+    r1 = to_unitless(55.4*2.47e-5*M/s, conc_unit/time_unit)
+    r2 = to_unitless(1e-14*1.37e11*M/s, conc_unit/time_unit)
+    assert abs(fout[0] - r2 + r1) < 1e-10
+    assert abs(fout[1] - r1 + r2) < 1e-10
+    assert abs(fout[2] - r1 + r2) < 1e-10
+
+
 @requires(units_library, 'pyodesys')
 def test_get_odesys__with_units():
     a = Substance('A')
@@ -68,34 +117,6 @@ def test_get_odesys__with_units():
     yref[:, 1] = 200 + (13-Aref)/2
     print((yout - yref*conc_unit)/yout)
     assert allclose(yout, yref*conc_unit)
-
-
-@requires(units_library, 'pyodesys')
-def test_get_odesys_2():
-    M = u.molar
-    s = u.second
-    mol = u.mol
-    m = u.metre
-    substances = list(map(Substance, 'H2O H+ OH-'.split()))
-    dissociation = Reaction({'H2O': 1}, {'H+': 1, 'OH-': 1}, 2.47e-5/s)
-    recombination = Reaction({'H+': 1, 'OH-': 1}, {'H2O': 1}, 1.37e11/M/s)
-    rsys = ReactionSystem([dissociation, recombination], substances)
-    odesys = get_odesys(
-        rsys, include_params=True, unit_registry=SI_base_registry,
-        output_conc_unit=M)[0]
-    c0 = {'H2O': 55.4*M, 'H+': 1e-7*M, 'OH-': 1e-4*mol/m**3}
-    x, y, p = odesys.pre_process(-42*u.second,
-                                 rsys.as_per_substance_array(c0, unit=M))
-    fout = odesys.f_cb(x, y, p)
-
-    time_unit = get_derived_unit(SI_base_registry, 'time')
-    conc_unit = get_derived_unit(SI_base_registry, 'concentration')
-
-    r1 = to_unitless(55.4*2.47e-5*M/s, conc_unit/time_unit)
-    r2 = to_unitless(1e-14*1.37e11*M/s, conc_unit/time_unit)
-    assert abs(fout[0] - r2 + r1) < 1e-10
-    assert abs(fout[1] - r1 + r2) < 1e-10
-    assert abs(fout[2] - r1 + r2) < 1e-10
 
 
 @requires('numpy', 'pyodesys')

@@ -59,6 +59,9 @@ class RateExpr(Expr):
 def mk_Radiolytic(doserate_name='doserate'):
     """ Create a Radiolytic rate expression
 
+    Note that there is no mass-action dependence in the resulting
+    class, i.e. the rates does not depend on any concentrations.
+
     Examples
     --------
     >>> RadiolyticAlpha = mk_Radiolytic('doserate_alpha')

@@ -43,7 +43,7 @@ class QuantityDict(ArithmeticDict):
         super(QuantityDict, self).__setitem__(key, value)
 
     def copy(self):
-        return self.__class__(self.units, copy.deepcopy(self.items()))
+        return self.__class__(self.units, copy.deepcopy(list(self.items())))
 
     def __repr__(self):
         return "{}({}, {})".format(self.__class__.__name__,
@@ -51,12 +51,12 @@ class QuantityDict(ArithmeticDict):
                                    dict(self))
 
     def __mul__(self, other):
-        d = dict(copy.deepcopy(self.items()))
+        d = dict(copy.deepcopy(list(self.items())))
         _imul(d, other)
         return self.__class__(self.units * getattr(other, 'units', 1), d)
 
     def __truediv__(self, other):
-        d = dict(copy.deepcopy(self.items()))
+        d = dict(copy.deepcopy(list(self.items())))
         _itruediv(d, other)
         return self.__class__(self.units / getattr(other, 'units', 1), d)
 
