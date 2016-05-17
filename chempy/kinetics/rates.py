@@ -11,6 +11,7 @@ from __future__ import (absolute_import, division, print_function)
 import math
 
 
+from ..util.pyutil import memoize
 from ..util._expr import Expr
 
 
@@ -54,6 +55,7 @@ class RateExpr(Expr):
         return _RateExpr
 
 
+@memoize(1)
 def mk_Radiolytic(doserate_name='doserate'):
     """ Create a Radiolytic rate expression
 

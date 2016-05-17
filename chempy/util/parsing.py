@@ -13,7 +13,7 @@ from .pyutil import ChemPyDeprecationWarning, memoize
 parsing_library = 'pyparsing'  # info used for selective testing.
 
 
-@memoize
+@memoize()
 def _get_formula_parser():
     """ Create a forward pyparsing parser for chemical formulae
 

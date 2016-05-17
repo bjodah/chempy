@@ -13,14 +13,18 @@ from .. import __url__
 from .deprecation import Deprecation
 
 
-def memoize(func):
-    @wraps(func)
-    def cb():
-        if cb.result is None:
-            cb.result = func()
-        return cb.result
-    cb.result = None
-    return cb
+def memoize(nargs=0):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args):
+            if len(args) > nargs:
+                raise ValueError("memoization error")
+            if args not in wrapper.results:
+                wrapper.results[args] = func(*args)
+            return wrapper.results[args]
+        wrapper.results = {}
+        return wrapper
+    return decorator
 
 
 def defaultnamedtuple(typename, field_names, defaults=()):
