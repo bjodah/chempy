@@ -156,3 +156,27 @@ def test_ArithmeticDict_div_float():
     t = d/3.0
     assert t['a'] == 2.0
     assert t['b'] == 3.0
+
+
+def test_ArithmeticDict_isclose():
+    d1 = ArithmeticDict(float)
+    d2 = ArithmeticDict(float)
+    assert d1.isclose(d2)
+    d1['a'] = 2
+    assert not d1.isclose(d2)
+    d2['a'] = 2+1e-15
+    assert d1.isclose(d2)
+    d2['b'] = 1e-15
+    assert not d1.isclose(d2)
+    assert d1.isclose(d2, atol=1e-14)
+
+
+def test_ArithmeticDict_all_non_negative():
+    d1 = ArithmeticDict(float)
+    assert d1.all_non_negative()
+    d1['a'] = .1
+    assert d1.all_non_negative()
+    d1['b'] = 0
+    assert d1.all_non_negative()
+    d1['b'] -= 1e-15
+    assert not d1.all_non_negative()

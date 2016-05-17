@@ -5,6 +5,24 @@ from collections import defaultdict
 from itertools import chain
 
 
+def _imul(d1, d2):
+    if hasattr(d2, 'keys'):
+        for k in set(chain(d1.keys(), d2.keys())):
+            d1[k] = d1[k]*d2[k]
+    else:
+        for k in d1:
+            d1[k] *= d2
+
+
+def _itruediv(d1, d2):
+    if hasattr(d2, 'keys'):
+        for k in set(chain(d1.keys(), d2.keys())):
+            d1[k] = d1[k]/d2[k]
+    else:
+        for k in d1:
+            d1[k] /= d2
+
+
 class ArithmeticDict(defaultdict):
     """ A dictionary which supports arithmetics
 
@@ -75,12 +93,7 @@ class ArithmeticDict(defaultdict):
         return -1*self + other
 
     def __imul__(self, other):
-        if hasattr(other, 'keys'):
-            for k in set(chain(self.keys(), other.keys())):
-                self[k] = self[k]*other[k]
-        else:
-            for k in self:
-                self[k] *= other
+        _imul(self, other)
         return self
 
     def __mul__(self, other):
@@ -92,12 +105,7 @@ class ArithmeticDict(defaultdict):
         return self * other
 
     def __itruediv__(self, other):
-        if hasattr(other, 'keys'):
-            for k in set(chain(self.keys(), other.keys())):
-                self[k] = self[k]/other[k]
-        else:
-            for k in self:
-                self[k] /= other
+        _itruediv(self, other)
         return self
 
     def __truediv__(self, other):
@@ -164,11 +172,17 @@ class ArithmeticDict(defaultdict):
 
     def isclose(self, other, rtol=1e-12, atol=None):
         def _isclose(a, b):
+            lim = abs(rtol*b)
             if atol is not None:
-                if abs(a-b) > atol:
-                    return False
-            return abs((a-b)/b) < rtol
+                lim += atol
+            return abs((a-b)) <= lim
         return self._discrepancy(other, _isclose)
+
+    def all_non_negative(self):
+        for v in self.values():
+            if v < v*0:
+                return False
+        return True
 
     def __hash__(self):
         default = self.default_factory()
