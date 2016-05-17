@@ -58,3 +58,13 @@ def test_Solution__dissolve():
     s4 = (s1 + s2).dissolve({'CH3OH': 1*u.gram})
     mw = (12.011 + 4*1.008 + 15.999)
     assert abs(s4.concentrations['CH3OH'] - (0.325 + 1/mw/.4)*u.molar) < 1e-7
+
+
+@requires(units_library)
+def test_Solution__withdraw():
+    s1, s2 = _get_s1_s2()
+    s3 = (s1 + s2)
+    s4 = s3.withdraw(.2 * u.dm3)
+    assert s4 == s3
+    assert s4 == (s1 + s2).withdraw(.2 * u.dm3)
+    assert s4 != s1 + s2

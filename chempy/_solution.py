@@ -19,10 +19,11 @@ True
 """
 from __future__ import (absolute_import, division, print_function)
 
+import copy
 
 from .chemistry import Substance
 from .units import is_unitless, default_units as u
-from .util.arithmeticdict import ArithmeticDict
+from .util.arithmeticdict import ArithmeticDict, _imul, _itruediv
 
 
 class QuantityDict(ArithmeticDict):
@@ -42,7 +43,7 @@ class QuantityDict(ArithmeticDict):
         super(QuantityDict, self).__setitem__(key, value)
 
     def copy(self):
-        return self.__class__(self.units, self.items())
+        return self.__class__(self.units, copy.deepcopy(self.items()))
 
     def __repr__(self):
         return "{}({}, {})".format(self.__class__.__name__,
@@ -50,16 +51,14 @@ class QuantityDict(ArithmeticDict):
                                    dict(self))
 
     def __mul__(self, other):
-        a = self.copy()
-        a.units = a.units * getattr(other, 'units', 1)
-        a *= other
-        return a
+        d = dict(copy.deepcopy(self.items()))
+        _imul(d, other)
+        return self.__class__(self.units * getattr(other, 'units', 1), d)
 
     def __truediv__(self, other):
-        a = self.copy()
-        a.units = a.units / getattr(other, 'units', 1)
-        a /= other
-        return a
+        d = dict(copy.deepcopy(self.items()))
+        _itruediv(d, other)
+        return self.__class__(self.units / getattr(other, 'units', 1), d)
 
     def __floordiv__(self, other):
         a = self.copy()
@@ -103,6 +102,11 @@ class Solution(object):
         self.substances = substances
         self.solvent = solvent
 
+    def __eq__(self, other):
+        if not isinstance(other, Solution):
+            return NotImplemented
+        return all([getattr(self, k) == getattr(other, k) for k in 'volume concentrations substances solvent'.split()])
+
     def __add__(self, other):
         if self.solvent != other.solvent:
             raise NotImplementedError("Mixed solvent should be represented as concentrations")
@@ -113,3 +117,11 @@ class Solution(object):
     def dissolve(self, masses):
         contrib = QuantityDict(u.molar, {k: v/self.substances[k].molar_mass()/self.volume for k, v in masses.items()})
         return Solution(self.volume, self.concentrations + contrib, self.substances, self.solvent)
+
+    def withdraw(self, volume):
+        if volume > self.volume:
+            raise ValueError("Cannot withdraw a volume greater than the solution volume")
+        if volume < volume*0:
+            raise ValueError("Cannot withdraw a negative volume")
+        self.volume -= volume
+        return Solution(volume, self.concentrations, self.substances, self.solvent)
