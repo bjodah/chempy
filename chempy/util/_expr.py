@@ -8,6 +8,7 @@ pay to allow for this is a somewhat contrived syntax
 """
 from __future__ import (absolute_import, division, print_function)
 
+import math
 from functools import reduce
 from itertools import chain
 from operator import add
@@ -122,7 +123,7 @@ class Expr(object):
     def arg(self, variables, index):
         if isinstance(index, str):
             index = self.argument_names.index(index)
-        if self.unique_keys is None:
+        if self.unique_keys is None or len(self.unique_keys) <= index:
             return self.args[index]
         else:
             return variables.get(self.unique_keys[index], self.args[index])
@@ -135,6 +136,43 @@ class Expr(object):
         units = [default_unit_in_registry(arg, unit_registry) for arg in self.args]
         unitless_args = [to_unitless(arg, unit) for arg, unit in zip(self.args, units)]
         return units, self.__class__(unitless_args, self.unique_keys, **{k: getattr(self, k) for k in self.kw})
+
+
+def Expr_from_callback(callback, **kwargs):
+    """ Factory of Expr subclasses
+
+    Parameters
+    ----------
+    callback : callable
+        signature: *args, backend=None
+    argument_names : tuple of str, optional
+    parameter_keys : tuple of str, optional,
+    kw : dict, optional
+    nargs : int, optional
+
+    Examples
+    --------
+    >>> from operator import add; from functools import reduce
+    >>> def poly(args, x, backend=None):
+    ...     x0 = args[0]
+    ...     return reduce(add, [c*(x-x0)**i for i, c in enumerate(args[1:])])
+    ...
+    >>> Poly = Expr_from_callback(poly, parameter_keys=('x',), argument_names=('x0', Ellipsis))
+    >>> p = Poly([1, 3, 2, 5])
+    >>> p({'x': 7}) == 3 + 2*(7-1) + 5*(7-1)**2
+    True
+    >>> q = Poly([1, 3, 2, 5], unique_keys=('x0_q',))
+    >>> q({'x': 7, 'x0_q': 0}) == 3 + 2*7 + 5*7**2
+    True
+
+    """
+    class Wrapper(Expr):
+        def __call__(self, variables, backend=math):
+            params = [variables[k] for k in self.parameter_keys]
+            return callback(self.all_args(variables), *params, backend=backend)
+    for k, v in kwargs.items():
+        setattr(Wrapper, k, v)
+    return Wrapper
 
 
 def _eval_poly(x, offset, coeffs, reciprocal=False):

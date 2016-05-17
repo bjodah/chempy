@@ -123,6 +123,11 @@ def test_ReactionSystem():
     assert rs.as_substance_index(0) == 0
 
 
+def test_ReactionSystem__rates():
+    rs = ReactionSystem([Reaction({'H2O'}, {'H+', 'OH-'}, 11)])
+    assert rs.rates({'H2O': 3, 'H+': 5, 'OH-': 7}) == {'H2O': -11*3, 'H+': 11*3, 'OH-': 11*3}
+
+
 def test_ReactionSystem__html_tables():
     r1 = Reaction({'A': 2}, {'A'}, name='R1')
     r2 = Reaction({'A'}, {'A': 2}, name='R2')

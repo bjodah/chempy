@@ -1191,6 +1191,33 @@ class ReactionSystem(object):
         else:
             return list(self.substances.keys()).index(substance_key)
 
+    def rates(self, variables=None, backend=math, substance_keys=None):
+        """ Per substance sums of reaction rates rates.
+
+        Parameters
+        ----------
+        variables : dict
+        backend : module, optional
+        substance_keys : iterable of str, optional
+
+        Examples
+        --------
+        >>> r = Reaction({'R': 2}, {'P': 1}, 42.0)
+        >>> rsys = ReactionSystem([r])
+        >>> rates = rsys.rates({'R': 3, 'P': 5})
+        >>> abs(rates['P'] - 42*3**2) < 1e-14
+        True
+
+        """
+        result = {}
+        for rxn in self.rxns:
+            for k, v in rxn.rate(variables, backend, substance_keys).items():
+                if k not in result:
+                    result[k] = v
+                else:
+                    result[k] += v
+        return result
+
     def _stoichs(self, attr, keys=None):
         import numpy as np
         if keys is None:
