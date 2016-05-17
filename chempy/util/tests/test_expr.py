@@ -2,6 +2,8 @@
 from __future__ import (absolute_import, division, print_function)
 
 import math
+from operator import add
+from functools import reduce
 
 import pytest
 
@@ -29,7 +31,7 @@ def _get_cv(kelvin=1, gram=1, mol=1):
             molar_mass = self.substance.mass
             TE = self.arg(variables, 0)  # einstein_temperature
             R = variables['R']
-            T = variables['temperature']
+            T, = self.all_params(variables, backend=backend)
             # Canoncial ensemble:
             molar_c_v = 3*R*(TE/(2*T))**2 * backend.sinh(TE/(2*T))**-2
             return molar_c_v/molar_mass
@@ -49,6 +51,20 @@ def test_Expr():
     cv = _get_cv()
     _ref = 0.8108020083055849
     assert abs(cv['Al']({'temperature': 273.15, 'R': 8.3145}) - _ref) < 1e-14
+
+
+@requires(parsing_library)
+def test_Expr__nested_Expr():
+    def poly(args, x, backend=None):
+        x0 = args[0]
+        return reduce(add, [c*(x-x0)**i for i, c in enumerate(args[1:])])
+
+    Poly = Expr_from_callback(poly, parameter_keys=('x',), argument_names=('x0', Ellipsis))
+    T = Poly([3, 7, 5])
+
+    cv = _get_cv()
+    _ref = 0.8108020083055849
+    assert abs(cv['Al']({'temperature': T, 'x': (273.15-7)/5 + 3, 'R': 8.3145}) - _ref) < 1e-14
 
 
 def test_nargs():

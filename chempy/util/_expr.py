@@ -109,8 +109,9 @@ class Expr(object):
             ['(%s)' % args_str],
             [unique_keys_fmt(self.unique_keys)] if self.unique_keys is not None else []
         ))]
-        print_kw = {k: getattr(self, k) for k in self.kw if getattr(self, k) != self.kw[k]}
-        if with_kw and print_kw:
+        if self.kw is not None:
+            print_kw = {k: getattr(self, k) for k in self.kw if getattr(self, k) != self.kw[k]}
+        if with_kw and self.kw is not None and print_kw:
             args_kwargs_strs += [', '.join('{}={}'.format(k, v) for k, v in print_kw.items())]
         return "{}({})".format(self.__class__.__name__, ', '.join(args_kwargs_strs))
 
@@ -120,16 +121,24 @@ class Expr(object):
     def string(self, arg_fmt=str):
         return self._str(arg_fmt)
 
-    def arg(self, variables, index):
+    def arg(self, variables, index, backend=None):
         if isinstance(index, str):
             index = self.argument_names.index(index)
         if self.unique_keys is None or len(self.unique_keys) <= index:
-            return self.args[index]
+            res = self.args[index]
         else:
-            return variables.get(self.unique_keys[index], self.args[index])
+            res = variables.get(self.unique_keys[index], self.args[index])
+        if isinstance(res, Expr):
+            return res(variables, backend=backend)
+        else:
+            return res
 
-    def all_args(self, variables):
-        return [self.arg(variables, i) for i in range(len(self.args))]
+    def all_args(self, variables, backend=None):
+        return [self.arg(variables, i, backend) for i in range(len(self.args))]
+
+    def all_params(self, variables, backend=None):
+        return [v(variables, backend=backend) if isinstance(v, Expr) else v for v
+                in [variables[k] for k in self.parameter_keys]]
 
     def _dedimensionalisation(self, unit_registry):
         from ..units import default_unit_in_registry, to_unitless
@@ -168,8 +177,9 @@ def Expr_from_callback(callback, **kwargs):
     """
     class Wrapper(Expr):
         def __call__(self, variables, backend=math):
-            params = [variables[k] for k in self.parameter_keys]
-            return callback(self.all_args(variables), *params, backend=backend)
+            args = self.all_args(variables, backend=backend)
+            params = self.all_params(variables, backend=backend)
+            return callback(args, *params, backend=backend)
     for k, v in kwargs.items():
         setattr(Wrapper, k, v)
     return Wrapper
@@ -223,7 +233,7 @@ def mk_Poly(parameter, reciprocal=False):
         skip_poly = 0
 
         def eval_poly(self, variables, backend=None):
-            all_args = self.all_args(variables)
+            all_args = self.all_args(variables, backend=backend)
             x = variables[parameter]
             offset, coeffs = all_args[self.skip_poly], all_args[self.skip_poly+1:]
             return _eval_poly(x, offset, coeffs, reciprocal)
@@ -239,7 +249,7 @@ def mk_PiecewisePoly(parameter, reciprocal=False):
         skip_poly = 0
 
         def eval_poly(self, variables, backend=None):
-            all_args = self.all_args(variables)[self.skip_poly:]
+            all_args = self.all_args(variables, backend=backend)[self.skip_poly:]
             npoly = all_args[0]
             arg_idx = 1
             poly_args = []
