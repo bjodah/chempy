@@ -59,6 +59,9 @@ def test_formula_to_composition():
     assert formula_to_composition('alpha-FeOOH(s)') == {1: 1, 8: 2, 26: 1}
     assert formula_to_composition('epsilon-Zn(OH)2(s)') == {1: 2, 8: 2, 30: 1}
 
+    # crystal water
+    assert formula_to_composition('Na2CO3.7H2O(s)') == {11: 2, 6: 1, 8: 10, 1: 14}
+
 
 def test_relative_atomic_masses():
     assert relative_atomic_masses[0] == 1.008

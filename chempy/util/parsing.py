@@ -330,15 +330,36 @@ def formula_to_composition(formula, prefixes=None,
     True
     >>> formula_to_composition('.NHO-(aq)') == {0: -1, 1: 1, 7: 1, 8: 1}
     True
+    >>> formula_to_composition('Na2CO3.7H2O') == {11: 2, 6: 1, 8: 10, 1: 14}
+    True
 
     """
     if prefixes is None:
         prefixes = _latex_mapping.keys()
-    parts = _formula_to_parts(formula, prefixes, suffixes)
-    comp = _parse_stoich(parts[0])
-    if parts[1] is not None:
-        comp[0] = _get_charge(parts[1])
-    return comp
+    stoich_tok, chg_tok = _formula_to_parts(formula, prefixes, suffixes)[:2]
+    tot_comp = {}
+    parts = stoich_tok.split('.')
+    for idx, stoich in enumerate(parts):
+        if idx == 0:
+            m = 1
+        else:
+            m = re.findall(r'^\d+', stoich)
+            if len(m) == 0:
+                m = 1
+            elif len(m) == 1:
+                stoich = stoich[len(m[0]):]
+                m = int(m[0])
+            else:
+                raise ValueError("Failed to parse: %s" % stoich)
+        comp = _parse_stoich(stoich)
+        for k, v in comp.items():
+            if k not in tot_comp:
+                tot_comp[k] = m*v
+            else:
+                tot_comp[k] += m*v
+    if chg_tok is not None:
+        tot_comp[0] = _get_charge(chg_tok)
+    return tot_comp
 
 
 def _subs(string, patterns):
