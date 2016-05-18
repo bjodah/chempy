@@ -300,12 +300,27 @@ _latex_mapping = {k + '-': '\\' + k + '-' for k in _greek_letters}
 _latex_mapping['epsilon-'] = '\\varepsilon-'
 _latex_mapping['omicron-'] = 'o-'
 _latex_mapping['.'] = '^\\bullet '
+_latex_infix_mapping = {'.': '\\cdot '}
 
 _unicode_mapping = {k + '-': v + '-' for k, v in zip(_greek_letters, _greek_u)}
 _unicode_mapping['.'] = u'⋅'
+_unicode_infix_mapping = {'.': u'·'}
 
 _html_mapping = {k + '-': '&' + k + ';-' for k in _greek_letters}
 _html_mapping['.'] = '&sdot;'
+_html_infix_mapping = _html_mapping
+
+
+def _get_leading_integer(s):
+    m = re.findall(r'^\d+', s)
+    if len(m) == 0:
+        m = 1
+    elif len(m) == 1:
+        s = s[len(m[0]):]
+        m = int(m[0])
+    else:
+        raise ValueError("Failed to parse: %s" % s)
+    return m, s
 
 
 def formula_to_composition(formula, prefixes=None,
@@ -343,14 +358,7 @@ def formula_to_composition(formula, prefixes=None,
         if idx == 0:
             m = 1
         else:
-            m = re.findall(r'^\d+', stoich)
-            if len(m) == 0:
-                m = 1
-            elif len(m) == 1:
-                stoich = stoich[len(m[0]):]
-                m = int(m[0])
-            else:
-                raise ValueError("Failed to parse: %s" % stoich)
+            m, stoich = _get_leading_integer(stoich)
         comp = _parse_stoich(stoich)
         for k, v in comp.items():
             if k not in tot_comp:
@@ -469,10 +477,20 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
 
 
 def _formula_to_format(sub, sup, formula, prefixes=None,
-                       suffixes=('(s)', '(l)', '(g)', '(aq)'),
-                       intercept=None):
+                       infixes=None, suffixes=('(s)', '(l)', '(g)', '(aq)')):
     parts = _formula_to_parts(formula, prefixes.keys(), suffixes)
-    string = re.sub(r'([0-9]+)', lambda m: sub(m.group(1)), parts[0])
+    stoichs = parts[0].split('.')
+    string = ''
+    for idx, stoich in enumerate(stoichs):
+        if idx == 0:
+            m = 1
+        else:
+            m, stoich = _get_leading_integer(stoich)
+            string += _subs('.', infixes)
+        if m != 1:
+            string += str(m)
+        string += re.sub(r'([0-9]+)', lambda m: sub(m.group(1)), stoich)
+
     if parts[1] is not None:
         chg = _get_charge(parts[1])
         if chg < 0:
@@ -486,7 +504,7 @@ def _formula_to_format(sub, sup, formula, prefixes=None,
     return pre_str + string + ''.join(parts[3])
 
 
-def formula_to_latex(formula, prefixes=None, **kwargs):
+def formula_to_latex(formula, prefixes=None, infixes=None, **kwargs):
     r""" Convert formula string to latex representation
 
     Parameters
@@ -495,8 +513,10 @@ def formula_to_latex(formula, prefixes=None, **kwargs):
         Chemical formula, e.g. 'H2O', 'Fe+3', 'Cl-'
     prefixes: dict
         Prefix transofmrations, default: greek letters and .
-    suffixes: tuple of strings
-        Suffixes to keep, e.g. ('(g)', '(s)')
+    infixes: dict
+        Infix transformations, default: .
+    suffixes: iterable of str
+        What suffixes not to interpret, default: (s), (l), (g), (aq)
 
     Examples
     --------
@@ -514,8 +534,10 @@ def formula_to_latex(formula, prefixes=None, **kwargs):
     """
     if prefixes is None:
         prefixes = _latex_mapping
+    if infixes is None:
+        infixes = _latex_infix_mapping
     return _formula_to_format(lambda x: '_{%s}' % x, lambda x: '^{%s}' % x,
-                              formula, prefixes)
+                              formula, prefixes, infixes, **kwargs)
 
 
 def _number_to_scientific_latex(number, fmt='%.3g'):
@@ -557,16 +579,18 @@ for k, v in enumerate(u"⁰¹²³⁴⁵⁶⁷⁸⁹"):
     _unicode_sup[str(k)] = v
 
 
-def formula_to_unicode(formula, prefixes=None, **kwargs):
+def formula_to_unicode(formula, prefixes=None, infixes=None, **kwargs):
     u""" Convert formula string to unicode string representation
 
     Parameters
     ----------
-    formula: str
+    formula : str
         Chemical formula, e.g. 'H2O', 'Fe+3', 'Cl-'
-    prefixes: dict
+    prefixes : dict
         Prefix transofmrations, default: greek letters and .
-    suffixes: tuple of strings
+    infixes : dict
+        Infix transofmrations, default: .
+    suffixes : tuple of strings
         Suffixes to keep, e.g. ('(g)', '(s)')
 
     Examples
@@ -585,11 +609,12 @@ def formula_to_unicode(formula, prefixes=None, **kwargs):
     """
     if prefixes is None:
         prefixes = _unicode_mapping
-
+    if infixes is None:
+        infixes = _unicode_infix_mapping
     return _formula_to_format(
         lambda x: ''.join(_unicode_sub[str(_)] for _ in x),
         lambda x: ''.join(_unicode_sup[str(_)] for _ in x),
-        formula, prefixes)
+        formula, prefixes, infixes, **kwargs)
 
 
 def _number_to_scientific_unicode(number, fmt='%.3g'):
@@ -618,16 +643,18 @@ def _number_to_scientific_unicode(number, fmt='%.3g'):
         return s + unit
 
 
-def formula_to_html(formula, prefixes=None, **kwargs):
+def formula_to_html(formula, prefixes=None, infixes=None, **kwargs):
     u""" Convert formula string to html string representation
 
     Parameters
     ----------
-    formula: str
+    formula : str
         Chemical formula, e.g. 'H2O', 'Fe+3', 'Cl-'
-    prefixes: dict
-        Prefix transofmrations, default: greek letters and .
-    suffixes: tuple of strings
+    prefixes : dict
+        Prefix transformations, default: greek letters and .
+    infixes : dict
+        Infix transformations, default: .
+    suffixes : tuple of strings
         Suffixes to keep, e.g. ('(g)', '(s)')
 
     Examples
@@ -646,9 +673,11 @@ def formula_to_html(formula, prefixes=None, **kwargs):
     """
     if prefixes is None:
         prefixes = _html_mapping
+    if infixes is None:
+        infixes = _html_infix_mapping
     return _formula_to_format(lambda x: '<sub>%s</sub>' % x,
                               lambda x: '<sup>%s</sup>' % x,
-                              formula, prefixes)
+                              formula, prefixes, infixes, **kwargs)
 
 
 def _number_to_scientific_html(number, fmt='%.3g'):
