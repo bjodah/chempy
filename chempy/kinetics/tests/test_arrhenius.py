@@ -7,8 +7,8 @@ import math
 from ..arrhenius import (
     arrhenius_equation, ArrheniusParam, ArrheniusParamWithUnits
 )
-from ..util.testing import requires
-from ..units import default_units, units_library
+from chempy.util.testing import requires
+from chempy.units import default_units, units_library
 
 
 def test_arrhenius_equation():

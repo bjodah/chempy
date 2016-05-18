@@ -337,7 +337,8 @@ class Backend(object):
     """ Wrapper around modules such as numpy and math
 
     Instances of Backend wraps a module, e.g. `numpy` and ensures that
-    arguments passed on are unitless.
+    arguments passed on are unitless, i.e. it raises an error if a
+    transcendental function is used with quantities with units.
 
     Parameters
     ----------
@@ -390,7 +391,7 @@ class Backend(object):
 
 
 def format_string(value, precision='%.5g', tex=False):
-    """ Formats a scalar with unit as a string
+    """ Formats a scalar with unit as two strings
 
     Parameters
     ----------
@@ -401,9 +402,9 @@ def format_string(value, precision='%.5g', tex=False):
 
     Examples
     --------
-    >>> print(format_string(0.42*default_units.mol/default_units.decimetre**3))
+    >>> print(' '.join(format_string(0.42*default_units.mol/default_units.decimetre**3)))
     0.42 mol/decimetre**3
-    >>> print(format_string(2/default_units.s, tex=True))
+    >>> print(' '.join(format_string(2/default_units.s, tex=True)))
     2 \\mathrm{\\frac{1}{s}}
 
     """
@@ -413,4 +414,4 @@ def format_string(value, precision='%.5g', tex=False):
         from quantities.markup import config
         attr = 'unicode' if config.use_unicode else 'string'
         unit_str = getattr(value.dimensionality, attr)
-    return precision % float(value.magnitude) + " " + unit_str
+    return precision % float(value.magnitude), unit_str
