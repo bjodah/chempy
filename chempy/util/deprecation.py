@@ -12,17 +12,17 @@ class Deprecation(object):
 
     Parameters
     ----------
-    last_supported_version : str
+    last_supported_version : str, optional
         Version string, e.g. ``'0.2.1'``.
-    will_be_missing_in : str
+    will_be_missing_in : str, optional
         Version string, e.g. ``'0.3.0'``.
-    use_instead : object or str
+    use_instead : object or str, optional
         Function or class to use instead or descriptive string.
-    issue : str
-    issues_url : callback
+    issue : str, optional
+    issues_url : callback, optional
         Converts issue to url, e.g. ``lambda s: 'https://github.com/user/repo/\
 issues/%s/' % s.lstrip('gh-')``.
-    warning: DeprecationWarning
+    warning: DeprecationWarning, optional
         Any subclass of DeprecationWarning, tip: you may invoke:
         ``warnings.simplefilter('once', MyWarning)`` at module init.
 

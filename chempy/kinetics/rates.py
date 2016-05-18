@@ -11,7 +11,7 @@ from __future__ import (absolute_import, division, print_function)
 import math
 
 
-from ..util.pyutil import memoize
+from ..util.pyutil import memoize, deprecated
 from ..util._expr import Expr
 
 
@@ -21,6 +21,7 @@ class RateExpr(Expr):
     kw = {'rxn': None, 'ref': None}
 
     @classmethod
+    @deprecated(use_instead=Expr.from_callback)
     def subclass_from_callback(cls, cb, cls_attrs=None):
         """ Override RateExpr.__call__
 

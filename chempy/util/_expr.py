@@ -11,7 +11,7 @@ from __future__ import (absolute_import, division, print_function)
 import math
 from functools import reduce
 from itertools import chain
-from operator import add
+from operator import add, mul, truediv, sub
 
 
 class Expr(object):
@@ -146,43 +146,111 @@ class Expr(object):
         unitless_args = [to_unitless(arg, unit) for arg, unit in zip(self.args, units)]
         return units, self.__class__(unitless_args, self.unique_keys, **{k: getattr(self, k) for k in self.kw})
 
+    @classmethod
+    def from_callback(cls, callback, **kwargs):
+        """ Factory of subclasses
 
-def Expr_from_callback(callback, **kwargs):
-    """ Factory of Expr subclasses
+        Parameters
+        ----------
+        callback : callable
+            signature: *args, backend=None
+        argument_names : tuple of str, optional
+        parameter_keys : tuple of str, optional,
+        kw : dict, optional
+        nargs : int, optional
 
-    Parameters
-    ----------
-    callback : callable
-        signature: *args, backend=None
-    argument_names : tuple of str, optional
-    parameter_keys : tuple of str, optional,
-    kw : dict, optional
-    nargs : int, optional
+        Examples
+        --------
+        >>> from operator import add; from functools import reduce
+        >>> def poly(args, x, backend=None):
+        ...     x0 = args[0]
+        ...     return reduce(add, [c*(x-x0)**i for i, c in enumerate(args[1:])])
+        ...
+        >>> Poly = Expr.from_callback(poly, parameter_keys=('x',), argument_names=('x0', Ellipsis))
+        >>> p = Poly([1, 3, 2, 5])
+        >>> p({'x': 7}) == 3 + 2*(7-1) + 5*(7-1)**2
+        True
+        >>> q = Poly([1, 3, 2, 5], unique_keys=('x0_q',))
+        >>> q({'x': 7, 'x0_q': 0}) == 3 + 2*7 + 5*7**2
+        True
 
-    Examples
-    --------
-    >>> from operator import add; from functools import reduce
-    >>> def poly(args, x, backend=None):
-    ...     x0 = args[0]
-    ...     return reduce(add, [c*(x-x0)**i for i, c in enumerate(args[1:])])
-    ...
-    >>> Poly = Expr_from_callback(poly, parameter_keys=('x',), argument_names=('x0', Ellipsis))
-    >>> p = Poly([1, 3, 2, 5])
-    >>> p({'x': 7}) == 3 + 2*(7-1) + 5*(7-1)**2
-    True
-    >>> q = Poly([1, 3, 2, 5], unique_keys=('x0_q',))
-    >>> q({'x': 7, 'x0_q': 0}) == 3 + 2*7 + 5*7**2
-    True
+        """
+        class Wrapper(cls):
+            def __call__(self, variables, backend=math):
+                args = self.all_args(variables, backend=backend)
+                params = self.all_params(variables, backend=backend)
+                return callback(args, *params, backend=backend)
+        for k, v in kwargs.items():
+            setattr(Wrapper, k, v)
+        return Wrapper
 
-    """
-    class Wrapper(Expr):
-        def __call__(self, variables, backend=math):
-            args = self.all_args(variables, backend=backend)
-            params = self.all_params(variables, backend=backend)
-            return callback(args, *params, backend=backend)
-    for k, v in kwargs.items():
-        setattr(Wrapper, k, v)
-    return Wrapper
+    def __add__(self, other):
+        if other == other*0:
+            return self
+        return AddExpr([self, other])
+
+    def __sub__(self, other):
+        if other == other*0:
+            return self
+        return SubExpr([self, other])
+
+    def __mul__(self, other):
+        if other == 1:
+            return self
+        return MulExpr([self, other])
+
+    def __truediv__(self, other):
+        if other == 1:
+            return self
+        return DivExpr([self, other])
+
+    def __neg__(self):
+        if isinstance(self, NegExpr):
+            return self.args[0]
+        return NegExpr((self,))
+
+    def __radd__(self, other):
+        return self+other
+
+    def __rmul__(self, other):
+        return self*other
+
+    def __rsub__(self, other):
+        return (-self) + other
+
+    def __rtruediv__(self, other):
+        return DivExpr([other, self])
+
+
+class NegExpr(Expr):
+
+    def __call__(self, variables, backend=None):
+        arg0, = self.all_args(variables, backend=backend)
+        return -arg0
+
+
+class BinaryExpr(Expr):
+    _op = None
+
+    def __call__(self, variables, backend=None):
+        arg0, arg1 = self.all_args(variables, backend=backend)
+        return self._op(arg0, arg1)
+
+
+class AddExpr(BinaryExpr):
+    _op = add
+
+
+class SubExpr(BinaryExpr):
+    _op = sub
+
+
+class MulExpr(BinaryExpr):
+    _op = mul
+
+
+class DivExpr(BinaryExpr):
+    _op = truediv
 
 
 def _eval_poly(x, offset, coeffs, reciprocal=False):

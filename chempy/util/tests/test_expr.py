@@ -14,7 +14,7 @@ from chempy.units import (
 )
 from chempy.util.testing import requires
 
-from .._expr import Expr, Expr_from_callback, mk_Poly, mk_PiecewisePoly
+from .._expr import Expr, mk_Poly, mk_PiecewisePoly
 from ..parsing import parsing_library
 
 
@@ -53,13 +53,14 @@ def test_Expr():
     assert abs(cv['Al']({'temperature': 273.15, 'R': 8.3145}) - _ref) < 1e-14
 
 
+def _poly(args, x, backend=None):
+    x0, coeffs = args[0], args[1:]
+    return reduce(add, [c*(x-x0)**i for i, c in enumerate(coeffs)])
+
+
 @requires(parsing_library)
 def test_Expr__nested_Expr():
-    def poly(args, x, backend=None):
-        x0 = args[0]
-        return reduce(add, [c*(x-x0)**i for i, c in enumerate(args[1:])])
-
-    Poly = Expr_from_callback(poly, parameter_keys=('x',), argument_names=('x0', Ellipsis))
+    Poly = Expr.from_callback(_poly, parameter_keys=('x',), argument_names=('x0', Ellipsis))
     T = Poly([3, 7, 5])
 
     cv = _get_cv()
@@ -105,14 +106,14 @@ def test_Expr__dedimensionalisation():
     assert expr.args == [0.806*1440]
 
 
-def test_Expr_from_callback():
+def test_Expr__from_callback():
     def two_dim_gauss(args, x, y, backend=None):
         A, x0, y0, sx, sy = args
         xp, yp = x-x0, y-y0
         vx, vy = 2*sx**2, 2*sy**2
         return A*backend.exp(-(xp**2/vx + yp**2/vy))
 
-    TwoDimGauss = Expr_from_callback(two_dim_gauss, parameter_keys=('x', 'y'), nargs=5)
+    TwoDimGauss = Expr.from_callback(two_dim_gauss, parameter_keys=('x', 'y'), nargs=5)
     with pytest.raises(ValueError):
         TwoDimGauss([1, 2])
     args = [3, 2, 1, 4, 5]
@@ -194,3 +195,25 @@ def test_PiecewisePoly__sympy():
 
     with pytest.raises(ValueError):
         tpwp.from_polynomials([(0, 10), (10, 20)], [p1, p2])
+
+
+def test_BinaryExpr():
+    Poly = Expr.from_callback(_poly, parameter_keys=('x',), argument_names=('x0', Ellipsis))
+    p1 = Poly([1, 2, 3])
+    p2 = Poly([2, 3, 4])
+    assert p1({'x': 5}) == 14
+    assert p2({'x': 5}) == 15
+    assert (p1+p2)({'x': 5}) == 14+15
+    assert (p1-p2)({'x': 5}) == 14-15
+    assert (p1*p2)({'x': 5}) == 14*15
+    assert (p1/p2)({'x': 5}) == 14/15
+
+    assert (p1+2)({'x': 5}) == 14+2
+    assert (p1-2)({'x': 5}) == 14-2
+    assert (p1*2)({'x': 5}) == 14*2
+    assert (p1/2)({'x': 5}) == 14/2
+
+    assert (2+p1)({'x': 5}) == 2+14
+    assert (2-p1)({'x': 5}) == 2-14
+    assert (2*p1)({'x': 5}) == 2*14
+    assert (2/p1)({'x': 5}) == 2/14

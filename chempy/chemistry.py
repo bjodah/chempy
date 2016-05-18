@@ -844,8 +844,18 @@ class Equilibrium(Reaction):
     html_arrow = '&harr;'
     param_char = 'K'  # convention
 
-    def as_reactions(self, state=None, kf=None, kb=None, units=None):
-        """ Creates a forward and backward :class:`Reaction` pair """
+    def as_reactions(self, kf=None, kb=None, units=None, variables=None, backend=math):
+        """ Creates a forward and backward :class:`Reaction` pair
+
+        Parameters
+        ----------
+        kf : float or RateExpr
+        kb : float or RateExpr
+        units : module
+        variables : dict, optional
+        backend : module
+
+        """
         nb = sum(self.prod.values())
         nf = sum(self.reac.values())
         if units is None:
@@ -858,9 +868,9 @@ class Equilibrium(Reaction):
         if kf is None:
             if kb is None:
                 raise ValueError("Exactly one rate needs to be provided")
-            kf = kb * self.K(state) * c0**(nb - nf)
+            kf = kb * self.equilibrium_constant(variables, backend=backend) * c0**(nb - nf)
         elif kb is None:
-            kb = kf / (self.K(state) * c0**(nb - nf))
+            kb = kf / (self.equilibrium_constant(variables, backend=backend) * c0**(nb - nf))
         else:
             raise ValueError("Exactly one rate needs to be provided")
         return (
@@ -870,17 +880,21 @@ class Equilibrium(Reaction):
                      self.inact_reac, ref=self.ref)
         )
 
-    def K(self, state=None):
-        """ Return equilibrium quotient (possibly state dependent) """
-        if callable(self.param):
-            # For some cases a default might be obvious:
-            # if state is None:
-            #     raise ValueError("No state provided")
-            return self.param(state)
-        else:
-            if state is not None:
-                raise ValueError("state provided but param not callable")
+    def equilibrium_constant(self, variables=None, backend=math):
+        """ Return equilibrium constant
+
+        Parameters
+        ----------
+        variables : dict, optional
+        backend : module, optional
+
+        """
+        try:
+            return self.param(variables, backend=backend)
+        except TypeError:
             return self.param
+
+    K = equilibrium_constant
 
     def Q(self, substances, concs):
         """ Calculates the equilibrium qoutient """

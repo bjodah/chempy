@@ -11,7 +11,7 @@ class EqExpr(Expr):
     kw = {'eq': None, 'ref': None}
 
 
-class GibbsEnergyExpr(EqExpr):
+class GibbsEquilibriumConstant(EqExpr):
     argument_names = ('dH_over_R', 'dS_over_R')
     parameter_keys = ('temperature',)
 
