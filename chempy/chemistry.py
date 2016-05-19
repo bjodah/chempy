@@ -1045,8 +1045,9 @@ class ReactionSystem(object):
          mapping str -> Substance instances, None => deduced from reactions.
     name : string (optional)
          Name of ReactionSystem (e.g. model name / citation key)
-    check_balance : bool (default: None)
-        if None => True if all substances has composition attribute.
+    checks : iterable of str, optional
+        raises value error if any method check_%s returns False
+        for all %s in checks.
     substance_factory : callback
         e.g. :meth:`Substance.from_formula`
 
@@ -1076,7 +1077,8 @@ class ReactionSystem(object):
 
     """
 
-    def __init__(self, rxns, substances=None, name=None, check_balance=None,
+    def __init__(self, rxns, substances=None, name=None, checks=('balance', 'substance_keys',
+                                                                 'duplicate', 'duplicate_names'),
                  substance_factory=Substance):
         self.rxns = rxns
         if substances is None:
@@ -1097,19 +1099,12 @@ class ReactionSystem(object):
                     self.substances = OrderedDict(substances)
                 except ValueError:
                     self.substances = OrderedDict((k, substance_factory(k)) for k in substances)
-        self._sanity_check()
+
         self.name = name
-        if check_balance is None:
-            for subst in self.substances.values():
-                if subst.composition is None:
-                    check_balance = False
-                    break
-            else:
-                check_balance = True
-        if check_balance:
-            self.check_balance()
-        self.check_duplicate()
-        self.check_duplicate_rxn_names()
+
+        for check in checks:
+            if not getattr(self, 'check_'+check)():
+                raise ValueError("Check failed %s" % check)
 
     def _repr_html_(self):
         def _format(r):
@@ -1121,32 +1116,53 @@ class ReactionSystem(object):
         for i1, rxn1 in enumerate(self.rxns):
             for i2, rxn2 in enumerate(self.rxns[i1+1:], i1+1):
                 if rxn1 == rxn2:
-                    raise ValueError("Duplicate reactions %d & %d" % (i1, i2))
+                    return False
+        return True
 
-    def check_duplicate_rxn_names(self):
+    def check_duplicate_names(self):
         names_seen = {}
         for idx, rxn in enumerate(self.rxns):
             if rxn.name is None:
                 continue
             if rxn.name in names_seen:
-                raise ValueError("Reactions with duplicate names (%s): %d & %d"
-                                 % (rxn.name, names_seen[rxn.name], idx))
+                return False
             else:
                 names_seen[rxn.name] = idx
+        return True
 
-    def check_balance(self):
+    def check_balance(self, strict=False):
         """ Raies ValueError there are unbalanecd reactions in self.rxns """
+        for subst in self.substances.values():
+            if subst.composition is None:
+                if strict:
+                    return False
+                else:
+                    return True
         for rxn in self.rxns:
             for net in rxn.composition_violation(self.substances):
                 if net != 0:
-                    raise ValueError("Reaction not balanced: %s" % str(rxn))
+                    return False
+        return True
 
-    def _sanity_check(self):
+    def check_substance_keys(self):
         for rxn in self.rxns:
             for key in chain(rxn.reac, rxn.prod, rxn.inact_reac,
                              rxn.inact_prod):
                 if key not in self.substances:
-                    raise ValueError("Unkown substance: %s" % key)
+                    return False
+        return True
+
+    def __getitem__(self, key):
+        candidate = None
+        for r in self.rxns:
+            if r.name == key:
+                if candidate is None:
+                    candidate = r
+                else:
+                    raise ValueError('Multiple reactions with the same name')
+        if candidate is None:
+            raise KeyError("No reaction with name %s found" % key)
+        return candidate
 
     def substance_names(self):
         """ Returns a tuple of the substances' names """

@@ -112,15 +112,24 @@ def test_Substance__molar_mass():
 @requires(parsing_library)
 def test_ReactionSystem():
     kw = dict(substance_factory=Substance.from_formula)
-    r1 = Reaction.from_string('H2O -> H+ + OH-', 'H2O H+ OH-')
+    r1 = Reaction.from_string('H2O -> H+ + OH-', 'H2O H+ OH-', name='r1')
     rs = ReactionSystem([r1], 'H2O H+ OH-', **kw)
-    r2 = Reaction.from_string('H2O -> 2 H+ + OH-', 'H2O H+ OH-')
+    r2 = Reaction.from_string('H2O -> 2 H+ + OH-', 'H2O H+ OH-', name='r2')
     with pytest.raises(ValueError):
         ReactionSystem([r2], 'H2O H+ OH-', **kw)
     with pytest.raises(ValueError):
         ReactionSystem([r1, r1], 'H2O H+ OH-', **kw)
     assert rs.as_substance_index('H2O') == 0
     assert rs.as_substance_index(0) == 0
+
+    assert rs['r1'] is r1
+    rs.rxns.append(r2)
+    assert rs['r2'] is r2
+    with pytest.raises(KeyError):
+        rs['r3']
+    rs.rxns.append(Reaction({}, {}, 0, name='r2', checks=()))
+    with pytest.raises(ValueError):
+        rs['r2']
 
 
 def test_ReactionSystem__rates():
