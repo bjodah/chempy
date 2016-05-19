@@ -343,18 +343,17 @@ class EqSystem(ReactionSystem):
                 new_concs -= new_concs[s_idx]/s_stoich * net_stoich
         return new_concs
 
-    def _fw_cond_factory(self, ri):
+    def _fw_cond_factory(self, ri, rtol=1e-14):
         rxn = self.rxns[ri]
 
         def fw_cond(x, p):
-            precip_stoich_coeff = rxn.precipitate_stoich(self.substances)[1]
+            precip_stoich_coeff, precip_idx = rxn.precipitate_stoich(self.substances)[1:3]
             q = rxn.Q(self.substances, self.dissolved(x))
             k = rxn.K()
-            QoverK = q/k
             if precip_stoich_coeff > 0:
-                return QoverK < 1
+                return q*(1+rtol) < k
             elif precip_stoich_coeff < 0:
-                return QoverK > 1
+                return q > k*(1+rtol)
             else:
                 raise NotImplementedError
         return fw_cond
@@ -368,16 +367,6 @@ class EqSystem(ReactionSystem):
                 return False
             else:
                 return True
-            # precip_stoich_coeff = rxn.precipitate_stoich(self.substances)[1]
-            # q = rxn.Q(self.substances, self.dissolved(x))
-            # k = rxn.K()
-            # QoverK = q/k
-            # if precip_stoich_coeff > 0:
-            #     return QoverK <= 1
-            # elif prec_stoich_coeff < 0:
-            #     return QoverK >= 1
-            # else:
-            #     raise NotImplementedError
         return bw_cond
 
     def _SymbolicSys_from_NumSys(self, NS, conds, rref_equil, rref_preserv):

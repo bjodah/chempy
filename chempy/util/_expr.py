@@ -141,6 +141,7 @@ class Expr(object):
                 in [variables[k] for k in self.parameter_keys]]
 
     def _dedimensionalisation(self, unit_registry):
+        # this does not yet work for nested cases
         from ..units import default_unit_in_registry, to_unitless
         units = [default_unit_in_registry(arg, unit_registry) for arg in self.args]
         unitless_args = [to_unitless(arg, unit) for arg, unit in zip(self.args, units)]

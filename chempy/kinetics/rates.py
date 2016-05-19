@@ -50,7 +50,7 @@ class RateExpr(Expr):
         class _RateExpr(cls):
 
             def __call__(self, variables, backend=math):
-                return cb(variables, self.all_args(variables), backend)
+                return cb(variables, self.all_args(variables), backend=backend)
         for k, v in (cls_attrs or {}).items():
             setattr(_RateExpr, k, v)
         return _RateExpr
@@ -76,7 +76,7 @@ def mk_Radiolytic(doserate_name='doserate'):
         parameter_keys = (doserate_name, 'density')
 
         def g_value(self, variables, backend):  # for subclasses
-            return self.arg(variables, 0)
+            return self.arg(variables, 0, backend=backend)
 
         def __call__(self, variables, backend=math):
             return self.g_value(variables, 0)*variables[doserate_name]*variables['density']
@@ -104,10 +104,10 @@ class MassAction(RateExpr):
     argument_names = ('rate_constant',)
 
     def rate_coeff(self, variables, backend=math):  # for subclasses
-        return self.arg(variables, 0)
+        return self.arg(variables, 0, backend=backend)
 
     def __call__(self, variables, backend=math):
-        prod = self.rate_coeff(variables, backend)
+        prod = self.rate_coeff(variables, backend=backend)
         for k, v in self.rxn.reac.items():
             prod *= variables[k]**v
         return prod
@@ -142,7 +142,7 @@ class MassAction(RateExpr):
         class _MassAction(cls):
 
             def rate_coeff(self, variables, backend=math):
-                return cb(variables, self.all_args(variables), backend)
+                return cb(variables, self.all_args(variables), backend=backend)
         for k, v in (cls_attrs or {}).items():
             setattr(_MassAction, k, v)
         return _MassAction
@@ -153,7 +153,7 @@ class ArrheniusMassAction(MassAction):
     parameter_keys = ('temperature',)
 
     def rate_coeff(self, variables, backend=math):
-        A, Ea_over_R = self.all_args(variables)
+        A, Ea_over_R = self.all_args(variables, backend=backend)
         return A*backend.exp(-Ea_over_R/variables['temperature'])
 
 
@@ -161,6 +161,6 @@ class EyringMassAction(ArrheniusMassAction):
     argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R')
 
     def rate_coeff(self, variables, backend=math):
-        kB_h_times_exp_dS_R, dH_over_R = self.all_args(variables)
+        kB_h_times_exp_dS_R, dH_over_R = self.all_args(variables, backend=backend)
         T = variables['temperature']
         return T * kB_h_times_exp_dS_R * backend.exp(-dH_over_R/T)

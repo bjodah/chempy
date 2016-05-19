@@ -84,7 +84,7 @@ def dCdt(rsys, rates):
     return f
 
 
-def get_odesys(rsys, include_params=False, substitutions=None,
+def get_odesys(rsys, include_params=True, substitutions=None,
                SymbolicSys=None,
                unit_registry=None, output_conc_unit=None,
                output_time_unit=None, **kwargs):
