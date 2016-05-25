@@ -29,21 +29,22 @@ class Expr(object):
         Unique names (among all instances) for late overriding
     \*\*kwargs :
         keyword arguments intercepted in subclasses (directed by :attr:`kw`)
+        note that parameters in :attr:`kw` are not processed in e.g. dedimensionalisation.
 
     Examples
     --------
     >>> class HeatCapacity(Expr):
     ...     parameter_keys = ('temperature',)
-    ...     kw = {'substance': None}
     ...
     >>> import math
     >>> class EinsteinSolid(HeatCapacity):
-    ...     argument_names = ('einstein_temperature',)
+    ...     parameter_keys = HeatCapacity.parameter_keys + ('molar_gas_constant',)
+    ...     argument_names = ('einstein_temperature', 'molar_mass')
+    ...
     ...     def __call__(self, variables, backend=math):
-    ...         molar_mass = self.substance.mass
-    ...         TE = self.arg(variables, 'einstein_temperature')  # einstein_temperature
-    ...         R = variables['R']  # shared "state"
-    ...         T = variables['temperature']  # shared state
+    ...         TE, molar_mass = self.all_args(variables, backend=backend)  # einstein_temperature
+    ...         T, R = self.all_params(variables, backend=backend)
+    ...         # Canonical ensemble:
     ...         molar_c_v = 3*R*(TE/(2*T))**2 * backend.sinh(TE/(2*T))**-2
     ...         return molar_c_v/molar_mass
     ...
@@ -51,11 +52,11 @@ class Expr(object):
     >>> Al = Substance.from_formula('Al', other_properties={'DebyeT': 428})
     >>> Be = Substance.from_formula('Be', other_properties={'DebyeT': 1440})
     >>> einT = lambda s: 0.806*s.other_properties['DebyeT']
-    >>> cv = {s.name: EinsteinSolid([einT(s)], substance=s) for s in (Al, Be)}
-    >>> print('%.4f' % cv['Al']({'temperature': 273.15, 'R': 8.3145}))  # J/(g*K)
+    >>> cv = {s.name: EinsteinSolid([einT(s), s.mass]) for s in (Al, Be)}
+    >>> print('%.4f' % cv['Al']({'temperature': 273.15, 'molar_gas_constant': 8.3145}))  # J/(g*K)
     0.8108
     >>> import sympy
-    >>> print(cv['Be']({'temperature': sympy.Symbol('T'), 'R': sympy.Symbol('R')}, backend=sympy))
+    >>> print(cv['Be']({'temperature': sympy.Symbol('T'), 'molar_gas_constant': sympy.Symbol('R')}, backend=sympy))
     112105.346283965*R/(T**2*sinh(580.32/T)**2)
 
     Attributes
@@ -140,12 +141,58 @@ class Expr(object):
         return [v(variables, backend=backend) if isinstance(v, Expr) else v for v
                 in [variables[k] for k in self.parameter_keys]]
 
-    def _dedimensionalisation(self, unit_registry):
-        # this does not yet work for nested cases
+    def dedimensionalisation(self, unit_registry, variables={}, backend=math):
+        """ Create an instance with consistent units
+
+        Parameters
+        ----------
+        unit_registry : dict
+        variables : dict
+        backend : module
+
+        Examples
+        --------
+        >>> class Pressure(Expr):
+        ...     argument_names = ('n',)
+        ...     parameter_keys = ('temperature', 'volume', 'R')
+        ...     def __call__(self, variables, backend=None):
+        ...         n, = self.all_args(variables, backend=backend)
+        ...         T, V, R = self.all_params(variables, backend=backend)
+        ...         return n*R*T/V
+        ...
+        >>> from chempy.units import SI_base_registry, default_units as u
+        >>> p = Pressure([2*u.micromole])
+        >>> units, d = p.dedimensionalisation(SI_base_registry)
+        >>> units[0] == 1e6*u.micromole
+        True
+        >>> d.args[0] == 2e-6
+        True
+
+
+        Returns
+        -------
+        A new instance where all args have been (recursively) expressed in the unit system
+        of unit_registry
+
+        """
         from ..units import default_unit_in_registry, to_unitless
-        units = [default_unit_in_registry(arg, unit_registry) for arg in self.args]
-        unitless_args = [to_unitless(arg, unit) for arg, unit in zip(self.args, units)]
-        return units, self.__class__(unitless_args, self.unique_keys, **{k: getattr(self, k) for k in self.kw})
+        units = [None if isinstance(arg, Expr) else default_unit_in_registry(arg, unit_registry) for arg
+                 in self.all_args(variables, backend=backend)]
+        new_units, unitless_args = [], []
+        for arg, unit in zip(self.all_args(variables, backend=backend), units):
+            if isinstance(arg, Expr):
+                if unit is not None:
+                    raise ValueError()
+                _unit, _dedim = arg.dedimensionalisation(unit_registry, variables, backend=backend)
+            else:
+                _unit, _dedim = unit, to_unitless(arg, unit)
+            new_units.append(_unit)
+            unitless_args.append(_dedim)
+        if self.kw is None:
+            kw = {}
+        else:
+            kw = {k: getattr(self, k) for k in self.kw}
+        return new_units, self.__class__(unitless_args, self.unique_keys, **kw)
 
     @classmethod
     def from_callback(cls, callback, **kwargs):
@@ -185,30 +232,44 @@ class Expr(object):
             setattr(Wrapper, k, v)
         return Wrapper
 
+    def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return False
+        if len(self.args) != len(other.args):
+            return False
+        for arg0, arg1 in zip(self.args, other.args):
+            if arg0 != arg1:
+                return False
+        if self.kw is not None:
+            for k in self.kw:
+                if getattr(self, k) != getattr(other, k):
+                    return False
+        return True
+
     def __add__(self, other):
         if other == other*0:
             return self
-        return AddExpr([self, other])
+        return _AddExpr([self, other])
 
     def __sub__(self, other):
         if other == other*0:
             return self
-        return SubExpr([self, other])
+        return _SubExpr([self, other])
 
     def __mul__(self, other):
         if other == 1:
             return self
-        return MulExpr([self, other])
+        return _MulExpr([self, other])
 
     def __truediv__(self, other):
         if other == 1:
             return self
-        return DivExpr([self, other])
+        return _DivExpr([self, other])
 
     def __neg__(self):
-        if isinstance(self, NegExpr):
+        if isinstance(self, _NegExpr):
             return self.args[0]
-        return NegExpr((self,))
+        return _NegExpr((self,))
 
     def __radd__(self, other):
         return self+other
@@ -220,17 +281,17 @@ class Expr(object):
         return (-self) + other
 
     def __rtruediv__(self, other):
-        return DivExpr([other, self])
+        return _DivExpr([other, self])
 
 
-class NegExpr(Expr):
+class _NegExpr(Expr):
 
     def __call__(self, variables, backend=None):
         arg0, = self.all_args(variables, backend=backend)
         return -arg0
 
 
-class BinaryExpr(Expr):
+class _BinaryExpr(Expr):
     _op = None
 
     def __call__(self, variables, backend=None):
@@ -238,19 +299,19 @@ class BinaryExpr(Expr):
         return self._op(arg0, arg1)
 
 
-class AddExpr(BinaryExpr):
+class _AddExpr(_BinaryExpr):
     _op = add
 
 
-class SubExpr(BinaryExpr):
+class _SubExpr(_BinaryExpr):
     _op = sub
 
 
-class MulExpr(BinaryExpr):
+class _MulExpr(_BinaryExpr):
     _op = mul
 
 
-class DivExpr(BinaryExpr):
+class _DivExpr(_BinaryExpr):
     _op = truediv
 
 
