@@ -484,6 +484,8 @@ class Reaction(object):
         return True
 
     def __eq__(lhs, rhs):
+        if lhs is rhs:
+            return True
         if not isinstance(lhs, Reaction) or not isinstance(rhs, Reaction):
             return NotImplemented
         for attr in ['reac', 'prod', 'param', 'inact_reac', 'inact_prod']:
@@ -645,7 +647,7 @@ class Reaction(object):
         """
         res = self._get_str('latex_name', 'latex_arrow', substances)
         if with_param and self.param is not None:
-            from .util.parsing import _number_to_scientific_latex as _fmt
+            from .util.parsing import number_to_scientific_latex as _fmt
             res += '; %s' % self._str_param(magnitude_fmt=_fmt, unit_fmt=lambda dim: dim.latex)
         return res
 
@@ -667,9 +669,9 @@ class Reaction(object):
         res = self._get_str('unicode_name', 'unicode_arrow', substances,
                             _str=str if sys.version_info[0] > 2 else unicode)
         if with_param and self.param is not None:
-            from .util.parsing import _number_to_scientific_unicode
+            from .util.parsing import number_to_scientific_unicode
             res += u'; ' + self._str_param(
-                magnitude_fmt=_number_to_scientific_unicode,
+                magnitude_fmt=number_to_scientific_unicode,
                 unit_fmt=lambda dim: (
                     dim.unicode if sys.version_info[0] > 2
                     else dim.unicode.decode(encoding='utf-8')
@@ -693,7 +695,7 @@ class Reaction(object):
         """
         res = self._get_str('html_name', 'html_arrow', substances)
         if with_param and self.param is not None:
-            from .util.parsing import _number_to_scientific_html as _fmt
+            from .util.parsing import number_to_scientific_html as _fmt
             res += '&#59; '
             try:
                 res += self.param.string(_fmt)
@@ -1224,6 +1226,43 @@ class ReactionSystem(object):
             return substance_key
         else:
             return list(self.substances.keys()).index(substance_key)
+
+    def per_substance_varied(self, per_substance, varied=None):
+        """ Dense nd-array for all combinations of varied levels per substance
+
+        Parameters
+        ----------
+        per_substance: dict or array
+        varied: dict
+
+        Examples
+        --------
+        >>> rsys = ReactionSystem([], 'A B C')
+        >>> arr, keys = rsys.per_substance_varied({'A': 2, 'B': 3, 'C': 5}, {'C': [5, 7, 9, 11]})
+        >>> arr.shape, keys
+        ((4, 3), ('C',))
+        >>> all(arr[1, :] == [2, 3, 7])
+        True
+
+        Returns
+        -------
+        ndarray : with len(varied) + 1 number of axes, and with last axis length == self.ns
+
+        """
+        import numpy as np
+        varied = varied or {}
+        varied_keys = tuple(k for k in self.substances if k in varied)
+        n_varied = len(varied)
+        shape = tuple(len(varied[k]) for k in self.substances if k in varied)
+        result = np.empty(shape + (self.ns,))
+        result[..., :] = self.as_per_substance_array(per_substance)
+        if varied:
+            for k, vals in varied.items():
+                varied_axis = varied_keys.index(k)
+                for varied_idx, val in enumerate(vals):
+                    index = tuple(varied_idx if i == varied_axis else slice(None) for i in range(n_varied))
+                    result[index + (self.as_substance_index(k),)] = val
+        return result, varied_keys
 
     def rates(self, variables=None, backend=math, substance_keys=None):
         """ Per substance sums of reaction rates rates.

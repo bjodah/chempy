@@ -20,6 +20,17 @@ class RateExpr(Expr):
 
     kw = {'rxn': None, 'ref': None}
 
+    @property
+    def rxn(self):
+        return self._rxn
+
+    @rxn.setter
+    def rxn(self, value):
+        self._rxn = value
+        for arg in self.args:
+            if isinstance(arg, RateExpr):
+                arg.rxn = value
+
     @classmethod
     @deprecated(use_instead=Expr.from_callback)
     def subclass_from_callback(cls, cb, cls_attrs=None):

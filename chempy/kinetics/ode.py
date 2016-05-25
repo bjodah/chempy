@@ -184,7 +184,7 @@ def get_odesys(rsys, include_params=True, substitutions=None,
         p_units = [get_derived_unit(unit_registry, k) for k in param_keys]
         new_r_exprs = []
         for ratex in r_exprs:
-            _pu, _new_rates = ratex._dedimensionalisation(unit_registry)
+            _pu, _new_rates = ratex.dedimensionalisation(unit_registry)
             p_units.extend(_pu)
             new_r_exprs.append(_new_rates)
         r_exprs = new_r_exprs
@@ -219,7 +219,7 @@ def get_odesys(rsys, include_params=True, substitutions=None,
         ))
         for k, act in _active_subst.items():
             if unit_registry is not None:
-                _, act = act._dedimensionalisation(unit_registry)
+                _, act = act.dedimensionalisation(unit_registry)
             variables[k] = act(variables, backend=backend)
         variables.update(_passive_subst)
         return dCdt(rsys, [rat(variables, backend=backend) for rat in r_exprs])

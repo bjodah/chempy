@@ -5,7 +5,7 @@ from __future__ import (absolute_import, division, print_function)
 import math
 
 from ..util._expr import mk_Poly, mk_PiecewisePoly
-from .rates import MassAction, Radiolytic
+from .rates import RateExpr, MassAction, Radiolytic
 
 
 TPoly = mk_Poly('temperature')
@@ -84,3 +84,15 @@ class TPolyInLog10MassAction(TPoly, MassAction):
         new_vars = variables.copy()
         new_vars['temperature'] = backend.log10(variables['temperature'] / T_u)
         return self.eval_poly(new_vars, backend=backend)
+
+
+class TPiecewise(RateExpr):
+    parameter_keys = ('temperature',)
+
+    def __call__(self, variables, backend=math):
+        temperature, = self.all_params(variables, backend=backend)
+        for lower, upper, expr in [self.args[i*3:i*3+3] for i in range(len(self.args)//3)]:
+            if lower <= temperature <= upper:
+                return expr(variables, backend=backend)
+        else:
+            raise ValueError("Outside all bounds: %s" % str(temperature))

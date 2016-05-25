@@ -6,11 +6,11 @@ import math
 import pytest
 
 from chempy import Reaction
-from chempy.units import Backend, to_unitless, units_library, default_units as u
+from chempy.units import allclose, Backend, to_unitless, units_library, default_units as u
 from chempy.util.testing import requires
 from .._rates import (
     TPolyMassAction, RTPolyMassAction, Log10TPolyMassAction, TPolyInLog10MassAction, TPolyRadiolytic,
-    TPoly, RTPoly, PiecewiseTPolyMassAction, Log10PiecewiseRTPolyMassAction
+    TPoly, RTPoly, PiecewiseTPolyMassAction, Log10PiecewiseRTPolyMassAction, TPiecewise
 )
 
 
@@ -176,3 +176,20 @@ def test_Log10PiecewiseRTPolyMassAction():
     res = ratex({'e-(aq)': 1e-13, 'temperature': 293.15})
     ref = 6.20e9*1e-26
     assert abs((res-ref)/ref) < 6e-3
+
+
+@requires(units_library)
+def test_TPiecewise():
+    expr0 = TPolyMassAction([273.15*u.K, 10/u.molar/u.s, 0.1/u.molar/u.s/u.K])
+    expr1 = TPolyMassAction([298.15*u.K, 12.5/u.molar/u.s, 0/u.molar/u.s/u.K, 2/u.molar/u.s/u.K**2])
+    pw = TPiecewise([273.15*u.K, 298.15*u.K, expr0, 298.15*u.K, 373.15*u.K, expr1])
+    Reaction({'e-(aq)': 2}, {'H2': 1, 'OH-': 2}, pw, {'H2O': 2})
+    res0 = pw({'temperature': 293.15*u.K, 'e-(aq)': 1e-13*u.molar})
+    ref0 = 12*1e-26 * u.molar/u.s
+    assert allclose(res0, ref0)
+    assert not allclose(res0, 2*ref0)
+
+    res1 = pw({'temperature': 300.15*u.K, 'e-(aq)': 2e-13*u.molar})
+    ref1 = 20.5*4e-26 * u.molar/u.s
+    assert allclose(res1, ref1)
+    assert not allclose(res1, ref1/2)

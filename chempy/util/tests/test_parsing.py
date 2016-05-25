@@ -4,10 +4,8 @@ from __future__ import (absolute_import, division, print_function)
 import pytest
 
 from ..parsing import (
-    formula_to_composition, relative_atomic_masses, mass_from_composition,
-    to_reaction, atomic_number, formula_to_latex, formula_to_unicode,
-    formula_to_html, parsing_library
-
+    atomic_number, formula_to_composition, formula_to_html, formula_to_latex, formula_to_unicode,
+    mass_from_composition, number_to_scientific_html, parsing_library, relative_atomic_masses, to_reaction
 )
 from ..testing import requires
 
@@ -207,3 +205,7 @@ def test_formula_to_html():
         r'&epsilon;-Zn(OH)<sub>2</sub>(s)')
     assert formula_to_html('Na2CO3.7H2O(s)') == 'Na<sub>2</sub>CO<sub>3</sub>&sdot;7H<sub>2</sub>O(s)'
     assert formula_to_html('Na2CO3.1H2O(s)') == 'Na<sub>2</sub>CO<sub>3</sub>&sdot;H<sub>2</sub>O(s)'
+
+
+def test_number_to_scientific_html():
+    assert number_to_scientific_html(2e-17) == '2&sdot;10<sup>-17</sup>'

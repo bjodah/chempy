@@ -540,16 +540,16 @@ def formula_to_latex(formula, prefixes=None, infixes=None, **kwargs):
                               formula, prefixes, infixes, **kwargs)
 
 
-def _number_to_scientific_latex(number, fmt='%.3g'):
+def number_to_scientific_latex(number, fmt='%.3g'):
     r"""
     Examples
     --------
-    >>> _number_to_scientific_latex(3.14) == '3.14'
+    >>> number_to_scientific_latex(3.14) == '3.14'
     True
-    >>> _number_to_scientific_latex(3.14159265e-7)
+    >>> number_to_scientific_latex(3.14159265e-7)
     '3.14\\cdot 10^{-7}'
     >>> import quantities as pq
-    >>> _number_to_scientific_latex(2**0.5 * pq.m / pq.s)
+    >>> number_to_scientific_latex(2**0.5 * pq.m / pq.s)
     '1.41 \\mathrm{\\frac{m}{s}}'
 
     """
@@ -617,16 +617,16 @@ def formula_to_unicode(formula, prefixes=None, infixes=None, **kwargs):
         formula, prefixes, infixes, **kwargs)
 
 
-def _number_to_scientific_unicode(number, fmt='%.3g'):
+def number_to_scientific_unicode(number, fmt='%.3g'):
     u"""
     Examples
     --------
-    >>> _number_to_scientific_unicode(3.14) == u'3.14'
+    >>> number_to_scientific_unicode(3.14) == u'3.14'
     True
-    >>> _number_to_scientific_unicode(3.14159265e-7) == u'3.14·10⁻⁷'
+    >>> number_to_scientific_unicode(3.14159265e-7) == u'3.14·10⁻⁷'
     True
     >>> import quantities as pq
-    >>> _number_to_scientific_html(2**0.5 * pq.m / pq.s)
+    >>> number_to_scientific_html(2**0.5 * pq.m / pq.s)
     '1.41 m/s'
 
     """
@@ -680,16 +680,16 @@ def formula_to_html(formula, prefixes=None, infixes=None, **kwargs):
                               formula, prefixes, infixes, **kwargs)
 
 
-def _number_to_scientific_html(number, fmt='%.3g'):
+def number_to_scientific_html(number, fmt='%.3g'):
     """
     Examples
     --------
-    >>> _number_to_scientific_html(3.14) == '3.14'
+    >>> number_to_scientific_html(3.14) == '3.14'
     True
-    >>> _number_to_scientific_html(3.14159265e-7)
+    >>> number_to_scientific_html(3.14159265e-7)
     '3.14&sdot;10<sup>-7</sup>'
     >>> import quantities as pq
-    >>> _number_to_scientific_html(2**0.5 * pq.m / pq.s)
+    >>> number_to_scientific_html(2**0.5 * pq.m / pq.s)
     '1.41 m/s'
 
     """

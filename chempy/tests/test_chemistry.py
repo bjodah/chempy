@@ -109,8 +109,9 @@ def test_Substance__molar_mass():
     assert abs(q - 1) < 1e-3
 
 
-@requires(parsing_library)
+@requires(parsing_library, 'numpy')
 def test_ReactionSystem():
+    import numpy as np
     kw = dict(substance_factory=Substance.from_formula)
     r1 = Reaction.from_string('H2O -> H+ + OH-', 'H2O H+ OH-', name='r1')
     rs = ReactionSystem([r1], 'H2O H+ OH-', **kw)
@@ -121,6 +122,14 @@ def test_ReactionSystem():
         ReactionSystem([r1, r1], 'H2O H+ OH-', **kw)
     assert rs.as_substance_index('H2O') == 0
     assert rs.as_substance_index(0) == 0
+    varied, varied_keys = rs.per_substance_varied({'H2O': 55.4, 'H+': 1e-7, 'OH-': 1e-7},
+                                                  {'H+': [1e-8, 1e-9, 1e-10, 1e-11], 'OH-': [1e-3, 1e-2]})
+    assert varied_keys == ('H+', 'OH-')
+    assert len(varied.shape) == 3
+    assert varied.shape[:-1] == (4, 2)
+    assert varied.shape[-1] == 3
+    assert np.all(varied[..., 0] == 55.4)
+    assert np.all(varied[:, 1, 2] == 1e-2)
 
     assert rs['r1'] is r1
     rs.rxns.append(r2)
