@@ -50,6 +50,7 @@ def test_Expr():
     cv = _get_cv()
     _ref = 0.8108020083055849
     assert abs(cv['Al']({'temperature': 273.15, 'molar_gas_constant': 8.3145}) - _ref) < 1e-14
+    assert cv['Al'].kwargs['substance'].name == 'Al'
 
 
 def _poly(args, x, backend=None):

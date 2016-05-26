@@ -158,6 +158,9 @@ class MassAction(RateExpr):
             setattr(_MassAction, k, v)
         return _MassAction
 
+    def as_mass_action(self, variables, backend=math):
+        return MassAction([self.rate_coeff(variables, backend=backend)], self.unique_keys, **self.kwargs)
+
 
 class ArrheniusMassAction(MassAction):
     argument_names = ('A', 'Ea_over_R')

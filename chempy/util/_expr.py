@@ -99,6 +99,10 @@ class Expr(object):
     def __call__(self, variables, backend=None):
         raise NotImplementedError("Subclass and implement __call__")
 
+    @property
+    def kwargs(self):
+        return {k: getattr(self, k, v) for k, v in self.kw.items()}
+
     def _str(self, arg_fmt, unique_keys_fmt=str, with_kw=False):
         if len(self.args) == 0:
             args_str = ''
@@ -281,6 +285,8 @@ class Expr(object):
                 return False
         if self.kw is not None:
             for k in self.kw:
+                print(k)
+                print(getattr(self, k), getattr(other, k))
                 if getattr(self, k) != getattr(other, k):
                     return False
         return True
