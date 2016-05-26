@@ -15,7 +15,8 @@ from ..units import (
     SI_base_registry, unitless_in_registry, format_string, get_physical_quantity,
     to_unitless, magnitude, default_unit_in_registry, Backend,
     unit_of, unit_registry_to_human_readable, units_library,
-    unit_registry_from_human_readable, _sum, default_units as u
+    unit_registry_from_human_readable, _sum, UncertainQuantity,
+    default_units as u
 )
 
 
@@ -100,11 +101,26 @@ def test_to_unitless():
 
     amount_unit = 1e-9  # nano
     assert abs(to_unitless(1.0, amount_unit) - 1e9) < 1e-6
-
     assert abs(to_unitless(3/(u.second*u.molar),
                            u.metre**3/u.mole/u.second) - 3e-3) < 1e-12
+    assert abs(to_unitless(2*u.dm3, u.cm3) - 2000) < 1e-12
+    assert (float(to_unitless(UncertainQuantity(2, u.dm3, .3), u.cm3)) - 2000) < 1e-12
 
-    assert to_unitless(2*u.dm3, u.cm3) - 2000
+    g1 = UncertainQuantity(4.46, u.per100eV, 0)
+    g_unit = get_derived_unit(SI_base_registry, 'radiolytic_yield')
+    assert abs(to_unitless(g1, g_unit) - 4.46 * 1.036e-7) < 1e-9
+    g2 = UncertainQuantity(-4.46, u.per100eV, 0)
+    assert abs(to_unitless(-g2, g_unit) - 4.46 * 1.036e-7) < 1e-9
+
+
+@requires(units_library)
+def test_UncertainQuantity():
+    a = UncertainQuantity([1, 2], u.m, [.1, .2])
+    assert a[1] == [2.]*u.m
+    assert (-a)[0] == [-1.]*u.m
+    assert (-a).uncertainty[0] == [0.1]*u.m
+    assert (-a)[0] == (a*-1)[0]
+    assert (-a).uncertainty[0] == (a*-1).uncertainty[0]
 
 
 @requires(units_library, 'sympy')

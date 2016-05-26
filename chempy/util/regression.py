@@ -22,7 +22,9 @@ def least_squares(x, y, w=1):  # w == 1 => OLS, w != 1 => WLS
 
     Returns
     -------
-    tuple : pair of parameter estimates (intercept and slope)
+    length 2 tuple : pair of parameter estimates (intercept and slope)
+    2x2 array : variance-covariance matrix
+    float : R-squared (goodness of fit)
 
 
     Examples

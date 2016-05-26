@@ -1214,7 +1214,8 @@ class ReactionSystem(object):
         return self
 
     def __add__(self, other):
-        return self.__class__(self.rxns + other.rxns, list(chain(self.substances.items(), other.substances.items())))
+        substances = list(chain(self.substances.items(), other.substances.items()))
+        return self.__class__(self.rxns + other.rxns, substances, checks=())
 
     def __eq__(self, other):
         if self is other:
@@ -1253,8 +1254,17 @@ class ReactionSystem(object):
         """ Returns list of per reaction ``param`` value """
         return [rxn.param for rxn in self.rxns]
 
-    def as_per_substance_array(self, cont, dtype='float64', unit=None):
-        """ Turns a dict into an ordered array """
+    def as_per_substance_array(self, cont, dtype='float64', unit=None, raise_on_unk=False):
+        """ Turns a dict into an ordered array
+
+        Parameters
+        ----------
+        cont : array_like or dict
+        dtype : str or numpy.dtype object
+        unit : unit, optional
+        raise_on_unk : bool
+
+        """
         import numpy as np
         if unit is not None:
             cont = to_unitless(cont, unit)
@@ -1262,9 +1272,10 @@ class ReactionSystem(object):
             pass
         elif isinstance(cont, dict):
             substance_keys = self.substances.keys()
-            for k in cont:
-                if k not in substance_keys:
-                    raise KeyError("Unkown substance key: %s" % k)
+            if raise_on_unk:
+                for k in cont:
+                    if k not in substance_keys:
+                        raise KeyError("Unkown substance key: %s" % k)
             cont = [cont[k] for k in substance_keys]
 
         cont = np.asarray(cont, dtype=dtype)

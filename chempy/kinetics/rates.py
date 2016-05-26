@@ -67,6 +67,10 @@ class RateExpr(Expr):
         return _RateExpr
 
 
+class RadiolyticBase(RateExpr):
+    pass  # for isinstance checks
+
+
 @memoize(1)
 def mk_Radiolytic(doserate_name='doserate'):
     """ Create a Radiolytic rate expression
@@ -82,9 +86,10 @@ def mk_Radiolytic(doserate_name='doserate'):
     >>> dihydrogen_gamma = RadiolyticGamma([0.45e-7])
 
     """
-    class _Radiolytic(RateExpr):
+    class _Radiolytic(RadiolyticBase):
         argument_names = ('radiolytic_yield',)  # [amount/energy]
         parameter_keys = (doserate_name, 'density')
+        print_name = 'Radiolytic' if doserate_name == 'doserate' else ('Radiolytic{'+doserate_name+'}')
 
         def g_value(self, variables, backend):  # for subclasses
             return self.arg(variables, 0, backend=backend)

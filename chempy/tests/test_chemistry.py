@@ -193,6 +193,7 @@ def test_ReactionSystem__as_per_substance_array_dict():
     assert rs.as_per_substance_dict([42]) == {'H2O': 42}
 
 
+@requires(parsing_library)
 def test_ReactionSystem__add():
     rs1 = ReactionSystem.from_string('\n'.join(['2 H2O2 -> O2 + 2 H2O', 'H2 + O2 -> H2O2']))
     rs2 = ReactionSystem.from_string('\n'.join(['2 NH3 -> N2 + 3 H2']))

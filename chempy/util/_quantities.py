@@ -39,4 +39,13 @@ def format_units_html(udict, font='%s', mult=r'&sdot;', paren=False):
 
 
 def _patch_quantities(pq):
-    pq.dimensionality.Dimensionality.html = property(lambda self: format_units_html(self))
+    # See https://github.com/python-quantities/python-quantities/pull/112
+    if not hasattr(pq.dimensionality.Dimensionality, 'html'):
+        pq.dimensionality.Dimensionality.html = property(lambda self: format_units_html(self))
+
+    # See https://github.com/python-quantities/python-quantities/pull/116
+    a = pq.UncertainQuantity([1, 2], pq.m, [.1, .2])
+    if (-a).uncertainty[0] != a.uncertainty[0]:
+        pq.UncertainQuantity.__neg__ = lambda self: self*-1
+    a = pq.UncertainQuantity([1, 2], pq.m, [.1, .2])
+    assert (-a).uncertainty[0] == (a*-1).uncertainty[0]

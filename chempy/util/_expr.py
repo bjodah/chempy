@@ -70,6 +70,8 @@ class Expr(object):
         kwargs to be intercepted in __init__ and set as attributes
     nargs : int
         number of arguments (`None` signifies unset, -1 signifies any number)
+    print_name : str
+        Name of class
 
     '''
 
@@ -77,6 +79,7 @@ class Expr(object):
     parameter_keys = ()
     kw = None
     nargs = None
+    print_name = None
 
     def __init__(self, args, unique_keys=None, **kwargs):
         if self.argument_names is not None and self.argument_names[-1] != Ellipsis and self.nargs is None:
@@ -118,13 +121,13 @@ class Expr(object):
             print_kw = {k: getattr(self, k) for k in self.kw if getattr(self, k) != self.kw[k]}
         if with_kw and self.kw is not None and print_kw:
             args_kwargs_strs += [', '.join('{}={}'.format(k, v) for k, v in print_kw.items())]
-        return "{}({})".format(self.__class__.__name__, ', '.join(args_kwargs_strs))
+        return "{}({})".format(self.print_name or self.__class__.__name__, ', '.join(args_kwargs_strs))
 
     def __repr__(self):
         return self._str(repr)
 
-    def string(self, arg_fmt=str):
-        return self._str(arg_fmt)
+    def string(self, arg_fmt=str, **kwargs):
+        return self._str(arg_fmt, **kwargs)
 
     def arg(self, variables, index, backend=None):
         if isinstance(index, str):

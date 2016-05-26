@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import tempfile
 
+from ..kinetics.rates import RadiolyticBase
 from ..units import to_unitless, get_derived_unit
 
 tex_templates = {
@@ -159,19 +160,26 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
     lines = []
     for ri, rxn in enumerate(rsys.rxns):
         rxn_ref = rxn.ref
-        if unit_registry is not None:
-            kunit = (get_derived_unit(unit_registry,
-                                      'concentration')**(1-rxn.order()) /
-                     get_derived_unit(unit_registry, 'time'))
-            try:
-                k = k_fmt % to_unitless(rxn.param, kunit)
+        if isinstance(rxn.param, RadiolyticBase):
+            if unit_registry is not None:
+                kunit = get_derived_unit(unit_registry, 'radiolytic_yield')
+                k = k_fmt % to_unitless(rxn.param.args[0], kunit)
                 k_unit_str = (kunit.dimensionality.latex.strip('$') if tex
                               else kunit.dimensionality)
-            except:
-                k, k_unit_str = rxn.param.equation_as_string(k_fmt, tex)
         else:
-            k_unit_str = '-'
-            k = k_fmt % rxn.param
+            if unit_registry is not None:
+                kunit = (get_derived_unit(unit_registry,
+                                          'concentration')**(1-rxn.order()) /
+                         get_derived_unit(unit_registry, 'time'))
+                try:
+                    k = k_fmt % to_unitless(rxn.param, kunit)
+                    k_unit_str = (kunit.dimensionality.latex.strip('$') if tex
+                                  else kunit.dimensionality)
+                except:
+                    k, k_unit_str = rxn.param.equation_as_string(k_fmt, tex)
+            else:
+                k_unit_str = '-'
+                k = k_fmt % rxn.param
         r_str, ir_str, arrow_str, p_str, ip_str = rxn._get_str_parts(
             'latex_name' if tex else 'name',
             'latex_arrow' if tex else 'str_arrow',

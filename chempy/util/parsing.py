@@ -439,7 +439,8 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
         from chempy.units import default_units
         globals_ = {k: getattr(rates, k) for k in dir(rates)}
         globals_.update({'chempy': chempy, 'default_units': default_units})
-        globals_.update(default_units.as_dict())
+        if default_units is not None:
+            globals_.update(default_units.as_dict())
     try:
         stoich, param, kw = map(str.strip, line.rstrip('\n').split(';'))
     except ValueError:

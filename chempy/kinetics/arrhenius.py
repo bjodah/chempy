@@ -8,8 +8,40 @@ Contains functions for the `Arrhenius equation
 from __future__ import (absolute_import, division, print_function)
 
 from .._util import get_backend
+from ..util.regression import least_squares
 from ..util.pyutil import defaultnamedtuple
 from ..units import default_constants, default_units, format_string
+
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
+
+def _fit_linearized(backtransfm, lin_x, lin_y, lin_yerr):
+    if len(lin_x) != len(lin_y):
+        raise ValueError("k and T needs to be of equal length.")
+    if lin_yerr is not None:
+        if len(lin_yerr) != len(lin_y):
+            raise ValueError("kerr and T needs to be of equal length.")
+    lin_p, lin_vcv, lin_r2 = least_squares(lin_x, lin_y, lin_yerr)
+    return [cb(lin_p) for cb in backtransfm]
+
+
+def _fit(T, k, kerr, func, lin_x, lin_y, backtransfm, linearized=False):
+    _lin_y = lin_y(T, k)
+    if kerr is None:
+        lin_yerr = 1
+    else:
+        lin_yerr = (abs(lin_y(k - kerr, T) - _lin_y) +
+                    abs(lin_y(k + kerr, T) - _lin_y))/2
+
+    lopt = _fit_linearized(backtransfm, lin_x(T, k), _lin_y, lin_yerr)
+    if linearized:
+        return lopt
+    from scipy.optimize import curve_fit
+    popt, pcov = curve_fit(func, T, k, lopt, kerr)
+    return popt, pcov
 
 
 def _get_R(constants=None, units=None):
@@ -58,7 +90,22 @@ def arrhenius_equation(A, Ea, T, constants=None, units=None, backend=None):
     return A*be.exp(-Ea/RT)
 
 
-def fit_arrhenius_equation(k, T, kerr=None, linearized=False):
+def fit_arrhenius_equation(T, k, kerr=None, linearized=False, constants=None, units=None):
+    """ Curve fitting of the Arrhenius equation to data points
+
+    Parameters
+    ----------
+    T : float
+    k : array_like
+    kerr : array_like (optional)
+    linearized : bool
+
+    """
+    return _fit(T, k, kerr, arrhenius_equation, lambda T, k: 1/T, lambda T, k: np.log(k),
+                [lambda p: np.exp(p[0]), lambda p: -p[1]*_get_R(constants, units)], linearized=linearized)
+
+
+def _fit_arrhenius_equation(T, k, kerr=None, linearized=False):
     """ Curve fitting of the Arrhenius equation to data points
 
     Parameters
@@ -69,14 +116,11 @@ def fit_arrhenius_equation(k, T, kerr=None, linearized=False):
     linearized : bool
 
     """
-
     if len(k) != len(T):
         raise ValueError("k and T needs to be of equal length.")
     from math import exp
     import numpy as np
-    rT = 1/T
-    lnk = np.log(k)
-    p = np.polyfit(rT, lnk, 1)
+    p = np.polyfit(1/T, np.log(k), 1)
     R = _get_R(constants=None, units=None)
     Ea = -R*p[0]
     A = exp(p[1])
@@ -110,6 +154,11 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
     '9.8245e+05'
 
     """
+
+    @classmethod
+    def from_fit_of_data(cls, T, k, kerr=None, **kwargs):
+        args, vcv = fit_arrhenius_equation(T, k, kerr)
+        return cls(*args, **kwargs)
 
     def __call__(self, T, constants=None, units=None, backend=None):
         """ Evaluates the arrhenius equation for a specified state
