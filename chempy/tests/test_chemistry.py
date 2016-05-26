@@ -89,6 +89,9 @@ def test_Reaction():
     r4 = Reaction({Hp, OHm}, {H2O}, 7)
     ref = {Hp: -3*5*7, OHm: -3*5*7, H2O: 3*5*7}
     r4.rate({Hp: 5, OHm: 3}) == ref
+    r5 = r4.copy()
+    assert r5 == r4
+    assert r5 != r1
 
 
 @requires(parsing_library)

@@ -384,6 +384,9 @@ class Reaction(object):
 
     """
 
+    _cmp_attr = ('reac', 'prod', 'param', 'inact_reac', 'inact_prod')
+    _all_attr = _cmp_attr + ('name', 'ref', 'other_properties')
+
     str_arrow = '->'
     latex_arrow = r'\rightarrow'
     unicode_arrow = u'→'
@@ -461,6 +464,9 @@ class Reaction(object):
                 substance_keys = substance_keys.split()
         return to_reaction(string, substance_keys, cls.str_arrow, cls, globals_, **kwargs)
 
+    def copy(self, **kwargs):
+        return self.__class__(**{k: kwargs.get(k, getattr(self, k)) for k in self._all_attr})
+
     def check_any_effect(self):
         """ Checks if the reaction has any effect """
         if not any(self.net_stoich(self.keys())):
@@ -488,7 +494,7 @@ class Reaction(object):
             return True
         if not isinstance(lhs, Reaction) or not isinstance(rhs, Reaction):
             return NotImplemented
-        for attr in ['reac', 'prod', 'param', 'inact_reac', 'inact_prod']:
+        for attr in lhs._cmp_attr:
             if getattr(lhs, attr) != getattr(rhs, attr):
                 return False
         return True
