@@ -18,7 +18,7 @@ from itertools import product
 
 import numpy as np
 
-from .chemistry import ReactionSystem, equilibrium_quotient
+from .chemistry import ReactionSystem, equilibrium_quotient, Equilibrium, Species
 from ._util import prodpow, get_backend, mat_dot_vec
 from .util.parsing import number_to_scientific_html
 from .util.pyutil import deprecated
@@ -352,6 +352,9 @@ class EqCalcResult(object):
 
 
 class EqSystem(ReactionSystem):
+
+    _BaseReaction = Equilibrium
+    _BaseSubstance = Species
 
     def eq_constants(self, non_precip_rids=(), eq_params=None, small=0):
         if eq_params is None:

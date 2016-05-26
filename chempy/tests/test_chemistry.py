@@ -190,6 +190,21 @@ def test_ReactionSystem__as_per_substance_array_dict():
     assert rs.as_per_substance_dict([42]) == {'H2O': 42}
 
 
+def test_ReactionSystem__add():
+    rs1 = ReactionSystem.from_string('\n'.join(['2 H2O2 -> O2 + 2 H2O', 'H2 + O2 -> H2O2']))
+    rs2 = ReactionSystem.from_string('\n'.join(['2 NH3 -> N2 + 3 H2']))
+    rs3 = rs1 + rs2
+    assert rs1 == rs1
+    assert rs1 != rs2
+    assert rs3 != rs1
+    assert len(rs1.rxns) == 2 and len(rs2.rxns) == 1 and len(rs3.rxns) == 3
+    for k in 'H2O2 O2 H2O H2 NH3 N2'.split():
+        assert k in rs3.substances
+    rs1 += rs2
+    assert len(rs1.rxns) == 3 and len(rs2.rxns) == 1
+    assert rs1 == rs3
+
+
 @requires(units_library)
 def test_Equilibrium__as_reactions():
     s = default_units.second

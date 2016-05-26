@@ -112,7 +112,8 @@ def render_tex_to_pdf(contents, texfname, pdffname, output_dir, save):
                     shutil.rmtree(output_dir)
             else:
                 # interpret path to copy pdf to.
-                shutil.copy(pdfpath, save)
+                if not os.path.samefile(pdfpath, save):
+                    shutil.copy(pdfpath, save)
 
 
 def rsys2tablines(rsys, rref0=1, coldelim=' & ',
@@ -164,7 +165,7 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
                      get_derived_unit(unit_registry, 'time'))
             try:
                 k = k_fmt % to_unitless(rxn.param, kunit)
-                k_unit_str = (kunit.dimensionality.latex if tex
+                k_unit_str = (kunit.dimensionality.latex.strip('$') if tex
                               else kunit.dimensionality)
             except:
                 k, k_unit_str = rxn.param.equation_as_string(k_fmt, tex)
@@ -181,7 +182,7 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
             _wrap(arrow_str),
             _wrap(p_str + ip_str),
             _wrap(k),
-            unit_fmt.format(k_unit_str),
+            unit_fmt.format(_wrap(k_unit_str)),
             ref_fmt(rxn_ref) if callable(ref_fmt) else ref_fmt.format(rxn_ref)
         ]))
 
@@ -301,6 +302,10 @@ def rsys2pdf_table(rsys, output_dir=None, doc_template=None,
 
     contents = doc_template % doc_template_dict
 
-    texfname = 'output.tex'
-    pdffname = 'output.pdf'
+    if isinstance(save, str) and save.endswith('.pdf'):
+        texfname = save.rstrip('.pdf') + '.tex'
+        pdffname = save
+    else:
+        texfname = 'output.tex'
+        pdffname = 'output.pdf'
     return render_tex_to_pdf(contents, texfname, pdffname, output_dir, save)

@@ -30,7 +30,7 @@ def test_rsys2table():
 Id. & Reactants &  & Products & {Rate constant} & Unit & Ref \\
 \midrule
 1 & \ensuremath{2 \boldsymbol{A}} & \ensuremath{\rightarrow} &""" +
-        r""" \ensuremath{\boldsymbol{B}} & \ensuremath{3} & - & None \\
+        r""" \ensuremath{\boldsymbol{B}} & \ensuremath{3} & \ensuremath{-} & None \\
 \bottomrule
 \end{tabular}
 \end{table}""")

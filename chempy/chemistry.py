@@ -421,7 +421,7 @@ class Reaction(object):
 
     @classmethod
     def from_string(cls, string, substance_keys=None, globals_=None, **kwargs):
-        """ Parses a string into an instance
+        """ Parses a string into a Reaction instance
 
         Parameters
         ----------
@@ -1079,13 +1079,15 @@ class ReactionSystem(object):
 
     """
 
+    _BaseReaction = Reaction
+    _BaseSubstance = Substance
+
     def __init__(self, rxns, substances=None, name=None, checks=('balance', 'substance_keys',
                                                                  'duplicate', 'duplicate_names'),
                  substance_factory=Substance):
         self.rxns = rxns
         if substances is None:
             substances = set.union(*[set(rxn.keys()) for rxn in self.rxns])
-
         if isinstance(substances, OrderedDict):
             self.substances = substances
         elif isinstance(substances, str):
@@ -1105,54 +1107,88 @@ class ReactionSystem(object):
         self.name = name
 
         for check in checks:
-            if not getattr(self, 'check_'+check)():
-                raise ValueError("Check failed %s" % check)
+            getattr(self, 'check_'+check)(throw=True)
 
     def _repr_html_(self):
         def _format(r):
             return r.html(self.substances, with_param=True)
         return '<br>'.join(map(_format, self.rxns))
 
-    def check_duplicate(self):
+    def check_duplicate(self, throw=False):
         """ Raies ValueError if there are duplicates in self.rxns """
         for i1, rxn1 in enumerate(self.rxns):
             for i2, rxn2 in enumerate(self.rxns[i1+1:], i1+1):
                 if rxn1 == rxn2:
-                    return False
+                    if throw:
+                        raise ValueError("Duplicate reactions %d & %d" % (i1, i2))
+                    else:
+                        return False
         return True
 
-    def check_duplicate_names(self):
+    def check_duplicate_names(self, throw=False):
         names_seen = {}
         for idx, rxn in enumerate(self.rxns):
             if rxn.name is None:
                 continue
             if rxn.name in names_seen:
-                return False
+                if throw:
+                    raise ValueError("Duplicate names at %d: %s" % (idx, rxn.name))
+                else:
+                    return False
             else:
                 names_seen[rxn.name] = idx
         return True
 
-    def check_balance(self, strict=False):
+    def check_balance(self, strict=False, throw=False):
         """ Raies ValueError there are unbalanecd reactions in self.rxns """
         for subst in self.substances.values():
             if subst.composition is None:
                 if strict:
-                    return False
+                    if throw:
+                        raise ValueError("No composition for %s" % str(subst))
+                    else:
+                        return False
                 else:
                     return True
         for rxn in self.rxns:
             for net in rxn.composition_violation(self.substances):
                 if net != 0:
-                    return False
+                    if throw:
+                        raise ValueError("Composition violation in %s" % str(rxn))
+                    else:
+                        return False
         return True
 
-    def check_substance_keys(self):
+    def check_substance_keys(self, throw=False):
         for rxn in self.rxns:
             for key in chain(rxn.reac, rxn.prod, rxn.inact_reac,
                              rxn.inact_prod):
                 if key not in self.substances:
-                    return False
+                    if throw:
+                        raise ValueError("Unknown key: %s" % key)
+                    else:
+                        return False
         return True
+
+    @classmethod
+    def from_string(cls, s):
+        """ Create a reaction system from a string
+
+        Parameters
+        ----------
+        s : str
+            multiline string
+
+        Examples
+        --------
+        >>> rs = ReactionSystem.from_string('\\n'.join(['2 HNO2 -> H2O + NO + NO2; 3', '2 NO2 -> N2O4; 4']))
+        >>> r1, r2 = 5*5*3, 7*7*4
+        >>> rs.rates({'HNO2': 5, 'NO2': 7}) == {'HNO2': -2*r1, 'H2O': r1, 'NO': r1, 'NO2': r1 - 2*r2, 'N2O4': r2}
+        True
+
+        """
+        rxns = [cls._BaseReaction.from_string(r) for r in s.split('\n')]
+        return cls(rxns, substance_factory=cls._BaseSubstance.from_formula)
 
     def __getitem__(self, key):
         candidate = None
@@ -1165,6 +1201,19 @@ class ReactionSystem(object):
         if candidate is None:
             raise KeyError("No reaction with name %s found" % key)
         return candidate
+
+    def __iadd__(self, other):
+        self.substances.update(other.substances)
+        self.rxns.extend(other.rxns)
+        return self
+
+    def __add__(self, other):
+        return self.__class__(self.rxns + other.rxns, list(chain(self.substances.items(), other.substances.items())))
+
+    def __eq__(self, other):
+        if self is other:
+            return True
+        return self.rxns == other.rxns and self.substances == other.substances
 
     def substance_names(self):
         """ Returns a tuple of the substances' names """
