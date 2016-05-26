@@ -261,3 +261,22 @@ def test_BinaryExpr():
     assert p1 + p2*1 == p1 + p2 + 0
 
     assert -(-p1) == p1
+
+
+@requires('sympy')
+def test_Expr__latex():
+    Poly = Expr.from_callback(_poly, parameter_keys=('x',), argument_names=('x0', Ellipsis))
+    p = Poly([1, 2, 3, 4])
+    import sympy
+    t = sympy.Symbol('t')
+    ref = sympy.latex(2 + 3*(t-1) + 4*(t-1)**2)
+    assert p.latex({'x': 't'}) == ref
+
+    TE = Poly([3, 7, 5])
+    cv_Al = _get_cv()['Al']
+    T, E, R, m = sympy.symbols('T E R m')
+    _TE = 7 + 5*(E-3)
+    ref = sympy.latex((3*R*(_TE/(2*T))**2 * sympy.sinh(_TE/(2*T))**-2)/m)
+    cv_Al.unique_keys = ('TE_Al', 'm_Al')
+    res = cv_Al.latex({'TE_Al': TE, 'temperature': 'T', 'x': 'E', 'molar_gas_constant': 'R', 'm_Al': 'm'})
+    assert res == ref

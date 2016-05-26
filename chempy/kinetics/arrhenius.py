@@ -151,7 +151,7 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
             return "{}*exp(-{}/(R*T))".format(str_A, str_Ea + ' ' + str_Ea_unit), str_A_unit
 
     def __str__(self):
-        return self.equation_as_string('%.5g')
+        return ' '.join(self.equation_as_string('%.5g'))
 
 
 class ArrheniusParamWithUnits(ArrheniusParam):

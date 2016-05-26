@@ -300,3 +300,10 @@ def test_Backend__sympy():
 def test_format_string():
     assert format_string(3*u.gram/u.metre**2) == ('3', 'g/m**2')
     assert format_string(3*u.gram/u.metre**2, tex=True) == ('3', r'\mathrm{\frac{g}{m^{2}}}')
+
+
+@requires(units_library)
+def test_joule_html():
+    joule_htm = 'kg&sdot;m<sup>2</sup>/s<sup>2</sup>'
+    joule = u.J.dimensionality.simplified
+    assert joule.html == joule_htm

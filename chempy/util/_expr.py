@@ -194,6 +194,45 @@ class Expr(object):
             kw = {k: getattr(self, k) for k in self.kw}
         return new_units, self.__class__(unitless_args, self.unique_keys, **kw)
 
+    def _sympy_format(self, method, variables, backend):
+        variables = variables or {}
+        if backend is None:
+            import sympy as backend
+        variables = {k: v if isinstance(v, Expr) else backend.Symbol(v) for k, v in variables.items()}
+        expr = self(variables, backend=backend)
+        if method == 'latex':
+            return backend.latex(expr)
+        elif method == 'unicode':
+            return backend.pprint(expr, use_unicode=True)
+        elif method == 'mathml':
+            from sympy.printing.mathml import print_mathml
+            return print_mathml(expr)
+        else:
+            raise NotImplementedError("Unknown method: %s" % method)
+
+    def latex(self, variables=None, backend=None):
+        r"""
+        Parameters
+        ----------
+        variables : dict
+        backend : module
+
+        Examples
+        --------
+        >>> def pressure(args, *params, **kw):
+        ...     return args[0]*params[0]*params[1]/params[2]
+        >>> Pressure = Expr.from_callback(pressure, parameter_keys='R temp vol'.split(), nargs=1)
+        >>> p = Pressure([7])
+        >>> p.latex({'R': 'R', 'temp': 'T', 'vol': 'V'})
+        '\\frac{7 R}{V} T'
+
+        Notes
+        -----
+        Requires SymPy
+
+        """
+        return self._sympy_format('latex', variables, backend)
+
     @classmethod
     def from_callback(cls, callback, **kwargs):
         """ Factory of subclasses

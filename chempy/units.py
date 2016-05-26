@@ -30,6 +30,8 @@ except ImportError:
     default_units = None
     SI_base_registry = None
 else:
+    from .util._quantities import _patch_quantities
+    _patch_quantities(pq)
     UncertainQuantity = pq.UncertainQuantity
     # Let us extend the underlying pq namespace with some common units in
     # chemistry
