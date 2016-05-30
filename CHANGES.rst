@@ -1,5 +1,7 @@
 v0.4.0
 ======
+- Multiple fixes throughout
+- Refactored .equilibria
 - .core and .debye_huckel was merged into .electrolytes
 - New functions: balance_stoichiometry, mass_fractions
 - kwargs one=, exp=, ln= changed throughout to use backend=None (backen=math)
@@ -10,6 +12,7 @@ v0.4.0
 - Substance got a new method: molar_mass, and a two new attributes: unicode_name, html_name
 - .util.parsing.to_latex was renamed to formula_to_latex.
 - New functions in util.parsing: formula_to_unicode, formula_to_html
+- Parsing of crystal water now supported.
 - ReactionSystem.__init__ got a new kwarg: substance_factory
 - ReactionSystem raises ValueError if it contains duplicate instances of Reaction
 - ReactionSystem got new methods:

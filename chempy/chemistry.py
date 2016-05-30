@@ -105,12 +105,12 @@ class Substance(object):
         self.data['mass'] = value
 
     @property
-    @deprecated(will_be_missing_in='0.4.0')
+    @deprecated(will_be_missing_in='0.5.0')
     def other_properties(self):
         return self.data
 
     @other_properties.setter
-    @deprecated(will_be_missing_in='0.4.0')
+    @deprecated(will_be_missing_in='0.5.0')
     def other_properties(self, value):
         self.data = value
 
@@ -131,7 +131,7 @@ class Substance(object):
 
     def __init__(self, name=None, charge=None, latex_name=None, unicode_name=None,
                  html_name=None, composition=None, data=None, other_properties=None):
-        if other_properties is not None:  # will_be_missing_in='0.4.0'
+        if other_properties is not None:  # will_be_missing_in='0.5.0'
             if data is not None:
                 raise ValueError("Cannot take both data and other_properties")
             else:

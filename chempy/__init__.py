@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-ChemPy is a Python package which aims to be useful in solving chemistry
-related problems.
+ChemPy is a Python package useful for solving problems in chemistry.
 """
 
 from __future__ import absolute_import, division, print_function
