@@ -7,25 +7,26 @@ from __future__ import (absolute_import, division, print_function)
 from collections import OrderedDict, defaultdict
 from itertools import chain
 
-import numpy as np
-from bokeh.plotting import Figure
-from bokeh.models import ColumnDataSource, HBox, VBoxForm
-from bokeh.models.widgets import Slider
-
 from chempy.kinetics.ode import get_odesys
 from chempy.units import to_unitless, linspace
 
 
-def integration_with_sliders(rsys, tend, c0, parameters, fig_kwargs=None,
-                             unit_registry=None, output_conc_unit=None,
-                             output_time_unit=None, slider_kwargs=None):
+def integration_with_sliders(
+        rsys, tend, c0, parameters, fig_kwargs=None, unit_registry=None, output_conc_unit=None,
+        output_time_unit=None, slider_kwargs=None, x_axis_type="linear", y_axis_type="linear",
+        integrate_kwargs=None):
+
+    import numpy as np
+    from bokeh.plotting import Figure
+    from bokeh.models import ColumnDataSource, HBox, VBoxForm
+    from bokeh.models.widgets import Slider
+
     if slider_kwargs is None:
         slider_kwargs = {}
     odesys, state_keys, rarg_keys, p_units = get_odesys(
         rsys, unit_registry=unit_registry,
         output_conc_unit=output_conc_unit,
         output_time_unit=output_time_unit)[:4]
-    print(odesys.exprs)
     if output_conc_unit is None:
         output_conc_unit = 1
     if output_time_unit is None:
@@ -33,7 +34,7 @@ def integration_with_sliders(rsys, tend, c0, parameters, fig_kwargs=None,
 
     param_keys = list(chain(state_keys, rarg_keys))
     tout = linspace(tend*0, tend)
-    tout, Cout, info = odesys.integrate(tout, c0, parameters)
+    tout, Cout, info = odesys.integrate(tout, c0, parameters, **(integrate_kwargs or {}))
     sources = [ColumnDataSource(data={
         'tout': to_unitless(tout, output_time_unit),
         k: to_unitless(Cout[:, idx], output_conc_unit)
@@ -45,7 +46,8 @@ def integration_with_sliders(rsys, tend, c0, parameters, fig_kwargs=None,
         y_range = list(to_unitless([Cmax*0, Cmax*1.1], output_conc_unit))
         fig_kwargs = dict(plot_height=400, plot_width=400, title="C vs t",
                           tools="crosshair,pan,reset,resize,save,wheel_zoom",
-                          x_range=x_range, y_range=y_range)
+                          x_range=x_range, y_range=y_range, x_axis_type=x_axis_type,
+                          y_axis_type=y_axis_type)
     plot = Figure(**fig_kwargs)
 
     colors = 'red green blue black cyan magenta'.split()

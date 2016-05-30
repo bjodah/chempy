@@ -11,7 +11,7 @@ from .._util import get_backend
 
 
 def dimerization_irrev(t, kf, initial_C, P0=1, t0=0):
-    return 1/(1/initial_C + kf*(t-t0))
+    return 1/(1/initial_C + 2*kf*(t-t0))
 
 
 def pseudo_irrev(t, kf, P0, t0, excess_C, limiting_C, eps_l, backend=None):

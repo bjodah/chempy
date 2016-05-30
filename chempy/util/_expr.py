@@ -8,9 +8,10 @@ pay to allow for this is a somewhat contrived syntax
 """
 from __future__ import (absolute_import, division, print_function)
 
+import math
 from functools import reduce
 from itertools import chain
-from operator import add
+from operator import add, mul, truediv, sub
 
 
 class Expr(object):
@@ -28,33 +29,34 @@ class Expr(object):
         Unique names (among all instances) for late overriding
     \*\*kwargs :
         keyword arguments intercepted in subclasses (directed by :attr:`kw`)
+        note that parameters in :attr:`kw` are not processed in e.g. dedimensionalisation.
 
     Examples
     --------
     >>> class HeatCapacity(Expr):
     ...     parameter_keys = ('temperature',)
-    ...     kw = {'substance': None}
     ...
     >>> import math
     >>> class EinsteinSolid(HeatCapacity):
-    ...     argument_names = ('einstein_temperature',)
+    ...     parameter_keys = HeatCapacity.parameter_keys + ('molar_gas_constant',)
+    ...     argument_names = ('einstein_temperature', 'molar_mass')
+    ...
     ...     def __call__(self, variables, backend=math):
-    ...         molar_mass = self.substance.mass
-    ...         TE = self.arg(variables, 'einstein_temperature')  # einstein_temperature
-    ...         R = variables['R']  # shared "state"
-    ...         T = variables['temperature']  # shared state
+    ...         TE, molar_mass = self.all_args(variables, backend=backend)  # einstein_temperature
+    ...         T, R = self.all_params(variables, backend=backend)
+    ...         # Canonical ensemble:
     ...         molar_c_v = 3*R*(TE/(2*T))**2 * backend.sinh(TE/(2*T))**-2
     ...         return molar_c_v/molar_mass
     ...
     >>> from chempy import Substance
-    >>> Al = Substance.from_formula('Al', other_properties={'DebyeT': 428})
-    >>> Be = Substance.from_formula('Be', other_properties={'DebyeT': 1440})
-    >>> einT = lambda s: 0.806*s.other_properties['DebyeT']
-    >>> cv = {s.name: EinsteinSolid([einT(s)], substance=s) for s in (Al, Be)}
-    >>> print('%.4f' % cv['Al']({'temperature': 273.15, 'R': 8.3145}))  # J/(g*K)
+    >>> Al = Substance.from_formula('Al', data={'DebyeT': 428})
+    >>> Be = Substance.from_formula('Be', data={'DebyeT': 1440})
+    >>> einT = lambda s: 0.806*s.data['DebyeT']
+    >>> cv = {s.name: EinsteinSolid([einT(s), s.mass]) for s in (Al, Be)}
+    >>> print('%.4f' % cv['Al']({'temperature': 273.15, 'molar_gas_constant': 8.3145}))  # J/(g*K)
     0.8108
     >>> import sympy
-    >>> print(cv['Be']({'temperature': sympy.Symbol('T'), 'R': sympy.Symbol('R')}, backend=sympy))
+    >>> print(cv['Be']({'temperature': sympy.Symbol('T'), 'molar_gas_constant': sympy.Symbol('R')}, backend=sympy))
     112105.346283965*R/(T**2*sinh(580.32/T)**2)
 
     Attributes
@@ -68,6 +70,8 @@ class Expr(object):
         kwargs to be intercepted in __init__ and set as attributes
     nargs : int
         number of arguments (`None` signifies unset, -1 signifies any number)
+    print_name : str
+        Name of class
 
     '''
 
@@ -75,12 +79,18 @@ class Expr(object):
     parameter_keys = ()
     kw = None
     nargs = None
+    print_name = None
 
     def __init__(self, args, unique_keys=None, **kwargs):
         if self.argument_names is not None and self.argument_names[-1] != Ellipsis and self.nargs is None:
             self.nargs = len(self.argument_names)
-        if self.nargs not in (None, -1) and len(args) != self.nargs:
-            raise ValueError("Incorrect number of arguments: %d (expected %d)" % (len(args), self.nargs))
+        if self.nargs == 1 and (isinstance(args, (float, int)) or getattr(args, 'ndim', -1) == 0):
+            args = [args]
+            nargs = 1
+        else:
+            nargs = len(args)
+        if self.nargs not in (None, -1) and nargs != self.nargs:
+            raise ValueError("Incorrect number of arguments: %d (expected %d)" % (nargs, self.nargs))
         if unique_keys is not None and self.nargs is not None and len(unique_keys) != self.nargs:
             raise ValueError("Incorrect number of unique_keys: %d (expected %d)" % (len(unique_keys), self.nargs))
         self.unique_keys = unique_keys
@@ -97,6 +107,10 @@ class Expr(object):
     def __call__(self, variables, backend=None):
         raise NotImplementedError("Subclass and implement __call__")
 
+    @property
+    def kwargs(self):
+        return {k: getattr(self, k, v) for k, v in self.kw.items()}
+
     def _str(self, arg_fmt, unique_keys_fmt=str, with_kw=False):
         if len(self.args) == 0:
             args_str = ''
@@ -108,33 +122,250 @@ class Expr(object):
             ['(%s)' % args_str],
             [unique_keys_fmt(self.unique_keys)] if self.unique_keys is not None else []
         ))]
-        print_kw = {k: getattr(self, k) for k in self.kw if getattr(self, k) != self.kw[k]}
-        if with_kw and print_kw:
+        if self.kw is not None:
+            print_kw = {k: getattr(self, k) for k in self.kw if getattr(self, k) != self.kw[k]}
+        if with_kw and self.kw is not None and print_kw:
             args_kwargs_strs += [', '.join('{}={}'.format(k, v) for k, v in print_kw.items())]
-        return "{}({})".format(self.__class__.__name__, ', '.join(args_kwargs_strs))
+        return "{}({})".format(self.print_name or self.__class__.__name__, ', '.join(args_kwargs_strs))
 
     def __repr__(self):
         return self._str(repr)
 
-    def string(self, arg_fmt=str):
-        return self._str(arg_fmt)
+    def string(self, arg_fmt=str, **kwargs):
+        return self._str(arg_fmt, **kwargs)
 
-    def arg(self, variables, index):
+    def arg(self, variables, index, backend=None):
         if isinstance(index, str):
             index = self.argument_names.index(index)
-        if self.unique_keys is None:
-            return self.args[index]
+        if self.unique_keys is None or len(self.unique_keys) <= index:
+            res = self.args[index]
         else:
-            return variables.get(self.unique_keys[index], self.args[index])
+            res = variables.get(self.unique_keys[index], self.args[index])
+        if isinstance(res, Expr):
+            return res(variables, backend=backend)
+        else:
+            return res
 
-    def all_args(self, variables):
-        return [self.arg(variables, i) for i in range(len(self.args))]
+    def all_args(self, variables, backend=None):
+        return [self.arg(variables, i, backend) for i in range(len(self.args))]
 
-    def _dedimensionalisation(self, unit_registry):
+    def all_params(self, variables, backend=None):
+        return [v(variables, backend=backend) if isinstance(v, Expr) else v for v
+                in [variables[k] for k in self.parameter_keys]]
+
+    def dedimensionalisation(self, unit_registry, variables={}, backend=math):
+        """ Create an instance with consistent units
+
+        Parameters
+        ----------
+        unit_registry : dict
+        variables : dict
+        backend : module
+
+        Examples
+        --------
+        >>> class Pressure(Expr):
+        ...     argument_names = ('n',)
+        ...     parameter_keys = ('temperature', 'volume', 'R')
+        ...     def __call__(self, variables, backend=None):
+        ...         n, = self.all_args(variables, backend=backend)
+        ...         T, V, R = self.all_params(variables, backend=backend)
+        ...         return n*R*T/V
+        ...
+        >>> from chempy.units import SI_base_registry, default_units as u
+        >>> p = Pressure([2*u.micromole])
+        >>> units, d = p.dedimensionalisation(SI_base_registry)
+        >>> units[0] == 1e6*u.micromole
+        True
+        >>> d.args[0] == 2e-6
+        True
+
+
+        Returns
+        -------
+        A new instance where all args have been (recursively) expressed in the unit system
+        of unit_registry
+
+        """
         from ..units import default_unit_in_registry, to_unitless
-        units = [default_unit_in_registry(arg, unit_registry) for arg in self.args]
-        unitless_args = [to_unitless(arg, unit) for arg, unit in zip(self.args, units)]
-        return units, self.__class__(unitless_args, self.unique_keys, **{k: getattr(self, k) for k in self.kw})
+        units = [None if isinstance(arg, Expr) else default_unit_in_registry(arg, unit_registry) for arg
+                 in self.all_args(variables, backend=backend)]
+        new_units, unitless_args = [], []
+        for arg, unit in zip(self.all_args(variables, backend=backend), units):
+            if isinstance(arg, Expr):
+                if unit is not None:
+                    raise ValueError()
+                _unit, _dedim = arg.dedimensionalisation(unit_registry, variables, backend=backend)
+            else:
+                _unit, _dedim = unit, to_unitless(arg, unit)
+            new_units.append(_unit)
+            unitless_args.append(_dedim)
+        if self.kw is None:
+            kw = {}
+        else:
+            kw = {k: getattr(self, k) for k in self.kw}
+        return new_units, self.__class__(unitless_args, self.unique_keys, **kw)
+
+    def _sympy_format(self, method, variables, backend):
+        variables = variables or {}
+        if backend is None:
+            import sympy as backend
+        variables = {k: v if isinstance(v, Expr) else backend.Symbol(v) for k, v in variables.items()}
+        expr = self(variables, backend=backend)
+        if method == 'latex':
+            return backend.latex(expr)
+        elif method == 'unicode':
+            return backend.pprint(expr, use_unicode=True)
+        elif method == 'mathml':
+            from sympy.printing.mathml import print_mathml
+            return print_mathml(expr)
+        else:
+            raise NotImplementedError("Unknown method: %s" % method)
+
+    def latex(self, variables=None, backend=None):
+        r"""
+        Parameters
+        ----------
+        variables : dict
+        backend : module
+
+        Examples
+        --------
+        >>> def pressure(args, *params, **kw):
+        ...     return args[0]*params[0]*params[1]/params[2]
+        >>> Pressure = Expr.from_callback(pressure, parameter_keys='R temp vol'.split(), nargs=1)
+        >>> p = Pressure([7])
+        >>> p.latex({'R': 'R', 'temp': 'T', 'vol': 'V'})
+        '\\frac{7 R}{V} T'
+
+        Notes
+        -----
+        Requires SymPy
+
+        """
+        return self._sympy_format('latex', variables, backend)
+
+    @classmethod
+    def from_callback(cls, callback, **kwargs):
+        """ Factory of subclasses
+
+        Parameters
+        ----------
+        callback : callable
+            signature: *args, backend=None
+        argument_names : tuple of str, optional
+        parameter_keys : tuple of str, optional,
+        kw : dict, optional
+        nargs : int, optional
+
+        Examples
+        --------
+        >>> from operator import add; from functools import reduce
+        >>> def poly(args, x, backend=None):
+        ...     x0 = args[0]
+        ...     return reduce(add, [c*(x-x0)**i for i, c in enumerate(args[1:])])
+        ...
+        >>> Poly = Expr.from_callback(poly, parameter_keys=('x',), argument_names=('x0', Ellipsis))
+        >>> p = Poly([1, 3, 2, 5])
+        >>> p({'x': 7}) == 3 + 2*(7-1) + 5*(7-1)**2
+        True
+        >>> q = Poly([1, 3, 2, 5], unique_keys=('x0_q',))
+        >>> q({'x': 7, 'x0_q': 0}) == 3 + 2*7 + 5*7**2
+        True
+
+        """
+        class Wrapper(cls):
+            def __call__(self, variables, backend=math):
+                args = self.all_args(variables, backend=backend)
+                params = self.all_params(variables, backend=backend)
+                return callback(args, *params, backend=backend)
+        for k, v in kwargs.items():
+            setattr(Wrapper, k, v)
+        return Wrapper
+
+    def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return False
+        if len(self.args) != len(other.args):
+            return False
+        for arg0, arg1 in zip(self.args, other.args):
+            if arg0 != arg1:
+                return False
+        if self.kw is not None:
+            for k in self.kw:
+                print(k)
+                print(getattr(self, k), getattr(other, k))
+                if getattr(self, k) != getattr(other, k):
+                    return False
+        return True
+
+    def __add__(self, other):
+        if other == other*0:
+            return self
+        return _AddExpr([self, other])
+
+    def __sub__(self, other):
+        if other == other*0:
+            return self
+        return _SubExpr([self, other])
+
+    def __mul__(self, other):
+        if other == 1:
+            return self
+        return _MulExpr([self, other])
+
+    def __truediv__(self, other):
+        if other == 1:
+            return self
+        return _DivExpr([self, other])
+
+    def __neg__(self):
+        if isinstance(self, _NegExpr):
+            return self.args[0]
+        return _NegExpr((self,))
+
+    def __radd__(self, other):
+        return self+other
+
+    def __rmul__(self, other):
+        return self*other
+
+    def __rsub__(self, other):
+        return (-self) + other
+
+    def __rtruediv__(self, other):
+        return _DivExpr([other, self])
+
+
+class _NegExpr(Expr):
+
+    def __call__(self, variables, backend=None):
+        arg0, = self.all_args(variables, backend=backend)
+        return -arg0
+
+
+class _BinaryExpr(Expr):
+    _op = None
+
+    def __call__(self, variables, backend=None):
+        arg0, arg1 = self.all_args(variables, backend=backend)
+        return self._op(arg0, arg1)
+
+
+class _AddExpr(_BinaryExpr):
+    _op = add
+
+
+class _SubExpr(_BinaryExpr):
+    _op = sub
+
+
+class _MulExpr(_BinaryExpr):
+    _op = mul
+
+
+class _DivExpr(_BinaryExpr):
+    _op = truediv
 
 
 def _eval_poly(x, offset, coeffs, reciprocal=False):
@@ -185,7 +416,7 @@ def mk_Poly(parameter, reciprocal=False):
         skip_poly = 0
 
         def eval_poly(self, variables, backend=None):
-            all_args = self.all_args(variables)
+            all_args = self.all_args(variables, backend=backend)
             x = variables[parameter]
             offset, coeffs = all_args[self.skip_poly], all_args[self.skip_poly+1:]
             return _eval_poly(x, offset, coeffs, reciprocal)
@@ -201,7 +432,7 @@ def mk_PiecewisePoly(parameter, reciprocal=False):
         skip_poly = 0
 
         def eval_poly(self, variables, backend=None):
-            all_args = self.all_args(variables)[self.skip_poly:]
+            all_args = self.all_args(variables, backend=backend)[self.skip_poly:]
             npoly = all_args[0]
             arg_idx = 1
             poly_args = []

@@ -12,17 +12,17 @@ class Deprecation(object):
 
     Parameters
     ----------
-    last_supported_version : str
+    last_supported_version : str, optional
         Version string, e.g. ``'0.2.1'``.
-    will_be_missing_in : str
+    will_be_missing_in : str, optional
         Version string, e.g. ``'0.3.0'``.
-    use_instead : object or str
+    use_instead : object or str, optional
         Function or class to use instead or descriptive string.
-    issue : str
-    issues_url : callback
+    issue : str, optional
+    issues_url : callback, optional
         Converts issue to url, e.g. ``lambda s: 'https://github.com/user/repo/\
 issues/%s/' % s.lstrip('gh-')``.
-    warning: DeprecationWarning
+    warning: DeprecationWarning, optional
         Any subclass of DeprecationWarning, tip: you may invoke:
         ``warnings.simplefilter('once', MyWarning)`` at module init.
 
@@ -74,6 +74,11 @@ issues/%s/' % s.lstrip('gh-')``.
     def __init__(self, last_supported_version=None, will_be_missing_in=None,
                  use_instead=None, issue=None, issues_url=None,
                  warning=DeprecationWarning):
+        if last_supported_version is not None and\
+           not isinstance(last_supported_version, (str, tuple, list)) and\
+           callable(last_supported_version):
+            raise ValueError("last_supported_version not str, tuple or list")
+
         self.last_supported_version = last_supported_version
         self.will_be_missing_in = will_be_missing_in
         self.use_instead = use_instead

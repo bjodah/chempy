@@ -9,9 +9,15 @@ from ..util.testing import requires
 from ..util.parsing import parsing_library
 from ..units import default_units, units_library, to_unitless
 from ..chemistry import (
-    Substance, Species, Reaction, ReactionSystem, Equilibrium,
-    balance_stoichiometry
+    equilibrium_quotient, Substance, Species, Reaction, ReactionSystem,
+    Equilibrium, balance_stoichiometry
 )
+
+
+@requires('numpy')
+def test_equilibrium_quotient():
+    assert abs(equilibrium_quotient([2.3, 3.7, 5.1], (-1, -1, 1)) -
+               5.1/2.3/3.7) < 1e-14
 
 
 @requires(parsing_library)
@@ -24,7 +30,7 @@ def test_Substance():
 
 def test_Substance__2():
     H2O = Substance(name='H2O',  charge=0, latex_name=r'$\mathrm{H_{2}O}$',
-                    other_properties={'pKa': 14})
+                    other_properties={'pKa': 14})  # will_be_missing_in='0.4.0', use data=...
     OH_m = Substance(name='OH-',  charge=-1, latex_name=r'$\mathrm{OH^{-}}$')
     assert sorted([OH_m, H2O], key=attrgetter('name')) == [H2O, OH_m]
 
@@ -89,6 +95,9 @@ def test_Reaction():
     r4 = Reaction({Hp, OHm}, {H2O}, 7)
     ref = {Hp: -3*5*7, OHm: -3*5*7, H2O: 3*5*7}
     r4.rate({Hp: 5, OHm: 3}) == ref
+    r5 = r4.copy()
+    assert r5 == r4
+    assert r5 != r1
 
 
 @requires(parsing_library)
@@ -98,6 +107,8 @@ def test_Reaction_parsing():
     assert Reaction.from_string(str(r4), None) == r4
     r5 = Reaction.from_string('2 H2O2 -> O2 + 2 H2O; 1e-7/molar/second', 'H2O O2 H2O2')
     assert to_unitless(r5.param, 1/default_units.molar/default_units.second) == 1e-7
+    r6 = Reaction.from_string('->', checks=())
+    assert r6.reac == {} and r6.prod == {}
 
 
 @requires(parsing_library, units_library)
@@ -107,16 +118,54 @@ def test_Substance__molar_mass():
     assert abs(q - 1) < 1e-3
 
 
-@requires(parsing_library)
+@requires(parsing_library, 'numpy')
 def test_ReactionSystem():
+    import numpy as np
     kw = dict(substance_factory=Substance.from_formula)
-    r1 = Reaction.from_string('H2O -> H+ + OH-', 'H2O H+ OH-')
-    ReactionSystem([r1], 'H2O H+ OH-', **kw)
-    r2 = Reaction.from_string('H2O -> 2 H+ + OH-', 'H2O H+ OH-')
+    r1 = Reaction.from_string('H2O -> H+ + OH-', 'H2O H+ OH-', name='r1')
+    rs = ReactionSystem([r1], 'H2O H+ OH-', **kw)
+    r2 = Reaction.from_string('H2O -> 2 H+ + OH-', 'H2O H+ OH-', name='r2')
     with pytest.raises(ValueError):
         ReactionSystem([r2], 'H2O H+ OH-', **kw)
     with pytest.raises(ValueError):
         ReactionSystem([r1, r1], 'H2O H+ OH-', **kw)
+    assert rs.as_substance_index('H2O') == 0
+    assert rs.as_substance_index(0) == 0
+    varied, varied_keys = rs.per_substance_varied({'H2O': 55.4, 'H+': 1e-7, 'OH-': 1e-7},
+                                                  {'H+': [1e-8, 1e-9, 1e-10, 1e-11], 'OH-': [1e-3, 1e-2]})
+    assert varied_keys == ('H+', 'OH-')
+    assert len(varied.shape) == 3
+    assert varied.shape[:-1] == (4, 2)
+    assert varied.shape[-1] == 3
+    assert np.all(varied[..., 0] == 55.4)
+    assert np.all(varied[:, 1, 2] == 1e-2)
+
+    assert rs['r1'] is r1
+    rs.rxns.append(r2)
+    assert rs['r2'] is r2
+    with pytest.raises(KeyError):
+        rs['r3']
+    rs.rxns.append(Reaction({}, {}, 0, name='r2', checks=()))
+    with pytest.raises(ValueError):
+        rs['r2']
+
+
+def test_ReactionSystem__rates():
+    rs = ReactionSystem([Reaction({'H2O'}, {'H+', 'OH-'}, 11)])
+    assert rs.rates({'H2O': 3, 'H+': 5, 'OH-': 7}) == {'H2O': -11*3, 'H+': 11*3, 'OH-': 11*3}
+
+
+def test_ReactionSystem__html_tables():
+    r1 = Reaction({'A': 2}, {'A'}, name='R1')
+    r2 = Reaction({'A'}, {'A': 2}, name='R2')
+    rs = ReactionSystem([r1, r2])
+    ut, unc = rs.unimolecular_html_table()
+    assert unc == [r1]
+    assert ut == u'<table><tr><td>A</td><td ><a title="A → 2 A">R2</a></td></tr></table>'
+
+    bt, bnc = rs.bimolecular_html_table()
+    assert bnc == [r2]
+    assert bt == u'<table><th></th><th>A</th>\n<tr><td>A</td><td ><a title="2 A → A">R1</a></td></tr></table>'
 
 
 @requires(parsing_library)
@@ -150,6 +199,33 @@ def test_ReactionSystem__as_per_substance_array_dict():
     assert rs.as_per_substance_dict([42]) == {'H2O': 42}
 
 
+@requires(parsing_library)
+def test_ReactionSystem__add():
+    rs1 = ReactionSystem.from_string('\n'.join(['2 H2O2 -> O2 + 2 H2O', 'H2 + O2 -> H2O2']))
+    rs2 = ReactionSystem.from_string('\n'.join(['2 NH3 -> N2 + 3 H2']))
+    rs3 = rs1 + rs2
+    assert rs1 == rs1
+    assert rs1 != rs2
+    assert rs3 != rs1
+    assert len(rs1.rxns) == 2 and len(rs2.rxns) == 1 and len(rs3.rxns) == 3
+    for k in 'H2O2 O2 H2O H2 NH3 N2'.split():
+        assert k in rs3.substances
+    rs1 += rs2
+    assert len(rs1.rxns) == 3 and len(rs2.rxns) == 1
+    assert rs1 == rs3
+
+    rs4 = ReactionSystem.from_string("H2O -> H+ + OH-; 1e-4")
+    rs4 += [Reaction({'H+', 'OH-'}, {'H2O'}, 1e10)]
+    res = rs4.rates({'H2O': 1, 'H+': 1e-7, 'OH-': 1e-7})
+    for k in 'H2O H+ OH-'.split():
+        assert abs(res[k]) < 1e-16
+
+    rs5 = ReactionSystem.from_string("H3O+ -> H+ + H2O")
+    rs6 = rs4 + rs5
+    rs7 = rs6 + (Reaction.from_string("H+ + H2O -> H3O+"),)
+    assert len(rs7.rxns) == 4
+
+
 @requires(units_library)
 def test_Equilibrium__as_reactions():
     s = default_units.second
@@ -169,6 +245,13 @@ def test_Reaction__from_string():
 
     with pytest.raises(ValueError):
         Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H OH-'.split())
+
+    r2 = Reaction.from_string("H2O -> H+ + OH-; 1e-4; ref='important_paper'")
+    assert r2.ref == 'important_paper'
+
+    with pytest.raises(ValueError):
+        Reaction.from_string("H2O -> H2O")
+    Reaction.from_string("H2O -> H2O; None; checks=()")
 
 
 @requires(parsing_library)
@@ -236,3 +319,23 @@ def test_balance_stoichiometry():
 
     with pytest.raises(ValueError):
         reac, prod = balance_stoichiometry({'C7H5(NO2)3', 'Al', 'NH4NO3'}, {'CO', 'H2O', 'N2'})
+
+    r2, p2 = balance_stoichiometry({'Na2CO3'}, {'Na2O', 'CO2'})
+    assert r2 == {'Na2CO3': 1}
+    assert p2 == {'Na2O': 1, 'CO2': 1}
+
+    r3, p3 = balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2'})
+    assert r3 == {'C2H6': 2, 'O2': 7}
+    assert p3 == {'CO2': 4, 'H2O': 6}
+    with pytest.raises(ValueError):
+        reac, prod = balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'})
+
+
+@requires(parsing_library)
+def test_ReactionSystem__from_string():
+    rs = ReactionSystem.from_string('-> H + OH; Radiolytic(2.1e-7)', checks=())
+    assert rs.rxns[0].reac == {}
+    assert rs.rxns[0].prod == {'H': 1, 'OH': 1}
+    assert rs.rxns[0].param.args == [2.1e-7]
+    ref = 2.1e-7 * 0.15 * 998
+    assert rs.rates({'doserate': .15, 'density': 998}) == {'H': ref, 'OH': ref}

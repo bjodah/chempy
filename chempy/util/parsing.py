@@ -13,7 +13,7 @@ from .pyutil import ChemPyDeprecationWarning, memoize
 parsing_library = 'pyparsing'  # info used for selective testing.
 
 
-@memoize
+@memoize()
 def _get_formula_parser():
     """ Create a forward pyparsing parser for chemical formulae
 
@@ -300,12 +300,27 @@ _latex_mapping = {k + '-': '\\' + k + '-' for k in _greek_letters}
 _latex_mapping['epsilon-'] = '\\varepsilon-'
 _latex_mapping['omicron-'] = 'o-'
 _latex_mapping['.'] = '^\\bullet '
+_latex_infix_mapping = {'.': '\\cdot '}
 
 _unicode_mapping = {k + '-': v + '-' for k, v in zip(_greek_letters, _greek_u)}
 _unicode_mapping['.'] = u'⋅'
+_unicode_infix_mapping = {'.': u'·'}
 
 _html_mapping = {k + '-': '&' + k + ';-' for k in _greek_letters}
 _html_mapping['.'] = '&sdot;'
+_html_infix_mapping = _html_mapping
+
+
+def _get_leading_integer(s):
+    m = re.findall(r'^\d+', s)
+    if len(m) == 0:
+        m = 1
+    elif len(m) == 1:
+        s = s[len(m[0]):]
+        m = int(m[0])
+    else:
+        raise ValueError("Failed to parse: %s" % s)
+    return m, s
 
 
 def formula_to_composition(formula, prefixes=None,
@@ -330,15 +345,29 @@ def formula_to_composition(formula, prefixes=None,
     True
     >>> formula_to_composition('.NHO-(aq)') == {0: -1, 1: 1, 7: 1, 8: 1}
     True
+    >>> formula_to_composition('Na2CO3.7H2O') == {11: 2, 6: 1, 8: 10, 1: 14}
+    True
 
     """
     if prefixes is None:
         prefixes = _latex_mapping.keys()
-    parts = _formula_to_parts(formula, prefixes, suffixes)
-    comp = _parse_stoich(parts[0])
-    if parts[1] is not None:
-        comp[0] = _get_charge(parts[1])
-    return comp
+    stoich_tok, chg_tok = _formula_to_parts(formula, prefixes, suffixes)[:2]
+    tot_comp = {}
+    parts = stoich_tok.split('.')
+    for idx, stoich in enumerate(parts):
+        if idx == 0:
+            m = 1
+        else:
+            m, stoich = _get_leading_integer(stoich)
+        comp = _parse_stoich(stoich)
+        for k, v in comp.items():
+            if k not in tot_comp:
+                tot_comp[k] = m*v
+            else:
+                tot_comp[k] += m*v
+    if chg_tok is not None:
+        tot_comp[0] = _get_charge(chg_tok)
+    return tot_comp
 
 
 def _subs(string, patterns):
@@ -376,7 +405,7 @@ def _parse_multiplicity(strings, substance_keys=None):
     return result
 
 
-def to_reaction(line, substance_keys, token, Cls, globals_=None):
+def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
     """ Parses a string into a Reaction object and substances
 
     Reac1 + 2 Reac2 + (2 Reac1) -> Prod1 + Prod2; 10**3.7; ref='doi:12/ab'
@@ -410,19 +439,20 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None):
         from chempy.units import default_units
         globals_ = {k: getattr(rates, k) for k in dir(rates)}
         globals_.update({'chempy': chempy, 'default_units': default_units})
-        globals_.update(default_units.as_dict())
+        if default_units is not None:
+            globals_.update(default_units.as_dict())
     try:
-        stoich, param, kwargs = map(str.strip, line.rstrip('\n').split(';'))
+        stoich, param, kw = map(str.strip, line.rstrip('\n').split(';'))
     except ValueError:
         if ';' in line:
             stoich, param = map(str.strip, line.rstrip('\n').split(';'))
         else:
-            stoich, param = line.strip(), 'None'
-        kwargs = {}
+            stoich, param = line.strip(), kwargs.pop('param', 'None')
     else:
-        kwargs = eval('dict('+kwargs+')', globals_)
+        kwargs.update({} if globals_ is False else eval('dict('+kw+')', globals_))
 
-    param = eval(param, globals_)
+    if isinstance(param, str):
+        param = None if globals_ is False else eval(param, globals_)
 
     if token not in stoich:
         raise ValueError("Missing token: %s" % token)
@@ -448,10 +478,20 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None):
 
 
 def _formula_to_format(sub, sup, formula, prefixes=None,
-                       suffixes=('(s)', '(l)', '(g)', '(aq)'),
-                       intercept=None):
+                       infixes=None, suffixes=('(s)', '(l)', '(g)', '(aq)')):
     parts = _formula_to_parts(formula, prefixes.keys(), suffixes)
-    string = re.sub(r'([0-9]+)', lambda m: sub(m.group(1)), parts[0])
+    stoichs = parts[0].split('.')
+    string = ''
+    for idx, stoich in enumerate(stoichs):
+        if idx == 0:
+            m = 1
+        else:
+            m, stoich = _get_leading_integer(stoich)
+            string += _subs('.', infixes)
+        if m != 1:
+            string += str(m)
+        string += re.sub(r'([0-9]+)', lambda m: sub(m.group(1)), stoich)
+
     if parts[1] is not None:
         chg = _get_charge(parts[1])
         if chg < 0:
@@ -465,7 +505,7 @@ def _formula_to_format(sub, sup, formula, prefixes=None,
     return pre_str + string + ''.join(parts[3])
 
 
-def formula_to_latex(formula, prefixes=None, **kwargs):
+def formula_to_latex(formula, prefixes=None, infixes=None, **kwargs):
     r""" Convert formula string to latex representation
 
     Parameters
@@ -474,8 +514,10 @@ def formula_to_latex(formula, prefixes=None, **kwargs):
         Chemical formula, e.g. 'H2O', 'Fe+3', 'Cl-'
     prefixes: dict
         Prefix transofmrations, default: greek letters and .
-    suffixes: tuple of strings
-        Suffixes to keep, e.g. ('(g)', '(s)')
+    infixes: dict
+        Infix transformations, default: .
+    suffixes: iterable of str
+        What suffixes not to interpret, default: (s), (l), (g), (aq)
 
     Examples
     --------
@@ -493,20 +535,22 @@ def formula_to_latex(formula, prefixes=None, **kwargs):
     """
     if prefixes is None:
         prefixes = _latex_mapping
+    if infixes is None:
+        infixes = _latex_infix_mapping
     return _formula_to_format(lambda x: '_{%s}' % x, lambda x: '^{%s}' % x,
-                              formula, prefixes)
+                              formula, prefixes, infixes, **kwargs)
 
 
-def _number_to_scientific_latex(number, fmt='%.3g'):
+def number_to_scientific_latex(number, fmt='%.3g'):
     r"""
     Examples
     --------
-    >>> _number_to_scientific_latex(3.14) == '3.14'
+    >>> number_to_scientific_latex(3.14) == '3.14'
     True
-    >>> _number_to_scientific_latex(3.14159265e-7)
+    >>> number_to_scientific_latex(3.14159265e-7)
     '3.14\\cdot 10^{-7}'
     >>> import quantities as pq
-    >>> _number_to_scientific_latex(2**0.5 * pq.m / pq.s)
+    >>> number_to_scientific_latex(2**0.5 * pq.m / pq.s)
     '1.41 \\mathrm{\\frac{m}{s}}'
 
     """
@@ -536,16 +580,18 @@ for k, v in enumerate(u"⁰¹²³⁴⁵⁶⁷⁸⁹"):
     _unicode_sup[str(k)] = v
 
 
-def formula_to_unicode(formula, prefixes=None, **kwargs):
+def formula_to_unicode(formula, prefixes=None, infixes=None, **kwargs):
     u""" Convert formula string to unicode string representation
 
     Parameters
     ----------
-    formula: str
+    formula : str
         Chemical formula, e.g. 'H2O', 'Fe+3', 'Cl-'
-    prefixes: dict
+    prefixes : dict
         Prefix transofmrations, default: greek letters and .
-    suffixes: tuple of strings
+    infixes : dict
+        Infix transofmrations, default: .
+    suffixes : tuple of strings
         Suffixes to keep, e.g. ('(g)', '(s)')
 
     Examples
@@ -564,23 +610,24 @@ def formula_to_unicode(formula, prefixes=None, **kwargs):
     """
     if prefixes is None:
         prefixes = _unicode_mapping
-
+    if infixes is None:
+        infixes = _unicode_infix_mapping
     return _formula_to_format(
         lambda x: ''.join(_unicode_sub[str(_)] for _ in x),
         lambda x: ''.join(_unicode_sup[str(_)] for _ in x),
-        formula, prefixes)
+        formula, prefixes, infixes, **kwargs)
 
 
-def _number_to_scientific_unicode(number, fmt='%.3g'):
+def number_to_scientific_unicode(number, fmt='%.3g'):
     u"""
     Examples
     --------
-    >>> _number_to_scientific_unicode(3.14) == u'3.14'
+    >>> number_to_scientific_unicode(3.14) == u'3.14'
     True
-    >>> _number_to_scientific_unicode(3.14159265e-7) == u'3.14·10⁻⁷'
+    >>> number_to_scientific_unicode(3.14159265e-7) == u'3.14·10⁻⁷'
     True
     >>> import quantities as pq
-    >>> _number_to_scientific_html(2**0.5 * pq.m / pq.s)
+    >>> number_to_scientific_html(2**0.5 * pq.m / pq.s)
     '1.41 m/s'
 
     """
@@ -597,16 +644,18 @@ def _number_to_scientific_unicode(number, fmt='%.3g'):
         return s + unit
 
 
-def formula_to_html(formula, prefixes=None, **kwargs):
+def formula_to_html(formula, prefixes=None, infixes=None, **kwargs):
     u""" Convert formula string to html string representation
 
     Parameters
     ----------
-    formula: str
+    formula : str
         Chemical formula, e.g. 'H2O', 'Fe+3', 'Cl-'
-    prefixes: dict
-        Prefix transofmrations, default: greek letters and .
-    suffixes: tuple of strings
+    prefixes : dict
+        Prefix transformations, default: greek letters and .
+    infixes : dict
+        Infix transformations, default: .
+    suffixes : tuple of strings
         Suffixes to keep, e.g. ('(g)', '(s)')
 
     Examples
@@ -625,21 +674,23 @@ def formula_to_html(formula, prefixes=None, **kwargs):
     """
     if prefixes is None:
         prefixes = _html_mapping
+    if infixes is None:
+        infixes = _html_infix_mapping
     return _formula_to_format(lambda x: '<sub>%s</sub>' % x,
                               lambda x: '<sup>%s</sup>' % x,
-                              formula, prefixes)
+                              formula, prefixes, infixes, **kwargs)
 
 
-def _number_to_scientific_html(number, fmt='%.3g'):
+def number_to_scientific_html(number, fmt='%.3g'):
     """
     Examples
     --------
-    >>> _number_to_scientific_html(3.14) == '3.14'
+    >>> number_to_scientific_html(3.14) == '3.14'
     True
-    >>> _number_to_scientific_html(3.14159265e-7)
+    >>> number_to_scientific_html(3.14159265e-7)
     '3.14&sdot;10<sup>-7</sup>'
     >>> import quantities as pq
-    >>> _number_to_scientific_html(2**0.5 * pq.m / pq.s)
+    >>> number_to_scientific_html(2**0.5 * pq.m / pq.s)
     '1.41 m/s'
 
     """

@@ -7,8 +7,8 @@ import math
 from ..eyring import (
     eyring_equation, EyringParam, EyringParamWithUnits
 )
-from ..util.testing import requires
-from ..units import allclose, units_library, default_units as u
+from chempy.util.testing import requires
+from chempy.units import allclose, units_library, default_units as u
 
 
 _kB_over_h = 2.083664399411865234375e10

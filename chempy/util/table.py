@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import tempfile
 
+from ..kinetics.rates import RadiolyticBase
 from ..units import to_unitless, get_derived_unit
 
 tex_templates = {
@@ -112,7 +113,8 @@ def render_tex_to_pdf(contents, texfname, pdffname, output_dir, save):
                     shutil.rmtree(output_dir)
             else:
                 # interpret path to copy pdf to.
-                shutil.copy(pdfpath, save)
+                if not os.path.samefile(pdfpath, save):
+                    shutil.copy(pdfpath, save)
 
 
 def rsys2tablines(rsys, rref0=1, coldelim=' & ',
@@ -158,20 +160,26 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
     lines = []
     for ri, rxn in enumerate(rsys.rxns):
         rxn_ref = rxn.ref
-        if unit_registry is not None:
-            kunit = (get_derived_unit(unit_registry,
-                                      'concentration')**(1-rxn.order()) /
-                     get_derived_unit(unit_registry, 'time'))
-            try:
-                k = k_fmt % to_unitless(rxn.param, kunit)
-                k_unit_str = (kunit.dimensionality.latex if tex
+        if isinstance(rxn.param, RadiolyticBase):
+            if unit_registry is not None:
+                kunit = get_derived_unit(unit_registry, 'radiolytic_yield')
+                k = k_fmt % to_unitless(rxn.param.args[0], kunit)
+                k_unit_str = (kunit.dimensionality.latex.strip('$') if tex
                               else kunit.dimensionality)
-            except:
-                k = rxn.param.equation_as_string(k_fmt, tex)
-                k_unit_str = '-'
         else:
-            k_unit_str = '-'
-            k = k_fmt % rxn.param
+            if unit_registry is not None:
+                kunit = (get_derived_unit(unit_registry,
+                                          'concentration')**(1-rxn.order()) /
+                         get_derived_unit(unit_registry, 'time'))
+                try:
+                    k = k_fmt % to_unitless(rxn.param, kunit)
+                    k_unit_str = (kunit.dimensionality.latex.strip('$') if tex
+                                  else kunit.dimensionality)
+                except:
+                    k, k_unit_str = rxn.param.equation_as_string(k_fmt, tex)
+            else:
+                k_unit_str = '-'
+                k = k_fmt % rxn.param
         r_str, ir_str, arrow_str, p_str, ip_str = rxn._get_str_parts(
             'latex_name' if tex else 'name',
             'latex_arrow' if tex else 'str_arrow',
@@ -182,7 +190,7 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
             _wrap(arrow_str),
             _wrap(p_str + ip_str),
             _wrap(k),
-            unit_fmt.format(k_unit_str),
+            unit_fmt.format(_wrap(k_unit_str)),
             ref_fmt(rxn_ref) if callable(ref_fmt) else ref_fmt.format(rxn_ref)
         ]))
 
@@ -283,8 +291,7 @@ def rsys2pdf_table(rsys, output_dir=None, doc_template=None,
     _envs = ['tiny'] + (['landscape'] if landscape else [])
     defaults = {
         'usepkg': '\n'.join([(r'\usepackage' + (
-            '[%s]' if isinstance(pkg, tuple) else '') + '{%s}') % pkg for
-                             pkg in _pkgs]),
+            '[%s]' if isinstance(pkg, tuple) else '') + '{%s}') % pkg for pkg in _pkgs]),
         'begins': '\n'.join([r'\begin{%s}' % env for env in _envs]),
         'ends': '\n'.join([r'\end{%s}' % env for env in _envs[::-1]])
     }
@@ -302,6 +309,10 @@ def rsys2pdf_table(rsys, output_dir=None, doc_template=None,
 
     contents = doc_template % doc_template_dict
 
-    texfname = 'output.tex'
-    pdffname = 'output.pdf'
+    if isinstance(save, str) and save.endswith('.pdf'):
+        texfname = save.rstrip('.pdf') + '.tex'
+        pdffname = save
+    else:
+        texfname = 'output.tex'
+        pdffname = 'output.pdf'
     return render_tex_to_pdf(contents, texfname, pdffname, output_dir, save)

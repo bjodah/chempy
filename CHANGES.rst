@@ -1,5 +1,7 @@
 v0.4.0
 ======
+- .core and .debye_huckel was merged into .electrolytes
+- New functions: balance_stoichiometry, mass_fractions
 - kwargs one=, exp=, ln= changed throughout to use backend=None (backen=math)
 - .chemistry.ArrheniusRate moved (and changed) to .arrhenius.ArrheniusParam
 - Equilibrium got a new method: cancel and a new staticmethod: eliminate
@@ -10,8 +12,11 @@ v0.4.0
 - New functions in util.parsing: formula_to_unicode, formula_to_html
 - ReactionSystem.__init__ got a new kwarg: substance_factory
 - ReactionSystem raises ValueError if it contains duplicate instances of Reaction
-- ReactionSystem got a new method: as_per_substance_dict (inverse of as_per_substance_array)
-- .kinetics.ode.law_of_mass_action_rates was moved to rates (alias deprecated)
+- ReactionSystem got new methods:
+  - as_per_substance_dict (inverse of as_per_substance_array)
+  - unimolecular_html_table
+  - bimolecular_html_table
+- .kinetics.ode.law_of_mass_action_rates was updated to handle RateExpr
 - fix in .properties.sulfuric_acid_density_myhre_1998.density_from_concentration for input with units
 - enhancements to .util.deprecation.Deprecation
 - .util.stoich.decompose_yields now takes iterable of Reaction instances as second arg.

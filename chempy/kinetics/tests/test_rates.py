@@ -9,7 +9,7 @@ from chempy import Reaction, ReactionSystem, Substance
 from chempy.units import allclose, Backend, to_unitless, units_library, default_units as u
 from chempy.util.parsing import parsing_library
 from chempy.util.testing import requires
-from ..rates import RateExpr, MassAction, ArrheniusMassAction, Radiolytic
+from ..rates import RateExpr, MassAction, ArrheniusMassAction, Radiolytic, mk_Radiolytic, EyringMassAction
 
 
 class SpecialFraction(RateExpr):
@@ -67,6 +67,9 @@ def test_MassAction():
     Reaction({'A': 2, 'B': 1}, {'C': 1}, ma, {'B': 1})
     assert abs(ma({'A': 11, 'B': 13, 'C': 17}) - 3.14*13*11**2) < 1e-14
     assert abs(ma({'A': 11, 'B': 13, 'C': 17, 'my_rate': 2.72}) - 2.72*13*11**2) < 1e-12
+    ma2 = ma.as_mass_action({})
+    assert ma == ma2
+    assert abs(ma2({'A': 11, 'B': 13, 'C': 17}) - 3.14*13*11**2) < 1e-14
 
 
 def test_MassAction__subclass_from_callback():
@@ -109,6 +112,8 @@ def test_ArrheniusMassAction():
 
     with pytest.raises(ValueError):
         ArrheniusMassAction([A, Ea_over_R, A])
+
+    assert ama.as_mass_action({T_: 273.15}).args[0] == A*math.exp(-Ea_over_R/273.15)
 
 
 @requires(units_library)
@@ -193,3 +198,30 @@ def test_Radioyltic__Reaction_html():
     H = Substance.from_formula('H')
     html = rxn.html({'H': H}, with_param=True)
     assert html == ' &rarr; H&#59; %s' % str(rate)
+
+
+def test_mk_Radiolytic():
+    R1 = mk_Radiolytic()
+    R2 = mk_Radiolytic()
+    assert R1 is R2
+
+
+def test_EyringMassAction():
+    args = kB_h_times_exp_dS_R, dH_over_R = 1.2e11/273.15, 40e3/8.3145
+    ama = EyringMassAction(args)
+    Reaction({'A': 2, 'B': 1}, {'C': 1}, ama, {'B': 1})
+    T_ = 'temperature'
+
+    def ref(v):
+        return 1.2e11/273.15*v[T_]*math.exp(-40e3/8.3145/v[T_])*v['B']*v['A']**2
+
+    for params in [(11., 13., 17., 311.2),
+                   (12, 8, 5, 270)]:
+        var = dict(zip(['A', 'B', 'C', T_], params))
+        r = ref(var)
+        assert abs((ama(var) - r)/r) < 1e-14
+
+    with pytest.raises(ValueError):
+        EyringMassAction([1, 1, 1])
+
+    assert ama.as_mass_action({T_: 273.15}).args[0] == 1.2e11*math.exp(-40e3/8.3145/273.15)

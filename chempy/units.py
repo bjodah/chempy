@@ -30,6 +30,8 @@ except ImportError:
     default_units = None
     SI_base_registry = None
 else:
+    from .util._quantities import _patch_quantities
+    _patch_quantities(pq)
     UncertainQuantity = pq.UncertainQuantity
     # Let us extend the underlying pq namespace with some common units in
     # chemistry
@@ -39,10 +41,14 @@ else:
     default_units.decimetre = pq.UnitQuantity(
         'decimetre',  default_units.m / 10.0, u_symbol='dm')
     default_units.dm3 = default_units.decimetre**3
+    default_units.cm3 = default_units.centimetre**3
     if not hasattr(default_units, 'molar'):
         default_units.molar = pq.UnitQuantity(
             'M',  default_units.mole / default_units.decimetre ** 3,
             u_symbol='M')
+    default_units.molal = pq.UnitQuantity(
+        'molal',  default_units.mole / default_units.kg,
+        u_symbol='molal')
     default_units.per100eV = pq.UnitQuantity(
         'per_100_eV',
         1/(100*default_units.eV*default_constants.Avogadro_constant),
@@ -295,10 +301,10 @@ def allclose(a, b, rtol=1e-8, atol=None):
         n = 1
 
     if n == 1:
-        return d < lim
+        return d <= lim
     else:
         import numpy as np
-        return np.all(_d < _lim for _d, _lim in zip(d, lim))
+        return np.all([_d <= _lim for _d, _lim in zip(d, lim)])
 
 
 def linspace(start, stop, num=50):
@@ -333,7 +339,8 @@ class Backend(object):
     """ Wrapper around modules such as numpy and math
 
     Instances of Backend wraps a module, e.g. `numpy` and ensures that
-    arguments passed on are unitless.
+    arguments passed on are unitless, i.e. it raises an error if a
+    transcendental function is used with quantities with units.
 
     Parameters
     ----------
@@ -386,7 +393,7 @@ class Backend(object):
 
 
 def format_string(value, precision='%.5g', tex=False):
-    """ Formats a scalar with unit as a string
+    """ Formats a scalar with unit as two strings
 
     Parameters
     ----------
@@ -397,9 +404,9 @@ def format_string(value, precision='%.5g', tex=False):
 
     Examples
     --------
-    >>> print(format_string(0.42*default_units.mol/default_units.decimetre**3))
+    >>> print(' '.join(format_string(0.42*default_units.mol/default_units.decimetre**3)))
     0.42 mol/decimetre**3
-    >>> print(format_string(2/default_units.s, tex=True))
+    >>> print(' '.join(format_string(2/default_units.s, tex=True)))
     2 \\mathrm{\\frac{1}{s}}
 
     """
@@ -409,4 +416,4 @@ def format_string(value, precision='%.5g', tex=False):
         from quantities.markup import config
         attr = 'unicode' if config.use_unicode else 'string'
         unit_str = getattr(value.dimensionality, attr)
-    return precision % float(value.magnitude) + " " + unit_str
+    return precision % float(value.magnitude), unit_str

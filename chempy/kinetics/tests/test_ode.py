@@ -16,6 +16,7 @@ from chempy.util._expr import Expr
 from chempy.util.testing import requires
 from .test_rates import _get_SpecialFraction_rsys
 from ..rates import ArrheniusMassAction, Radiolytic
+from .._rates import TPolyMassAction
 from ..ode import get_odesys
 from ..integrated import dimerization_irrev
 
@@ -40,33 +41,29 @@ def test_get_odesys_1():
     assert np.allclose(yout, yref)
 
 
-@requires(units_library, 'pyodesys')
-def test_get_odesys__with_units():
+@requires('numpy', 'pyodesys')
+def test_get_odesys_2():
+    g = Radiolytic([3.14])
     a = Substance('A')
     b = Substance('B')
-    molar = u.molar
-    second = u.second
-    r = Reaction({'A': 2}, {'B': 1}, param=1e-3/molar/second)
+    r = Reaction({'A': 1}, {'B': 1}, param=g)
     rsys = ReactionSystem([r], [a, b])
-    odesys = get_odesys(rsys, include_params=True,
-                        unit_registry=SI_base_registry)[0]
+    odesys = get_odesys(rsys, include_params=True)[0]
     c0 = {
-        'A': 13*u.mol / u.metre**3,
-        'B': .2 * u.molar
+        'A': 1.0,
+        'B': 3.0,
     }
-    conc_unit = get_derived_unit(SI_base_registry, 'concentration')
-    t = np.linspace(0, 10)*u.hour
-    xout, yout, info = odesys.integrate(
-        t, rsys.as_per_substance_array(c0, unit=conc_unit))
-    Aref = dimerization_irrev(to_unitless(xout, u.second), 1e-6, 13.0)
-    yref = np.zeros((xout.size, 2))
-    yref[:, 0] = Aref
-    yref[:, 1] = .2e-3 + 2*Aref
-    assert allclose(yout, yref*conc_unit)
+    t = np.linspace(0.0, .1)
+    xout, yout, info = odesys.integrate(t, rsys.as_per_substance_array(c0), {'doserate': 2.72, 'density': .998})
+    yref = np.zeros((t.size, 2))
+    k = 3.14*2.72*.998
+    yref[:, 0] = 1 - k*t
+    yref[:, 1] = 3 + k*t
+    assert np.allclose(yout, yref)
 
 
 @requires(units_library, 'pyodesys')
-def test_get_odesys_2():
+def test_get_odesys_3():
     M = u.molar
     s = u.second
     mol = u.mol
@@ -93,6 +90,36 @@ def test_get_odesys_2():
     assert abs(fout[2] - r1 + r2) < 1e-10
 
 
+@requires(units_library, 'pyodesys')
+def test_get_odesys__with_units():
+    a = Substance('A')
+    b = Substance('B')
+    molar = u.molar
+    second = u.second
+    r = Reaction({'A': 2}, {'B': 1}, param=1e-3/molar/second)
+    rsys = ReactionSystem([r], [a, b])
+    odesys = get_odesys(rsys, include_params=True,
+                        unit_registry=SI_base_registry)[0]
+    c0 = {
+        'A': 13*u.mol / u.metre**3,
+        'B': .2 * u.molar
+    }
+    conc_unit = get_derived_unit(SI_base_registry, 'concentration')
+    t = np.linspace(0, 10)*u.hour
+    xout, yout, info = odesys.integrate(
+        t, rsys.as_per_substance_array(c0, unit=conc_unit),
+        atol=1e-10, rtol=1e-12)
+
+    t_unitless = to_unitless(xout, u.second)
+    Aref = dimerization_irrev(t_unitless, 1e-6, 13.0)
+    # Aref = 1/(1/13 + 2*1e-6*t_unitless)
+    yref = np.zeros((xout.size, 2))
+    yref[:, 0] = Aref
+    yref[:, 1] = 200 + (13-Aref)/2
+    print((yout - yref*conc_unit)/yout)
+    assert allclose(yout, yref*conc_unit)
+
+
 @requires('numpy', 'pyodesys')
 def test_SpecialFraction():
     k, kprime = 3.142, 2.718
@@ -114,9 +141,11 @@ def test_SpecialFraction_with_units():
                         unit_registry=SI_base_registry)[0]
     c0 = {'H2': 13*u.molar, 'Br2': 16*u.molar, 'HBr': 19*u.molar}
     r = k*c0['H2']*c0['Br2']**(3/2)/(c0['Br2'] + kprime*c0['HBr'])
-    ref = rsys.as_per_substance_array({'H2': -r, 'Br2': -r, 'HBr': 2*r})
-    res = odesys.f_cb(0, rsys.as_per_substance_array(c0, unit=u.molar))
-    assert allclose(ref, res)
+    conc_unit = u.mol/u.metre**3
+    rate_unit = conc_unit/u.second
+    ref = rsys.as_per_substance_array({'H2': -r, 'Br2': -r, 'HBr': 2*r}, unit=rate_unit)
+    res = odesys.f_cb(0, rsys.as_per_substance_array(c0, unit=conc_unit))
+    assert allclose(to_unitless(ref, rate_unit), res)
 
 
 @requires('pyodesys')
@@ -220,5 +249,19 @@ def test_get_ode__Radiolytic__substitutions__units():
     x, y, p = odesys.pre_process(-37*u.second, conc, {'doserate': 0.4*u.gray/u.second, 'temperature': 298.15*u.kelvin})
     fout = odesys.f_cb(x, y, p)
     r = 2.4e-7*0.4*0.975 * 1e3  # mol/m3/s
+    ref = [-4*r, -r, 3*r, 2*r]
+    assert np.all(abs((fout - ref)/ref) < 1e-14)
+
+
+@requires('pyodesys', units_library)
+def test_get_ode__TPoly():
+    rate = TPolyMassAction([273.15*u.K, 10/u.molar/u.s, 2/u.molar/u.s/u.K])
+    rxn = Reaction({'A': 1, 'B': 1}, {'C': 3, 'D': 2}, rate, {'A': 3})
+    rsys = ReactionSystem([rxn], 'A B C D')
+    odesys = get_odesys(rsys, unit_registry=SI_base_registry)[0]
+    conc = {'A': 3*u.molar, 'B': 5*u.molar, 'C': 11*u.molar, 'D': 13*u.molar}
+    x, y, p = odesys.pre_process(-37*u.second, conc, {'temperature': 298.15*u.kelvin})
+    fout = odesys.f_cb(x, y, p)
+    r = 3*5*(10+2*25)*1000  # mol/m3/s
     ref = [-4*r, -r, 3*r, 2*r]
     assert np.all(abs((fout - ref)/ref) < 1e-14)

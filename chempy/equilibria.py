@@ -11,256 +11,24 @@ equilibria.
 """
 from __future__ import division, absolute_import
 
-import math
 import warnings
 from collections import defaultdict
 
-
 import numpy as np
 
-from .chemistry import ReactionSystem, equilibrium_quotient
-from ._util import prodpow, get_backend, mat_dot_vec
+from .chemistry import ReactionSystem, equilibrium_quotient, Equilibrium, Species
+from ._util import get_backend
 from .util.pyutil import deprecated
+from ._eqsys import EqCalcResult, NumSysLin, NumSysLog, NumSysSquare as _NumSysSquare
 
 
-def equilibrium_residual(rc, c0, stoich, K, activity_product=None):
-    """
-    Parameters
-    ---------
-    rc: float
-        Reaction coordinate
-    c0: array_like of reals
-        concentrations
-    stoich: tuple
-        per specie stoichiometry coefficient
-    K: float
-        equilibrium constant
-    activity_product: callable
-        callback for calculating the activity product taking
-        concentration as single parameter.
-    """
-    if not hasattr(stoich, 'ndim') or stoich.ndim == 1:
-        c = c0 + stoich*rc
-    else:
-        c = c0 + np.dot(stoich, rc)
-    Q = equilibrium_quotient(c, stoich)
-    if activity_product is not None:
-        Q *= activity_product(c)
-    return K - Q
-
-
-def get_rc_interval(stoich, c0):
-    """ get reaction coordinate interval """
-    limits = c0/stoich
-    if np.any(limits < 0):
-        upper = -np.max(limits[np.argwhere(limits < 0)])
-    else:
-        upper = 0
-
-    if np.any(limits > 0):
-        lower = -np.min(limits[np.argwhere(limits > 0)])
-    else:
-        lower = 0
-
-    if lower is 0 and upper is 0:
-        raise ValueError("0-interval")
-    else:
-        return lower, upper
-
-
-def _solve_equilibrium_coord(c0, stoich, K, activity_product=None):
-    from scipy.optimize import brentq
-    mask, = np.nonzero(stoich)
-    stoich_m = stoich[mask]
-    c0_m = c0[mask]
-    lower, upper = get_rc_interval(stoich_m, c0_m)
-    # span = upper - lower
-    return brentq(
-        equilibrium_residual,
-        lower,  # + delta_frac*span,
-        upper,  # - delta_frac*span,
-        (c0_m, stoich_m, K, activity_product)
-    )
-
-
-def solve_equilibrium(c0, stoich, K, activity_product=None):
-    """
-    Solve equilibrium concentrations by using scipy.optimize.brentq
-
-    Parameters
-    ----------
-    c0: array_like
-        Initial guess of equilibrium concentrations
-    stoich: tuple
-        per specie stoichiometry coefficient (law of mass action)
-    K: float
-        equilibrium constant
-    activity_product: callable
-        see ``equilibrium_residual``
-    delta_frac: float
-        to avoid division by zero the span of searched values for
-        the reactions coordinate (rc) is shrunk by 2*delta_frac*span(rc)
-    """
-    stoich = np.array(stoich)
-    c0 = np.array(c0)
-    rc = _solve_equilibrium_coord(c0, stoich, K, activity_product)
-    return c0 + rc*stoich
-
-
-def composition_balance(substances, concs, composition_number):
-    if not hasattr(concs, 'ndim') or concs.ndim == 1:
-        res = 0
-    elif concs.ndim == 2:
-        res = np.zeros(concs.shape[0])
-        concs = concs.T
-    else:
-        raise NotImplementedError
-    for s, c in zip(substances, concs):
-        res += s.composition.get(composition_number, 0)*c
-    return res
-
-
-class _NumSys(object):
-
-    small = 0  # precipitation limit
-    pre_processor = None
-    post_processor = None
-    internal_x0_cb = None
-
-    def __init__(self, eqsys, rref_equil=False, rref_preserv=False,
-                 backend=None, precipitates=()):
-        self.eqsys = eqsys
-        self.rref_equil = rref_equil
-        self.rref_preserv = rref_preserv
-        self.backend = get_backend(backend)
-        self.precipitates = precipitates
-
-    def _get_A_ks(self, eq_params):
-        non_precip_rids = self.eqsys.non_precip_rids(self.precipitates)
-        return self.eqsys.stoichs_constants(
-            self.eqsys.eq_constants(non_precip_rids, eq_params, self.small),
-            self.rref_equil, backend=self.backend, non_precip_rids=non_precip_rids)
-
-    def _inits_and_eq_params(self, params):
-        return params[:self.eqsys.ns], params[self.eqsys.ns:]
-
-
-class NumSysLin(_NumSys):
-
-    def internal_x0_cb(self, init_concs, params):
-        # reduce risk of stationary starting point
-        return (99*init_concs + self.eqsys.dissolved(init_concs))/100
-
-    def f(self, yvec, params):
-        from pyneqsys.symbolic import linear_exprs
-        init_concs, eq_params = self._inits_and_eq_params(params)
-        A, ks = self._get_A_ks(eq_params)
-        # yvec == C
-        f_equil = [q/k - 1 if k != 0 else q for q, k
-                   in zip(prodpow(yvec, A), ks)]
-        B, comp_nrs = self.eqsys.composition_balance_vectors()
-        f_preserv = linear_exprs(B, yvec, mat_dot_vec(B, init_concs),
-                                 rref=self.rref_preserv)
-        return f_equil + f_preserv
-
-
-class _NumSysLinNegPenalty(NumSysLin):
-
-    def f(self, yvec, params):
-        import sympy as sp
-        f_penalty = [sp.Piecewise((yi**2, yi < 0), (0, True)) for yi in yvec]
-        return super(_NumSysLinNegPenalty, self).f(yvec, params) + f_penalty
-
-
-class NumSysLinRel(NumSysLin):
-
-    def max_concs(self, params, min_=min, dtype=np.float64):
-        init_concs = params[:self.eqsys.ns]
-        return self.eqsys.upper_conc_bounds(init_concs, min_=min_, dtype=dtype)
-
-    def pre_processor(self, x, params):
-        return x/self.max_concs(params), params
-
-    def post_processor(self, x, params):
-        return x*self.max_concs(params), params
-
-    def f(self, yvec, params):
-        import sympy as sp
-        return NumSysLin.f(self, [m*yi for m, yi in zip(
-            self.max_concs(params, min_=lambda x: sp.Min(*x), dtype=object),
-            yvec)], params)
-
-
-class NumSysSquare(NumSysLin):
-
-    small = 1e-35
-
-    def pre_processor(self, x, params):
-        return (np.sqrt(np.abs(x)), params)
-
-    def post_processor(self, x, params):
-        return x**2, params
-
-    def internal_x0_cb(self, init_concs, params):
-        return np.sqrt(np.abs(init_concs))
-
-    def f(self, yvec, params):
-        ysq = [yi*yi for yi in yvec]
-        return NumSysLin.f(self, ysq, params)
-
-
-class NumSysLinTanh(NumSysLin):
-
-    def pre_processor(self, x, params):
-        ymax = self.eqsys.upper_conc_bounds(params[:self.eqsys.ns])
-        return np.arctanh((8*x/ymax - 4) / 5), params
-
-    def post_processor(self, x, params):
-        ymax = self.eqsys.upper_conc_bounds(params[:self.eqsys.ns])
-        return ymax*(4 + 5*np.tanh(x))/8, params
-
-    def internal_x0_cb(self, init_concs, params):
-        return self.pre_processor(init_concs, init_concs)[0]
-
-    def f(self, yvec, params):
-        import sympy
-        ymax = self.eqsys.upper_conc_bounds(
-            params[:self.eqsys.ns],
-            min_=lambda a, b: sympy.Piecewise((a, a < b), (b, True)))
-        ytanh = [yimax*(4 + 5*sympy.tanh(yi))/8
-                 for yimax, yi in zip(ymax, yvec)]
-        return NumSysLin.f(self, ytanh, params)
-
-
-class NumSysLog(_NumSys):
-
-    small = math.exp(-80)  # anything less than `small` is insignificant
-
-    def pre_processor(self, x, params):
-        return (np.log(np.asarray(x) + NumSysLog.small),  # 10: damping
-                params)  # zero conc. ~= small
-
-    def post_processor(self, x, params):
-        return np.exp(x), params
-
-    def internal_x0_cb(self, init_concs, params):
-        # return [1]*len(init_concs)
-        return [0.1]*len(init_concs)
-
-    def f(self, yvec, params):
-        from pyneqsys.symbolic import linear_exprs
-        init_concs, eq_params = self._inits_and_eq_params(params)
-        A, ks = self._get_A_ks(eq_params)
-        # yvec == ln(C)
-        f_equil = mat_dot_vec(A, yvec, [-self.backend.log(k) for k in ks])
-        B, comp_nrs = self.eqsys.composition_balance_vectors()
-        f_preserv = linear_exprs(B, list(map(self.backend.exp, yvec)),
-                                 mat_dot_vec(B, init_concs),
-                                 rref=self.rref_preserv)
-        return f_equil + f_preserv
+NumSysSquare = deprecated()(_NumSysSquare)
 
 
 class EqSystem(ReactionSystem):
+
+    _BaseReaction = Equilibrium
+    _BaseSubstance = Species
 
     def eq_constants(self, non_precip_rids=(), eq_params=None, small=0):
         if eq_params is None:
@@ -343,18 +111,17 @@ class EqSystem(ReactionSystem):
                 new_concs -= new_concs[s_idx]/s_stoich * net_stoich
         return new_concs
 
-    def _fw_cond_factory(self, ri):
+    def _fw_cond_factory(self, ri, rtol=1e-14):
         rxn = self.rxns[ri]
 
         def fw_cond(x, p):
-            precip_stoich_coeff = rxn.precipitate_stoich(self.substances)[1]
+            precip_stoich_coeff, precip_idx = rxn.precipitate_stoich(self.substances)[1:3]
             q = rxn.Q(self.substances, self.dissolved(x))
             k = rxn.K()
-            QoverK = q/k
             if precip_stoich_coeff > 0:
-                return QoverK < 1
+                return q*(1+rtol) < k
             elif precip_stoich_coeff < 0:
-                return QoverK > 1
+                return q > k*(1+rtol)
             else:
                 raise NotImplementedError
         return fw_cond
@@ -368,16 +135,6 @@ class EqSystem(ReactionSystem):
                 return False
             else:
                 return True
-            # precip_stoich_coeff = rxn.precipitate_stoich(self.substances)[1]
-            # q = rxn.Q(self.substances, self.dissolved(x))
-            # k = rxn.K()
-            # QoverK = q/k
-            # if precip_stoich_coeff > 0:
-            #     return QoverK <= 1
-            # elif prec_stoich_coeff < 0:
-            #     return QoverK >= 1
-            # else:
-            #     raise NotImplementedError
         return bw_cond
 
     def _SymbolicSys_from_NumSys(self, NS, conds, rref_equil, rref_preserv):
@@ -469,6 +226,28 @@ class EqSystem(ReactionSystem):
             return False
         return True
 
+    def _solve(self, init_concs, x0=None, NumSys=(NumSysLog, NumSysLin), neqsys='chained_conditional', **kwargs):
+        if isinstance(neqsys, str):
+            neqsys = self.get_neqsys(
+                neqsys, init_concs, NumSys=NumSys,
+                rref_equil=kwargs.pop('rref_equil', False),
+                rref_preserv=kwargs.pop('rref_preserv', False),
+                precipitates=kwargs.pop('precipitates', None))
+        if x0 is None:
+            x0 = init_concs
+        params = np.concatenate((init_concs, [float(elem) for elem
+                                              in self.eq_constants()]))
+        x, sol = neqsys.solve(x0, params, **kwargs)
+        if not sol['success']:
+            warnings.warn("Root-finding indicated as failed by solver.")
+        sane = self._result_is_sane(init_concs, x)
+        return x, sol, sane
+
+    def solve(self, init_concs, varied=None, **kwargs):
+        results = EqCalcResult(self, init_concs, varied)
+        results.solve()
+        return results
+
     def root(self, init_concs, x0=None, neqsys=None, NumSys=NumSysLog,
              neqsys_type='chained_conditional', **kwargs):
         init_concs = self.as_per_substance_array(init_concs)
@@ -509,21 +288,22 @@ class EqSystem(ReactionSystem):
         """
         Parameters
         ----------
-        init_concs: array or dict
-        varied_data: array
-        varied_idx: int or str
-        x0: array
-        NumSys: _NumSys subclass
+        init_concs : array or dict
+        varied_data : array
+        varied_idx : int or str
+        x0 : array
+        NumSys : _NumSys subclass
             See :class:`NumSysLin`, :class:`NumSysLog`, etc.
-        plot_kwargs: dict
+        plot_kwargs : dict
             See py:meth:`pyneqsys.NeqSys.solve`. Two additional keys
             are intercepted here:
                 latex_names: bool (default: False)
                 conc_unit_str: str (default: 'M')
-        neqsys_type: str
+        neqsys_type : str
             what method to use for NeqSys construction (get_neqsys_*)
-        \*\*kwargs:
+        \*\*kwargs :
             kwargs passed on to py:meth:`pyneqsys.NeqSys.solve_series`
+
         """
         _plot = plot_kwargs is not None
         if _plot:

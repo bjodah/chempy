@@ -84,7 +84,7 @@ def dCdt(rsys, rates):
     return f
 
 
-def get_odesys(rsys, include_params=False, substitutions=None,
+def get_odesys(rsys, include_params=True, substitutions=None,
                SymbolicSys=None,
                unit_registry=None, output_conc_unit=None,
                output_time_unit=None, **kwargs):
@@ -93,9 +93,8 @@ def get_odesys(rsys, include_params=False, substitutions=None,
     Parameters
     ----------
     rsys : ReactionSystem
-        note that if :attr:`param` if not RateExpr it will be inspected for
-        :meth:`_as_RateExpr`, lacking such it will be used to construct a
-        :class:`MassAction` instance.
+        note that if :attr:`param` if not RateExpr (or convertible to one through
+        :meth:`_as_RateExpr`) it will be used to construct a :class:`MassAction` instance.
     include_params : bool (default: False)
         whether rate constants should be included into the rate expressions or
         left as free parameters in the :class:`pyneqsys.SymbolicSys` instance.
@@ -185,7 +184,7 @@ def get_odesys(rsys, include_params=False, substitutions=None,
         p_units = [get_derived_unit(unit_registry, k) for k in param_keys]
         new_r_exprs = []
         for ratex in r_exprs:
-            _pu, _new_rates = ratex._dedimensionalisation(unit_registry)
+            _pu, _new_rates = ratex.dedimensionalisation(unit_registry)
             p_units.extend(_pu)
             new_r_exprs.append(_new_rates)
         r_exprs = new_r_exprs
@@ -220,7 +219,7 @@ def get_odesys(rsys, include_params=False, substitutions=None,
         ))
         for k, act in _active_subst.items():
             if unit_registry is not None:
-                _, act = act._dedimensionalisation(unit_registry)
+                _, act = act.dedimensionalisation(unit_registry)
             variables[k] = act(variables, backend=backend)
         variables.update(_passive_subst)
         return dCdt(rsys, [rat(variables, backend=backend) for rat in r_exprs])
