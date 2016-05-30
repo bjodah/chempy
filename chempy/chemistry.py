@@ -541,13 +541,11 @@ class Reaction(object):
 
     def all_reac_stoich(self, substances):
         """ Per substance reactant stoichiometry tuple (active & inactive) """
-        return tuple(self.reac.get(k, 0) + self.inact_reac.get(k, 0)
-                     for k in substances)
+        return tuple(self.reac.get(k, 0) + self.inact_reac.get(k, 0) for k in substances)
 
     def all_prod_stoich(self, substances):
         """ Per substance product stoichiometry tuple (active & inactive) """
-        return tuple(self.prod.get(k, 0) + self.inact_prod.get(k, 0)
-                     for k in substances)
+        return tuple(self.prod.get(k, 0) + self.inact_prod.get(k, 0) for k in substances)
 
     def _xprecipitate_stoich(self, substances, xor):
         return tuple((
@@ -573,9 +571,7 @@ class Reaction(object):
         return self._xprecipitate_stoich(substances, False)
 
     def has_precipitates(self, substances):
-        for s_name in chain(self.reac.keys(), self.prod.keys(),
-                            self.inact_reac.keys(),
-                            self.inact_prod.keys()):
+        for s_name in chain(self.reac.keys(), self.prod.keys(), self.inact_reac.keys(), self.inact_prod.keys()):
             if substances[s_name].precipitate:
                 return True
         return False
@@ -587,11 +583,9 @@ class Reaction(object):
             return arg
         nullstr, space = _str(''), _str(' ')
         reac, prod, i_reac, i_prod = [[
-            ((_str(v)+space) if v > 1 else nullstr) + _str(not_None(getattr(
-                substances[k], name_attr, k), k))
+            ((_str(v)+space) if v > 1 else nullstr) + _str(not_None(getattr(substances[k], name_attr, k), k))
             for k, v in filter(itemgetter(1), d.items())
-        ] for d in (self.reac, self.prod, self.inact_reac,
-                    self.inact_prod)]
+        ] for d in (self.reac, self.prod, self.inact_reac, self.inact_prod)]
         r_str = _str(" + ").join(sorted(reac))
         ir_str = (_str(' (+ ') + _str(" + ").join(sorted(i_reac)) + _str(')')
                   if len(i_reac) > 0 else nullstr)
@@ -982,29 +976,29 @@ class Equilibrium(Reaction):
     def __mul__(self, other):
         return other*self
 
-    def __add__(lhs, rhs):
+    def __add__(self, other):
         keys = set()
-        for key in chain(lhs.reac.keys(), lhs.prod.keys(),
-                         rhs.reac.keys(), rhs.prod.keys()):
+        for key in chain(self.reac.keys(), self.prod.keys(),
+                         other.reac.keys(), other.prod.keys()):
             keys.add(key)
         reac, prod = {}, {}
         for key in keys:
-            n = (lhs.prod.get(key, 0) - lhs.reac.get(key, 0) +
-                 rhs.prod.get(key, 0) - rhs.reac.get(key, 0))
+            n = (self.prod.get(key, 0) - self.reac.get(key, 0) +
+                 other.prod.get(key, 0) - other.reac.get(key, 0))
             if n < 0:
                 reac[key] = -n
             elif n > 0:
                 prod[key] = n
             else:
                 pass  # n == 0
-        if (lhs.param, rhs.param) == (None, None):
+        if (self.param, other.param) == (None, None):
             param = None
         else:
-            param = lhs.param * rhs.param
+            param = self.param * other.param
         return Equilibrium(reac, prod, param)
 
-    def __sub__(lhs, rhs):
-        return lhs + -1*rhs
+    def __sub__(self, other):
+        return self + -1*other
 
     @staticmethod
     def eliminate(rxns, wrt):
@@ -1113,7 +1107,7 @@ class ReactionSystem(object):
     def __init__(self, rxns, substances=None, name=None, checks=('balance', 'substance_keys',
                                                                  'duplicate', 'duplicate_names'),
                  substance_factory=Substance):
-        self.rxns = rxns
+        self.rxns = list(rxns)
         if substances is None:
             substances = set.union(*[set(rxn.keys()) for rxn in self.rxns])
         if isinstance(substances, OrderedDict):
@@ -1199,7 +1193,7 @@ class ReactionSystem(object):
         return True
 
     @classmethod
-    def from_string(cls, s):
+    def from_string(cls, s, **kwargs):
         """ Create a reaction system from a string
 
         Parameters
@@ -1216,7 +1210,7 @@ class ReactionSystem(object):
 
         """
         rxns = [cls._BaseReaction.from_string(r) for r in s.split('\n')]
-        return cls(rxns, substance_factory=cls._BaseSubstance.from_formula)
+        return cls(rxns, substance_factory=cls._BaseSubstance.from_formula, **kwargs)
 
     def __getitem__(self, key):
         candidate = None
@@ -1231,13 +1225,20 @@ class ReactionSystem(object):
         return candidate
 
     def __iadd__(self, other):
-        self.substances.update(other.substances)
-        self.rxns.extend(other.rxns)
+        try:
+            self.substances.update(other.substances)
+        except AttributeError:
+            self.rxns.extend(other)
+        else:
+            self.rxns.extend(other.rxns)
         return self
 
     def __add__(self, other):
-        substances = list(chain(self.substances.items(), other.substances.items()))
-        return self.__class__(self.rxns + other.rxns, substances, checks=())
+        try:
+            substances = list(chain(self.substances.items(), other.substances.items()))
+        except AttributeError:
+            substances = self.substances.copy()
+        return self.__class__(chain(self.rxns, getattr(other, 'rxns', other)), substances, checks=())
 
     def __eq__(self, other):
         if self is other:
@@ -1360,6 +1361,11 @@ class ReactionSystem(object):
         variables : dict
         backend : module, optional
         substance_keys : iterable of str, optional
+
+        Returns
+        -------
+        dict
+            per substance_key time derivatives of concentrations.
 
         Examples
         --------

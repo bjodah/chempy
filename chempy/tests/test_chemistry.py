@@ -214,6 +214,17 @@ def test_ReactionSystem__add():
     assert len(rs1.rxns) == 3 and len(rs2.rxns) == 1
     assert rs1 == rs3
 
+    rs4 = ReactionSystem.from_string("H2O -> H+ + OH-; 1e-4")
+    rs4 += [Reaction({'H+', 'OH-'}, {'H2O'}, 1e10)]
+    res = rs4.rates({'H2O': 1, 'H+': 1e-7, 'OH-': 1e-7})
+    for k in 'H2O H+ OH-'.split():
+        assert abs(res[k]) < 1e-16
+
+    rs5 = ReactionSystem.from_string("H3O+ -> H+ + H2O")
+    rs6 = rs4 + rs5
+    rs7 = rs6 + (Reaction.from_string("H+ + H2O -> H3O+"),)
+    assert len(rs7.rxns) == 4
+
 
 @requires(units_library)
 def test_Equilibrium__as_reactions():
@@ -234,6 +245,13 @@ def test_Reaction__from_string():
 
     with pytest.raises(ValueError):
         Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H OH-'.split())
+
+    r2 = Reaction.from_string("H2O -> H+ + OH-; 1e-4; ref='important_paper'")
+    assert r2.ref == 'important_paper'
+
+    with pytest.raises(ValueError):
+        Reaction.from_string("H2O -> H2O")
+    Reaction.from_string("H2O -> H2O; None; checks=()")
 
 
 @requires(parsing_library)
@@ -311,3 +329,13 @@ def test_balance_stoichiometry():
     assert p3 == {'CO2': 4, 'H2O': 6}
     with pytest.raises(ValueError):
         reac, prod = balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'})
+
+
+@requires(parsing_library)
+def test_ReactionSystem__from_string():
+    rs = ReactionSystem.from_string('-> H + OH; Radiolytic(2.1e-7)', checks=())
+    assert rs.rxns[0].reac == {}
+    assert rs.rxns[0].prod == {'H': 1, 'OH': 1}
+    assert rs.rxns[0].param.args == [2.1e-7]
+    ref = 2.1e-7 * 0.15 * 998
+    assert rs.rates({'doserate': .15, 'density': 998}) == {'H': ref, 'OH': ref}
