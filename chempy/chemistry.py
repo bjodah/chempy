@@ -7,6 +7,7 @@ from itertools import chain
 from operator import itemgetter, mul
 import math
 import sys
+import warnings
 
 from .util.arithmeticdict import ArithmeticDict
 from .util.parsing import (
@@ -16,7 +17,7 @@ from .util.parsing import (
 
 from .units import to_unitless, default_units
 from ._util import intdiv
-from .util.pyutil import deprecated
+from .util.pyutil import deprecated, ChemPyDeprecationWarning
 
 
 class Substance(object):
@@ -24,16 +25,16 @@ class Substance(object):
 
     Parameters
     ----------
-    name: str
-    charge: int (optional, default: None)
+    name : str
+    charge : int (optional, default: None)
         will be stored in composition[0], prefer composition when possible
-    latex_name: str
-    unicode_name: str
-    html_name: str
-    composition: dict or None (default)
+    latex_name : str
+    unicode_name : str
+    html_name : str
+    composition : dict or None (default)
         dict (int -> number) e.g. {atomic number: count}, zero has special
         meaning (net charge)
-    other_properties: dict
+    data : dict
         free form dictionary. Could be simple such as ``{'mp': 0, 'bp': 100}``
         or considerably more involved, e.g.: ``{'diffusion_coefficient': {\
  'water': lambda T: 2.1*m**2/s/K*(T - 273.15*K)}}``
@@ -41,21 +42,25 @@ class Substance(object):
     Attributes
     ----------
     mass
-        maps to other_properties, and when unavailable looks for formula.mass
+        maps to data['mass'], and when unavailable looks for formula.mass
     attrs
         a tuple of attribute names for serialization
+    data
+        free form dict
+    other_properties
+        deprecated alias to :attr:`data`
 
     Examples
     --------
     >>> ammonium = Substance('NH4+', 1, 'NH_4^+', composition={7: 1, 1: 4},
-    ...     other_properties={'mass': 18.0385, 'pKa': 9.24})
+    ...     data={'mass': 18.0385, 'pKa': 9.24})
     >>> ammonium.name
     'NH4+'
     >>> ammonium.composition  # note that charge was inserted as composition[0]
     {0: 1, 1: 4, 7: 1}
-    >>> ammonium.other_properties['mass']
+    >>> ammonium.data['mass']
     18.0385
-    >>> ammonium.other_properties['pKa']
+    >>> ammonium.data['pKa']
     9.24
     >>> ammonium.mass  # mass is a special case (also attribute)
     18.0385
@@ -73,7 +78,7 @@ class Substance(object):
 
     attrs = (
         'name', 'latex_name', 'unicode_name', 'html_name',
-        'composition', 'other_properties'
+        'composition', 'data'
     )
 
     @property
@@ -83,21 +88,31 @@ class Substance(object):
 
     @property
     def mass(self):
-        """ Convenience property for accessing ``other_properties['mass']``
+        """ Convenience property for accessing ``data['mass']``
 
-        when ``other_properties['mass']`` is missing the mass is calculated
+        when ``data['mass']`` is missing the mass is calculated
         from the :attr:`composition` using
         :func:`chempy.util.parsing.mass_from_composition`.
         """
         try:
-            return self.other_properties['mass']
+            return self.data['mass']
         except KeyError:
             if self.composition is not None:
                 return mass_from_composition(self.composition)
 
     @mass.setter
     def mass(self, value):
-        self.other_properties['mass'] = value
+        self.data['mass'] = value
+
+    @property
+    @deprecated(will_be_missing_in='0.4.0')
+    def other_properties(self):
+        return self.data
+
+    @other_properties.setter
+    @deprecated(will_be_missing_in='0.4.0')
+    def other_properties(self, value):
+        self.data = value
 
     def molar_mass(self, units=None):
         """ Returns the molar mass (with units) of the substance
@@ -115,7 +130,13 @@ class Substance(object):
         return self.mass*units.g/units.mol
 
     def __init__(self, name=None, charge=None, latex_name=None, unicode_name=None,
-                 html_name=None, composition=None, other_properties=None):
+                 html_name=None, composition=None, data=None, other_properties=None):
+        if other_properties is not None:  # will_be_missing_in='0.4.0'
+            if data is not None:
+                raise ValueError("Cannot take both data and other_properties")
+            else:
+                data = other_properties
+                warnings.warn("use data kwarg instead of other_properties", ChemPyDeprecationWarning)
         self.name = name
         self.latex_name = latex_name
         self.unicode_name = unicode_name
@@ -128,7 +149,7 @@ class Substance(object):
         else:
             if charge is not None:
                 self.composition[0] = charge
-        self.other_properties = other_properties or {}
+        self.data = data or {}
 
     @classmethod
     def from_formula(cls, formula, **kwargs):
@@ -336,7 +357,7 @@ class Reaction(object):
     if neither: `param` will be assumed to be a rate constant for a mass-action
     type of kinetic expression.
 
-    Additional data may be stored in the ``other_properties`` dict.
+    Additional data may be stored in the ``data`` dict.
 
 
     Parameters
@@ -355,7 +376,7 @@ class Reaction(object):
     k : deprecated (alias for param)
     ref : object
         reference
-    other_properties : dict (optional)
+    data : dict (optional)
     checks : iterable of str
         raises value error if any method check_%s returns False
         for all %s in checks.
@@ -369,7 +390,7 @@ class Reaction(object):
     inact_prod: dict
     name: str
     ref: str
-    other_properties: dict
+    data: dict
 
     Examples
     --------
@@ -386,7 +407,7 @@ class Reaction(object):
     """
 
     _cmp_attr = ('reac', 'prod', 'param', 'inact_reac', 'inact_prod')
-    _all_attr = _cmp_attr + ('name', 'ref', 'other_properties')
+    _all_attr = _cmp_attr + ('name', 'ref', 'data')
 
     str_arrow = '->'
     latex_arrow = r'\rightarrow'
@@ -396,7 +417,7 @@ class Reaction(object):
 
     def __init__(
             self, reac, prod, param=None, inact_reac=None, inact_prod=None,
-            name=None, ref=None, other_properties=None,
+            name=None, ref=None, data=None,
             checks=('any_effect', 'all_positive', 'all_integral')):
         if isinstance(reac, set):
             reac = {k: 1 for k in reac}
@@ -413,7 +434,7 @@ class Reaction(object):
         self.inact_prod = inact_prod or {}
         self.name = name
         self.ref = ref
-        self.other_properties = other_properties or {}
+        self.data = data or {}
 
         from .kinetics.rates import RateExpr
         if isinstance(self.param, RateExpr) and self.param.rxn is None:

@@ -49,9 +49,9 @@ class Expr(object):
     ...         return molar_c_v/molar_mass
     ...
     >>> from chempy import Substance
-    >>> Al = Substance.from_formula('Al', other_properties={'DebyeT': 428})
-    >>> Be = Substance.from_formula('Be', other_properties={'DebyeT': 1440})
-    >>> einT = lambda s: 0.806*s.other_properties['DebyeT']
+    >>> Al = Substance.from_formula('Al', data={'DebyeT': 428})
+    >>> Be = Substance.from_formula('Be', data={'DebyeT': 1440})
+    >>> einT = lambda s: 0.806*s.data['DebyeT']
     >>> cv = {s.name: EinsteinSolid([einT(s), s.mass]) for s in (Al, Be)}
     >>> print('%.4f' % cv['Al']({'temperature': 273.15, 'molar_gas_constant': 8.3145}))  # J/(g*K)
     0.8108

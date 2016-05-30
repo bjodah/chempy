@@ -76,7 +76,7 @@ issues/%s/' % s.lstrip('gh-')``.
                  warning=DeprecationWarning):
         if last_supported_version is not None and\
            not isinstance(last_supported_version, (str, tuple, list)) and\
-           callble(last_supported_version):
+           callable(last_supported_version):
             raise ValueError("last_supported_version not str, tuple or list")
 
         self.last_supported_version = last_supported_version
