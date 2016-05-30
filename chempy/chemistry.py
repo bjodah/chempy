@@ -13,6 +13,7 @@ from .util.parsing import (
     formula_to_composition, mass_from_composition, to_reaction,
     formula_to_latex, formula_to_unicode, formula_to_html
 )
+
 from .units import to_unitless, default_units
 from ._util import intdiv
 from .util.pyutil import deprecated
@@ -1382,8 +1383,7 @@ class ReactionSystem(object):
             -np.array(eq.precipitate_stoich(self.substances)[0]) if idx
             in non_precip_rids else
             eq.non_precipitate_stoich(self.substances)
-        ) for idx, eq in enumerate(self.rxns)],
-                        dtype=object)
+        ) for idx, eq in enumerate(self.rxns)], dtype=object)
 
     def obeys_mass_balance(self):
         """ Returns True if all reactions obeys mass balance, else False. """
@@ -1605,7 +1605,7 @@ def balance_stoichiometry(reactants, products, substances=None,
                 for ci, comp in enumerate(A[ri, :]):
                     if ci == si:
                         continue
-                    if x[ci] == None:
+                    if x[ci] is None:
                         raise NotImplementedError("Need a second LU solve")
                     others += comp*x[ci]
                 x[si] = -others/cell

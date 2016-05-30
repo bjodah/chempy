@@ -7,11 +7,6 @@ from __future__ import (absolute_import, division, print_function)
 from collections import OrderedDict, defaultdict
 from itertools import chain
 
-import numpy as np
-from bokeh.plotting import Figure
-from bokeh.models import ColumnDataSource, HBox, VBoxForm
-from bokeh.models.widgets import Slider
-
 from chempy.kinetics.ode import get_odesys
 from chempy.units import to_unitless, linspace
 
@@ -20,6 +15,12 @@ def integration_with_sliders(
         rsys, tend, c0, parameters, fig_kwargs=None, unit_registry=None, output_conc_unit=None,
         output_time_unit=None, slider_kwargs=None, x_axis_type="linear", y_axis_type="linear",
         integrate_kwargs=None):
+
+    import numpy as np
+    from bokeh.plotting import Figure
+    from bokeh.models import ColumnDataSource, HBox, VBoxForm
+    from bokeh.models.widgets import Slider
+
     if slider_kwargs is None:
         slider_kwargs = {}
     odesys, state_keys, rarg_keys, p_units = get_odesys(

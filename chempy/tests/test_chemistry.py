@@ -9,9 +9,15 @@ from ..util.testing import requires
 from ..util.parsing import parsing_library
 from ..units import default_units, units_library, to_unitless
 from ..chemistry import (
-    Substance, Species, Reaction, ReactionSystem, Equilibrium,
-    balance_stoichiometry
+    equilibrium_quotient, Substance, Species, Reaction, ReactionSystem,
+    Equilibrium, balance_stoichiometry
 )
+
+
+@requires('numpy')
+def test_equilibrium_quotient():
+    assert abs(equilibrium_quotient([2.3, 3.7, 5.1], (-1, -1, 1)) -
+               5.1/2.3/3.7) < 1e-14
 
 
 @requires(parsing_library)

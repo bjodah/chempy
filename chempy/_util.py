@@ -123,3 +123,16 @@ def mat_dot_vec(iter_mat, iter_vec, iter_term=None):  # pure python (slow)
         # daxpy
         return [vec_dot_vec(row, iter_vec) + term for row, term
                 in zip(iter_mat, iter_term)]
+
+
+# def composition_balance(substances, concs, composition_number):
+#     if not hasattr(concs, 'ndim') or concs.ndim == 1:
+#         res = 0
+#     elif concs.ndim == 2:
+#         res = np.zeros(concs.shape[0])
+#         concs = concs.T
+#     else:
+#         raise NotImplementedError
+#     for s, c in zip(substances, concs):
+#         res += s.composition.get(composition_number, 0)*c
+#     return res

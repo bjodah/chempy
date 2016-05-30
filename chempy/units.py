@@ -47,8 +47,8 @@ else:
             'M',  default_units.mole / default_units.decimetre ** 3,
             u_symbol='M')
     default_units.molal = pq.UnitQuantity(
-            'molal',  default_units.mole / default_units.kg,
-            u_symbol='molal')
+        'molal',  default_units.mole / default_units.kg,
+        u_symbol='molal')
     default_units.per100eV = pq.UnitQuantity(
         'per_100_eV',
         1/(100*default_units.eV*default_constants.Avogadro_constant),

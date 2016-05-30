@@ -7,8 +7,6 @@ Add --show argument or navigate to:
 """
 from collections import defaultdict
 
-from bokeh.io import curdoc
-
 from chempy import Reaction, ReactionSystem
 from chempy.kinetics.rates import MassAction
 from chempy.util.bkh import integration_with_sliders
@@ -23,6 +21,7 @@ def get_rsys():
 
 if __name__.startswith('bk_'):
     # TODO: better xlim, ylim, ranges for c0
+    from bokeh.io import curdoc
     curdoc().add_root(integration_with_sliders(
         get_rsys(), tend=1e3,
         c0=defaultdict(float, {'A': 1}),

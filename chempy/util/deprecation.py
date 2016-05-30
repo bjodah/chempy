@@ -74,6 +74,11 @@ issues/%s/' % s.lstrip('gh-')``.
     def __init__(self, last_supported_version=None, will_be_missing_in=None,
                  use_instead=None, issue=None, issues_url=None,
                  warning=DeprecationWarning):
+        if last_supported_version is not None and\
+           not isinstance(last_supported_version, (str, tuple, list)) and\
+           callble(last_supported_version):
+            raise ValueError("last_supported_version not str, tuple or list")
+
         self.last_supported_version = last_supported_version
         self.will_be_missing_in = will_be_missing_in
         self.use_instead = use_instead

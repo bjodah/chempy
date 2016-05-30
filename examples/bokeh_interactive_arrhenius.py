@@ -7,8 +7,6 @@ Add --show argument or navigate to:
 """
 from collections import defaultdict
 
-from bokeh.io import curdoc
-
 from chempy import Reaction, ReactionSystem
 from chempy.arrhenius import ArrheniusParam
 from chempy.util.bkh import integration_with_sliders
@@ -21,6 +19,7 @@ def get_rsys(Af=1e16, Ab=1.5e15, Ea=72e3, Er=-12e3):
 
 
 if __name__.startswith('bk_'):
+    from bokeh.io import curdoc
     curdoc().add_root(integration_with_sliders(
         get_rsys(), tend=3,
         c0=defaultdict(float, {'Fe+3': 3e-3, 'SCN-': 1.5e-3}),

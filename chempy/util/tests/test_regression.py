@@ -13,7 +13,7 @@ def test_irls():
     b, c, info = irls(x, np.log(y), full_output=True)
     assert abs(b[1] + 1/47) < 1e-5
     assert np.all(c < 1e-4)
-    assert info['success'] == True
+    assert info['success'] is True
     assert info['niter'] < 3
 
 

@@ -291,8 +291,7 @@ def rsys2pdf_table(rsys, output_dir=None, doc_template=None,
     _envs = ['tiny'] + (['landscape'] if landscape else [])
     defaults = {
         'usepkg': '\n'.join([(r'\usepackage' + (
-            '[%s]' if isinstance(pkg, tuple) else '') + '{%s}') % pkg for
-                             pkg in _pkgs]),
+            '[%s]' if isinstance(pkg, tuple) else '') + '{%s}') % pkg for pkg in _pkgs]),
         'begins': '\n'.join([r'\begin{%s}' % env for env in _envs]),
         'ends': '\n'.join([r'\end{%s}' % env for env in _envs[::-1]])
     }

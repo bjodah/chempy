@@ -7,7 +7,6 @@ Add --show argument or navigate to:
 """
 from collections import defaultdict
 
-from bokeh.io import curdoc
 from chempy.util.bkh import integration_with_sliders
 from chempy.units import SI_base_registry, default_units as u
 
@@ -15,6 +14,7 @@ from bokeh_interactive_arrhenius import get_rsys
 
 
 if __name__.startswith('bk_'):
+    from bokeh.io import curdoc
     Af, Ab, Ea, Er = 1e16/u.molar/u.s, 1.5e15/u.s, 72e3*u.J/u.mol, -12e3*u.J/u.mol
     curdoc().add_root(integration_with_sliders(
         get_rsys(Af, Ab, Ea, Er), tend=3*u.s,
