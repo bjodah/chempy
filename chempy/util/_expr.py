@@ -84,8 +84,13 @@ class Expr(object):
     def __init__(self, args, unique_keys=None, **kwargs):
         if self.argument_names is not None and self.argument_names[-1] != Ellipsis and self.nargs is None:
             self.nargs = len(self.argument_names)
-        if self.nargs not in (None, -1) and len(args) != self.nargs:
-            raise ValueError("Incorrect number of arguments: %d (expected %d)" % (len(args), self.nargs))
+        if self.nargs == 1 and (isinstance(args, (float, int)) or getattr(args, 'ndim', -1) == 0):
+            args = [args]
+            nargs = 1
+        else:
+            nargs = len(args)
+        if self.nargs not in (None, -1) and nargs != self.nargs:
+            raise ValueError("Incorrect number of arguments: %d (expected %d)" % (nargs, self.nargs))
         if unique_keys is not None and self.nargs is not None and len(unique_keys) != self.nargs:
             raise ValueError("Incorrect number of unique_keys: %d (expected %d)" % (len(unique_keys), self.nargs))
         self.unique_keys = unique_keys

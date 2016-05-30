@@ -281,3 +281,32 @@ def test_Expr__latex():
     cv_Al.unique_keys = ('TE_Al', 'm_Al')
     res = cv_Al.latex({'TE_Al': TE, 'temperature': 'T', 'x': 'E', 'molar_gas_constant': 'R', 'm_Al': 'm'})
     assert res == ref
+
+
+def test_Expr__single_arg():
+    class Pressure(Expr):
+        argument_names = ('n',)
+        parameter_keys = ('temperature', 'volume', 'R')
+
+        def __call__(self, variables, backend=None):
+            n, = self.all_args(variables, backend=backend)
+            T, V, R = self.all_params(variables, backend=backend)
+            return n*R*T/V
+    p = Pressure(3)
+    assert abs(p({'temperature': 273.15, 'volume': 0.17, 'R': 8.314}) - 3*8.314*273.15/0.17) < 1e-15
+
+
+@requires(units_library)
+def test_Expr__single_arg__units():
+
+    class Pressure(Expr):
+        argument_names = ('n',)
+        parameter_keys = ('temperature', 'volume', 'R')
+
+        def __call__(self, variables, backend=None):
+            n, = self.all_args(variables, backend=backend)
+            T, V, R = self.all_params(variables, backend=backend)
+            return n*R*T/V
+    p = Pressure(3*u.mol)
+    variables = {'temperature': 273.15*u.kelvin, 'volume': 170*u.dm3, 'R': 8.314*u.J/u.K/u.mol}
+    assert allclose(p(variables), 3*8.314*273.15/0.17*u.Pa)
