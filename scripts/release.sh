@@ -1,7 +1,7 @@
 #!/bin/bash -xeu
 # Usage:
 #
-#    $ ./scripts/release.sh v1.2.3 ~/anaconda2/bin myserver
+#    $ ./scripts/release.sh v1.2.3 ~/anaconda2/bin
 #
 
 if [[ $1 != v* ]]; then
@@ -10,7 +10,6 @@ if [[ $1 != v* ]]; then
 fi
 VERSION=${1#v}
 ANACONDA_BIN_PATH=$2
-SERVER=$3
 ./scripts/check_clean_repo_on_master.sh
 cd $(dirname $0)/..
 # PKG will be name of the directory one level up containing "__init__.py" 
@@ -29,14 +28,3 @@ git tag -a v$VERSION -m v$VERSION
 git push
 git push --tags
 twine upload dist/${PKG}-$VERSION.tar.gz
-MD5=$(md5sum dist/${PKG}-$VERSION.tar.gz | cut -f1 -d' ')
-cp -r conda-recipe/ dist/conda-recipe-$VERSION
-sed -i -E -e "s/version:(.+)/version: $VERSION/" -e "s/path:(.+)/fn: $PKG-$VERSION.tar.gz\n  url: https:\/\/pypi.python.org\/packages\/source\/${PKG:0:1}\/$PKG\/$PKG-$VERSION.tar.gz#md5=$MD5\n  md5: $MD5/" dist/conda-recipe-$VERSION/meta.yaml
-env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION python setup.py upload_sphinx
-
-# Specific for this project:
-scp -r dist/conda-recipe-$VERSION/ $PKG@$SERVER:~/public_html/conda-recipes/
-scp dist/${PKG}-$VERSION.tar.gz $PKG@$SERVER:~/public_html/releases/
-for CONDA_PY in 2.7 3.4 3.5; do
-    ssh $PKG@$SERVER "source /etc/profile; conda-build --python $CONDA_PY ~/public_html/conda-recipes/conda-recipe-$VERSION/"
-done
