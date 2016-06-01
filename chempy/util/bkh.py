@@ -8,13 +8,13 @@ from collections import OrderedDict, defaultdict
 from itertools import chain
 
 from chempy.kinetics.ode import get_odesys
-from chempy.units import to_unitless, linspace
+from chempy.units import to_unitless, linspace, logspace10
 
 
 def integration_with_sliders(
         rsys, tend, c0, parameters, fig_kwargs=None, unit_registry=None, output_conc_unit=None,
         output_time_unit=None, slider_kwargs=None, x_axis_type="linear", y_axis_type="linear",
-        integrate_kwargs=None):
+        integrate_kwargs=None, substitutions=None):
 
     import numpy as np
     from bokeh.plotting import Figure
@@ -24,7 +24,7 @@ def integration_with_sliders(
     if slider_kwargs is None:
         slider_kwargs = {}
     odesys, state_keys, rarg_keys, p_units = get_odesys(
-        rsys, unit_registry=unit_registry,
+        rsys, unit_registry=unit_registry, substitutions=substitutions,
         output_conc_unit=output_conc_unit,
         output_time_unit=output_time_unit)[:4]
     if output_conc_unit is None:
@@ -33,7 +33,13 @@ def integration_with_sliders(
         output_conc_unit = 1
 
     param_keys = list(chain(state_keys, rarg_keys))
-    tout = linspace(tend*0, tend)
+    if x_axis_type == 'linear':
+        tout = linspace(tend*0, tend)
+    elif x_axis_type == 'log':
+        tout = logspace10(tend*1e-9, tend)
+    else:
+        raise NotImplementedError("Unknown x_axis_type: %s" % x_axis_type)
+
     tout, Cout, info = odesys.integrate(tout, c0, parameters, **(integrate_kwargs or {}))
     sources = [ColumnDataSource(data={
         'tout': to_unitless(tout, output_time_unit),
@@ -73,7 +79,7 @@ def integration_with_sliders(
                        slider_kwargs.get(k, dict(start=v/10, end=v*10, step=v/10)),
                        u)))
         for k, v, u in zip(param_keys, p_ul, p_units)])
-    all_widgets = list(chain(c0_widgets.values(), param_widgets.values()))
+    all_widgets = list(chain(param_widgets.values(), c0_widgets.values()))
 
     def update_data(attrname, old, new):
         _c0 = defaultdict(lambda: 0*output_conc_unit)

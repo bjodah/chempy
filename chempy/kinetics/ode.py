@@ -162,7 +162,6 @@ def get_odesys(rsys, include_params=True, substitutions=None,
             if ratex.unique_keys is not None:
                 unique_keys.extend(ratex.unique_keys)
                 p_defaults.extend(ratex.args)
-
     if unit_registry is None:
         def pre_processor(x, y, p):
             return (
@@ -184,9 +183,9 @@ def get_odesys(rsys, include_params=True, substitutions=None,
         p_units = [get_derived_unit(unit_registry, k) for k in param_keys]
         new_r_exprs = []
         for ratex in r_exprs:
-            _pu, _new_rates = ratex.dedimensionalisation(unit_registry)
+            _pu, _new_rate = ratex._recursive_as_RateExpr().dedimensionalisation(unit_registry)
             p_units.extend(_pu)
-            new_r_exprs.append(_new_rates)
+            new_r_exprs.append(_new_rate)
         r_exprs = new_r_exprs
 
         time_unit = get_derived_unit(unit_registry, 'time')

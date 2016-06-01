@@ -18,7 +18,7 @@ if __name__.startswith('bk_'):
     Af, Ab, Ea, Er = 1e16/u.molar/u.s, 1.5e15/u.s, 72e3*u.J/u.mol, -12e3*u.J/u.mol
     curdoc().add_root(integration_with_sliders(
         get_rsys(Af, Ab, Ea, Er), tend=3*u.s,
-        c0=defaultdict(float, {'Fe+3': 3e-3*u.molar, 'SCN-': 1.5e-3*u.molar}),
+        c0=defaultdict(lambda: 0*u.molar, {'Fe+3': 3e-3*u.molar, 'SCN-': 1.5e-3*u.molar}),
         parameters={'temperature': 298.15*u.K},
         slider_kwargs={'temperature': dict(start=273.15*u.K, end=313.15*u.K, step=.05*u.K)},
         unit_registry=SI_base_registry,

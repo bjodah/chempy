@@ -31,6 +31,22 @@ class RateExpr(Expr):
             if isinstance(arg, RateExpr):
                 arg.rxn = value
 
+    def _recursive_as_RateExpr(self):
+        new_args = []
+        for arg in self.args:
+            if isinstance(arg, Expr):
+                new_args.append(arg)
+            else:
+                if hasattr(arg, '_as_RateExpr'):
+                    new_args.append(arg._as_RateExpr(self.rxn))
+                else:
+                    new_args.append(arg)
+        if self.kw is None:
+            kw = {}
+        else:
+            kw = {k: getattr(self, k) for k in self.kw}
+        return self.__class__(new_args, self.unique_keys, **kw)
+
     @classmethod
     @deprecated(use_instead=Expr.from_callback)
     def subclass_from_callback(cls, cb, cls_attrs=None):
@@ -168,6 +184,22 @@ class MassAction(RateExpr):
 
 
 class ArrheniusMassAction(MassAction):
+    """ Rate expression for a Arrhenius-type of rate
+
+    Examples
+    --------
+    >>> from math import exp
+    >>> from chempy import Reaction
+    >>> from chempy.units import allclose, default_units as u
+    >>> A = 1e11 / u.second
+    >>> Ea_over_R = 42e3/8.3145 * u.K**-1
+    >>> ratex = ArrheniusMassAction([A, Ea_over_R])
+    >>> rxn = Reaction({'R'}, {'P'}, ratex)
+    >>> dRdt = rxn.rate({'R': 3*u.M, 'temperature': 298.15*u.K})['R']
+    >>> allclose(dRdt, -3*1e11*exp(-42e3/8.3145/298.15)*u.M/u.s)
+    True
+
+    """
     argument_names = ('A', 'Ea_over_R')
     parameter_keys = ('temperature',)
 

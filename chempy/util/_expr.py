@@ -12,6 +12,7 @@ import math
 from functools import reduce
 from itertools import chain
 from operator import add, mul, truediv, sub
+from .pyutil import defaultkeydict
 
 
 class Expr(object):
@@ -55,8 +56,8 @@ class Expr(object):
     >>> cv = {s.name: EinsteinSolid([einT(s), s.mass]) for s in (Al, Be)}
     >>> print('%.4f' % cv['Al']({'temperature': 273.15, 'molar_gas_constant': 8.3145}))  # J/(g*K)
     0.8108
-    >>> import sympy
-    >>> print(cv['Be']({'temperature': sympy.Symbol('T'), 'molar_gas_constant': sympy.Symbol('R')}, backend=sympy))
+    >>> import sympy; from sympy import Symbol as Symb
+    >>> print(cv['Be']({'temperature': Symb('T'), 'molar_gas_constant': Symb('R')}, backend=sympy))
     112105.346283965*R/(T**2*sinh(580.32/T)**2)
 
     Attributes
@@ -104,6 +105,44 @@ class Expr(object):
         if kwargs:
             raise ValueError("Unexpected keyword arguments %s" % kwargs)
 
+    @classmethod
+    def from_callback(cls, callback, **kwargs):
+        """ Factory of subclasses
+
+        Parameters
+        ----------
+        callback : callable
+            signature: *args, backend=None
+        argument_names : tuple of str, optional
+        parameter_keys : tuple of str, optional,
+        kw : dict, optional
+        nargs : int, optional
+
+        Examples
+        --------
+        >>> from operator import add; from functools import reduce
+        >>> def poly(args, x, backend=None):
+        ...     x0 = args[0]
+        ...     return reduce(add, [c*(x-x0)**i for i, c in enumerate(args[1:])])
+        ...
+        >>> Poly = Expr.from_callback(poly, parameter_keys=('x',), argument_names=('x0', Ellipsis))
+        >>> p = Poly([1, 3, 2, 5])
+        >>> p({'x': 7}) == 3 + 2*(7-1) + 5*(7-1)**2
+        True
+        >>> q = Poly([1, 3, 2, 5], unique_keys=('x0_q',))
+        >>> q({'x': 7, 'x0_q': 0}) == 3 + 2*7 + 5*7**2
+        True
+
+        """
+        class Wrapper(cls):
+            def __call__(self, variables, backend=math):
+                args = self.all_args(variables, backend=backend)
+                params = self.all_params(variables, backend=backend)
+                return callback(args, *params, backend=backend)
+        for k, v in kwargs.items():
+            setattr(Wrapper, k, v)
+        return Wrapper
+
     def __call__(self, variables, backend=None):
         raise NotImplementedError("Subclass and implement __call__")
 
@@ -134,20 +173,20 @@ class Expr(object):
     def string(self, arg_fmt=str, **kwargs):
         return self._str(arg_fmt, **kwargs)
 
-    def arg(self, variables, index, backend=None):
+    def arg(self, variables, index, backend=None, evaluate=True):
         if isinstance(index, str):
             index = self.argument_names.index(index)
         if self.unique_keys is None or len(self.unique_keys) <= index:
             res = self.args[index]
         else:
             res = variables.get(self.unique_keys[index], self.args[index])
-        if isinstance(res, Expr):
+        if isinstance(res, Expr) and evaluate:
             return res(variables, backend=backend)
         else:
             return res
 
-    def all_args(self, variables, backend=None):
-        return [self.arg(variables, i, backend) for i in range(len(self.args))]
+    def all_args(self, variables, backend=None, evaluate=True):
+        return [self.arg(variables, i, backend, evaluate) for i in range(len(self.args))]
 
     def all_params(self, variables, backend=None):
         return [v(variables, backend=backend) if isinstance(v, Expr) else v for v
@@ -189,9 +228,9 @@ class Expr(object):
         """
         from ..units import default_unit_in_registry, to_unitless
         units = [None if isinstance(arg, Expr) else default_unit_in_registry(arg, unit_registry) for arg
-                 in self.all_args(variables, backend=backend)]
+                 in self.all_args(variables, backend=backend, evaluate=False)]
         new_units, unitless_args = [], []
-        for arg, unit in zip(self.all_args(variables, backend=backend), units):
+        for arg, unit in zip(self.all_args(variables, backend=backend, evaluate=False), units):
             if isinstance(arg, Expr):
                 if unit is not None:
                     raise ValueError()
@@ -206,12 +245,14 @@ class Expr(object):
             kw = {k: getattr(self, k) for k in self.kw}
         return new_units, self.__class__(unitless_args, self.unique_keys, **kw)
 
-    def _sympy_format(self, method, variables, backend):
+    def _sympy_format(self, method, variables, backend, default):
         variables = variables or {}
         if backend is None:
             import sympy as backend
-        variables = {k: v if isinstance(v, Expr) else backend.Symbol(v) for k, v in variables.items()}
-        expr = self(variables, backend=backend)
+        variables = defaultkeydict(
+            None if default is None else (lambda k: backend.Symbol(default(k))),
+            {k: v if isinstance(v, Expr) else backend.Symbol(v) for k, v in variables.items()})
+        expr = self(variables, backend=backend).simplify()
         if method == 'latex':
             return backend.latex(expr)
         elif method == 'unicode':
@@ -222,12 +263,14 @@ class Expr(object):
         else:
             raise NotImplementedError("Unknown method: %s" % method)
 
-    def latex(self, variables=None, backend=None):
+    def latex(self, variables=None, backend=None, default=None):
         r"""
         Parameters
         ----------
         variables : dict
         backend : module
+        default : callable
+            Format string based on missing key, signature: str -> str.
 
         Examples
         --------
@@ -243,45 +286,7 @@ class Expr(object):
         Requires SymPy
 
         """
-        return self._sympy_format('latex', variables, backend)
-
-    @classmethod
-    def from_callback(cls, callback, **kwargs):
-        """ Factory of subclasses
-
-        Parameters
-        ----------
-        callback : callable
-            signature: *args, backend=None
-        argument_names : tuple of str, optional
-        parameter_keys : tuple of str, optional,
-        kw : dict, optional
-        nargs : int, optional
-
-        Examples
-        --------
-        >>> from operator import add; from functools import reduce
-        >>> def poly(args, x, backend=None):
-        ...     x0 = args[0]
-        ...     return reduce(add, [c*(x-x0)**i for i, c in enumerate(args[1:])])
-        ...
-        >>> Poly = Expr.from_callback(poly, parameter_keys=('x',), argument_names=('x0', Ellipsis))
-        >>> p = Poly([1, 3, 2, 5])
-        >>> p({'x': 7}) == 3 + 2*(7-1) + 5*(7-1)**2
-        True
-        >>> q = Poly([1, 3, 2, 5], unique_keys=('x0_q',))
-        >>> q({'x': 7, 'x0_q': 0}) == 3 + 2*7 + 5*7**2
-        True
-
-        """
-        class Wrapper(cls):
-            def __call__(self, variables, backend=math):
-                args = self.all_args(variables, backend=backend)
-                params = self.all_params(variables, backend=backend)
-                return callback(args, *params, backend=backend)
-        for k, v in kwargs.items():
-            setattr(Wrapper, k, v)
-        return Wrapper
+        return self._sympy_format('latex', variables, backend=backend, default=default)
 
     def __eq__(self, other):
         if self.__class__ != other.__class__:
