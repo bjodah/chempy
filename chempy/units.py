@@ -12,8 +12,9 @@ only use the `chempy.units` module (in case ``ChemPy`` changes this backend).
 """
 from __future__ import (absolute_import, division, print_function)
 
-from operator import mul
 from functools import reduce
+from math import log10
+from operator import mul
 
 from ._util import NameSpace
 # Currently we use quantities for units. This may change, therefore use this
@@ -315,6 +316,15 @@ def linspace(start, stop, num=50):
     start_ = to_unitless(start, unit)
     stop_ = to_unitless(stop, unit)
     return np.linspace(start_, stop_, num)*unit
+
+
+def logspace10(start, stop, num=50):
+    """ Logarithmically spaced data points """
+    import numpy as np
+    unit = unit_of(start)
+    start_ = log10(to_unitless(start, unit))
+    stop_ = log10(to_unitless(stop, unit))
+    return 10**np.linspace(start_, stop_, num)*unit
 
 
 def _sum(iterable):

@@ -11,7 +11,7 @@ import pytest
 
 from ..util.testing import requires
 from ..units import (
-    allclose, get_derived_unit, is_unitless, linspace,
+    allclose, get_derived_unit, is_unitless, linspace, logspace10,
     SI_base_registry, unitless_in_registry, format_string, get_physical_quantity,
     to_unitless, magnitude, default_unit_in_registry, Backend,
     unit_of, unit_registry_to_human_readable, units_library,
@@ -135,6 +135,13 @@ def test_to_unitless__sympy():
 def test_linspace():
     ls = linspace(2*u.second, 3*u.second)
     assert abs(to_unitless(ls[0], u.hour) - 2/3600.) < 1e-15
+
+
+@requires(units_library)
+def test_logspace10():
+    ls = logspace10(2*u.second, 3*u.second)
+    assert abs(to_unitless(ls[0], u.hour) - 2/3600.) < 1e-15
+    assert abs(to_unitless(ls[-1], u.hour) - 3/3600.) < 1e-15
 
 
 @requires(units_library)
