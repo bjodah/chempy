@@ -1301,7 +1301,7 @@ class ReactionSystem(object):
                         raise KeyError("Unkown substance key: %s" % k)
             cont = [cont[k] for k in substance_keys]
 
-        cont = np.asarray(cont, dtype=dtype)
+        cont = np.atleast_1d(np.asarray(cont, dtype=dtype).squeeze())
         if cont.shape[-1] != self.ns:
             raise ValueError("Incorrect size")
         return cont*(unit if unit is not None else 1)

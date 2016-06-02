@@ -4,7 +4,7 @@ General utilities and exceptions.
 """
 from __future__ import (absolute_import, division, print_function)
 
-from collections import namedtuple, Mapping
+from collections import defaultdict, namedtuple, Mapping
 from functools import wraps
 import os
 import warnings
@@ -25,6 +25,29 @@ def memoize(nargs=0):
         wrapper.results = {}
         return wrapper
     return decorator
+
+
+class defaultkeydict(defaultdict):
+    """ defaultdict where default_factory should have the signature key -> value
+
+    Examples
+    --------
+    >>> d = defaultkeydict(lambda k: '[%s]' % k, {'a': '[a]', 'b': '[B]'})
+    >>> d['a']
+    '[a]'
+    >>> d['b']
+    '[B]'
+    >>> d['c']
+    '[c]'
+
+    """
+
+    def __missing__(self, key):
+        if self.default_factory is None:
+            raise KeyError("Missing key: %s" % key)
+        else:
+            self[key] = self.default_factory(key)
+        return self[key]
 
 
 def defaultnamedtuple(typename, field_names, defaults=()):

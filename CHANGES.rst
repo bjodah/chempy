@@ -1,3 +1,10 @@
+v0.4.1
+======
+- Fixes for enhanced robustness:
+  - ``.kinetics.ode.get_odesys``
+  - ``.chemistry.as_per_substance_array``
+- Minor changes.
+
 v0.4.0
 ======
 - Multiple fixes throughout

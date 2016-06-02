@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function)
 
-from ..pyutil import defaultnamedtuple
+from ..pyutil import defaultkeydict, defaultnamedtuple
 
 
 def test_defaultnamedtuple():
@@ -37,3 +37,8 @@ def test_defaultnamedtuple():
     p3 = MySubclass(9)
     assert p3.x == 3
     assert p3.y == 10**.5
+
+
+def test_defaultkeydict():
+    d = defaultkeydict(lambda k: k*2)
+    assert d['as'] == 'asas'

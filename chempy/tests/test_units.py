@@ -11,9 +11,9 @@ import pytest
 
 from ..util.testing import requires
 from ..units import (
-    allclose, get_derived_unit, is_unitless, linspace,
+    allclose, get_derived_unit, is_unitless, linspace, logspace_from_lin,
     SI_base_registry, unitless_in_registry, format_string, get_physical_quantity,
-    to_unitless, magnitude, default_unit_in_registry, Backend,
+    to_unitless, magnitude, default_unit_in_registry, Backend, latex_of_unit,
     unit_of, unit_registry_to_human_readable, units_library,
     unit_registry_from_human_readable, _sum, UncertainQuantity,
     default_units as u
@@ -104,6 +104,7 @@ def test_to_unitless():
     assert abs(to_unitless(3/(u.second*u.molar),
                            u.metre**3/u.mole/u.second) - 3e-3) < 1e-12
     assert abs(to_unitless(2*u.dm3, u.cm3) - 2000) < 1e-12
+    assert abs(to_unitless(2*u.m3, u.dm3) - 2000) < 1e-12
     assert (float(to_unitless(UncertainQuantity(2, u.dm3, .3), u.cm3)) - 2000) < 1e-12
 
     g1 = UncertainQuantity(4.46, u.per100eV, 0)
@@ -135,6 +136,13 @@ def test_to_unitless__sympy():
 def test_linspace():
     ls = linspace(2*u.second, 3*u.second)
     assert abs(to_unitless(ls[0], u.hour) - 2/3600.) < 1e-15
+
+
+@requires(units_library)
+def test_logspace_from_lin():
+    ls = logspace_from_lin(2*u.second, 3*u.second)
+    assert abs(to_unitless(ls[0], u.hour) - 2/3600.) < 1e-15
+    assert abs(to_unitless(ls[-1], u.hour) - 3/3600.) < 1e-15
 
 
 @requires(units_library)
@@ -323,3 +331,8 @@ def test_joule_html():
     joule_htm = 'kg&sdot;m<sup>2</sup>/s<sup>2</sup>'
     joule = u.J.dimensionality.simplified
     assert joule.html == joule_htm
+
+
+@requires(units_library)
+def test_latex_of_unit():
+    assert latex_of_unit(u.gram/u.metre**2) == r'\mathrm{\frac{g}{m^{2}}}'
