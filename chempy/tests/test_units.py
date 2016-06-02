@@ -13,7 +13,7 @@ from ..util.testing import requires
 from ..units import (
     allclose, get_derived_unit, is_unitless, linspace, logspace10,
     SI_base_registry, unitless_in_registry, format_string, get_physical_quantity,
-    to_unitless, magnitude, default_unit_in_registry, Backend,
+    to_unitless, magnitude, default_unit_in_registry, Backend, latex_of_unit,
     unit_of, unit_registry_to_human_readable, units_library,
     unit_registry_from_human_readable, _sum, UncertainQuantity,
     default_units as u
@@ -330,3 +330,8 @@ def test_joule_html():
     joule_htm = 'kg&sdot;m<sup>2</sup>/s<sup>2</sup>'
     joule = u.J.dimensionality.simplified
     assert joule.html == joule_htm
+
+
+@requires(units_library)
+def test_latex_of_unit():
+    assert latex_of_unit(u.gram/u.metre**2) == r'\mathrm{\frac{g}{m^{2}}}'

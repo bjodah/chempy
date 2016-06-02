@@ -148,6 +148,18 @@ def unit_registry_to_human_readable(unit_registry):
     return new_registry
 
 
+def latex_of_unit(quant):
+    """ Returns LaTeX reperesentation of the unit of a quantity
+
+    Examples
+    --------
+    >>> print(latex_of_unit(1/default_units.kelvin))
+    \\mathrm{\\frac{1}{K}}
+
+    """
+    return quant.dimensionality.latex.strip('$')
+
+
 def unit_registry_from_human_readable(unit_registry):
     """ Deserialization of unit_registry. """
     if unit_registry is None:
