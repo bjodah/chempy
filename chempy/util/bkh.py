@@ -8,7 +8,7 @@ from collections import OrderedDict, defaultdict
 from itertools import chain
 
 from chempy.kinetics.ode import get_odesys
-from chempy.units import to_unitless, linspace, logspace10
+from chempy.units import to_unitless, linspace, logspace_from_lin
 
 
 def integration_with_sliders(
@@ -36,7 +36,7 @@ def integration_with_sliders(
     if x_axis_type == 'linear':
         tout = linspace(tend*0, tend)
     elif x_axis_type == 'log':
-        tout = logspace10(tend*1e-9, tend)
+        tout = logspace_from_lin(tend*1e-9, tend)
     else:
         raise NotImplementedError("Unknown x_axis_type: %s" % x_axis_type)
 

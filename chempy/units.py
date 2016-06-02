@@ -5,20 +5,21 @@
 - ``chempy.units.default_constants``
 - ``chempy.units.SI_base_registry``
 
+together with some functions.
+
 Currently `quantities <https://pypi.python.org/pypi/quantities>`_ is used as
 the underlying package to handle units. If it is possible you should try to
-only use the `chempy.units` module (in case ``ChemPy`` changes this backend).
+only use the `chempy.units` module (in case ``ChemPy`` changes this backend),
+and avoid relying on any attributes of the Quantity instances (and rather use
+functions in `chempy.units`).
 
 """
 from __future__ import (absolute_import, division, print_function)
 
 from functools import reduce
-from math import log10
 from operator import mul
 
 from ._util import NameSpace
-# Currently we use quantities for units. This may change, therefore use this
-# file for all units. A requirement is first-class numpy support.
 
 units_library = 'quantities'  # info used for selective testing.
 
@@ -41,6 +42,7 @@ else:
     default_units = NameSpace(pq)
     default_units.decimetre = pq.UnitQuantity(
         'decimetre',  default_units.m / 10.0, u_symbol='dm')
+    default_units.m3 = default_units.metre**3
     default_units.dm3 = default_units.decimetre**3
     default_units.cm3 = default_units.centimetre**3
     if not hasattr(default_units, 'molar'):
@@ -321,7 +323,15 @@ def allclose(a, b, rtol=1e-8, atol=None):
 
 
 def linspace(start, stop, num=50):
-    """ Analogous to ``numpy.linspace``. """
+    """ Analogous to ``numpy.linspace``.
+
+    Examples
+    --------
+    >>> abs(linspace(2, 8, num=3)[1] - 5) < 1e-15
+    True
+
+    """
+
     # work around for quantities v0.10.1 and NumPy
     import numpy as np
     unit = unit_of(start)
@@ -330,13 +340,20 @@ def linspace(start, stop, num=50):
     return np.linspace(start_, stop_, num)*unit
 
 
-def logspace10(start, stop, num=50):
-    """ Logarithmically spaced data points """
+def logspace_from_lin(start, stop, num=50):
+    """ Logarithmically spaced data points
+
+    Examples
+    --------
+    >>> abs(logspace_from_lin(2, 8, num=3)[1] - 4) < 1e-15
+    True
+
+    """
     import numpy as np
     unit = unit_of(start)
-    start_ = log10(to_unitless(start, unit))
-    stop_ = log10(to_unitless(stop, unit))
-    return 10**np.linspace(start_, stop_, num)*unit
+    start_ = np.log2(to_unitless(start, unit))
+    stop_ = np.log2(to_unitless(stop, unit))
+    return np.exp2(np.linspace(start_, stop_, num))*unit
 
 
 def _sum(iterable):

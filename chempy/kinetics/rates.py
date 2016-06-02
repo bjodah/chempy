@@ -107,7 +107,7 @@ def mk_Radiolytic(doserate_name='doserate'):
         parameter_keys = (doserate_name, 'density')
         print_name = 'Radiolytic' if doserate_name == 'doserate' else ('Radiolytic{'+doserate_name+'}')
 
-        def g_value(self, variables, backend):  # for subclasses
+        def g_value(self, variables, backend=math):  # for subclasses
             return self.arg(variables, 0, backend=backend)
 
         def __call__(self, variables, backend=math):

@@ -187,8 +187,7 @@ def test_ReactionSystem__as_per_substance_array_dict():
     m = default_units.metre
     M = default_units.molar
     rs = ReactionSystem([], [Substance('H2O')])
-    c = rs.as_per_substance_array({'H2O': 1*M},
-                                  unit=M)
+    c = rs.as_per_substance_array({'H2O': 1*M}, unit=M)
     assert c.dimensionality == M.dimensionality
     assert abs(c[0]/(1000*mol/m**3) - 1) < 1e-16
 
