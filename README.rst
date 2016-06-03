@@ -10,6 +10,8 @@ ChemPy
 .. image:: https://img.shields.io/badge/python-2.7,3.4,3.5-blue.svg
    :target: https://www.python.org/
    :alt: Python version
+.. image:: https://zenodo.org/badge/8840/bjodah/chempy.svg
+   :target: https://zenodo.org/badge/latestdoi/8840/bjodah/chempy
 .. image:: https://img.shields.io/pypi/l/chempy.svg
    :target: https://github.com/bjodah/chempy/blob/master/LICENSE
    :alt: License
