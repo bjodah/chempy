@@ -3,7 +3,7 @@ from __future__ import (absolute_import, division, print_function)
 
 from ..nernst import nernst_potential
 from chempy.util.testing import requires
-from chempy.units import default_units, default_constants, units_library
+from chempy.units import default_units, default_constants, units_library, allclose
 
 
 def test_nernst_potential():
@@ -27,4 +27,4 @@ def test_nernst_potential__units():
     K = default_units.kelvin
     coulomb = default_units.coulomb
     v = nernst_potential(145, 15, 1, 310*K, default_constants)
-    assert (1000 * v - 60.605*J/coulomb) < 1e-4
+    assert allclose(1000 * v, 60.605*J/coulomb, rtol=1e-4)
