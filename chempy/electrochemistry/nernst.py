@@ -3,7 +3,8 @@ from __future__ import (absolute_import, division, print_function)
 import math
 
 
-def nernst_potential(ion_conc_out, ion_conc_in, charge, T, constants=None, units=None):
+def nernst_potential(ion_conc_out, ion_conc_in, charge, T,
+                     constants=None, units=None, backend=math):
     """
     Calculates the Nernst potential using the Nernst equation for a particular
     ion.
@@ -24,6 +25,9 @@ def nernst_potential(ion_conc_out, ion_conc_in, charge, T, constants=None, units
             R - Ideal Gas constant
     units: object (optional, default: None)
         unit attributes: coulomb, joule, kelvin, mol
+    backend: module (optional, default: math)
+        module used to calculate log using `log` method, can be substituted
+        with sympy to get symbolic answers
 
     Returns
     -------
@@ -39,4 +43,4 @@ def nernst_potential(ion_conc_out, ion_conc_in, charge, T, constants=None, units
         F = constants.Faraday_constant
         R = constants.ideal_gas_constant
 
-    return (R * T) / (charge * F) * math.log(ion_conc_out / ion_conc_in)
+    return (R * T) / (charge * F) * backend.log(ion_conc_out / ion_conc_in)
