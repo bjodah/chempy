@@ -22,6 +22,9 @@ def test_nernst_potential():
 
 
 @requires(units_library)
-def test_nernst_potential_units():
-    v = nernst_potential(145, 15, 1, 310, default_constants, default_units)
-    assert (1000 * v - 60.605) < 1e-4
+def test_nernst_potential__units():
+    J = default_units.joule
+    K = default_units.kelvin
+    coulomb = default_units.coulomb
+    v = nernst_potential(145, 15, 1, 310*K, default_constants)
+    assert (1000 * v - 60.605*J/coulomb) < 1e-4
