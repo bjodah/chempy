@@ -38,6 +38,7 @@ submodules = [
     'chempy.kinetics',
     'chempy.properties',
     'chempy.util',
+    'chempy.electrochemistry',
 ]
 
 tests = [
@@ -45,6 +46,7 @@ tests = [
     'chempy.kinetics.tests',
     'chempy.properties.tests',
     'chempy.util.tests',
+    'chempy.electrochemistry.tests',
 ]
 
 classifiers = [
