@@ -562,7 +562,11 @@ def number_to_scientific_latex(number, fmt='%.3g'):
     s = fmt % number
     if 'e' in s:
         prefix, suffix = s.split('e')
-        return prefix + r'\cdot 10^{%s}' % str(int(suffix)) + unit
+        if prefix in ('1', '1.0'):
+            result = '10^{%s}'
+        else:
+            result = prefix + r'\cdot 10^{%s}'
+        return result % str(int(suffix)) + unit
     else:
         return s + unit
 
@@ -627,7 +631,7 @@ def number_to_scientific_unicode(number, fmt='%.3g'):
     >>> number_to_scientific_unicode(3.14159265e-7) == u'3.14·10⁻⁷'
     True
     >>> import quantities as pq
-    >>> number_to_scientific_html(2**0.5 * pq.m / pq.s)
+    >>> number_to_scientific_unicode(2**0.5 * pq.m / pq.s)
     '1.41 m/s'
 
     """
@@ -639,7 +643,11 @@ def number_to_scientific_unicode(number, fmt='%.3g'):
     s = fmt % number
     if 'e' in s:
         prefix, suffix = s.split('e')
-        return prefix + u'·10' + u''.join(map(_unicode_sup.get, str(int(suffix)))) + unit
+        if prefix in ('1', '1.0'):
+            result = u'10'
+        else:
+            result = prefix + u'·10'
+        return result + u''.join(map(_unicode_sup.get, str(int(suffix)))) + unit
     else:
         return s + unit
 
@@ -689,6 +697,8 @@ def number_to_scientific_html(number, fmt='%.3g'):
     True
     >>> number_to_scientific_html(3.14159265e-7)
     '3.14&sdot;10<sup>-7</sup>'
+    >>> number_to_scientific_html(1e13)
+    '10<sup>13</sup>'
     >>> import quantities as pq
     >>> number_to_scientific_html(2**0.5 * pq.m / pq.s)
     '1.41 m/s'
@@ -702,6 +712,10 @@ def number_to_scientific_html(number, fmt='%.3g'):
     s = fmt % number
     if 'e' in s:
         prefix, suffix = s.split('e')
-        return prefix + '&sdot;10<sup>' + str(int(suffix)) + '</sup>' + unit
+        if prefix in ('1', '1.0'):
+            result = '10<sup>'
+        else:
+            result = prefix + '&sdot;10<sup>'
+        return result + str(int(suffix)) + '</sup>' + unit
     else:
         return s + unit
