@@ -41,6 +41,6 @@ def nernst_potential(ion_conc_out, ion_conc_in, charge, T,
             R *= units.joule / units.kelvin / units.mol
     else:
         F = constants.Faraday_constant
-        R = constants.ideal_gas_constant
+        R = constants.molar_gas_constant
 
     return (R * T) / (charge * F) * backend.log(ion_conc_out / ion_conc_in)
