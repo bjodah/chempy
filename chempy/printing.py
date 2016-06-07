@@ -18,5 +18,11 @@ class Table(object):
 
 
 def as_per_substance_html_table(cont, substances, header='Concentration'):
-    rows = [(v.html_name, number_to_scientific_html(cont[k])) for k, v in substances.items()]
+    """ """
+    def _elem(k):
+        try:
+            return cont[k]
+        except (IndexError, TypeError):
+            return cont[list(substances.keys()).index(k)]
+    rows = [(v.html_name, number_to_scientific_html(_elem(k))) for k, v in substances.items()]
     return Table(rows, ['Substance', header])

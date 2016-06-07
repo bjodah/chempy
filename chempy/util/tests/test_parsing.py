@@ -5,7 +5,8 @@ import pytest
 
 from ..parsing import (
     atomic_number, formula_to_composition, formula_to_html, formula_to_latex, formula_to_unicode,
-    mass_from_composition, number_to_scientific_html, parsing_library, relative_atomic_masses, to_reaction
+    mass_from_composition, number_to_scientific_html, number_to_scientific_latex, number_to_scientific_unicode,
+    parsing_library, relative_atomic_masses, to_reaction
 )
 from ..testing import requires
 
@@ -209,3 +210,14 @@ def test_formula_to_html():
 
 def test_number_to_scientific_html():
     assert number_to_scientific_html(2e-17) == '2&sdot;10<sup>-17</sup>'
+    assert number_to_scientific_html(1e-17) == '10<sup>-17</sup>'
+
+
+def test_number_to_scientific_latex():
+    assert number_to_scientific_latex(2e-17) == r'2\cdot 10^{-17}'
+    assert number_to_scientific_latex(1e-17) == '10^{-17}'
+
+
+def test_number_to_scientific_unicode():
+    assert number_to_scientific_unicode(2e-17) == u'2·10⁻¹⁷'
+    assert number_to_scientific_unicode(1e-17) == u'10⁻¹⁷'

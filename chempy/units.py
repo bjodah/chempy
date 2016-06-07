@@ -31,7 +31,9 @@ except ImportError:
     default_constants = None
     default_units = None
     SI_base_registry = None
+    np = None
 else:
+    import numpy as np
     from .util._quantities import _patch_quantities
     _patch_quantities(pq)
     UncertainQuantity = pq.UncertainQuantity
@@ -235,7 +237,6 @@ def to_unitless(value, new_unit=None):
     '1e+09'
 
     """
-    import numpy as np
     if new_unit is None:
         new_unit = pq.dimensionless
     if isinstance(value, (list, tuple)):
@@ -318,7 +319,6 @@ def allclose(a, b, rtol=1e-8, atol=None):
     if n == 1:
         return d <= lim
     else:
-        import numpy as np
         return np.all([_d <= _lim for _d, _lim in zip(d, lim)])
 
 
@@ -333,7 +333,6 @@ def linspace(start, stop, num=50):
     """
 
     # work around for quantities v0.10.1 and NumPy
-    import numpy as np
     unit = unit_of(start)
     start_ = to_unitless(start, unit)
     stop_ = to_unitless(stop, unit)
@@ -349,7 +348,6 @@ def logspace_from_lin(start, stop, num=50):
     True
 
     """
-    import numpy as np
     unit = unit_of(start)
     start_ = np.log2(to_unitless(start, unit))
     stop_ = np.log2(to_unitless(stop, unit))
@@ -456,3 +454,10 @@ def format_string(value, precision='%.5g', tex=False):
         attr = 'unicode' if config.use_unicode else 'string'
         unit_str = getattr(value.dimensionality, attr)
     return precision % float(value.magnitude), unit_str
+
+
+def concatenate(arrays, **kwargs):
+    """ Patched version of numpy.concatenate """
+    unit = unit_of(arrays[0])
+    result = np.concatenate([to_unitless(arr, unit) for arr in arrays], **kwargs)
+    return result*unit

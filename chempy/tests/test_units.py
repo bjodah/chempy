@@ -11,7 +11,7 @@ import pytest
 
 from ..util.testing import requires
 from ..units import (
-    allclose, get_derived_unit, is_unitless, linspace, logspace_from_lin,
+    allclose, concatenate, get_derived_unit, is_unitless, linspace, logspace_from_lin,
     SI_base_registry, unitless_in_registry, format_string, get_physical_quantity,
     to_unitless, magnitude, default_unit_in_registry, Backend, latex_of_unit,
     unit_of, unit_registry_to_human_readable, units_library,
@@ -336,3 +336,11 @@ def test_joule_html():
 @requires(units_library)
 def test_latex_of_unit():
     assert latex_of_unit(u.gram/u.metre**2) == r'\mathrm{\frac{g}{m^{2}}}'
+
+
+@requires(units_library)
+def test_concatenate():
+    a = [1, 2]*u.metre
+    b = [2, 3]*u.mm
+    ref = [1, 2, 2e-3, 3e-3]*u.metre
+    assert allclose(concatenate((a, b)), ref)

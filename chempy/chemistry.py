@@ -662,7 +662,7 @@ class Reaction(object):
         >>> r.latex(subst) == r'H_{2}O \rightarrow H^{+} + OH^{-}'
         True
         >>> r2 = Reaction.from_string("H2O -> H+ + OH-; 1e-8/molar/second", subst)
-        >>> ref = r'H_{2}O \rightarrow H^{+} + OH^{-}; 1\cdot 10^{-8} $\mathrm{\frac{1}{(s{\cdot}M)}}$'
+        >>> ref = r'H_{2}O \rightarrow H^{+} + OH^{-}; 10^{-8} $\mathrm{\frac{1}{(s{\cdot}M)}}$'
         >>> r2.latex(subst, with_param=True) == ref
         True
 
@@ -684,7 +684,7 @@ class Reaction(object):
         >>> r.unicode(subst) == u'H₂O → H⁺ + OH⁻'
         True
         >>> r2 = Reaction.from_string("H2O -> H+ + OH-; 1e-8/molar/second", subst)
-        >>> r2.unicode(subst, with_param=True) == u'H₂O → H⁺ + OH⁻; 1·10⁻⁸ 1/(s·M)'
+        >>> r2.unicode(subst, with_param=True) == u'H₂O → H⁺ + OH⁻; 10⁻⁸ 1/(s·M)'
         True
 
         """
@@ -712,7 +712,7 @@ class Reaction(object):
         'H<sub>2</sub>O &rarr; H<sup>+</sup> + OH<sup>-</sup>'
         >>> r2 = Reaction.from_string("H2O -> H+ + OH-; 1e-8/molar/second", subst)
         >>> r2.html(subst, with_param=True)
-        'H<sub>2</sub>O &rarr; H<sup>+</sup> + OH<sup>-</sup>&#59; 1&sdot;10<sup>-8</sup> 1/(s*M)'
+        'H<sub>2</sub>O &rarr; H<sup>+</sup> + OH<sup>-</sup>&#59; 10<sup>-8</sup> 1/(s*M)'
 
         """
         res = self._get_str('html_name', 'html_arrow', substances)
