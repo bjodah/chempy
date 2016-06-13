@@ -13,7 +13,7 @@ from ..util.testing import requires
 
 def test_ionic_strength():
     assert abs(ionic_strength([0.1, 1.3, 2.1, 0.7],
-                              [-1, 2, -3, 4]) - 17.7) < 1e-14
+                              [-1, 2, -3, 4], warn=False) - 17.7) < 1e-14
 
 
 def test_ActivityProductBase():

@@ -9,7 +9,7 @@ try:
 except ImportError:
     np = None
 
-from .util.parsing import number_to_scientific_html
+from .printing import number_to_scientific_html
 from ._util import get_backend, mat_dot_vec, prodpow
 
 

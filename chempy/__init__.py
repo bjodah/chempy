@@ -9,4 +9,4 @@ from ._url import __url__
 from ._release import __version__
 from .chemistry import Substance, Reaction, Equilibrium, ReactionSystem, Species, balance_stoichiometry, mass_fractions
 from .henry import Henry
-from .util.parsing import atomic_number
+from .util.periodic import atomic_number

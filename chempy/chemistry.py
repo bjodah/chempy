@@ -10,8 +10,9 @@ import sys
 import warnings
 
 from .util.arithmeticdict import ArithmeticDict
+from .util.periodic import mass_from_composition
 from .util.parsing import (
-    formula_to_composition, mass_from_composition, to_reaction,
+    formula_to_composition, to_reaction,
     formula_to_latex, formula_to_unicode, formula_to_html
 )
 
@@ -669,7 +670,7 @@ class Reaction(object):
         """
         res = self._get_str('latex_name', 'latex_arrow', substances)
         if with_param and self.param is not None:
-            from .util.parsing import number_to_scientific_latex as _fmt
+            from .printing import number_to_scientific_latex as _fmt
             res += '; %s' % self._str_param(magnitude_fmt=_fmt, unit_fmt=lambda dim: dim.latex)
         return res
 
@@ -691,7 +692,7 @@ class Reaction(object):
         res = self._get_str('unicode_name', 'unicode_arrow', substances,
                             _str=str if sys.version_info[0] > 2 else unicode)
         if with_param and self.param is not None:
-            from .util.parsing import number_to_scientific_unicode
+            from .printing import number_to_scientific_unicode
             res += u'; ' + self._str_param(
                 magnitude_fmt=number_to_scientific_unicode,
                 unit_fmt=lambda dim: (
@@ -717,7 +718,7 @@ class Reaction(object):
         """
         res = self._get_str('html_name', 'html_arrow', substances)
         if with_param and self.param is not None:
-            from .util.parsing import number_to_scientific_html as _fmt
+            from .printing import number_to_scientific_html as _fmt
             res += '&#59; '
             try:
                 res += self.param.string(_fmt)

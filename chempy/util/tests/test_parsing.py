@@ -4,19 +4,10 @@ from __future__ import (absolute_import, division, print_function)
 import pytest
 
 from ..parsing import (
-    atomic_number, formula_to_composition, formula_to_html, formula_to_latex, formula_to_unicode,
-    mass_from_composition, number_to_scientific_html, number_to_scientific_latex, number_to_scientific_unicode,
-    parsing_library, relative_atomic_masses, to_reaction
+    formula_to_composition, formula_to_html, formula_to_latex, formula_to_unicode,
+    parsing_library, to_reaction
 )
 from ..testing import requires
-
-
-def test_atomic_number():
-    assert atomic_number('U') == 92
-    assert atomic_number('carbon') == 6
-    assert atomic_number('ununpentium') == 115
-    with pytest.raises(ValueError):
-        atomic_number('unobtainium')
 
 
 @requires(parsing_library)
@@ -60,24 +51,6 @@ def test_formula_to_composition():
 
     # crystal water
     assert formula_to_composition('Na2CO3.7H2O(s)') == {11: 2, 6: 1, 8: 10, 1: 14}
-
-
-def test_relative_atomic_masses():
-    assert relative_atomic_masses[0] == 1.008
-
-
-def test_mass_from_composition():
-    mass = mass_from_composition({11: 1, 9: 1})
-    assert abs(41.988172443 - mass) < 1e-7
-
-
-@requires(parsing_library)
-def test_mass_from_composition__formula():
-    mass = mass_from_composition(formula_to_composition('NaF'))
-    assert abs(41.988172443 - mass) < 1e-7
-
-    Fminus = mass_from_composition(formula_to_composition('F/-'))
-    assert abs(Fminus - 18.998403163 - 5.489e-4) < 1e-7
 
 
 @requires(parsing_library)
@@ -206,18 +179,3 @@ def test_formula_to_html():
         r'&epsilon;-Zn(OH)<sub>2</sub>(s)')
     assert formula_to_html('Na2CO3.7H2O(s)') == 'Na<sub>2</sub>CO<sub>3</sub>&sdot;7H<sub>2</sub>O(s)'
     assert formula_to_html('Na2CO3.1H2O(s)') == 'Na<sub>2</sub>CO<sub>3</sub>&sdot;H<sub>2</sub>O(s)'
-
-
-def test_number_to_scientific_html():
-    assert number_to_scientific_html(2e-17) == '2&sdot;10<sup>-17</sup>'
-    assert number_to_scientific_html(1e-17) == '10<sup>-17</sup>'
-
-
-def test_number_to_scientific_latex():
-    assert number_to_scientific_latex(2e-17) == r'2\cdot 10^{-17}'
-    assert number_to_scientific_latex(1e-17) == '10^{-17}'
-
-
-def test_number_to_scientific_unicode():
-    assert number_to_scientific_unicode(2e-17) == u'2·10⁻¹⁷'
-    assert number_to_scientific_unicode(1e-17) == u'10⁻¹⁷'

@@ -2,10 +2,11 @@
 from __future__ import (absolute_import, division, print_function)
 
 from collections import OrderedDict
-from .. import Substance
-from ..printing import as_per_substance_html_table
-from ..util.testing import requires
-from ..util.parsing import parsing_library
+
+from chempy import Substance
+from chempy.util.testing import requires
+from chempy.util.parsing import parsing_library
+from ..table import as_per_substance_html_table
 
 
 @requires(parsing_library)

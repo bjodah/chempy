@@ -6,7 +6,6 @@ try:
 except ImportError:
     np = None
 
-from chempy.arrhenius import ArrheniusParam
 from chempy.chemistry import Substance, Reaction, ReactionSystem
 from chempy.units import (
     SI_base_registry, get_derived_unit, allclose, units_library,
@@ -15,6 +14,7 @@ from chempy.units import (
 from chempy.util._expr import Expr
 from chempy.util.testing import requires
 from .test_rates import _get_SpecialFraction_rsys
+from ..arrhenius import ArrheniusParam
 from ..rates import ArrheniusMassAction, Radiolytic
 from .._rates import TPolyMassAction
 from ..ode import get_odesys

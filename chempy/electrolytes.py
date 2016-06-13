@@ -5,12 +5,22 @@ This modules collects expressions related to ionic strenght, e.g. the Debye-Hüc
 from __future__ import (absolute_import, division, print_function)
 
 from collections import OrderedDict
+import warnings
+
 from ._util import get_backend
 from .chemistry import Substance
+from .units import allclose
 
 
-def ionic_strength(molalities, charges=None, b0=1, units=None, substances=None,
-                   substance_factory=Substance.from_formula):
+def _get_b0(b0, units=None):
+    if units is not None and b0 is 1:
+        return b0*units.molal
+    else:
+        return b0
+
+
+def ionic_strength(molalities, charges=None, units=None, substances=None,
+                   substance_factory=Substance.from_formula, warn=True):
     """ Calculates the ionic strength
 
     Parameters
@@ -27,6 +37,8 @@ def ionic_strength(molalities, charges=None, b0=1, units=None, substances=None,
         is a dict).
     substance_factory: callback
         Used if `substances` is a string.
+    warn: bool
+        Issue a warning if molalities violates net charge neutrality.
 
     Examples
     --------
@@ -36,7 +48,7 @@ def ionic_strength(molalities, charges=None, b0=1, units=None, substances=None,
     30.0
 
     """
-    tot = 0
+    tot = None
     if charges is None:
         if substances is None:
             substances = ' '.join(molalities.keys())
@@ -47,7 +59,19 @@ def ionic_strength(molalities, charges=None, b0=1, units=None, substances=None,
     if len(molalities) != len(charges):
         raise ValueError("molalities and charges of different lengths")
     for b, z in zip(molalities, charges):
-        tot += b * z**2
+        if tot is None:
+            tot = b * z**2
+        else:
+            tot += b * z**2
+    if warn:
+        net = None
+        for b, z in zip(molalities, charges):
+            if net is None:
+                net = b * z
+            else:
+                net += b * z
+        if not allclose(net, tot*0, atol=tot*1e-14):
+            warnings.warn("Molalities not charge neutral: %s" % str(net))
     return tot/2
 
 
@@ -60,13 +84,6 @@ class _ActivityProductBase(object):
 
     def __call__(self, c):
         pass
-
-
-def _get_b0(b0, units=None):
-    if units is not None and b0 is 1:
-        return b0*units.molal
-    else:
-        return b0
 
 
 def A(eps_r, T, rho, b0=1, constants=None, units=None, backend=None):

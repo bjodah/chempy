@@ -39,6 +39,7 @@ submodules = [
     'chempy.properties',
     'chempy.util',
     'chempy.electrochemistry',
+    'chempy.printing',
 ]
 
 tests = [
@@ -47,6 +48,7 @@ tests = [
     'chempy.properties.tests',
     'chempy.util.tests',
     'chempy.electrochemistry.tests',
+    'chempy.printing.tests',
 ]
 
 classifiers = [

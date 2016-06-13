@@ -1,3 +1,8 @@
+v0.4.2
+======
+- ``.electrochemistry.nernst_formula`` - thanks to Adel Qalieh (@adelq)
+- moved ``.util.parsing.number_to_scientific_*`` to ``.printing(.numbers)``
+
 v0.4.1
 ======
 - Fixes for enhanced robustness:
