@@ -100,21 +100,21 @@ def get_derived_unit(registry, key):
         'luminous_intensity', 'amount'. If registry is ``None`` the
         function returns 1.0 unconditionally.
     key: str
-        one of the registry keys or one of: 'diffusion', 'electrical_mobility',
+        one of the registry keys or one of: 'diffusivity', 'electrical_mobility',
         'permittivity', 'charge', 'energy', 'concentration', 'density',
         'radiolytic_yield'
 
     Examples
     --------
     >>> m, s = default_units.meter, default_units.second
-    >>> get_derived_unit(SI_base_registry, 'diffusion') == m**2/s
+    >>> get_derived_unit(SI_base_registry, 'diffusivity') == m**2/s
     True
 
     """
     if registry is None:
         return 1.0
     derived = {
-        'diffusion': registry['length']**2/registry['time'],
+        'diffusivity': registry['length']**2/registry['time'],
         'electrical_mobility': (registry['current']*registry['time']**2 /
                                 registry['mass']),
         'permittivity': (registry['current']**2*registry['time']**4 /
@@ -124,6 +124,7 @@ def get_derived_unit(registry, key):
         'concentration': registry['amount']/registry['length']**3,
         'density': registry['mass']/registry['length']**3,
     }
+    derived['diffusion'] = derived['diffusivity']  # 'diffusion' is deprecated
     derived['radiolytic_yield'] = registry['amount']/derived['energy']
     derived['doserate'] = derived['energy']/registry['mass']/registry['time']
 
@@ -162,6 +163,18 @@ def latex_of_unit(quant):
 
     """
     return quant.dimensionality.latex.strip('$')
+
+
+def html_of_unit(quant):
+    """ Returns HTML reperesentation of the unit of a quantity
+
+    Examples
+    --------
+    >>> print(html_of_unit(2*default_units.m**2))
+    m<sup>2</sup>
+
+    """
+    return quant.dimensionality.html
 
 
 def unit_registry_from_human_readable(unit_registry):
@@ -242,7 +255,7 @@ def to_unitless(value, new_unit=None):
     if isinstance(value, (list, tuple)):
         return np.array([to_unitless(elem, new_unit) for elem in value])
     if isinstance(value, dict):
-        new_value = value.copy()
+        new_value = dict(value.items())  # value.copy()
         for k in value:
             new_value[k] = to_unitless(value[k], new_unit)
         return new_value

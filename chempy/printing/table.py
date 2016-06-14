@@ -19,7 +19,7 @@ class Table(object):
         return self.html()
 
 
-def as_per_substance_html_table(cont, substances=None, header='Concentration',
+def as_per_substance_html_table(cont, substances=None, header=None,
                                 substance_factory=Substance.from_formula):
     """ """
     if substances is None:
@@ -31,4 +31,4 @@ def as_per_substance_html_table(cont, substances=None, header='Concentration',
         except (IndexError, TypeError):
             return cont[list(substances.keys()).index(k)]
     rows = [(v.html_name, number_to_scientific_html(_elem(k))) for k, v in substances.items()]
-    return Table(rows, ['Substance', header])
+    return Table(rows, ['Substance', header or ''])
