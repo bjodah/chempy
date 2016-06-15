@@ -9,7 +9,17 @@ except ImportError:
 import warnings
 
 
-def least_squares(x, y, w=1):  # w == 1 => OLS, w != 1 => WLS
+def _plot(x, y, beta, ax):
+    import matplotlib.pyplot as plt
+    if ax is True:
+        ax = plt.subplot(1, 1, 1)
+    ax.plot(x, y)
+    from chempy.printing import number_to_scientific_latex as ntsl
+    _tex = ntsl(beta[0]), ntsl(beta[1])
+    ax.plot(x, beta[0] + np.asarray(x)*beta[1], label='$y(x) = %s + %s \\cdot x$' % _tex)
+
+
+def least_squares(x, y, w=1, ax=None):  # w == 1 => OLS, w != 1 => WLS
     """ Least-squares (w or w/o weights) fit to data series.
 
     Linear regression (unweighted or weighted).
@@ -47,7 +57,8 @@ def least_squares(x, y, w=1):  # w == 1 => OLS, w != 1 => WLS
         The American Statistician 42.3 (1988): 236-238.
     """
     sqrtw = np.sqrt(w)
-    y = np.asarray(y) * sqrtw
+    y = np.asarray(y)
+    Y = y * sqrtw
     x = np.asarray(x)
     X = np.ones((x.size, 2))
     X[:, 1] = x
@@ -55,16 +66,18 @@ def least_squares(x, y, w=1):  # w == 1 => OLS, w != 1 => WLS
         sqrtw = sqrtw.reshape((sqrtw.size, 1))
     X *= sqrtw
 
-    beta = np.linalg.lstsq(X, y)[0]
-    eps = X.dot(beta) - y
+    beta = np.linalg.lstsq(X, Y)[0]
+    eps = X.dot(beta) - Y
     SSR = eps.T.dot(eps)  # sum of squared residuals
     vcv = SSR/(x.size - 2)*np.linalg.inv(X.T.dot(X))
-    TSS = np.sum(np.square(y - np.mean(y)))  # total sum of squares
+    TSS = np.sum(np.square(Y - np.mean(Y)))  # total sum of squares
     R2 = 1 - SSR/TSS
+    if ax is not None:
+        _plot(x, y, beta, ax)
     return beta, vcv, float(R2)
 
 
-def irls(x, y, w_cb=lambda x, y, b, c: x**0, itermax=16, rmsdwtol=1e-8, full_output=False):
+def irls(x, y, w_cb=lambda x, y, b, c: x**0, itermax=16, rmsdwtol=1e-8, full_output=False, ax=None):
     """ Iteratively reweighted least squares
 
     Parameters
@@ -105,6 +118,8 @@ def irls(x, y, w_cb=lambda x, y, b, c: x**0, itermax=16, rmsdwtol=1e-8, full_out
         ii += 1
     if ii == itermax:
         warnings.warn('itermax reached')
+    if ax is not None:
+        _plot(x, y, beta, ax)
     if full_output:
         return beta, cov, {'weights': weights, 'niter': ii, 'success': ii < itermax}
     else:
@@ -125,22 +140,24 @@ def plot_fit(x, y, beta, kw_data=None, kw_fit=None):
     plt.plot(x[[0, -1]], beta[0] + beta[1]*x[[0, -1]], marker='None', **kw_fit)
 
 
-def avg_params(opt_params, cov_params, label_cb=None, plot=False):
+def avg_params(opt_params, cov_params, label_cb=None, ax=None):
     var_beta = np.vstack((cov_params[:, 0, 0], cov_params[:, 1, 1])).T
     avg_beta, sum_of_weights = np.average(opt_params, axis=0, weights=1/var_beta, returned=True)
     var_avg_beta = np.sum(np.square(opt_params - avg_beta)/var_beta, axis=0)/((avg_beta.shape[0] - 1) * sum_of_weights)
-    if plot:
+    if ax is not None:
         import matplotlib.pyplot as plt
         if label_cb is not None:
             lbl = label_cb(avg_beta, var_avg_beta)
         else:
             lbl = None
-        plt.errorbar(opt_params[:, 0], opt_params[:, 1], marker='s', ls='None',
-                     xerr=var_beta[:, 0]**0.5, yerr=var_beta[:, 1]**0.5)
-        plt.xlabel(r'$\beta_0$')
-        plt.ylabel(r'$\beta_1$')
-        plt.title(r'$y(x) = \beta_0 + \beta_1 \cdot x$')
-        plt.errorbar(avg_beta[0], avg_beta[1], xerr=var_avg_beta[0]**0.5, yerr=var_avg_beta[1]**0.5, marker='o', c='r',
-                     linewidth=2, markersize=10, label=lbl)
-        plt.legend(numpoints=1)
+        if ax is True:
+            ax = plt.subplot(1, 1, 1)
+        ax.errorbar(opt_params[:, 0], opt_params[:, 1], marker='s', ls='None',
+                    xerr=var_beta[:, 0]**0.5, yerr=var_beta[:, 1]**0.5)
+        ax.set_xlabel(r'$\beta_0$')
+        ax.set_ylabel(r'$\beta_1$')
+        ax.set_title(r'$y(x) = \beta_0 + \beta_1 \cdot x$')
+        ax.errorbar(avg_beta[0], avg_beta[1], xerr=var_avg_beta[0]**0.5, yerr=var_avg_beta[1]**0.5, marker='o', c='r',
+                    linewidth=2, markersize=10, label=lbl)
+        ax.legend(numpoints=1)
     return avg_beta, var_avg_beta
