@@ -248,6 +248,8 @@ def to_unitless(value, new_unit=None):
     --------
     >>> '%.1g' % to_unitless(1*default_units.metre, default_units.nm)
     '1e+09'
+    >>> '%.1g %.1g' % tuple(to_unitless([1*default_units.m, 1*default_units.mm], default_units.nm))
+    '1e+09 1e+06'
 
     """
     if new_unit is None:
@@ -442,6 +444,7 @@ class Backend(object):
             return be_attr
 
 
+# TODO: decide whether to deprecate in favor of "number_to_scientific_latex"?
 def format_string(value, precision='%.5g', tex=False):
     """ Formats a scalar with unit as two strings
 
