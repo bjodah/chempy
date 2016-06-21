@@ -14,7 +14,7 @@ from ..printing import number_to_scientific_latex
 
 
 def plot_fit(x, y, beta, yerr=None, vcv_beta=None, r2=None, kw_data=None, kw_fit=None, fit_label_cb=None, ax=True,
-             x_unit=None, y_unit=None):
+             x_unit=1, y_unit=1):
     """ Plot the result of a fit
 
     Parameters
@@ -42,14 +42,19 @@ def plot_fit(x, y, beta, yerr=None, vcv_beta=None, r2=None, kw_data=None, kw_fit
     kw_data, kw_fit = kw_data or {}, kw_fit or {}
     if fit_label_cb is not None and 'label' not in kw_fit:
         kw_fit['label'] = fit_label_cb(beta, vcv_beta, r2)
+
     if yerr is None:
         ax.plot(x_ul, y_ul, **kw_data)
     else:
         ax.errorbar(x, y, yerr=yerr, **kw_data)
+
     xlim = [np.min(x_ul), np.max(x_ul)]
     if 'marker' not in kw_fit:
         kw_fit['marker'] = 'None'
-    yfit_ul = to_unitless(beta[0] + beta[1]*xlim*x_unit, y_unit)
+
+    beta_ul = [to_unitless(elem, y_unit*x_unit**-i) for i, elem in enumerate(beta)]
+    yfit_ul = [sum([b*x_elem**i for i, b in enumerate(beta_ul)]) for x_elem in xlim]
+
     ax.plot(xlim, yfit_ul, **kw_fit)
     if 'label' in kw_fit:
         ax.legend(loc='best')
@@ -65,6 +70,10 @@ def plot_fit(x, y, beta, yerr=None, vcv_beta=None, r2=None, kw_data=None, kw_fit
         ax.set_ylabel('$y / %s$' % latex_of_unit(y_unit))
 
     return ax
+
+
+def _beta_tup(beta, x_unit, y_unit):
+    return tuple(coeff*y_unit*x_unit**-i for i, coeff in enumerate(beta))
 
 
 def least_squares(x, y, w=1, plot_cb=None, plot_cb_kwargs=None):  # w == 1 => OLS, w != 1 => WLS
@@ -151,14 +160,15 @@ def least_squares(x, y, w=1, plot_cb=None, plot_cb_kwargs=None):  # w == 1 => OL
     if 'y_unit' not in plot_cb_kwargs:
         plot_cb_kwargs['y_unit'] = y_unit
 
-    beta_tup = tuple(coeff*y_unit*x_unit**-i for i, coeff in enumerate(beta))
+    beta_tup = _beta_tup(beta, x_unit, y_unit)
     if plot_cb is not None:
         plot_cb(x, y, beta_tup, w**-0.5 if explicit_errors else None, **plot_cb_kwargs)
 
     return beta_tup, vcv, float(R2)
 
 
-def irls(x, y, w_cb=lambda x, y, b, c: x**0, itermax=16, rmsdwtol=1e-8, full_output=False, ax=None):
+def irls(x, y, w_cb=lambda x, y, b, c: x**0, itermax=16, rmsdwtol=1e-8, full_output=False,
+         plot_cb=None, plot_cb_kwargs=None):
     """ Iteratively reweighted least squares
 
     Parameters
@@ -175,7 +185,10 @@ def irls(x, y, w_cb=lambda x, y, b, c: x**0, itermax=16, rmsdwtol=1e-8, full_out
     itermax : int
     rmsdwtol : float
     full_output : bool
-    ax : matplotlib.axes.Axes
+    plot_cb : callble
+        See :func:`least_squares`
+    plot_cb_kwargs : dict
+        See :func:`least_squares`
 
     Returns
     -------
@@ -194,28 +207,33 @@ def irls(x, y, w_cb=lambda x, y, b, c: x**0, itermax=16, rmsdwtol=1e-8, full_out
 
 
     """
-
+    x_unit, y_unit = unit_of(x), unit_of(y)
+    x_ul, y_ul = to_unitless(x, x_unit), to_unitless(y, y_unit)
     if itermax < 1:
         raise ValueError("itermax must be >= 1")
     weights = []
-    w = np.ones_like(x)
+    w = np.ones_like(x_ul)
     rmsdw = np.inf
     ii = 0
     while rmsdw > rmsdwtol and ii < itermax:
         weights.append(w)
-        beta, cov, r2 = least_squares(x, y, w)
+        beta, cov, r2 = least_squares(x_ul, y_ul, w)
         old_w = w.copy()
-        w = w_cb(x, y, beta, cov)
+        w = w_cb(x_ul, y_ul, beta, cov)
         rmsdw = np.sqrt(np.mean(np.square(w - old_w)))
         ii += 1
     if ii == itermax:
         warnings.warn('itermax reached')
-    if ax is not None:
-        plot_fit(x, y, beta, ax=ax)
+    if plot_cb is True:
+        plot_cb = plot_fit
+    beta_tup = _beta_tup(beta, x_unit, y_unit)
+    plot_cb_kwargs = plot_cb_kwargs or {}
+    if plot_cb is not None:
+        plot_cb(x, y, beta_tup, **plot_cb_kwargs)
     if full_output:
-        return beta, cov, {'weights': weights, 'niter': ii, 'success': ii < itermax}
+        return beta_tup, cov, {'weights': weights, 'niter': ii, 'success': ii < itermax}
     else:
-        return beta, cov
+        return beta_tup, cov
 
 irls.ones = lambda x, y, b, c: 1
 
