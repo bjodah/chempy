@@ -244,8 +244,7 @@ if np is not None:
 
 
 def avg_params(opt_params, cov_params, label_cb=None, ax=None,
-               title=r'$y(x) = \beta_0 + \beta_1 \cdot x$',
-               xlabel=r'$\beta_0$', ylabel=r'$\beta_1$'):
+               title=False, xlabel=False, ylabel=False, flip=False, nsigma=1):
     """ Calculates the average parameters from a set of regression parameters
 
     Parameters
@@ -257,8 +256,13 @@ def avg_params(opt_params, cov_params, label_cb=None, ax=None,
     label_cb : callable
         signature (beta, variance_beta) -> str
     ax : matplotlib.axes.Axes
-    xlabel : str
-    ylabel : str
+    title : bool or str
+    xlabel : bool or str
+    ylabel : bool or str
+    flip : bool
+        for plotting: (x, y) -> beta1, beta0
+    nsigma : int
+        Multiplier for error bars
 
     Returns
     -------
@@ -279,12 +283,26 @@ def avg_params(opt_params, cov_params, label_cb=None, ax=None,
             lbl = None
         if ax is True:
             ax = plt.subplot(1, 1, 1)
-        ax.errorbar(opt_params[:, 0], opt_params[:, 1], marker='s', ls='None',
-                    xerr=var_beta[:, 0]**0.5, yerr=var_beta[:, 1]**0.5)
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
-        ax.set_title(title)
-        ax.errorbar(avg_beta[0], avg_beta[1], xerr=var_avg_beta[0]**0.5, yerr=var_avg_beta[1]**0.5, marker='o', c='r',
+        xidx, yidx = (1, 0) if flip else (0, 1)
+        ax.errorbar(opt_params[:, xidx], opt_params[:, yidx], marker='s', ls='None',
+                    xerr=nsigma*var_beta[:, xidx]**0.5,
+                    yerr=nsigma*var_beta[:, yidx]**0.5)
+        if xlabel:
+            if xlabel is True:
+                xlabel = r'$\beta_%d$' % xidx
+            ax.set_xlabel(xlabel)
+        if ylabel:
+            if ylabel is True:
+                xlabel = r'$\beta_%d$' % yidx
+            ax.set_ylabel(ylabel)
+        if title:
+            if title is True:
+                title = r'$y(x) = \beta_0 + \beta_1 \cdot x$'
+            ax.set_title(title)
+        ax.errorbar(avg_beta[xidx],
+                    avg_beta[yidx],
+                    xerr=nsigma*var_avg_beta[xidx]**0.5,
+                    yerr=nsigma*var_avg_beta[yidx]**0.5, marker='o', c='r',
                     linewidth=2, markersize=10, label=lbl)
         ax.legend(numpoints=1)
     return avg_beta, var_avg_beta
