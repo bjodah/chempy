@@ -22,7 +22,10 @@ from __future__ import (absolute_import, division, print_function)
 import copy
 
 from .chemistry import Substance
-from .units import get_derived_unit, html_of_unit, is_unitless, SI_base_registry, to_unitless, default_units as u
+from .units import (
+    get_derived_unit, html_of_unit, is_unitless, SI_base_registry,
+    to_unitless, rescale, default_units as u
+)
 from .util.arithmeticdict import ArithmeticDict, _imul, _itruediv
 from .printing import as_per_substance_html_table
 
@@ -38,6 +41,9 @@ class QuantityDict(ArithmeticDict):
         instance = cls(get_derived_unit(SI_base_registry, quantity_name), *args, **kwargs)
         instance.quantity_name = quantity_name
         return instance
+
+    def rescale(self, new_units):
+        return self.__class__(new_units, {k: rescale(v, new_units) for k, v in self.items()})
 
     def _repr_html_(self):
         if hasattr(self, 'quantity_name'):

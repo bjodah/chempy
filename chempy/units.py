@@ -42,7 +42,7 @@ else:
     default_constants = pq.constants
 
     default_units = NameSpace(pq)
-    default_units.decimetre = pq.UnitQuantity(
+    default_units.dm = default_units.decimetre = pq.UnitQuantity(
         'decimetre',  default_units.m / 10.0, u_symbol='dm')
     default_units.m3 = default_units.metre**3
     default_units.dm3 = default_units.decimetre**3
@@ -165,6 +165,18 @@ def latex_of_unit(quant):
     return quant.dimensionality.latex.strip('$')
 
 
+def unicode_of_unit(quant):
+    """ Returns unicode reperesentation of the unit of a quantity
+
+    Examples
+    --------
+    >>> print(unicode_of_unit(1/default_units.kelvin))
+    1/K
+
+    """
+    return quant.dimensionality.unicode
+
+
 def html_of_unit(quant):
     """ Returns HTML reperesentation of the unit of a quantity
 
@@ -234,6 +246,10 @@ def unit_of(expr, simplified=False):
             return expr.units
     except AttributeError:
         return 1
+
+
+def rescale(value, unit):
+    return value.rescale(unit)
 
 
 def to_unitless(value, new_unit=None):

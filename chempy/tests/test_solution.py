@@ -5,7 +5,7 @@ import pytest
 
 from .._solution import Solution, QuantityDict
 from ..util.testing import requires
-from ..units import units_library, to_unitless, default_units as u
+from ..units import magnitude, units_library, to_unitless, default_units as u
 
 
 @requires(units_library)
@@ -29,6 +29,9 @@ def test_QuantityDict():
 
     assert n.isclose({'H2O': 55.4*.4*u.mol})
     assert abs(to_unitless(n['H2O'], u.mol) - 55.4*.4) < 1e-14
+
+    c2 = c.rescale(u.mol/u.cm3)
+    assert abs(magnitude(c2['H2O']) - 55.4e-3) < 1e-6
 
 
 def _get_s1_s2():

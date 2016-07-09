@@ -13,8 +13,9 @@ from ..units import latex_of_unit, is_unitless, to_unitless, unit_of
 from ..printing import number_to_scientific_latex
 
 
-def plot_fit(x, y, beta, yerr=None, vcv_beta=None, r2=None, kw_data=None, kw_fit=None, fit_label_cb=None, ax=True,
-             x_unit=1, y_unit=1):
+def plot_fit(x, y, beta, yerr=None, vcv_beta=None, r2=None, kw_data=None,
+             kw_fit=None, fit_label_cb=None, ax=True,
+             x_unit=1, y_unit=1, nsigma=1):
     """ Plot the result of a fit
 
     Parameters
@@ -32,6 +33,10 @@ def plot_fit(x, y, beta, yerr=None, vcv_beta=None, r2=None, kw_data=None, kw_fit
         signature (beta, variance_beta, r2) -> str
     ax : matplotlib.axes.Axes
         Alternatively ``True`` or ``None``
+    x_unit : unit
+    y_unit : unit
+    nsigma : int
+        Multiplier for errorbars when plotting.
 
     """
     x_ul = to_unitless(x, x_unit)
@@ -46,7 +51,7 @@ def plot_fit(x, y, beta, yerr=None, vcv_beta=None, r2=None, kw_data=None, kw_fit
     if yerr is None:
         ax.plot(x_ul, y_ul, **kw_data)
     else:
-        ax.errorbar(x, y, yerr=yerr, **kw_data)
+        ax.errorbar(x, y, yerr=yerr*nsigma, **kw_data)
 
     xlim = [np.min(x_ul), np.max(x_ul)]
     if 'marker' not in kw_fit:
