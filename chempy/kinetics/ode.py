@@ -6,6 +6,7 @@ evolution of concentrations in reaction systems.
 """
 from __future__ import (absolute_import, division, print_function)
 
+from collections import OrderedDict
 from itertools import chain
 import math
 
@@ -146,14 +147,13 @@ def get_odesys(rsys, include_params=True, substitutions=None,
     _passive_subst = {}
     substitutions = substitutions or {}
 
-    unique_keys = []
-    p_defaults = {}
+    unique = OrderedDict()
 
     def _reg_unique(expr):
         if not include_params:
             if expr.unique_keys is not None:
-                unique_keys.extend(expr.unique_keys)
-                p_defaults.update(dict(zip(expr.unique_keys, expr.args)))
+                for k, v in zip(expr.unique_keys, expr.args):
+                    unique[k] = v
 
     for key, v in substitutions.items():
         if key not in _original_param_keys:
@@ -169,9 +169,6 @@ def get_odesys(rsys, include_params=True, substitutions=None,
     for ratex in r_exprs:
         _reg_unique(ratex)
 
-    if len(unique_keys) != len(set(unique_keys)):
-        raise ValueError("Duplicates in unique keys.")
-
     if unit_registry is None:
         def pre_processor(x, y, p):
             if p == ():
@@ -180,16 +177,16 @@ def get_odesys(rsys, include_params=True, substitutions=None,
             return (
                 x,
                 rsys.as_per_substance_array(y),
-                [p[k] for k in param_keys] + [p.get(k, p_defaults[k]) for k in unique_keys]
+                [p[k] for k in param_keys] + [p.get(k, v) for k, v in unique.items()]
             )
 
         def post_processor(x, y, p):
             return (
                 x,
                 y,  # dict(zip(substance_keys, y)),
-                dict(zip(param_keys+unique_keys, p))
+                dict(zip(chain(param_keys, unique.keys()), p))
             )
-        p_units = [None]*(len(param_keys) + len(unique_keys))
+        p_units = [None]*(len(param_keys) + len(unique))
     else:
         # We need to make rsys_params unitless and create
         # a pre- & post-processor for SymbolicSys
@@ -211,7 +208,7 @@ def get_odesys(rsys, include_params=True, substitutions=None,
             return (
                 to_unitless(x, time_unit),
                 rsys.as_per_substance_array(to_unitless(y, conc_unit)),
-                [to_unitless(p[k], p_unit) for k, p_unit in zip(chain(param_keys, unique_keys), p_units)]
+                [to_unitless(p[k], p_unit) for k, p_unit in zip(chain(param_keys, unique.keys()), p_units)]
             )
 
         def post_processor(x, y, p):
@@ -230,7 +227,7 @@ def get_odesys(rsys, include_params=True, substitutions=None,
         variables = dict(chain(
             zip(substance_keys, y),
             zip(param_keys, p[:len(param_keys)]),
-            zip(unique_keys, p[len(param_keys):])
+            zip(unique.keys(), p[len(param_keys):])
         ))
         variables['time'] = t
         for k, act in _active_subst.items():
@@ -242,5 +239,5 @@ def get_odesys(rsys, include_params=True, substitutions=None,
 
     return SymbolicSys.from_callback(
         dydt, len(substance_keys),
-        len(param_keys) + (0 if include_params else len(unique_keys)),
-        **kwargs), param_keys, unique_keys, p_units
+        len(param_keys) + (0 if include_params else len(unique)),
+        **kwargs), param_keys, unique, p_units
