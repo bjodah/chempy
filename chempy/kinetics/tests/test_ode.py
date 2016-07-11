@@ -304,12 +304,13 @@ def test_get_odesys__time_dep_temperature():
         d_Texp = T0*sp.exp(-Ea_over_R/T0) - T*sp.exp(-Ea_over_R/T)
         return A0*sp.exp(A/dTdt*(Ea_over_R*d_Ei + d_Texp)).n(30)
 
-    params = A0, A, Ea_over_R, T0, dTdt = 13, 1e10, 56e3/8, 273, 2
+    params = A0, A, Ea_over_R, T0, dTdt = [13, 1e10, 56e3/8, 273, 2]
     B0 = 11
     rate = ArrheniusMassAction([A, Ea_over_R])
     rxn = Reaction({'A': 1}, {'B': 3}, rate)
     rsys = ReactionSystem([rxn], 'A B')
-    odesys = get_odesys(rsys, substitutions={'temperature': RampedTemp([T0, dTdt])})[0]
+    rt = RampedTemp([T0, dTdt], ('init_temp', 'ramp_rate'))
+    odesys = get_odesys(rsys, False, substitutions={'temperature': rt})[0]
     conc = {'A': A0, 'B': B0}
     x, y, p = odesys.pre_process([2, 5, 10], conc)
     fout = odesys.f_cb(x, y, p)
@@ -323,13 +324,14 @@ def test_get_odesys__time_dep_temperature():
     ])
     assert np.allclose(fout, ref)
 
-    xout, yout, info = odesys.integrate(
-        10, rsys.as_per_substance_array(conc),
-        atol=1e-10, rtol=1e-12)
-
-    Aref = np.array([float(refA(t, *params)) for t in xout])
-    # Aref = 1/(1/13 + 2*1e-6*t_unitless)
-    yref = np.zeros((xout.size, 2))
-    yref[:, 0] = Aref
-    yref[:, 1] = B0 + 3*(A0-Aref)
-    assert allclose(yout, yref)
+    for ramp_rate in [2, 3, 4]:
+        xout, yout, info = odesys.integrate(
+            10, rsys.as_per_substance_array(conc), {'ramp_rate': ramp_rate},
+            atol=1e-10, rtol=1e-12)
+        params[-1] = ramp_rate
+        Aref = np.array([float(refA(t, *params)) for t in xout])
+        # Aref = 1/(1/13 + 2*1e-6*t_unitless)
+        yref = np.zeros((xout.size, 2))
+        yref[:, 0] = Aref
+        yref[:, 1] = B0 + 3*(A0-Aref)
+        assert allclose(yout, yref)

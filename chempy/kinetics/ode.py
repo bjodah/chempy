@@ -145,23 +145,33 @@ def get_odesys(rsys, include_params=True, substitutions=None,
     _active_subst = {}
     _passive_subst = {}
     substitutions = substitutions or {}
+
+    unique_keys = []
+    p_defaults = {}
+
+    def _reg_unique(expr):
+        if not include_params:
+            if expr.unique_keys is not None:
+                unique_keys.extend(expr.unique_keys)
+                p_defaults.update(dict(zip(expr.unique_keys, expr.args)))
+
     for key, v in substitutions.items():
         if key not in _original_param_keys:
-            raise ValueError("Substitution: '%s' does not appear in any rate expressions.")
+            raise ValueError("Substitution: '%s' does not appear in any rate expressions." % key)
         if isinstance(v, Expr):
             _from_subst.update(v.parameter_keys)
             _active_subst[key] = v
+            _reg_unique(v)
         else:
             _passive_subst[key] = v
     param_keys = list(filter(lambda x: x not in substitutions, _original_param_keys.union(_from_subst)))
 
-    unique_keys = []
-    p_defaults = []
-    if not include_params:
-        for ratex in r_exprs:
-            if ratex.unique_keys is not None:
-                unique_keys.extend(ratex.unique_keys)
-                p_defaults.extend(ratex.args)
+    for ratex in r_exprs:
+        _reg_unique(ratex)
+
+    if len(unique_keys) != len(set(unique_keys)):
+        raise ValueError("Duplicates in unique keys.")
+
     if unit_registry is None:
         def pre_processor(x, y, p):
             if p == ():
@@ -170,7 +180,7 @@ def get_odesys(rsys, include_params=True, substitutions=None,
             return (
                 x,
                 rsys.as_per_substance_array(y),
-                [p[k] for k in param_keys] + [p[k] for k in unique_keys]
+                [p[k] for k in param_keys] + [p.get(k, p_defaults[k]) for k in unique_keys]
             )
 
         def post_processor(x, y, p):
