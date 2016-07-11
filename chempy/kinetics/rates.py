@@ -215,3 +215,13 @@ class EyringMassAction(ArrheniusMassAction):
         kB_h_times_exp_dS_R, dH_over_R = self.all_args(variables, backend=backend)
         T = variables['temperature']
         return T * kB_h_times_exp_dS_R * backend.exp(-dH_over_R/T)
+
+
+class RampedTemp(Expr):
+    """ Ramped temperature, pass as substitution to e.g. ``get_odesys`` """
+    argument_names = ('T0', 'dTdt')
+    parameter_keys = ('time',)
+
+    def __call__(self, variables, backend=None):
+        T0, dTdt = self.all_args(variables, backend=backend)
+        return T0 + dTdt*variables['time']

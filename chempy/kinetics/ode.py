@@ -164,6 +164,9 @@ def get_odesys(rsys, include_params=True, substitutions=None,
                 p_defaults.extend(ratex.args)
     if unit_registry is None:
         def pre_processor(x, y, p):
+            if p == ():
+                p = {}
+            p['time'] = x
             return (
                 x,
                 rsys.as_per_substance_array(y),
@@ -192,6 +195,9 @@ def get_odesys(rsys, include_params=True, substitutions=None,
         conc_unit = get_derived_unit(unit_registry, 'concentration')
 
         def pre_processor(x, y, p):
+            if p == ():
+                p = {}
+            p['time'] = to_unitless(x, time_unit)
             return (
                 to_unitless(x, time_unit),
                 rsys.as_per_substance_array(to_unitless(y, conc_unit)),
@@ -216,6 +222,7 @@ def get_odesys(rsys, include_params=True, substitutions=None,
             zip(param_keys, p[:len(param_keys)]),
             zip(unique_keys, p[len(param_keys):])
         ))
+        variables['time'] = t
         for k, act in _active_subst.items():
             if unit_registry is not None:
                 _, act = act.dedimensionalisation(unit_registry)

@@ -3,7 +3,7 @@ from __future__ import (absolute_import, division, print_function)
 
 from math import log10, floor
 
-from ..units import html_of_unit, latex_of_unit, unicode_of_unit, magnitude, to_unitless, unit_of
+from ..units import html_of_unit, latex_of_unit, unicode_of_unit, to_unitless, unit_of
 from ..util.parsing import _unicode_sup
 
 
@@ -49,7 +49,7 @@ def _float_str_w_uncert(x, xe, precision=2):
     >>> _float_str_w_uncert(3.1416, 0.029, 1)
     '3.14(3)'
     >>> _float_str_w_uncert(3.1416e9, 2.9e6, 1)
-    '3.142(3)e+09'
+    '3.142(3)e9'
 
     Returns
     -------
