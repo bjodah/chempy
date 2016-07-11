@@ -186,8 +186,8 @@ def test_Expr__nargs():
         Linear([3, 2, 1])
 
     l2 = Linear([3, 2], ['a', 'b'])
-    with pytest.raises(ValueError):
-        Linear([3, 2], ['a'])
+    # with pytest.raises(ValueError):
+    #     Linear([3, 2], ['a'])
     with pytest.raises(ValueError):
         Linear([3, 2], ['a', 'b', 'c'])
 
@@ -317,3 +317,20 @@ def test_Expr__single_arg__units():
     p = Pressure(3*u.mol)
     variables = {'temperature': 273.15*u.kelvin, 'volume': 170*u.dm3, 'R': 8.314*u.J/u.K/u.mol}
     assert allclose(p(variables), 3*8.314*273.15/0.17*u.Pa)
+
+
+def test_Expr__argument_defaults():
+
+    class MyExpr(Expr):
+        argument_names = ('a', 'b', 'c')
+        argument_defaults = (17, 23)
+
+        def __call__(self, variables={}, backend=math):
+            a, b, c = self.all_args(variables, backend=backend)
+            return a*b*c
+
+    assert MyExpr([15])() == 15*17*23
+    assert MyExpr([15, 17])() == 15*17*23
+    assert MyExpr([15, 19])() == 15*19*23
+    assert MyExpr([15, 19, 29])() == 15*19*29
+    assert MyExpr(dict(zip('abc', [15, 19, 29])))() == 15*19*29

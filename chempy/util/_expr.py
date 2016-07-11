@@ -27,7 +27,7 @@ class Expr(object):
     args : tuple/list of scalars or dict mapping name to scalar
         When dict it is converted to a list using self.argument_names or self.unique_keys
     unique_keys : iterable of strings
-        Unique names (among all instances) for late overriding
+        Unique names (among all instances) for late overriding, aligned with beginning of ``args``.
     \*\*kwargs :
         keyword arguments intercepted in subclasses (directed by :attr:`kw`)
         note that parameters in :attr:`kw` are not processed in e.g. dedimensionalisation.
@@ -66,6 +66,8 @@ class Expr(object):
         For documentation and referencing positional arguments in self.args
         If set, and `nargs` is `None`: its length is used to set `nargs`
         (unless argument_names ends with an Ellipsis()).
+    argument_defaults : tuple of floats, optional
+        Default values for arguments, aligned from the end of argument names.
     parameter_keys : tuple of strings
     kw : dict or None
         kwargs to be intercepted in __init__ and set as attributes
@@ -77,6 +79,7 @@ class Expr(object):
     '''
 
     argument_names = None
+    argument_defaults = None
     parameter_keys = ()
     kw = None
     nargs = None
@@ -85,15 +88,26 @@ class Expr(object):
     def __init__(self, args, unique_keys=None, **kwargs):
         if self.argument_names is not None and self.argument_names[-1] != Ellipsis and self.nargs is None:
             self.nargs = len(self.argument_names)
+        if self.argument_defaults is not None:
+            if self.nargs == -1:
+                raise ValueError("Cannot have defaults when number of arguments is unbounded.")
+            if len(self.argument_defaults) > len(self.argument_names):
+                raise ValueError("Cannot have more defaults than actual arguments")
+            n_missing = self.nargs - len(args)
+            if n_missing > 0:
+                args = tuple(chain(args, self.argument_defaults[-n_missing:]))
+
         if self.nargs == 1 and (isinstance(args, (float, int)) or getattr(args, 'ndim', -1) == 0):
             args = [args]
             nargs = 1
         else:
             nargs = len(args)
+
         if self.nargs not in (None, -1) and nargs != self.nargs:
-            raise ValueError("Incorrect number of arguments: %d (expected %d)" % (nargs, self.nargs))
-        if unique_keys is not None and self.nargs is not None and len(unique_keys) != self.nargs:
-            raise ValueError("Incorrect number of unique_keys: %d (expected %d)" % (len(unique_keys), self.nargs))
+            raise ValueError("Incorrect number of arguments: %d (expected %d)" % (nargs, nargs))
+        if unique_keys is not None and self.nargs is not None and len(unique_keys) > self.nargs:
+            raise ValueError("Incorrect number of unique_keys: %d (expected %d or less)" % (
+                len(unique_keys), self.nargs))
         self.unique_keys = unique_keys
 
         if isinstance(args, dict):
@@ -114,6 +128,7 @@ class Expr(object):
         callback : callable
             signature: *args, backend=None
         argument_names : tuple of str, optional
+        argument_defaults : tuple of floats, optional
         parameter_keys : tuple of str, optional,
         kw : dict, optional
         nargs : int, optional
