@@ -180,7 +180,7 @@ class MassAction(RateExpr):
         return _MassAction
 
     def as_mass_action(self, variables, backend=math):
-        return MassAction([self.rate_coeff(variables, backend=backend)], self.unique_keys, **self.kwargs)
+        return MassAction([self.rate_coeff(variables, backend=backend)], **self.kwargs)
 
 
 class ArrheniusMassAction(MassAction):
@@ -209,12 +209,13 @@ class ArrheniusMassAction(MassAction):
 
 
 class EyringMassAction(ArrheniusMassAction):
-    argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R')
+    argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R', 'kB_h_times_exp_rS_R', 'rH_over_R')
+    argument_defaults = (1, 0)
 
     def rate_coeff(self, variables, backend=math):
-        kB_h_times_exp_dS_R, dH_over_R = self.all_args(variables, backend=backend)
+        Sact_fact, Hact_exp, Sref_fact, Href_exp = self.all_args(variables, backend=backend)
         T = variables['temperature']
-        return T * kB_h_times_exp_dS_R * backend.exp(-dH_over_R/T)
+        return T * Sact_fact / Sref_fact * backend.exp((Href_exp-Hact_exp)/T)
 
 
 class RampedTemp(Expr):
