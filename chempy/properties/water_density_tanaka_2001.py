@@ -79,20 +79,17 @@ def water_density(T=None, T0=None, units=None, a=None,
         warnings.warn("Temperature is outside range (0-40 degC)")
     return a[4]*(1-((t + a[0])**2*(t + a[1]))/(a[2]*(t + a[3])))
 
-# generated at doi2bib.org:
-bibtex = """
-@article{Tanaka2001,
-  doi = {10.1088/0026-1394/38/4/3},
-  url = {http://dx.doi.org/10.1088/0026-1394/38/4/3},
-  year  = {2001},
-  month = {aug},
-  publisher = {{IOP} Publishing},
-  volume = {38},
-  number = {4},
-  pages = {301--309},
-  author = {M Tanaka and G Girard and R Davis and A Peuto and N Bignell},
-  title = {Recommended table for the density of water between 0 ~C and 40
-           ~C based on recent experimental reports},
-  journal = {Metrologia}
+# bibtex format (generated at doi2bib.org):
+reference = {
+    'doi': '10.1088/0026-1394/38/4/3',
+    'url': 'http://dx.doi.org/10.1088/0026-1394/38/4/3',
+    'year ': 2001,
+    'month': 'aug',
+    'publisher': '{IOP} Publishing',
+    'volume': 38,
+    'number': 4,
+    'pages': (301, 309),
+    'author': 'M Tanaka and G Girard and R Davis and A Peuto and N Bignell',
+    'title': 'Recommended table for the density of water between 0 ~C and 40 ~C based on recent experimental reports',
+    'journal': 'Metrologia'
 }
-"""

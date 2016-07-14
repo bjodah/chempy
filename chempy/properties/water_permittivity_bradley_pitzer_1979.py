@@ -83,20 +83,18 @@ def water_permittivity(T=None, P=None, units=None, U=None,
     return eps1000 + C*be.log((B+P)/(B + 1000.0*bar))
 
 
-# generated at doi2bib.org:
-bibtex = """
-@article{Bradley1979,
-  doi = {10.1021/j100475a009},
-  url = {http://dx.doi.org/10.1021/j100475a009},
-  year  = {1979},
-  month = {jun},
-  publisher = {American Chemical Society ({ACS})},
-  volume = {83},
-  number = {12},
-  pages = {1599--1603},
-  author = {Daniel J. Bradley and Kenneth S. Pitzer},
-  title = {Thermodynamics of electrolytes. 12. Dielectric properties of water
-           and Debye-Hueckel parameters to 350.degree.C and 1 kbar},
-  journal = {J. Phys. Chem.}
+# bibtex format (generated at doi2bib.org):
+reference = {
+    'doi': '10.1021/j100475a009',
+    'url': 'http://dx.doi.org/10.1021/j100475a009',
+    'year ': 1979,
+    'month': 'jun',
+    'publisher': 'American Chemical Society ({ACS})',
+    'volume': 83,
+    'number': 12,
+    'pages': (1599, 1603),
+    'author': 'Daniel J. Bradley and Kenneth S. Pitzer',
+    'title': ('Thermodynamics of electrolytes. 12. Dielectric properties of'
+              ' water and Debye-Hueckel parameters to 350 C and 1 kbar'),
+    'journal': 'J. Phys. Chem.'
 }
-"""

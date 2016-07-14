@@ -83,22 +83,20 @@ def sulfuric_acid_density(w, T=None, T0=None, units=None, warn=True):
     return np.sum((t_arr*w_arr)*_data)*kg/m3  # Equation (2) in reference
 
 
-# generated at doi2bib.org:
-bibtex = """
-@article{Myhre1998,
-  doi = {10.1021/je980013g},
-  url = {http://dx.doi.org/10.1021/je980013g},
-  year  = {1998},
-  month = {jul},
-  publisher = {American Chemical Society ({ACS})},
-  volume = {43},
-  number = {4},
-  pages = {617--622},
-  author = {Cathrine E. L. Myhre and Claus J. Nielsen and Ole W. Saastad},
-  title = {Density and Surface Tension of Aqueous H2{SO}4 at Low Temperature},
-  journal = {Journal of Chemical {\&} Engineering Data}
+# bibtex format (generated at doi2bib.org):
+reference = {
+    'doi': '10.1021/je980013g',
+    'url': 'http://dx.doi.org/10.1021/je980013g',
+    'year ': 1998,
+    'month': 'jul',
+    'publisher': 'American Chemical Society ({ACS})',
+    'volume': 43,
+    'number': 4,
+    'pages': (617, 622),
+    'author': 'Cathrine E. L. Myhre and Claus J. Nielsen and Ole W. Saastad',
+    'title': 'Density and Surface Tension of Aqueous H2{SO}4 at Low Temperature',
+    'journal': 'Journal of Chemical {\&} Engineering Data'
 }
-"""
 
 
 def density_from_concentration(conc, T=None, molar_mass=None,
