@@ -87,7 +87,7 @@ Parsing formulae
 
    >>> from chempy import Substance
    >>> ferricyanide = Substance.from_formula('Fe(CN)6-3')
-   >>> ferricyanide.composition == {0: -3, 26: 1, 6: 6, 7: 6}
+   >>> ferricyanide.composition == {0: -3, 26: 1, 6: 6, 7: 6}  # 0 for charge
    True
    >>> print(ferricyanide.unicode_name)
    Fe(CN)₆³⁻
@@ -149,18 +149,20 @@ Chemical equilibria
 
    >>> from chempy import Equilibrium
    >>> from chempy.chemistry import Species
-   >>> water_autop = Equilibrium({'H2O'}, {'H+', 'OH-'}, 10**-14)
-   >>> ammonia_prot = Equilibrium({'NH4+'}, {'NH3', 'H+'}, 10**-9.24)
+   >>> water_autop = Equilibrium({'H2O'}, {'H+', 'OH-'}, 10**-14)  # unit "molar" assumed
+   >>> ammonia_prot = Equilibrium({'NH4+'}, {'NH3', 'H+'}, 10**-9.24)  # same here
    >>> from chempy.equilibria import EqSystem
    >>> substances = map(Species.from_formula, 'H2O OH- H+ NH3 NH4+'.split())
    >>> eqsys = EqSystem([water_autop, ammonia_prot], substances)
-   >>> print('\n'.join(map(str, eqsys.rxns)))
+   >>> print('\n'.join(map(str, eqsys.rxns)))  # "rxns" short for "reactions"
    H2O = H+ + OH-; 1e-14
    NH4+ = H+ + NH3; 5.75e-10
    >>> from collections import defaultdict
    >>> init_conc = defaultdict(float, {'H2O': 1, 'NH3': 0.1})
    >>> x, sol, sane = eqsys.root(init_conc)
    >>> assert sol['success'] and sane
+   >>> print(sorted(sol.keys()))  # see package "pyneqsys" for more info
+   ['fun', 'intermediate_info', 'internal_x_vecs', 'nfev', 'njev', 'success', 'x', 'x_vecs']
    >>> print(', '.join('%.2g' % v for v in x))
    1, 0.0013, 7.6e-12, 0.099, 0.0013
 
@@ -182,6 +184,12 @@ The source code is Open Source and is released under the very permissive
 `"simplified (2-clause) BSD license" <https://opensource.org/licenses/BSD-2-Clause>`_.
 See `LICENSE <LICENSE>`_ for further details.
 
+See also
+--------
+- `SymPy <https://github.com/sympy/sympy>`_
+- `pyneqsys <https://github.com/bjodah/pyneqsys>`_
+- `pyodesys <https://github.com/bjodah/pyodesys>`_
+- `thermo <https://github.com/CalebBell/thermo>`_
 
 Contributing
 ------------
