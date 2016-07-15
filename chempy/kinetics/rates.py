@@ -37,8 +37,8 @@ class RateExpr(Expr):
             if isinstance(arg, Expr):
                 new_args.append(arg)
             else:
-                if hasattr(arg, '_as_RateExpr'):
-                    new_args.append(arg._as_RateExpr(self.rxn))
+                if hasattr(arg, 'as_RateExpr'):
+                    new_args.append(arg.as_RateExpr(self.rxn))
                 else:
                     new_args.append(arg)
         if self.kw is None:
@@ -184,7 +184,7 @@ class MassAction(RateExpr):
 
 
 class ArrheniusMassAction(MassAction):
-    """ Rate expression for a Arrhenius-type of rate
+    """ Rate expression for a Arrhenius-type of rate: c0*exp(-c1/T)
 
     Examples
     --------
@@ -209,7 +209,9 @@ class ArrheniusMassAction(MassAction):
 
 
 class EyringMassAction(ArrheniusMassAction):
-    argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R', 'kB_h_times_exp_rS_R', 'rH_over_R')
+    """ Rate expression for Eyring eq: c0/c2*T*exp((c3-c1)/T) """
+
+    argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R', 'kB_h_times_exp_refS_R', 'rH_over_R')
     argument_defaults = (1, 0)
 
     def rate_coeff(self, variables, backend=math):
