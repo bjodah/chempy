@@ -24,7 +24,16 @@ for CONDA_PY in 2.7 3.4 3.5; do
 done
 
 # All went well, add a tag and push it.
-git tag -a v$VERSION -m v$VERSION
+git tag -a v$VERSION -m $PKG-$VERSION
 git push
 git push --tags
 twine upload dist/${PKG}-$VERSION.tar.gz
+
+set +x
+echo ""
+echo "    Make a github release of the tag \"v$VERSION\" and name "
+echo "    it \"${PKG}-${VERSION}\", manually attach the new .tar.gz"
+echo "    file from the ./dist/ directory. Then run:"
+echo ""
+echo "        $ ./scripts/post_release.sh v$VERSION MYSERVER MYGITHUBUSERNAME"
+echo ""
