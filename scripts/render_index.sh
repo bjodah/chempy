@@ -23,11 +23,11 @@ for f in $@; do
         continue  # don't include bokeh apps
     fi
     img=$(basename $f .html).png
-    phantomjs $(unset CDPATH && cd "$(dirname "$0")" && echo $PWD)/rasterize.js $f $tmpdir/$img 1200px*900px
+    QT_QPA_PLATFORM=offscreen phantomjs $(unset CDPATH && cd "$(dirname "$0")" && echo $PWD)/rasterize.js $f $tmpdir/$img 1200px*900px
     convert $tmpdir/$img -resize 400x300 thumbs/$img
     cat <<EOF>>index.html
 <p style='text-align: center'>
-<a href='$f' style='ffont-ont-family: sans-serif'>
+<a href='$f' style='font-family: sans-serif'>
 <img src='thumbs/$img'><br>
 $f
 </a></p>
