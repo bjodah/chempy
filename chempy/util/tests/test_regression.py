@@ -10,7 +10,7 @@ def test_irls():
     import numpy as np
     x = np.linspace(0, 100)
     y = np.exp(-x/47)
-    b, c, info = irls(x, np.log(y), full_output=True)
+    b, c, info = irls(x, np.log(y))
     assert abs(b[1] + 1/47) < 1e-5
     assert np.all(c < 1e-4)
     assert info['success'] is True

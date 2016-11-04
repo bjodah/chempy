@@ -50,34 +50,32 @@ chemistry (mainly physical/inorganic/analytical chemistry). Currently it include
 
 Documentation
 -------------
-Auto-generated API documentation for latest stable release is found here:
-`<https://pythonhosted.org/chempy>`_
-(and development docs for the current master branch are found here:
+Auto-generated API documentation for the latest stable release is found here:
+`<https://bjodah.github.io/chempy/latest>`_
+(and the development version for the current master branch is found here:
 `<http://hera.physchem.kth.se/~chempy/branches/master/html>`_).
 
 
 Installation
 ------------
-Simplest way to install ChemPy is to use ``pip``::
+Simplest way to install ChemPy and its (optional) dependencies is to use the `conda pacakge manager <https://conda.pydata.org/docs/>`_::
 
-   $ python -m pip install --user chempy
+   $ conda install -c bjodah chempy pytest
+   $ python -m pytest --pyargs chempy  # runs the test-suite
 
-you can skip the ``--user`` flag if you have got root permissions, to run the
-tests you need ``pytest`` too::
+alternatively you may also use `pip`::
 
    $ python -m pip install --user --upgrade pytest
    $ python -m pytest --pyargs chempy
 
-
-an alternative to ``pip`` is to use the `conda package manager <http://conda.pydata.org/docs/>`_::
-
-   $ conda install -c bjodah chempy pytest
+you can skip the ``--user`` flag if you have got root permissions.
+See `setup.py <setup.py>`_ for optional requirements.
 
 
 Examples
 --------
-See demo scripts in `examples/ <https://github.com/bjodah/chempy/tree/master/examples>`_,
-and rendered jupyter notebooks here:
+See demonstration scripts in `examples/ <https://github.com/bjodah/chempy/tree/master/examples>`_,
+and some rendered `jupyter <https://www.jupyter.org>`_ notebooks here:
 `<http://hera.physchem.kth.se/~chempy/branches/master/examples>`_.
 You may also browse the documentation for more examples. Below you will find a few code snippets:
 

@@ -3,10 +3,8 @@
 Contains rudimentary tools for regression: (iteratively) (weighted) least squares
 and functions for plotting the fit from the regression analysis.
 """
+
 from __future__ import (absolute_import, division, print_function)
-
-import warnings
-
 
 try:
     import numpy as np
@@ -82,36 +80,30 @@ def plot_fit(x, y, beta, yerr=None, vcv_beta=None, r2=None, kw_data=None,
 
 
 def _beta_tup(beta, x_unit, y_unit):
-    return tuple(coeff*y_unit*x_unit**-i for i, coeff in enumerate(beta))
+    return tuple(coeff*y_unit/x_unit**i for i, coeff in enumerate(beta))
 
 
-def plot_least_squares_fit(x, y, beta_vcv, plot_cb=None, plot_cb_kwargs=None):
+def plot_least_squares_fit(x, y, beta_vcv_r2, plot_cb=None, plot_cb_kwargs=None, x_unit=1, y_unit=1,
+                           explicit_errors=False):
     """ Performs Least-squares fit and plots data and fitted line
 
     Parameters
     ----------
     x : array_like
     y : array_like
-    w : array_like, optional
-    plot_cb : callable or True
-        When ``True``: uses :func:`plot_fit`, when callable:
+    beta_vcv_r2 : tuple
+        Result from :func:`least_squares_fit`.
+    plot_cb : callable
+        When ``None``: uses :func:`plot_fit`, when callable:
         signature ``(x, y, beta, yerr=None, fit_label_cb=lambda beta, vcv, r2: 'None') -> str``.
     plot_cb_kwargs: dict, optional
         Keyword arguments passed on to ``plot_cb`` (see :func:`plot_fit` for list of
         expected kwargs). If ``plot_cb`` is ``True`` it will be populated with defaults
         (kw_data, fit_label_cb, x_unit, y_unit).
 
-
-    Returns
-    -------
-    length 2 tuple : pair of parameter estimates (intercept and slope)
-    2x2 array : variance-covariance matrix
-    float : R-squared (goodness of fit)
-
     """
     plot_cb_kwargs = plot_cb_kwargs or {}
-    if plot_cb is True:
-        # plot_cb == True give some convenient defaults
+    if plot_cb is None:
         kw_data = plot_cb_kwargs.get('kw_data', {})
         if 'marker' not in kw_data and len(x) < 40:
             kw_data['marker'] = 'd'
@@ -128,8 +120,10 @@ def plot_least_squares_fit(x, y, beta_vcv, plot_cb=None, plot_cb_kwargs=None):
     if 'y_unit' not in plot_cb_kwargs:
         plot_cb_kwargs['y_unit'] = y_unit
 
-    beta_tup = _beta_tup(beta, x_unit, y_unit)
+    beta_tup = _beta_tup(beta_vcv_r2[0], x_unit, y_unit)
     if plot_cb is not None:
+        if explicit_errors:
+            w = np.diag(beta_tup[0])  # units?
         plot_cb(x, y, beta_tup, w**-0.5 if explicit_errors else None, **plot_cb_kwargs)
 
 
@@ -141,6 +135,10 @@ def least_squares_units(x, y, w=1):
     x : array_like
     y : array_like
     w : array_like, optional
+
+    See also
+    --------
+    - :func:`least_squares`
 
     """
     x_unit, y_unit = unit_of(x), unit_of(y)
@@ -157,9 +155,8 @@ def least_squares_units(x, y, w=1):
     _x = to_unitless(x, x_unit)
     _y = to_unitless(y, y_unit)
     beta, vcv, r2 = least_squares(_x, _y, _w)
-
     beta_tup = _beta_tup(beta, x_unit, y_unit)
-    return beta_tup, vcv, float(R2)
+    return beta_tup, vcv, float(r2)
 
 
 def least_squares(x, y, w=1):  # w == 1 => OLS, w != 1 => WLS
@@ -178,7 +175,6 @@ def least_squares(x, y, w=1):  # w == 1 => OLS, w != 1 => WLS
     length 2 tuple : pair of parameter estimates (intercept and slope)
     2x2 array : variance-covariance matrix
     float : R-squared (goodness of fit)
-
 
     Examples
     --------
@@ -202,7 +198,8 @@ def least_squares(x, y, w=1):  # w == 1 => OLS, w != 1 => WLS
     """
     sqrtw = np.sqrt(w)
     Y = y * sqrtw
-    X = np.ones((x.size, 2))
+    _x = np.asarray(x)
+    X = np.ones((_x.size, 2))
     X[:, 1] = x
     if hasattr(sqrtw, 'ndim') and sqrtw.ndim == 1:
         sqrtw = sqrtw.reshape((sqrtw.size, 1))
@@ -217,24 +214,26 @@ def least_squares(x, y, w=1):  # w == 1 => OLS, w != 1 => WLS
     return beta, vcv, R2
 
 
-def plot_irls_fit(plot_cb=None, plot_cb_kwargs=None):
-    if plot_cb is True:
-        plot_cb = plot_fit
-
-
-
 def irls_units(x, y, **kwargs):
     """ Units aware version of :func:`irls`
+
+    Parameters
+    ----------
+    x : array_like
+    y : array_like
+    \*\*kwargs
+        Keyword arguments passed on to :func:`irls`
+
+    See also
+    --------
+    - :func:`irls`
 
     """
     x_unit, y_unit = unit_of(x), unit_of(y)
     x_ul, y_ul = to_unitless(x, x_unit), to_unitless(y, y_unit)
     beta, vcv, info = irls(x_ul, y_ul, **kwargs)
     beta_tup = _beta_tup(beta, x_unit, y_unit)
-    plot_cb_kwargs = plot_cb_kwargs or {}
-    if plot_cb is not None:
-        plot_cb(x, y, beta_tup, **plot_cb_kwargs)
-    return beta_tup, vcv, r2
+    return beta_tup, vcv, info
 
 
 def irls(x, y, w_cb=lambda x, y, b, c: x**0, itermax=16, rmsdwtol=1e-8):
@@ -278,6 +277,7 @@ def irls(x, y, w_cb=lambda x, y, b, c: x**0, itermax=16, rmsdwtol=1e-8):
     if itermax < 1:
         raise ValueError("itermax must be >= 1")
     weights = []
+    x, y = np.asarray(x), np.asarray(y)
     w = np.ones_like(x)
     rmsdw = np.inf
     ii = 0
@@ -300,50 +300,18 @@ if np is not None:
     irls.abs_residuals = lambda x, y, b, c: np.abs(b[0] + b[1]*x - y)
 
 
-def plot_avg_params():
-    if ax is not None:
-        import matplotlib.pyplot as plt
-        if label_cb is not None:
-            lbl = label_cb(avg_beta, var_avg_beta)
-        else:
-            lbl = None
-        if ax is True:
-            ax = plt.subplot(1, 1, 1)
-        xidx, yidx = (1, 0) if flip else (0, 1)
-        ax.errorbar(opt_params[:, xidx], opt_params[:, yidx], marker='s', ls='None',
-                    xerr=nsigma*var_beta[:, xidx]**0.5,
-                    yerr=nsigma*var_beta[:, yidx]**0.5)
-        if xlabel:
-            if xlabel is True:
-                xlabel = r'$\beta_%d$' % xidx
-            ax.set_xlabel(xlabel)
-        if ylabel:
-            if ylabel is True:
-                xlabel = r'$\beta_%d$' % yidx
-            ax.set_ylabel(ylabel)
-        if title:
-            if title is True:
-                title = r'$y(x) = \beta_0 + \beta_1 \cdot x$'
-            ax.set_title(title)
-        ax.errorbar(avg_beta[xidx],
-                    avg_beta[yidx],
-                    xerr=nsigma*var_avg_beta[xidx]**0.5,
-                    yerr=nsigma*var_avg_beta[yidx]**0.5, marker='o', c='r',
-                    linewidth=2, markersize=10, label=lbl)
-        ax.legend(numpoints=1)
-    return
-
-
-def avg_params(opt_params, cov_params, label_cb=None, ax=None,
-               title=False, xlabel=False, ylabel=False, flip=False, nsigma=1):
+def plot_avg_params(opt_params, cov_params, avg_params_result, label_cb=None, ax=None,
+                    title=False, xlabel=False, ylabel=False, flip=False, nsigma=1):
     """ Calculates the average parameters from a set of regression parameters
 
     Parameters
     ----------
     opt_params : array_like
-        of shape (nfits, nparams)
+        Of shape ``(nfits, nparams)``.
     cov_params : array_like
         of shape (nfits, nparams, nparams)
+    avg_params_result : length-2 tuple
+       Result from :func:`avg_parrams`.
     label_cb : callable
         signature (beta, variance_beta) -> str
     ax : matplotlib.axes.Axes
@@ -354,6 +322,57 @@ def avg_params(opt_params, cov_params, label_cb=None, ax=None,
         for plotting: (x, y) -> beta1, beta0
     nsigma : int
         Multiplier for error bars
+
+    Returns
+    -------
+    avg_beta: weighted average of parameters
+    var_avg_beta: variance-covariance matrix
+
+    """
+    avg_beta, var_avg_beta = avg_params_result
+    import matplotlib.pyplot as plt
+    if label_cb is not None:
+        lbl = label_cb(avg_beta, var_avg_beta)
+    else:
+        lbl = None
+    if ax is None:
+        ax = plt.subplot(1, 1, 1)
+    xidx, yidx = (1, 0) if flip else (0, 1)
+    opt_params = np.asarray(opt_params)
+    cov_params = np.asarray(cov_params)
+    var_beta = np.vstack((cov_params[:, 0, 0], cov_params[:, 1, 1])).T
+    ax.errorbar(opt_params[:, xidx], opt_params[:, yidx], marker='s', ls='None',
+                xerr=nsigma*var_beta[:, xidx]**0.5,
+                yerr=nsigma*var_beta[:, yidx]**0.5)
+    if xlabel:
+        if xlabel is True:
+            xlabel = r'$\beta_%d$' % xidx
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        if ylabel is True:
+            xlabel = r'$\beta_%d$' % yidx
+        ax.set_ylabel(ylabel)
+    if title:
+        if title is True:
+            title = r'$y(x) = \beta_0 + \beta_1 \cdot x$'
+        ax.set_title(title)
+    ax.errorbar(avg_beta[xidx],
+                avg_beta[yidx],
+                xerr=nsigma*var_avg_beta[xidx]**0.5,
+                yerr=nsigma*var_avg_beta[yidx]**0.5, marker='o', c='r',
+                linewidth=2, markersize=10, label=lbl)
+    ax.legend(numpoints=1)
+
+
+def avg_params(opt_params, cov_params):
+    """ Calculates the average parameters from a set of regression parameters.
+
+    Parameters
+    ----------
+    opt_params : array_like
+        of shape (nfits, nparams)
+    cov_params : array_like
+        of shape (nfits, nparams, nparams)
 
     Returns
     -------

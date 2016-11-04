@@ -12,6 +12,7 @@ import math
 
 from ..units import to_unitless, get_derived_unit
 from ..util._expr import Expr
+# from ..util.numutil import broadcast_stack
 from .rates import RateExpr, MassAction
 
 
@@ -91,25 +92,30 @@ def get_odesys(rsys, include_params=True, substitutions=None,
                output_time_unit=None, **kwargs):
     """ Creates a :class:`pyneqsys.SymbolicSys` from a :class:`ReactionSystem`
 
+    The parameters passed to RateExpr will contain the key ``'time'`` corresponding to the
+    independent variable of the IVP.
+
     Parameters
     ----------
     rsys : ReactionSystem
-        note that if :attr:`param` if not RateExpr (or convertible to one through
-        :meth:`as_RateExpr`) it will be used to construct a :class:`MassAction` instance.
+        Each reaction of ``rsys`` will have their :meth:`Reaction.rate_expr()` invoked.
+        Note that if :attr:`Reaction.param` is not a :class:`RateExpr` (or convertible to
+        one through :meth:`as_RateExpr`) it will be used to construct a :class:`MassAction`
+        instance.
     include_params : bool (default: False)
-        whether rate constants should be included into the rate expressions or
+        Whether rate constants should be included into the rate expressions or
         left as free parameters in the :class:`pyneqsys.SymbolicSys` instance.
     substitutions : dict, optional
-        variable substitutions used by rate expressions (in respective Reaction.param).
+        Variable substitutions used by rate expressions (in respective Reaction.param).
         values are allowed to be tuple like: (new_vars, callback)
     SymbolicSys : class (optional)
-        default : :class:`pyneqsys.SymbolicSys`
+        Default : :class:`pyneqsys.SymbolicSys`.
     unit_registry: dict (optional)
-        see :func:`chempy.units.get_derived_units`
+        See :func:`chempy.units.get_derived_units`.
     output_conc_unit : unit (Optional)
     output_time_unit : unit (Optional)
     \*\*kwargs :
-        Keyword arguemnts pass on to `SymbolicSys`
+        Keyword arguemnts pass on to `SymbolicSys`.
 
     Returns
     -------
@@ -173,11 +179,13 @@ def get_odesys(rsys, include_params=True, substitutions=None,
         def pre_processor(x, y, p):
             if p == ():
                 p = {}
-            p['time'] = x
+            p['time'] = x[0]
             return (
                 x,
                 rsys.as_per_substance_array(y),
+                # broadcast_stack(
                 [p[k] for k in param_keys] + [p.get(k, v) for k, v in unique.items()]
+                # , as_scalars=True)  # DO-NOT-MERGE
             )
 
         def post_processor(x, y, p):

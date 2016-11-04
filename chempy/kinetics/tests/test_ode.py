@@ -56,7 +56,8 @@ def test_get_odesys_2():
         'B': 3.0,
     }
     t = np.linspace(0.0, .1)
-    xout, yout, info = odesys.integrate(t, rsys.as_per_substance_array(c0), {'doserate': 2.72, 'density': .998})
+    xout, yout, info = odesys.integrate(t, rsys.as_per_substance_array(c0),
+                                        {'doserate': 2.72, 'density': .998})
     yref = np.zeros((t.size, 2))
     k = 3.14*2.72*.998
     yref[:, 0] = 1 - k*t
@@ -87,9 +88,9 @@ def test_get_odesys_3():
 
     r1 = to_unitless(55.4*2.47e-5*M/s, conc_unit/time_unit)
     r2 = to_unitless(1e-14*1.37e11*M/s, conc_unit/time_unit)
-    assert abs(fout[0] - r2 + r1) < 1e-10
-    assert abs(fout[1] - r1 + r2) < 1e-10
-    assert abs(fout[2] - r1 + r2) < 1e-10
+    assert np.all(abs(fout[:, 0] - r2 + r1)) < 1e-10
+    assert np.all(abs(fout[:, 1] - r1 + r2)) < 1e-10
+    assert np.all(abs(fout[:, 2] - r1 + r2)) < 1e-10
 
 
 @requires(units_library, 'pyodesys')
@@ -160,8 +161,8 @@ def test_ode_with_global_parameters():
     x, y, p = odesys.pre_process(-37, conc, {'temperature': 298.15})
     fout = odesys.f_cb(x, y, p)
     ref = 3*1e10*np.exp(-40e3/8.3145/298.15)
-    assert abs((fout[0] + ref)/ref) < 1e-14
-    assert abs((fout[1] - ref)/ref) < 1e-14
+    assert np.all(abs((fout[:, 0] + ref)/ref) < 1e-14)
+    assert np.all(abs((fout[:, 1] - ref)/ref) < 1e-14)
 
 
 @requires('pyodesys')
@@ -174,8 +175,8 @@ def test_get_ode__ArrheniusParam():
     x, y, p = odesys.pre_process(-37, conc, {'temperature': 200})
     fout = odesys.f_cb(x, y, p)
     ref = 3*1e10*np.exp(-40e3/8.314472/200)
-    assert abs((fout[0] + ref)/ref) < 1e-14
-    assert abs((fout[1] - ref)/ref) < 1e-14
+    assert np.all(abs((fout[:, 0] + ref)/ref) < 1e-14)
+    assert np.all(abs((fout[:, 1] - ref)/ref) < 1e-14)
 
 
 @requires('pyodesys')
@@ -290,7 +291,7 @@ def test_get_odesys__time_dep_rate():
     ref = np.array([
         [-r*5, -r*13, -r*17],
         [r*5*3, r*13*3, r*17*3]
-    ])
+    ]).T
     assert np.allclose(fout, ref)
 
 
@@ -321,7 +322,7 @@ def test_get_odesys__time_dep_temperature():
     ref = np.array([
         [-r(2), -r(5), -r(10)],
         [3*r(2), 3*r(5), 3*r(10)]
-    ])
+    ]).T
     assert np.allclose(fout, ref)
 
     for ramp_rate in [2, 3, 4]:
