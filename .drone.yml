@@ -1,6 +1,8 @@
 build:
   image: bjodah/bjodahimg16:v1.2
   commands:
+    - python2 -m pip install --upgrade pip
+    - python3 -m pip install --upgrade pip
     - ./scripts/ci.sh chempy
     - (cd examples/; python -m pip install --force bokeh==0.11.1; for f in bokeh_*.py; do python -m bokeh html $f; done)
     - ./scripts/prepare_deploy.sh

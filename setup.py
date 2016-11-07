@@ -84,7 +84,6 @@ _author, _author_email = open(_path_under_setup('AUTHORS'), 'rt').readline().spl
 extras_req = {
     'integrators': ['scipy>=0.16.1', 'pyodeint>=0.7.0', 'pycvodes>=0.6.1', 'pygslodeiv2>=0.6.1'],
     'solvers': ['pykinsol'],
-    'symbolic': ['sym', 'sympy'],
     'native': ['pycompilation>=0.4.3', 'pycodeexport>=0.1.1', 'appdirs'],
     'docs': ['Sphinx', 'sphinx_rtd_theme', 'numpydoc'],
     'plotting': ['bokeh>=0.11.1'],
@@ -106,8 +105,8 @@ setup_kwargs = dict(
     classifiers=classifiers,
     install_requires=[
         'numpy>1.7', 'scipy>=0.16.1', 'matplotlib>=1.3.1',
-        'sympy>=0.7.6.1', 'quantities>=0.11.1', 'pyneqsys>=0.3.0',
-        'pyodesys>=0.7.0', 'pyparsing>=2.0.3'
+        'sympy>=1.0', 'quantities>=0.11.1', 'pyneqsys>=0.4.4',
+        'pyodesys>=0.7.0', 'pyparsing>=2.0.3', 'sym'
         # 'dot2tex>=2.9.0'
     ],
     extras_require=extras_req

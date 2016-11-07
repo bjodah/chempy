@@ -8,7 +8,7 @@ git archive -o /tmp/$PKG_NAME.zip HEAD  # test pip installable zip (symlinks bre
 python3 -m pip install /tmp/$PKG_NAME.zip
 
 python2 setup.py sdist  # test pip installable sdist (checks MANIFEST.in)
-(cd dist/; python2 -m pip install $PKG_NAME-$($PYTHON ../setup.py --version).tar.gz)
+(cd dist/; python2 -m pip install $PKG_NAME-$(python2 ../setup.py --version).tar.gz)
 (cd /; python2 -m pytest --pyargs $PKG_NAME)
 
 PYTHON=python2 ./scripts/run_tests.sh
@@ -21,6 +21,9 @@ pip install virtualenv
 python -m virtualenv venv
 set +u
 (source ./venv/bin/activate; python -m pip install pytest; python -m pytest chempy)
+
+python2 -m pip install .[all]
+python3 -m pip install .[all]
 
 ./scripts/render_notebooks.sh
 ./scripts/generate_docs.sh

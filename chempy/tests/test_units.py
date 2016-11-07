@@ -346,6 +346,7 @@ def test_concatenate():
     assert allclose(concatenate((a, b)), ref)
 
 
+@requires(units_library)
 def test_pow0():
     a = [1, 2]*u.metre
     b = a**0
