@@ -53,7 +53,7 @@ def plot_fit(x, y, beta, yerr=None, vcv_beta=None, r2=None, kw_data=None,
     if yerr is None:
         ax.plot(x_ul, y_ul, **kw_data)
     else:
-        ax.errorbar(x, y, yerr=yerr*nsigma, **kw_data)
+        ax.errorbar(x_ul, y_ul, yerr=to_unitless(yerr*nsigma, y_unit), **kw_data)
 
     xlim = [np.min(x_ul), np.max(x_ul)]
     if 'marker' not in kw_fit:
@@ -83,8 +83,8 @@ def _beta_tup(beta, x_unit, y_unit):
     return tuple(coeff*y_unit/x_unit**i for i, coeff in enumerate(beta))
 
 
-def plot_least_squares_fit(x, y, beta_vcv_r2, plot_cb=None, plot_cb_kwargs=None, x_unit=1, y_unit=1,
-                           explicit_errors=False):
+def plot_least_squares_fit(x, y, beta_vcv_r2, yerr=None, plot_cb=None,
+                           plot_cb_kwargs=None, x_unit=1, y_unit=1):
     """ Performs Least-squares fit and plots data and fitted line
 
     Parameters
@@ -120,11 +120,7 @@ def plot_least_squares_fit(x, y, beta_vcv_r2, plot_cb=None, plot_cb_kwargs=None,
     if 'y_unit' not in plot_cb_kwargs:
         plot_cb_kwargs['y_unit'] = y_unit
 
-    beta_tup = _beta_tup(beta_vcv_r2[0], x_unit, y_unit)
-    if plot_cb is not None:
-        if explicit_errors:
-            w = np.diag(beta_tup[0])  # units?
-        plot_cb(x, y, beta_tup, w**-0.5 if explicit_errors else None, **plot_cb_kwargs)
+    plot_cb(x, y, beta_vcv_r2[0], yerr, **plot_cb_kwargs)
 
 
 def least_squares_units(x, y, w=1):

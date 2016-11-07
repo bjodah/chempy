@@ -9,9 +9,10 @@ together with some functions.
 
 Currently `quantities <https://pypi.python.org/pypi/quantities>`_ is used as
 the underlying package to handle units. If it is possible you should try to
-only use the `chempy.units` module (in case ``ChemPy`` changes this backend),
-and avoid relying on any attributes of the Quantity instances (and rather use
-functions in `chempy.units`).
+only use the ``chempy.units`` module (since it is likely that ``ChemPy``
+will change this backend at some point in the future). Therefore you should not
+rely on any attributes of the ``Quantity`` instances (and rather use
+getter & setter functions in `chempy.units`).
 
 """
 from __future__ import (absolute_import, division, print_function)

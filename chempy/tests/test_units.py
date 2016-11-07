@@ -344,3 +344,12 @@ def test_concatenate():
     b = [2, 3]*u.mm
     ref = [1, 2, 2e-3, 3e-3]*u.metre
     assert allclose(concatenate((a, b)), ref)
+
+
+def test_pow0():
+    a = [1, 2]*u.metre
+    b = a**0
+    assert allclose(b, [1, 1])
+
+    c = a**2
+    assert allclose(c, [1, 4]*u.m**2)

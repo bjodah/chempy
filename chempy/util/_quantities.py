@@ -2,6 +2,8 @@
 from __future__ import (absolute_import, division, print_function)
 import re
 
+import numpy as np
+
 
 # See https://github.com/python-quantities/python-quantities/pull/112
 def format_units_html(udict, font='%s', mult=r'&sdot;', paren=False):
@@ -38,6 +40,13 @@ def format_units_html(udict, font='%s', mult=r'&sdot;', paren=False):
     return res
 
 
+def _patch_pow0_py35(pq):
+    try:
+        pq.metre**0
+    except:
+        pq.quantity.Quantity.__pow__ = pq.quantity.check_uniform(lambda self, other: np.power(self, other))
+
+
 def _patch_quantities(pq):
     # See https://github.com/python-quantities/python-quantities/pull/112
     if not hasattr(pq.dimensionality.Dimensionality, 'html'):
@@ -49,3 +58,7 @@ def _patch_quantities(pq):
         pq.UncertainQuantity.__neg__ = lambda self: self*-1
     a = pq.UncertainQuantity([1, 2], pq.m, [.1, .2])
     assert (-a).uncertainty[0] == (a*-1).uncertainty[0]
+
+    # See https://github.com/python-quantities/python-quantities/pull/126
+    _patch_pow0_py35(pq)
+    assert (3*pq.m)**0 == 1*pq.dimensionless
