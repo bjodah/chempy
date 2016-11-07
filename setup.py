@@ -42,20 +42,22 @@ else:
     exec(io.open(release_py_path, encoding='utf-8').read())
 
 submodules = [
-    'chempy.kinetics',
-    'chempy.properties',
-    'chempy.util',
     'chempy.electrochemistry',
+    'chempy.kinetics',
     'chempy.printing',
+    'chempy.properties',
+    'chempy.thermodynamics',
+    'chempy.util',
 ]
 
 tests = [
     'chempy.tests',
-    'chempy.kinetics.tests',
-    'chempy.properties.tests',
-    'chempy.util.tests',
     'chempy.electrochemistry.tests',
+    'chempy.kinetics.tests',
     'chempy.printing.tests',
+    'chempy.properties.tests',
+    'chempy.thermodynamics.tests',
+    'chempy.util.tests',
 ]
 
 classifiers = [
