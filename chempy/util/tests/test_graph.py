@@ -3,6 +3,7 @@ from __future__ import (absolute_import, division, print_function)
 
 
 import os
+import subprocess
 import shutil
 import tempfile
 from chempy.chemistry import Reaction, ReactionSystem, Substance
@@ -40,7 +41,11 @@ def test_rsys2graph():
     try:
         rsys2graph(rsys, os.path.join(tempdir, 'out.png'))
         rsys2graph(rsys, os.path.join(tempdir, 'out.ps'))
-        # rsys2graph(rsys, os.path.join(tempdir, 'out.tex'))
-        # https://github.com/kjellmf/dot2tex/issues/48
+        try:
+            subprocess.call(['dot2tex', '-v'])
+        except:
+            pass
+        else:
+            rsys2graph(rsys, os.path.join(tempdir, 'out.tex'))
     finally:
         shutil.rmtree(tempdir)
