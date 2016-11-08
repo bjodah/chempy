@@ -54,9 +54,9 @@ _cation_oxidation_states = {  # This needs to be reviewed, just from the top of 
     'Zn': (2,),
     'Cd': (2,),
     'Hg': (1, 2),  # Tricky: Hg2+2
-    'Al': 3,
-    'Ga': 3,
-    'In': 3,
+    'Al': (3,),
+    'Ga': (3,),
+    'In': (3,),
     'Tl': (1, 3),
     'Sn': (2, 4),
     'Pb': (2, 4),

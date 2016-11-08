@@ -2,7 +2,11 @@
 from __future__ import (absolute_import, division, print_function)
 import re
 
-import numpy as np
+
+try:
+    import numpy as np
+except ImportError:
+    np = None
 
 
 # See https://github.com/python-quantities/python-quantities/pull/112

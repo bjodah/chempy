@@ -12,7 +12,6 @@ import math
 
 from ..units import to_unitless, get_derived_unit
 from ..util._expr import Expr
-# from ..util.numutil import broadcast_stack
 from .rates import RateExpr, MassAction
 
 
@@ -183,9 +182,7 @@ def get_odesys(rsys, include_params=True, substitutions=None,
             return (
                 x,
                 rsys.as_per_substance_array(y),
-                # broadcast_stack(
                 [p[k] for k in param_keys] + [p.get(k, v) for k, v in unique.items()]
-                # , as_scalars=True)  # DO-NOT-MERGE
             )
 
         def post_processor(x, y, p):

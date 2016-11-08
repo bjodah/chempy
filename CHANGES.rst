@@ -1,7 +1,9 @@
-v0.4.2
-======
+unreleased
+==========
 - ``.electrochemistry.nernst_formula`` - thanks to Adel Qalieh (@adelq)
 - moved ``.util.parsing.number_to_scientific_*`` to ``.printing(.numbers)``
+- Number formating now handles uncertainties.
+- ``refereence`` in reimplementations now a dict
 
 v0.4.1
 ======
