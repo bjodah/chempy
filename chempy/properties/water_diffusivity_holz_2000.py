@@ -73,20 +73,18 @@ def water_self_diffusion_coefficient(T=None, units=None, warn=True,
         warnings.warn("Temperature is outside range (0-100 degC)")
     return _D0*((T/_TS) - 1)**gamma
 
-# generated at doi2bib.org:
-bibtex = """
-@article{Holz2000,
-  doi = {10.1039/b005319h},
-  url = {http://dx.doi.org/10.1039/B005319H},
-  year  = {2000},
-  publisher = {Royal Society of Chemistry ({RSC})},
-  volume = {2},
-  number = {20},
-  pages = {4740--4742},
-  author = {Manfred Holz and Stefan R. Heil and Antonio Sacco},
-  title = {Temperature-dependent self-diffusion coefficients of water and six
-           selected molecular liquids for calibration in accurate 1H {NMR}
-           {PFG} measurements},
-  journal = {Phys. Chem. Chem. Phys.}
+# bibtex format (generated at doi2bib.org):
+reference = {
+    'doi': '10.1039/b005319h',
+    'url': 'http://dx.doi.org/10.1039/B005319H',
+    'year ': 2000,
+    'publisher': 'Royal Society of Chemistry ({RSC})',
+    'volume': 2,
+    'number': 20,
+    'pages': (4740, 4742),
+    'author': 'Manfred Holz and Stefan R. Heil and Antonio Sacco',
+    'title': ('Temperature-dependent self-diffusion coefficients of water and'
+              ' six selected molecular liquids for calibration in accurate 1H'
+              ' {NMR} {PFG} measurements'),
+    'journal': 'Phys. Chem. Chem. Phys.'
 }
-"""

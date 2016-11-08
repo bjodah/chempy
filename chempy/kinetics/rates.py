@@ -37,8 +37,8 @@ class RateExpr(Expr):
             if isinstance(arg, Expr):
                 new_args.append(arg)
             else:
-                if hasattr(arg, '_as_RateExpr'):
-                    new_args.append(arg._as_RateExpr(self.rxn))
+                if hasattr(arg, 'as_RateExpr'):
+                    new_args.append(arg.as_RateExpr(self.rxn))
                 else:
                     new_args.append(arg)
         if self.kw is None:
@@ -180,11 +180,11 @@ class MassAction(RateExpr):
         return _MassAction
 
     def as_mass_action(self, variables, backend=math):
-        return MassAction([self.rate_coeff(variables, backend=backend)], self.unique_keys, **self.kwargs)
+        return MassAction([self.rate_coeff(variables, backend=backend)], **self.kwargs)
 
 
 class ArrheniusMassAction(MassAction):
-    """ Rate expression for a Arrhenius-type of rate
+    """ Rate expression for a Arrhenius-type of rate: c0*exp(-c1/T)
 
     Examples
     --------
@@ -209,9 +209,22 @@ class ArrheniusMassAction(MassAction):
 
 
 class EyringMassAction(ArrheniusMassAction):
-    argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R')
+    """ Rate expression for Eyring eq: c0/c2*T*exp((c3-c1)/T) """
+
+    argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R', 'kB_h_times_exp_refS_R', 'rH_over_R')
+    argument_defaults = (1, 0)
 
     def rate_coeff(self, variables, backend=math):
-        kB_h_times_exp_dS_R, dH_over_R = self.all_args(variables, backend=backend)
+        Sact_fact, Hact_exp, Sref_fact, Href_exp = self.all_args(variables, backend=backend)
         T = variables['temperature']
-        return T * kB_h_times_exp_dS_R * backend.exp(-dH_over_R/T)
+        return T * Sact_fact / Sref_fact * backend.exp((Href_exp-Hact_exp)/T)
+
+
+class RampedTemp(Expr):
+    """ Ramped temperature, pass as substitution to e.g. ``get_odesys`` """
+    argument_names = ('T0', 'dTdt')
+    parameter_keys = ('time',)
+
+    def __call__(self, variables, backend=None):
+        T0, dTdt = self.all_args(variables, backend=backend)
+        return T0 + dTdt*variables['time']

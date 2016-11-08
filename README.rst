@@ -50,34 +50,32 @@ chemistry (mainly physical/inorganic/analytical chemistry). Currently it include
 
 Documentation
 -------------
-Auto-generated API documentation for latest stable release is found here:
-`<https://pythonhosted.org/chempy>`_
-(and development docs for the current master branch are found here:
+Auto-generated API documentation for the latest stable release is found here:
+`<https://bjodah.github.io/chempy/latest>`_
+(and the development version for the current master branch is found here:
 `<http://hera.physchem.kth.se/~chempy/branches/master/html>`_).
 
 
 Installation
 ------------
-Simplest way to install ChemPy is to use ``pip``::
-
-   $ python -m pip install --user chempy
-
-you can skip the ``--user`` flag if you have got root permissions, to run the
-tests you need ``pytest`` too::
-
-   $ python -m pip install --user --upgrade pytest
-   $ python -m pytest --pyargs chempy
-
-
-an alternative to ``pip`` is to use the `conda package manager <http://conda.pydata.org/docs/>`_::
+Simplest way to install ChemPy and its (optional) dependencies is to use the `conda pacakge manager <https://conda.pydata.org/docs/>`_::
 
    $ conda install -c bjodah chempy pytest
+   $ python -m pytest --pyargs chempy  # runs the test-suite
+
+alternatively you may also use `pip`::
+
+   $ python -m pip install --user --upgrade chempy pytest
+   $ python -m pytest --pyargs chempy
+
+you can skip the ``--user`` flag if you have got root permissions.
+See `setup.py <setup.py>`_ for optional requirements.
 
 
 Examples
 --------
-See demo scripts in `examples/ <https://github.com/bjodah/chempy/tree/master/examples>`_,
-and rendered jupyter notebooks here:
+See demonstration scripts in `examples/ <https://github.com/bjodah/chempy/tree/master/examples>`_,
+and some rendered `jupyter <https://www.jupyter.org>`_ notebooks here:
 `<http://hera.physchem.kth.se/~chempy/branches/master/examples>`_.
 You may also browse the documentation for more examples. Below you will find a few code snippets:
 
@@ -87,7 +85,7 @@ Parsing formulae
 
    >>> from chempy import Substance
    >>> ferricyanide = Substance.from_formula('Fe(CN)6-3')
-   >>> ferricyanide.composition == {0: -3, 26: 1, 6: 6, 7: 6}
+   >>> ferricyanide.composition == {0: -3, 26: 1, 6: 6, 7: 6}  # 0 for charge
    True
    >>> print(ferricyanide.unicode_name)
    Fe(CN)₆³⁻
@@ -149,18 +147,20 @@ Chemical equilibria
 
    >>> from chempy import Equilibrium
    >>> from chempy.chemistry import Species
-   >>> water_autop = Equilibrium({'H2O'}, {'H+', 'OH-'}, 10**-14)
-   >>> ammonia_prot = Equilibrium({'NH4+'}, {'NH3', 'H+'}, 10**-9.24)
+   >>> water_autop = Equilibrium({'H2O'}, {'H+', 'OH-'}, 10**-14)  # unit "molar" assumed
+   >>> ammonia_prot = Equilibrium({'NH4+'}, {'NH3', 'H+'}, 10**-9.24)  # same here
    >>> from chempy.equilibria import EqSystem
    >>> substances = map(Species.from_formula, 'H2O OH- H+ NH3 NH4+'.split())
    >>> eqsys = EqSystem([water_autop, ammonia_prot], substances)
-   >>> print('\n'.join(map(str, eqsys.rxns)))
+   >>> print('\n'.join(map(str, eqsys.rxns)))  # "rxns" short for "reactions"
    H2O = H+ + OH-; 1e-14
    NH4+ = H+ + NH3; 5.75e-10
    >>> from collections import defaultdict
    >>> init_conc = defaultdict(float, {'H2O': 1, 'NH3': 0.1})
    >>> x, sol, sane = eqsys.root(init_conc)
    >>> assert sol['success'] and sane
+   >>> print(sorted(sol.keys()))  # see package "pyneqsys" for more info
+   ['fun', 'intermediate_info', 'internal_x_vecs', 'nfev', 'njev', 'success', 'x', 'x_vecs']
    >>> print(', '.join('%.2g' % v for v in x))
    1, 0.0013, 7.6e-12, 0.099, 0.0013
 
@@ -182,6 +182,12 @@ The source code is Open Source and is released under the very permissive
 `"simplified (2-clause) BSD license" <https://opensource.org/licenses/BSD-2-Clause>`_.
 See `LICENSE <LICENSE>`_ for further details.
 
+See also
+--------
+- `SymPy <https://github.com/sympy/sympy>`_
+- `pyneqsys <https://github.com/bjodah/pyneqsys>`_
+- `pyodesys <https://github.com/bjodah/pyodesys>`_
+- `thermo <https://github.com/CalebBell/thermo>`_
 
 Contributing
 ------------

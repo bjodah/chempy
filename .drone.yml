@@ -1,12 +1,13 @@
 build:
-  image: bjodah/bjodahimg:v1.1
+  image: bjodah/bjodahimg16dev:latest
   commands:
+    - python2 -m pip install --upgrade pip
+    - python3 -m pip install --upgrade pip
     - ./scripts/ci.sh chempy
     - (cd examples/; python -m pip install --force bokeh==0.11.1; for f in bokeh_*.py; do python -m bokeh html $f; done)
-    - (cd examples/; ipython2 nbconvert --to=html --debug --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
-    - (cd examples/; ../scripts/render_index.sh *.html)
-    - ./scripts/generate_docs.sh
     - ./scripts/prepare_deploy.sh
+    - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
+    - PATH=/opt/miniconda3/bin:$PATH conda build conda-recipe
 
 deploy:
 

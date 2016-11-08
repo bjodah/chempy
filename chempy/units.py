@@ -9,9 +9,10 @@ together with some functions.
 
 Currently `quantities <https://pypi.python.org/pypi/quantities>`_ is used as
 the underlying package to handle units. If it is possible you should try to
-only use the `chempy.units` module (in case ``ChemPy`` changes this backend),
-and avoid relying on any attributes of the Quantity instances (and rather use
-functions in `chempy.units`).
+only use the ``chempy.units`` module (since it is likely that ``ChemPy``
+will change this backend at some point in the future). Therefore you should not
+rely on any attributes of the ``Quantity`` instances (and rather use
+getter & setter functions in `chempy.units`).
 
 """
 from __future__ import (absolute_import, division, print_function)
@@ -42,7 +43,7 @@ else:
     default_constants = pq.constants
 
     default_units = NameSpace(pq)
-    default_units.decimetre = pq.UnitQuantity(
+    default_units.dm = default_units.decimetre = pq.UnitQuantity(
         'decimetre',  default_units.m / 10.0, u_symbol='dm')
     default_units.m3 = default_units.metre**3
     default_units.dm3 = default_units.decimetre**3
@@ -100,21 +101,21 @@ def get_derived_unit(registry, key):
         'luminous_intensity', 'amount'. If registry is ``None`` the
         function returns 1.0 unconditionally.
     key: str
-        one of the registry keys or one of: 'diffusion', 'electrical_mobility',
+        one of the registry keys or one of: 'diffusivity', 'electrical_mobility',
         'permittivity', 'charge', 'energy', 'concentration', 'density',
         'radiolytic_yield'
 
     Examples
     --------
     >>> m, s = default_units.meter, default_units.second
-    >>> get_derived_unit(SI_base_registry, 'diffusion') == m**2/s
+    >>> get_derived_unit(SI_base_registry, 'diffusivity') == m**2/s
     True
 
     """
     if registry is None:
         return 1.0
     derived = {
-        'diffusion': registry['length']**2/registry['time'],
+        'diffusivity': registry['length']**2/registry['time'],
         'electrical_mobility': (registry['current']*registry['time']**2 /
                                 registry['mass']),
         'permittivity': (registry['current']**2*registry['time']**4 /
@@ -124,6 +125,7 @@ def get_derived_unit(registry, key):
         'concentration': registry['amount']/registry['length']**3,
         'density': registry['mass']/registry['length']**3,
     }
+    derived['diffusion'] = derived['diffusivity']  # 'diffusion' is deprecated
     derived['radiolytic_yield'] = registry['amount']/derived['energy']
     derived['doserate'] = derived['energy']/registry['mass']/registry['time']
 
@@ -162,6 +164,30 @@ def latex_of_unit(quant):
 
     """
     return quant.dimensionality.latex.strip('$')
+
+
+def unicode_of_unit(quant):
+    """ Returns unicode reperesentation of the unit of a quantity
+
+    Examples
+    --------
+    >>> print(unicode_of_unit(1/default_units.kelvin))
+    1/K
+
+    """
+    return quant.dimensionality.unicode
+
+
+def html_of_unit(quant):
+    """ Returns HTML reperesentation of the unit of a quantity
+
+    Examples
+    --------
+    >>> print(html_of_unit(2*default_units.m**2))
+    m<sup>2</sup>
+
+    """
+    return quant.dimensionality.html
 
 
 def unit_registry_from_human_readable(unit_registry):
@@ -223,6 +249,10 @@ def unit_of(expr, simplified=False):
         return 1
 
 
+def rescale(value, unit):
+    return value.rescale(unit)
+
+
 def to_unitless(value, new_unit=None):
     """ Nondimensionalization of a quantity.
 
@@ -235,6 +265,8 @@ def to_unitless(value, new_unit=None):
     --------
     >>> '%.1g' % to_unitless(1*default_units.metre, default_units.nm)
     '1e+09'
+    >>> '%.1g %.1g' % tuple(to_unitless([1*default_units.m, 1*default_units.mm], default_units.nm))
+    '1e+09 1e+06'
 
     """
     if new_unit is None:
@@ -242,7 +274,7 @@ def to_unitless(value, new_unit=None):
     if isinstance(value, (list, tuple)):
         return np.array([to_unitless(elem, new_unit) for elem in value])
     if isinstance(value, dict):
-        new_value = value.copy()
+        new_value = dict(value.items())  # value.copy()
         for k in value:
             new_value[k] = to_unitless(value[k], new_unit)
         return new_value
@@ -429,6 +461,7 @@ class Backend(object):
             return be_attr
 
 
+# TODO: decide whether to deprecate in favor of "number_to_scientific_latex"?
 def format_string(value, precision='%.5g', tex=False):
     """ Formats a scalar with unit as two strings
 

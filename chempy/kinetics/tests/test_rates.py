@@ -207,13 +207,13 @@ def test_mk_Radiolytic():
 
 
 def test_EyringMassAction():
-    args = kB_h_times_exp_dS_R, dH_over_R = 1.2e11/273.15, 40e3/8.3145
-    ama = EyringMassAction(args)
-    Reaction({'A': 2, 'B': 1}, {'C': 1}, ama, {'B': 1})
+    args = kB_h_times_exp_dS_R, dH_over_R = 1.2e11/273.15, 40e3/8
+    ama = EyringMassAction(args, ('Sfreq', 'Hact'))
+    rxn1 = Reaction({'A': 2, 'B': 1}, {'C': 1}, ama, {'B': 1})
     T_ = 'temperature'
 
     def ref(v):
-        return 1.2e11/273.15*v[T_]*math.exp(-40e3/8.3145/v[T_])*v['B']*v['A']**2
+        return v.get('Sfreq', 1.2e11/273.15)*v[T_]*math.exp(-v.get('Hact', 40e3/8)/v[T_])*v['B']*v['A']**2
 
     for params in [(11., 13., 17., 311.2),
                    (12, 8, 5, 270)]:
@@ -222,6 +222,26 @@ def test_EyringMassAction():
         assert abs((ama(var) - r)/r) < 1e-14
 
     with pytest.raises(ValueError):
-        EyringMassAction([1, 1, 1])
+        EyringMassAction([1, 1, 1, 1, 1])
 
-    assert ama.as_mass_action({T_: 273.15}).args[0] == 1.2e11*math.exp(-40e3/8.3145/273.15)
+    assert ama.as_mass_action({T_: 273.15}).args[0] == 1.2e11*math.exp(-40e3/8/273.15)
+
+    ama2 = EyringMassAction([1.2e11/273, 40e3/8, 1.2, 1e3], ('Sfreq', 'Hact', 'Sref', 'Href'))
+    rxn2 = Reaction({'C': 1}, {'A': 2, 'B': 2}, ama2)
+    var2 = {'C': 29, 'temperature': 273}
+
+    def ref2(var):
+        return var['C']*var.get('temperature', 273)*var.get('Sfreq', 1.2e11/273)/var.get('Sref', 1.2)*math.exp(
+            (var.get('Href', 1e3) - var.get('Hact', 5e3))/var.get('temperature', 273))
+
+    r2 = ref2(var2)
+    assert abs((ama2(var2) - r2)/r2) < 1e-14
+
+    rsys = ReactionSystem([rxn1, rxn2])
+    var3 = {'A': 11, 'B': 13, 'C': 17, 'temperature': 298, 'Sfreq': 1.2e11/298}
+    rates = rsys.rates(var3)
+    rf3 = ref(var3)
+    rb3 = ref2(var3)
+    ref_rates = {'A': 2*(rb3 - rf3), 'B': 2*(rb3 - rf3), 'C': rf3 - rb3}
+    for k, v in ref_rates.items():
+        assert abs((rates[k] - v)/v) < 1e-14

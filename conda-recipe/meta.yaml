@@ -1,25 +1,31 @@
+{% set name = "chempy" %}
+{% set version = "0.5.0.git" %}
+
 package:
-  name: chempy
-  version: 0.4.0.git
+  name: {{ name|lower }}
+  version: {{ version }}
 
 source:
-  path: ../
+  git_url: ../
 
 build:
   number: 0
+  script: python setup.py install --single-version-externally-managed --record record.txt
 
 requirements:
   build:
     - python
+    - setuptools
     - numpy
     - sympy
     - scipy
     - matplotlib
     - quantities
-    - pyparsing
-    - pyneqsys
+    - sym
+    - appdirs
     - pyodesys
-#    - dot2tex
+    - pyneqsys
+    - pyparsing
   run:
     - python
     - numpy
@@ -27,16 +33,23 @@ requirements:
     - scipy
     - matplotlib
     - quantities
-    - pyparsing
-    - pyneqsys
+    - sym
+    - appdirs
     - pyodesys
-#    - dot2tex
+    - pyneqsys
+    - pyparsing
 
 test:
   imports:
-    - chempy
+    - {{ name }}
 
 about:
   home: https://github.com/bjodah/chempy
-  license: BSD
-  summary: Python package useful for (physical) chemistry
+  license: BSD 2-Clause
+  license_file: LICENSE
+  summary: 'Python package useful for (physical) chemistry'
+  doc_url: https://bjodah.github.io/{{ name }}/latest
+
+extra:
+  recipe-maintainers:
+    - bjodah

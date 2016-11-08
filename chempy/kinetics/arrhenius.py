@@ -178,9 +178,13 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
         return arrhenius_equation(self.A, self.Ea, T, constants=constants,
                                   units=units, backend=backend)
 
-    def _as_RateExpr(self, rxn, arg_keys=None, constants=None, units=None, backend=None):
+    def Ea_over_R(self, constants, units, backend=None):
+        return self.Ea/_get_R(constants, units)
+
+    def as_RateExpr(self, rxn=None, unique_keys=None, constants=None, units=None, backend=None):
         from .rates import ArrheniusMassAction as AMA
-        return AMA([self.A, self.Ea/_get_R(constants, units)], arg_keys, rxn=rxn, ref=self.ref)
+        args = [self.A, self.Ea_over_R(constants, units)]
+        return AMA(args, unique_keys, rxn=rxn, ref=self.ref)
 
     def format(self, precision, tex=False):
         try:
@@ -210,5 +214,5 @@ class ArrheniusParamWithUnits(ArrheniusParam):
         return super(ArrheniusParamWithUnits, self).__call__(
             state, constants, units, backend)
 
-    def _as_RateExpr(self, rxn, arg_keys=None, constants=default_constants, units=default_units):
-        return super(ArrheniusParamWithUnits, self)._as_RateExpr(rxn, arg_keys, constants, units)
+    def as_RateExpr(self, rxn, unique_keys=None, constants=default_constants, units=default_units):
+        return super(ArrheniusParamWithUnits, self).as_RateExpr(rxn, unique_keys, constants, units)

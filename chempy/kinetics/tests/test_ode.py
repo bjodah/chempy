@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function)
 
+import math
+
 try:
     import numpy as np
 except ImportError:
@@ -15,7 +17,7 @@ from chempy.util._expr import Expr
 from chempy.util.testing import requires
 from .test_rates import _get_SpecialFraction_rsys
 from ..arrhenius import ArrheniusParam
-from ..rates import ArrheniusMassAction, Radiolytic
+from ..rates import ArrheniusMassAction, MassAction, Radiolytic, RampedTemp
 from .._rates import TPolyMassAction
 from ..ode import get_odesys
 from ..integrated import dimerization_irrev
@@ -54,7 +56,8 @@ def test_get_odesys_2():
         'B': 3.0,
     }
     t = np.linspace(0.0, .1)
-    xout, yout, info = odesys.integrate(t, rsys.as_per_substance_array(c0), {'doserate': 2.72, 'density': .998})
+    xout, yout, info = odesys.integrate(t, rsys.as_per_substance_array(c0),
+                                        {'doserate': 2.72, 'density': .998})
     yref = np.zeros((t.size, 2))
     k = 3.14*2.72*.998
     yref[:, 0] = 1 - k*t
@@ -85,9 +88,9 @@ def test_get_odesys_3():
 
     r1 = to_unitless(55.4*2.47e-5*M/s, conc_unit/time_unit)
     r2 = to_unitless(1e-14*1.37e11*M/s, conc_unit/time_unit)
-    assert abs(fout[0] - r2 + r1) < 1e-10
-    assert abs(fout[1] - r1 + r2) < 1e-10
-    assert abs(fout[2] - r1 + r2) < 1e-10
+    assert np.all(abs(fout[:, 0] - r2 + r1)) < 1e-10
+    assert np.all(abs(fout[:, 1] - r1 + r2)) < 1e-10
+    assert np.all(abs(fout[:, 2] - r1 + r2)) < 1e-10
 
 
 @requires(units_library, 'pyodesys')
@@ -158,8 +161,8 @@ def test_ode_with_global_parameters():
     x, y, p = odesys.pre_process(-37, conc, {'temperature': 298.15})
     fout = odesys.f_cb(x, y, p)
     ref = 3*1e10*np.exp(-40e3/8.3145/298.15)
-    assert abs((fout[0] + ref)/ref) < 1e-14
-    assert abs((fout[1] - ref)/ref) < 1e-14
+    assert np.all(abs((fout[:, 0] + ref)/ref) < 1e-14)
+    assert np.all(abs((fout[:, 1] - ref)/ref) < 1e-14)
 
 
 @requires('pyodesys')
@@ -172,8 +175,8 @@ def test_get_ode__ArrheniusParam():
     x, y, p = odesys.pre_process(-37, conc, {'temperature': 200})
     fout = odesys.f_cb(x, y, p)
     ref = 3*1e10*np.exp(-40e3/8.314472/200)
-    assert abs((fout[0] + ref)/ref) < 1e-14
-    assert abs((fout[1] - ref)/ref) < 1e-14
+    assert np.all(abs((fout[:, 0] + ref)/ref) < 1e-14)
+    assert np.all(abs((fout[:, 1] - ref)/ref) < 1e-14)
 
 
 @requires('pyodesys')
@@ -265,3 +268,71 @@ def test_get_ode__TPoly():
     r = 3*5*(10+2*25)*1000  # mol/m3/s
     ref = [-4*r, -r, 3*r, 2*r]
     assert np.all(abs((fout - ref)/ref) < 1e-14)
+
+
+@requires('pyodesys', units_library)
+def test_get_odesys__time_dep_rate():
+
+    class RampedRate(MassAction):
+        argument_names = ('rate_constant', 'ramping_rate')
+
+        def rate_coeff(self, variables, backend=math):
+            rate_constant, ramping_rate = self.all_args(variables, backend=backend)
+            return rate_constant * ramping_rate * variables['time']
+
+    rate = RampedRate([7, 2])
+    rxn = Reaction({'A': 1}, {'B': 3}, rate)
+    rsys = ReactionSystem([rxn], 'A B')
+    odesys = get_odesys(rsys)[0]
+    conc = {'A': 3, 'B': 11}
+    x, y, p = odesys.pre_process([5, 13, 17], conc)
+    fout = odesys.f_cb(x, y, p)
+    r = 2*7*3
+    ref = np.array([
+        [-r*5, -r*13, -r*17],
+        [r*5*3, r*13*3, r*17*3]
+    ]).T
+    assert np.allclose(fout, ref)
+
+
+@requires('pyodesys', units_library)
+def test_get_odesys__time_dep_temperature():
+    import sympy as sp
+
+    def refA(t, A0, A, Ea_over_R, T0, dTdt):
+        T = (T0 + dTdt*t)
+        d_Ei = sp.Ei(-Ea_over_R/T0).n(100).round(90) - sp.Ei(-Ea_over_R/T).n(100).round(90)
+        d_Texp = T0*sp.exp(-Ea_over_R/T0) - T*sp.exp(-Ea_over_R/T)
+        return A0*sp.exp(A/dTdt*(Ea_over_R*d_Ei + d_Texp)).n(30)
+
+    params = A0, A, Ea_over_R, T0, dTdt = [13, 1e10, 56e3/8, 273, 2]
+    B0 = 11
+    rate = ArrheniusMassAction([A, Ea_over_R])
+    rxn = Reaction({'A': 1}, {'B': 3}, rate)
+    rsys = ReactionSystem([rxn], 'A B')
+    rt = RampedTemp([T0, dTdt], ('init_temp', 'ramp_rate'))
+    odesys = get_odesys(rsys, False, substitutions={'temperature': rt})[0]
+    conc = {'A': A0, 'B': B0}
+    x, y, p = odesys.pre_process([2, 5, 10], conc)
+    fout = odesys.f_cb(x, y, p)
+
+    def r(t):
+        return A*np.exp(-Ea_over_R/(T0 + dTdt*t))*A0  # refA(t, *params)
+
+    ref = np.array([
+        [-r(2), -r(5), -r(10)],
+        [3*r(2), 3*r(5), 3*r(10)]
+    ]).T
+    assert np.allclose(fout, ref)
+
+    for ramp_rate in [2, 3, 4]:
+        xout, yout, info = odesys.integrate(
+            10, rsys.as_per_substance_array(conc), {'ramp_rate': ramp_rate},
+            atol=1e-10, rtol=1e-12)
+        params[-1] = ramp_rate
+        Aref = np.array([float(refA(t, *params)) for t in xout])
+        # Aref = 1/(1/13 + 2*1e-6*t_unitless)
+        yref = np.zeros((xout.size, 2))
+        yref[:, 0] = Aref
+        yref[:, 1] = B0 + 3*(A0-Aref)
+        assert allclose(yout, yref)

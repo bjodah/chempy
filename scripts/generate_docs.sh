@@ -20,7 +20,7 @@ Overview
 ========
 $(tail -n+3 README.rst)
 EOF
-sed -i "s/'sphinx.ext.viewcode',/'sphinx.ext.viewcode',\n    'sphinx.ext.autosummary',\n    'numpydoc',/g" doc/conf.py
+sed -i "s/'sphinx.ext.viewcode',/'sphinx.ext.viewcode',\n    'sphinx.ext.autosummary',\n    'sphinx.ext.mathjax',\n    'numpydoc',/g" doc/conf.py
 sed -i "s/alabaster/sphinx_rtd_theme/g" doc/conf.py
 if [[ $NARGS -eq 3 ]]; then
 cat <<EOF>>doc/conf.py

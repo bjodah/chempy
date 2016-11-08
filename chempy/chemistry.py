@@ -354,7 +354,7 @@ class Reaction(object):
     {'B': 1}, inact_reac={'C1': 4}, param=k)``.
 
     The rate constant information in ``param`` may be a subclass of
-    :class:`chempy.kinetics.rates.RateExpr` or carry a :meth:`_as_RateExpr`,
+    :class:`chempy.kinetics.rates.RateExpr` or carry a :meth:`as_RateExpr`,
     if neither: `param` will be assumed to be a rate constant for a mass-action
     type of kinetic expression.
 
@@ -797,7 +797,7 @@ class Reaction(object):
             return self.param
         else:
             try:
-                convertible = self.param._as_RateExpr
+                convertible = self.param.as_RateExpr
             except AttributeError:
                 return MassAction([self.param], rxn=self)
             else:
