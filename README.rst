@@ -65,7 +65,7 @@ Simplest way to install ChemPy and its (optional) dependencies is to use the `co
 
 alternatively you may also use `pip`::
 
-   $ python -m pip install --user --upgrade pytest
+   $ python -m pip install --user --upgrade chempy pytest
    $ python -m pytest --pyargs chempy
 
 you can skip the ``--user`` flag if you have got root permissions.
