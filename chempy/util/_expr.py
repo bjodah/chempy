@@ -4,7 +4,8 @@ This module provides a class :class:`Expr` to subclass from in order to
 describe expressions. The value of the class is that it allows straightforward
 interoperability between python packages handling symbolics (SymPy) and units
 (quantities) as well as working without either of those. The price one has to
-pay to allow for this is a somewhat contrived syntax
+pay to allow for this is a somewhat contrived syntax.
+
 """
 from __future__ import (absolute_import, division, print_function)
 
@@ -25,11 +26,13 @@ class Expr(object):
     Parameters
     ----------
     args : tuple/list of scalars or dict mapping name to scalar
-        When dict it is converted to a list using self.argument_names or self.unique_keys
+        When dict: it is converted to a list using ``self.argument_names`` or
+        ``self.unique_keys``.
     unique_keys : iterable of strings
-        Unique names (among all instances) for late overriding, aligned with beginning of ``args``.
+        Unique names (among all instances) for late overriding, aligned with beginning of
+        ``args``.
     \*\*kwargs :
-        keyword arguments intercepted in subclasses (directed by :attr:`kw`)
+        Keyword arguments intercepted in subclasses (directed by :attr:`kw`)
         note that parameters in :attr:`kw` are not processed in e.g. dedimensionalisation.
 
     Examples
@@ -85,7 +88,7 @@ class Expr(object):
     nargs = None
     print_name = None
 
-    def __init__(self, args, unique_keys=None, **kwargs):
+    def __init__(self, args=None, unique_keys=None, **kwargs):
         if self.argument_names is not None and self.argument_names[-1] != Ellipsis and self.nargs is None:
             self.nargs = len(self.argument_names)
         if self.argument_defaults is not None:
@@ -93,17 +96,20 @@ class Expr(object):
                 raise ValueError("Cannot have defaults when number of arguments is unbounded.")
             if len(self.argument_defaults) > len(self.argument_names):
                 raise ValueError("Cannot have more defaults than actual arguments")
-            n_missing = self.nargs - len(args)
-            if n_missing > 0:
-                args = tuple(chain(args, self.argument_defaults[-n_missing:]))
+            if args is not None:
+                n_missing = self.nargs - len(args)
+                if n_missing > 0:
+                    args = tuple(chain(args, self.argument_defaults[-n_missing:]))
 
         if self.nargs == 1 and (isinstance(args, (float, int)) or getattr(args, 'ndim', -1) == 0):
             args = [args]
             nargs = 1
+        elif args is None:
+            nargs = None
         else:
             nargs = len(args)
 
-        if self.nargs not in (None, -1) and nargs != self.nargs:
+        if self.nargs not in (None, -1) and nargs is not None and nargs != self.nargs:
             raise ValueError("Incorrect number of arguments: %d (expected %d)" % (nargs, nargs))
         if unique_keys is not None and self.nargs is not None and len(unique_keys) > self.nargs:
             raise ValueError("Incorrect number of unique_keys: %d (expected %d or less)" % (
