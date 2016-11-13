@@ -215,19 +215,27 @@ class Expr(object):
         if isinstance(index, str):
             index = self.argument_names.index(index)
 
+        print('self.unique_keys', self.unique_keys)
+        print('index', index)
         if self.unique_keys is None:
             res = self.args[index]
-        elif len(self.unique_keys) < index:
+        elif index < len(self.unique_keys):
             uk = self.unique_keys[index]
-            if self.unique_keys[index] in variables:
+            try:
                 res = variables[uk]
-            else:
-                _defaults = dict(zip(self.argument_names[-len(self.argument_defaults):],
-                                     self.argument_defaults))
-                res = _defaults[uk]
+            except KeyError:
+                if self.args is None:
+                    if index < len(self.unique_keys):
+                        raise KeyError("Unique key missing: %s" % uk)
+                    else:
+                        res = self.argument_defaults[index - self.nargs + len(self.argument_defaults)]
+                else:
+                    res = self.args[index]
         else:
-            res = self.args[index]
-
+            if self.args is None or index > len(self.args):
+                res = self.argument_defaults[index - self.nargs + len(self.argument_defaults)]
+            else:
+                res = self.args[index]
         if isinstance(res, Expr) and evaluate:
             return res(variables, backend=backend)
         else:
