@@ -12,8 +12,8 @@ from chempy.units import (
     allclose, units_library, default_constants, Backend, to_unitless,
     SI_base_registry, default_units as u
 )
-from chempy.util.testing import requires
-
+from ..testing import requires
+from ..pyutil import defaultkeydict
 from .._expr import Expr, mk_Poly, mk_PiecewisePoly
 from ..parsing import parsing_library
 
@@ -65,7 +65,10 @@ def test_Expr__nested_Expr():
 
     cv = _get_cv()
     _ref = 0.8108020083055849
-    assert abs(cv['Al']({'temperature': T, 'x': (273.15-7)/5 + 3, 'molar_gas_constant': 8.3145}) - _ref) < 1e-14
+    args = {'temperature': T, 'x': (273.15-7)/5 + 3, 'molar_gas_constant': 8.3145}
+    assert abs(cv['Al'](args) - _ref) < 1e-14
+    Al2 = cv['Al']/2
+    assert abs(Al2(args) - _ref/2) < 1e-14
 
 
 def test_nargs():
@@ -334,3 +337,67 @@ def test_Expr__argument_defaults():
     assert MyExpr([15, 19])() == 15*19*23
     assert MyExpr([15, 19, 29])() == 15*19*29
     assert MyExpr(dict(zip('abc', [15, 19, 29])))() == 15*19*29
+
+
+class MyK(Expr):
+    argument_names = ('H', 'S')
+    parameter_keys = ('T',)
+    R = 8.3145
+
+    def __call__(self, variables, backend=math):
+        H, S = self.all_args(variables, backend=backend)
+        T, = self.all_params(variables, backend=backend)
+        return backend.exp(-(H - T*S)/(self.R*T))
+
+
+def test_Expr__no_args():
+    K1 = MyK(unique_keys=('H1', 'S1'))
+    K2 = MyK(unique_keys=('H2', 'S2'))
+    add = K1 + K2
+    T = 298.15
+    res = add({'H1': 2, 'H2': 3, 'S1': 5, 'S2': 7, 'T': T})
+    RT = 8.3145 * 298.15
+    ref = math.exp(-(2 - T*5)/RT) + math.exp(-(3 - T*7)/RT)
+    assert abs(res - ref) < 1e-14
+
+
+@requires('sympy')
+def test_Expr__no_args__symbolic():
+    K1 = MyK(unique_keys=('H1', 'S1'))
+    K2 = MyK(unique_keys=('H2', 'S2'))
+    add = K1 + K2
+    import sympy
+    v = defaultkeydict(sympy.Symbol)
+    res = add(v, backend=sympy)
+    R = 8.3145
+    expr1 = sympy.exp(-(v['H1'] - v['T']*v['S1'])/R/v['T'])
+    expr2 = sympy.exp(-(v['H2'] - v['T']*v['S2'])/R/v['T'])
+    ref = expr1 + expr2
+    assert (res - ref).simplify() == 0
+
+
+class MyK2(Expr):
+    argument_names = ('H', 'S', 'Cp', 'Tref')
+    argument_defaults = (0, 298.15)
+    parameter_keys = ('T')
+    R = 8.3145
+
+    def __call__(self, variables, backend=math):
+        H, S, Cp, Tref = self.all_args(variables, backend=backend)
+        T, = self.all_params(variables, backend=backend)
+        _H = H + Cp*(T-Tref)
+        _S = S + Cp*backend.log(T/Tref)
+        return backend.exp(-(_H - T*_S)/(self.R*T))
+
+
+def test_Expr__no_args__arg_defaults():
+    K1 = MyK2(unique_keys=('H1', 'S1', 'Cp1'))
+    K2 = MyK2(unique_keys=('H2', 'S2'))
+    add = K1 + K2
+    T = 293.15
+    res = add({'H1': 2, 'H2': 3, 'S1': 5, 'S2': 7, 'T': T, 'Cp1': 13})
+    RT = 8.3145 * T
+    H1p = 2 + 13*(T - 298.15)
+    S1p = 5 + 13*math.log(T/298.15)
+    ref = math.exp(-(H1p - T*S1p)/RT) + math.exp(-(3 - T*7)/RT)
+    assert abs(res - ref) < 1e-14

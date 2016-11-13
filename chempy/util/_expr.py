@@ -6,6 +6,8 @@ interoperability between python packages handling symbolics (SymPy) and units
 (quantities) as well as working without either of those. The price one has to
 pay to allow for this is a somewhat contrived syntax.
 
+Note that this module is to be considered an implementation detail, and not
+something that should be relied upon in external code.
 """
 from __future__ import (absolute_import, division, print_function)
 
@@ -132,7 +134,7 @@ class Expr(object):
         Parameters
         ----------
         callback : callable
-            signature: *args, backend=None
+            signature: *args, backend=math
         argument_names : tuple of str, optional
         argument_defaults : tuple of floats, optional
         parameter_keys : tuple of str, optional,
@@ -142,7 +144,7 @@ class Expr(object):
         Examples
         --------
         >>> from operator import add; from functools import reduce
-        >>> def poly(args, x, backend=None):
+        >>> def poly(args, x, backend=math):
         ...     x0 = args[0]
         ...     return reduce(add, [c*(x-x0)**i for i, c in enumerate(args[1:])])
         ...
@@ -164,7 +166,7 @@ class Expr(object):
             setattr(Wrapper, k, v)
         return Wrapper
 
-    def __call__(self, variables, backend=None):
+    def __call__(self, variables, backend=math):
         raise NotImplementedError("Subclass and implement __call__")
 
     @property
@@ -194,22 +196,47 @@ class Expr(object):
     def string(self, arg_fmt=str, **kwargs):
         return self._str(arg_fmt, **kwargs)
 
-    def arg(self, variables, index, backend=None, evaluate=True):
+    def arg(self, variables, index, backend=math, evaluate=True):
+        """
+        Parameters
+        ----------
+        variables : container
+        index : int or str
+            When str: index from ``self.argument_names``.
+        backend : module
+        evaluate : bool
+
+        Notes
+        -----
+        Priority:
+            1. unique_keys
+            2. variables[k] for k in argument_names
+        """
         if isinstance(index, str):
             index = self.argument_names.index(index)
-        if self.unique_keys is None or len(self.unique_keys) <= index:
+
+        if self.unique_keys is None:
             res = self.args[index]
+        elif len(self.unique_keys) < index:
+            uk = self.unique_keys[index]
+            if self.unique_keys[index] in variables:
+                res = variables[uk]
+            else:
+                _defaults = dict(zip(self.argument_names[-len(self.argument_defaults):],
+                                     self.argument_defaults))
+                res = _defaults[uk]
         else:
-            res = variables.get(self.unique_keys[index], self.args[index])
+            res = self.args[index]
+
         if isinstance(res, Expr) and evaluate:
             return res(variables, backend=backend)
         else:
             return res
 
-    def all_args(self, variables, backend=None, evaluate=True):
-        return [self.arg(variables, i, backend, evaluate) for i in range(len(self.args))]
+    def all_args(self, variables, backend=math, evaluate=True):
+        return [self.arg(variables, i, backend, evaluate) for i in range(self.nargs or len(self.args))]
 
-    def all_params(self, variables, backend=None):
+    def all_params(self, variables, backend=math):
         return [v(variables, backend=backend) if isinstance(v, Expr) else v for v
                 in [variables[k] for k in self.parameter_keys]]
 
@@ -227,7 +254,7 @@ class Expr(object):
         >>> class Pressure(Expr):
         ...     argument_names = ('n',)
         ...     parameter_keys = ('temperature', 'volume', 'R')
-        ...     def __call__(self, variables, backend=None):
+        ...     def __call__(self, variables, backend=math):
         ...         n, = self.all_args(variables, backend=backend)
         ...         T, V, R = self.all_params(variables, backend=backend)
         ...         return n*R*T/V
@@ -268,7 +295,7 @@ class Expr(object):
 
     def _sympy_format(self, method, variables, backend, default):
         variables = variables or {}
-        if backend is None:
+        if backend in (None, math):
             import sympy as backend
         variables = defaultkeydict(
             None if default is None else (lambda k: backend.Symbol(default(k))),
@@ -284,7 +311,7 @@ class Expr(object):
         else:
             raise NotImplementedError("Unknown method: %s" % method)
 
-    def latex(self, variables=None, backend=None, default=None):
+    def latex(self, variables=None, backend=math, default=None):
         r"""
         Parameters
         ----------
@@ -365,7 +392,7 @@ class Expr(object):
 
 class _NegExpr(Expr):
 
-    def __call__(self, variables, backend=None):
+    def __call__(self, variables, backend=math):
         arg0, = self.all_args(variables, backend=backend)
         return -arg0
 
@@ -373,7 +400,7 @@ class _NegExpr(Expr):
 class _BinaryExpr(Expr):
     _op = None
 
-    def __call__(self, variables, backend=None):
+    def __call__(self, variables, backend=math):
         arg0, arg1 = self.all_args(variables, backend=backend)
         return self._op(arg0, arg1)
 
@@ -441,7 +468,7 @@ def mk_Poly(parameter, reciprocal=False):
         parameter_keys = (parameter,)
         skip_poly = 0
 
-        def eval_poly(self, variables, backend=None):
+        def eval_poly(self, variables, backend=math):
             all_args = self.all_args(variables, backend=backend)
             x = variables[parameter]
             offset, coeffs = all_args[self.skip_poly], all_args[self.skip_poly+1:]
@@ -457,7 +484,7 @@ def mk_PiecewisePoly(parameter, reciprocal=False):
         parameter_keys = (parameter,)
         skip_poly = 0
 
-        def eval_poly(self, variables, backend=None):
+        def eval_poly(self, variables, backend=math):
             all_args = self.all_args(variables, backend=backend)[self.skip_poly:]
             npoly = all_args[0]
             arg_idx = 1
