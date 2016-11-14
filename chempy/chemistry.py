@@ -545,7 +545,7 @@ class Reaction(object):
         return tuple(self.reac.get(k, 0) + self.inact_reac.get(k, 0) for k in substances)
 
     def active_reac_stoich(self, substances):
-        """ Per substance reactant stoichiometry tuple (active & inactive) """
+        """ Per substance reactant stoichiometry tuple (active) """
         return tuple(self.reac.get(k, 0) for k in substances)
 
     def all_prod_stoich(self, substances):
@@ -553,7 +553,7 @@ class Reaction(object):
         return tuple(self.prod.get(k, 0) + self.inact_prod.get(k, 0) for k in substances)
 
     def active_prod_stoich(self, substances):
-        """ Per substance product stoichiometry tuple (active & inactive) """
+        """ Per substance product stoichiometry tuple (active) """
         return tuple(self.prod.get(k, 0) for k in substances)
 
     def _xprecipitate_stoich(self, substances, xor):
