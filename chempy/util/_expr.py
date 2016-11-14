@@ -162,6 +162,7 @@ class Expr(object):
                 args = self.all_args(variables, backend=backend)
                 params = self.all_params(variables, backend=backend)
                 return callback(args, *params, backend=backend)
+        Wrapper.__name__ = callback.__name__
         for k, v in kwargs.items():
             setattr(Wrapper, k, v)
         return Wrapper
@@ -174,7 +175,7 @@ class Expr(object):
         return {k: getattr(self, k, v) for k, v in self.kw.items()}
 
     def _str(self, arg_fmt, unique_keys_fmt=str, with_kw=False):
-        if len(self.args) == 0:
+        if self.args is None or len(self.args) == 0:
             args_str = ''
         elif len(self.args) == 1:
             args_str = '%s,' % self.args[0]
@@ -215,8 +216,6 @@ class Expr(object):
         if isinstance(index, str):
             index = self.argument_names.index(index)
 
-        print('self.unique_keys', self.unique_keys)
-        print('index', index)
         if self.unique_keys is None:
             res = self.args[index]
         elif index < len(self.unique_keys):
@@ -408,6 +407,9 @@ class _NegExpr(Expr):
 class _BinaryExpr(Expr):
     _op = None
 
+    def _str(self, *args, **kwargs):
+        return ("({0} %s {1})" % self._op_str).format(*[arg._str(*args, **kwargs) for arg in self.args])
+
     def __call__(self, variables, backend=math):
         arg0, arg1 = self.all_args(variables, backend=backend)
         return self._op(arg0, arg1)
@@ -415,18 +417,23 @@ class _BinaryExpr(Expr):
 
 class _AddExpr(_BinaryExpr):
     _op = add
+    _op_str = '+'
 
 
 class _SubExpr(_BinaryExpr):
     _op = sub
+    _op_str = '-'
 
 
 class _MulExpr(_BinaryExpr):
     _op = mul
+    _op_str = '*'
 
 
 class _DivExpr(_BinaryExpr):
     _op = truediv
+    _op_str = '/'
+
 
 
 def _eval_poly(x, offset, coeffs, reciprocal=False):

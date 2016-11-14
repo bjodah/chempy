@@ -544,9 +544,17 @@ class Reaction(object):
         """ Per substance reactant stoichiometry tuple (active & inactive) """
         return tuple(self.reac.get(k, 0) + self.inact_reac.get(k, 0) for k in substances)
 
+    def active_reac_stoich(self, substances):
+        """ Per substance reactant stoichiometry tuple (active & inactive) """
+        return tuple(self.reac.get(k, 0) for k in substances)
+
     def all_prod_stoich(self, substances):
         """ Per substance product stoichiometry tuple (active & inactive) """
         return tuple(self.prod.get(k, 0) + self.inact_prod.get(k, 0) for k in substances)
+
+    def active_prod_stoich(self, substances):
+        """ Per substance product stoichiometry tuple (active & inactive) """
+        return tuple(self.prod.get(k, 0) for k in substances)
 
     def _xprecipitate_stoich(self, substances, xor):
         return tuple((
@@ -869,7 +877,7 @@ class Equilibrium(Reaction):
     html_arrow = '&harr;'
     param_char = 'K'  # convention
 
-    def as_reactions(self, kf=None, kb=None, units=None, variables=None, backend=math):
+    def as_reactions(self, kf=None, kb=None, units=None, variables=None, backend=math, new_name=None):
         """ Creates a forward and backward :class:`Reaction` pair
 
         Parameters
@@ -894,15 +902,19 @@ class Equilibrium(Reaction):
             if kb is None:
                 raise ValueError("Exactly one rate needs to be provided")
             kf = kb * self.equilibrium_constant(variables, backend=backend) * c0**(nb - nf)
+            fw_name = self.name
+            bw_name = new_name
         elif kb is None:
             kb = kf / (self.equilibrium_constant(variables, backend=backend) * c0**(nb - nf))
+            fw_name = new_name
+            bw_name = self.name
         else:
             raise ValueError("Exactly one rate needs to be provided")
         return (
             Reaction(self.reac, self.prod, kf, self.inact_reac,
-                     self.inact_prod, ref=self.ref),
+                     self.inact_prod, ref=self.ref, name=fw_name),
             Reaction(self.prod, self.reac, kb, self.inact_prod,
-                     self.inact_reac, ref=self.ref)
+                     self.inact_reac, ref=self.ref, name=bw_name)
         )
 
     def equilibrium_constant(self, variables=None, backend=math):
@@ -1194,7 +1206,7 @@ class ReactionSystem(object):
         return True
 
     @classmethod
-    def from_string(cls, s, **kwargs):
+    def from_string(cls, s, rxn_parse_kwargs=None, **kwargs):
         """ Create a reaction system from a string
 
         Parameters
@@ -1210,8 +1222,10 @@ class ReactionSystem(object):
         True
 
         """
-        rxns = [cls._BaseReaction.from_string(r) for r in s.split('\n')]
-        return cls(rxns, substance_factory=cls._BaseSubstance.from_formula, **kwargs)
+        rxns = [cls._BaseReaction.from_string(r, **(rxn_parse_kwargs or {})) for r in s.split('\n') if r != '']
+        if 'substance_factory' not in kwargs:
+            kwargs['substance_factory'] = cls._BaseSubstance.from_formula
+        return cls(rxns, **kwargs)
 
     def __getitem__(self, key):
         candidate = None
@@ -1400,8 +1414,14 @@ class ReactionSystem(object):
     def all_reac_stoichs(self, keys=None):
         return self._stoichs('all_reac_stoich', keys)
 
+    def active_reac_stoichs(self, keys=None):
+        return self._stoichs('active_reac_stoich', keys)
+
     def all_prod_stoichs(self, keys=None):
         return self._stoichs('all_prod_stoich', keys)
+
+    def active_prod_stoichs(self, keys=None):
+        return self._stoichs('active_prod_stoich', keys)
 
     def stoichs(self, non_precip_rids=()):  # TODO: rename to cond_stoichs
         """ Conditional stoichiometries depending on precipitation status """

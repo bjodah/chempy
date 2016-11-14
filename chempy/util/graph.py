@@ -8,8 +8,8 @@ import shutil
 import tempfile
 
 
-def rsys2dot(rsys, tex=False, rprefix='r', rref0=1,
-             nodeparams='[label="{}" shape=diamond]', colors=('maroon', 'darkgreen')):
+def rsys2dot(rsys, tex=False, rprefix='r', rref0=1, nodeparams='[label="{}" shape=diamond]',
+             colors=('maroon', 'darkgreen'), include_inactive=True):
     """
     Returns list of lines of DOT (graph description language)
     formated graph.
@@ -32,7 +32,7 @@ def rsys2dot(rsys, tex=False, rprefix='r', rref0=1,
     list of lines of DOT representation of the graph representation.
 
     """
-    lines = ['digraph ' + str(rsys.name) + '{\n']
+    lines = ['digraph "' + str(rsys.name) + '" {\n']
     ind = '  '  # indentation
 
     def add_vertex(key, num, reac):
@@ -43,8 +43,13 @@ def rsys2dot(rsys, tex=False, rprefix='r', rref0=1,
               (rid, name, snum, colors[1], colors[1]))
         ))
 
-    all_reac_stoichs = rsys.all_reac_stoichs()
-    all_prod_stoichs = rsys.all_prod_stoichs()
+    if include_inactive:
+        reac_stoichs = rsys.all_reac_stoichs()
+        prod_stoichs = rsys.all_prod_stoichs()
+    else:
+        reac_stoichs = rsys.active_reac_stoichs()
+        prod_stoichs = rsys.active_prod_stoichs()
+
 
     for ri, rxn in enumerate(rsys.rxns):
         rid = rprefix + str(ri+rref0)
@@ -53,12 +58,12 @@ def rsys2dot(rsys, tex=False, rprefix='r', rref0=1,
         lines.append(ind*2 + rid)
         lines.append(ind + '}\n')
         for idx, key in enumerate(rsys.substances):
-            num = all_reac_stoichs[ri, idx]
+            num = reac_stoichs[ri, idx]
             if num == 0:
                 continue
             add_vertex(key, num, True)
         for idx, key in enumerate(rsys.substances):
-            num = all_prod_stoichs[ri, idx]
+            num = prod_stoichs[ri, idx]
             if num == 0:
                 continue
             add_vertex(key, num, False)

@@ -58,7 +58,7 @@ def law_of_mass_action_rates(conc, rsys, variables=None):
             yield rate*rxn.param
 
 
-def dCdt(rsys, rates):
+def dCdt_list(rsys, rates):
     """ Returns a list of the time derivatives of the concentrations
 
     Parameters
@@ -136,13 +136,13 @@ def get_odesys(rsys, include_params=True, substitutions=None,
     array([ 0.7042,  0.0042,  0.2958])
 
     """
+    for k in 'names param_names latex_names latex_param_names'.split():
+        if k in kwargs:
+            raise ValueError("Cannot override %s" % k)
     if SymbolicSys is None:
         from pyodesys.symbolic import SymbolicSys
 
     substance_keys = list(rsys.substances.keys())
-
-    if 'names' not in kwargs:
-        kwargs['names'] = list(rsys.substances.values())  # pyodesys>=0.5.3
 
     r_exprs = [rxn.rate_expr() for rxn in rsys.rxns]
 
@@ -157,8 +157,12 @@ def get_odesys(rsys, include_params=True, substitutions=None,
     def _reg_unique(expr):
         if not include_params:
             if expr.unique_keys is not None:
-                for k, v in zip(expr.unique_keys, expr.args):
-                    unique[k] = v
+                if expr.args is None:
+                    for k in expr.unique_keys:
+                        unique[k] = 0
+                else:
+                    for k, v in zip(expr.unique_keys, expr.args):
+                        unique[k] = v
 
     for key, v in substitutions.items():
         if key not in _original_param_keys:
@@ -229,20 +233,21 @@ def get_odesys(rsys, include_params=True, substitutions=None,
     kwargs['post_processors'] = kwargs.get('post_processors', []) + [post_processor]
 
     def dydt(t, y, p, backend=math):
-        variables = dict(chain(
-            zip(substance_keys, y),
-            zip(param_keys, p[:len(param_keys)]),
-            zip(unique.keys(), p[len(param_keys):])
-        ))
+        variables = dict(chain(y.items(), p.items()))
         variables['time'] = t
         for k, act in _active_subst.items():
             if unit_registry is not None:
                 _, act = act.dedimensionalisation(unit_registry)
             variables[k] = act(variables, backend=backend)
         variables.update(_passive_subst)
-        return dCdt(rsys, [rat(variables, backend=backend) for rat in r_exprs])
+        return rsys.rates(variables, backend=backend)
 
-    return SymbolicSys.from_callback(
-        dydt, len(substance_keys),
-        len(param_keys) + (0 if include_params else len(unique)),
-        **kwargs), param_keys, unique, p_units
+
+    kwargs['names'] = [s.name for s in rsys.substances.values()]
+    kwargs['latex_names'] = [s.latex_name for s in rsys.substances.values()]
+    if include_params:
+        kwargs['param_names'] = param_keys
+    else:
+        kwargs['param_names'] = list(chain(param_keys, unique.keys()))
+
+    return SymbolicSys.from_callback(dydt, dep_by_name=True, par_by_name=True, **kwargs), param_keys, unique, p_units

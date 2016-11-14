@@ -27,9 +27,10 @@ class RateExpr(Expr):
     @rxn.setter
     def rxn(self, value):
         self._rxn = value
-        for arg in self.args:
-            if isinstance(arg, RateExpr):
-                arg.rxn = value
+        if self.args is not None:
+            for arg in self.args:
+                if isinstance(arg, RateExpr):
+                    arg.rxn = value
 
     def _recursive_as_RateExpr(self):
         new_args = []
