@@ -156,7 +156,10 @@ def get_odesys(rsys, include_params=True, substitutions=None,
                     unique[k] = None
             else:
                 for k, v in zip(expr.unique_keys, expr.args):
-                    unique[k] = v
+                    if isinstance(v, Expr):
+                        _reg_unique(v)
+                    else:
+                        unique[k] = v
 
     for sk, sv in substitutions.items():
         if sk not in _ori_pk:

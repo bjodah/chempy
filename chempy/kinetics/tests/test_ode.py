@@ -9,6 +9,7 @@ except ImportError:
     np = None
 
 from chempy.chemistry import Substance, Reaction, ReactionSystem
+from chempy.thermodynamics.expressions import EqExpr
 from chempy.units import (
     SI_base_registry, get_derived_unit, allclose, units_library,
     to_unitless, default_units as u
@@ -338,3 +339,25 @@ def test_get_odesys__time_dep_temperature():
         [3*r(2), 3*r(5), 3*r(10)]
     ]).T
     assert np.allclose(fout, ref)
+
+
+def test_get_odesys__late_binding():
+    def _gibbs(args, T, R, backend):
+        H, S = args
+        return backend.exp(-(H - T*S)/(R*T))
+
+    def _eyring(args, T, R, k_B, h, backend):
+        H, S = args
+        return k_B/h*T*backend.exp(-(H - T*S)/(R*T))
+
+    gibbs_pk = ('temperature', 'molar_gas_constant')
+    eyring_pk = ('temperature', 'molar_gas_constant', 'Boltzmann_constant', 'Planck_constant')
+
+    GibbsEC = EqExpr.from_callback(_gibbs, parameter_keys=gibbs_pk)
+    EyringMA = MassAction.from_callback(_eyring, parameter_keys=eyring_pk)
+
+    beta = GibbsEC(unique_keys=('He_assoc', 'Se_assoc'))  # equilibrium parameters
+    bimol_barrier = EyringMA(unique_keys=('Ha_assoc', 'Sa_assoc'))  # activation parameters
+    eq = Equilibrium({'Fe+3', 'SCN-'}, {'FeSCN+2'}, beta)
+    rsys = ReactionSystem(eq.as_reactions(kf=bimol_barrier))
+    odesys,  = get_odesys()

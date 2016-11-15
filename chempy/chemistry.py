@@ -10,6 +10,7 @@ import sys
 import warnings
 
 from .util.arithmeticdict import ArithmeticDict
+from .util._expr import Expr
 from .util.periodic import mass_from_composition
 from .util.parsing import (
     formula_to_composition, to_reaction,
@@ -384,14 +385,14 @@ class Reaction(object):
 
     Attributes
     ----------
-    reac: dict
-    prod: dict
-    param: object
-    inact_reac: dict
-    inact_prod: dict
-    name: str
-    ref: str
-    data: dict
+    reac : dict
+    prod : dict
+    param : object
+    inact_reac : dict
+    inact_prod : dict
+    name : str
+    ref : str
+    data : dict
 
     Examples
     --------
@@ -835,8 +836,9 @@ class Reaction(object):
             substance_keys = self.keys()
         if ratex is None:
             ratex = self.rate_expr()
-        r = ratex(variables, backend)
-        return {k: r*v for k, v in zip(substance_keys, self.net_stoich(substance_keys))}
+        if isinstance(ratex, Expr):
+            ratex = ratex(variables, backend)
+        return {k: ratex*v for k, v in zip(substance_keys, self.net_stoich(substance_keys))}
 
 
 def equilibrium_quotient(concs, stoich):
@@ -1241,6 +1243,10 @@ class ReactionSystem(object):
         if candidate is None:
             raise KeyError("No reaction with name %s found" % key)
         return candidate
+
+    def __iter__(self):
+        for r in self.rxns:
+            yield r
 
     def __iadd__(self, other):
         try:
