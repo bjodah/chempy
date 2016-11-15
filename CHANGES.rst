@@ -4,6 +4,7 @@ unreleased
 - moved ``.util.parsing.number_to_scientific_*`` to ``.printing(.numbers)``
 - Number formating now handles uncertainties.
 - ``refereence`` in reimplementations now a dict
+- Fixes to ``.kinetics.ode.get_odesys`` (refactored)
 
 v0.4.1
 ======

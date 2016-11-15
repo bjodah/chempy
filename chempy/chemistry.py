@@ -811,14 +811,15 @@ class Reaction(object):
             else:
                 return convertible(self)
 
-    def rate(self, variables=None, backend=math, substance_keys=None):
+    def rate(self, variables=None, backend=math, substance_keys=None, ratex=None):
         """ Evaluate the rate of a reaction
 
         Parameters
         ----------
-        variables: dict
-        backend: module, optional
-        substance_keys: iterable of str, optional
+        variables : dict
+        backend : module, optional
+        substance_keys : iterable of str, optional
+        ratex : RateExpr
 
         Examples
         --------
@@ -832,7 +833,9 @@ class Reaction(object):
             variables = {}
         if substance_keys is None:
             substance_keys = self.keys()
-        r = self.rate_expr()(variables, backend)
+        if ratex is None:
+            ratex = self.rate_expr()
+        r = ratex(variables, backend)
         return {k: r*v for k, v in zip(substance_keys, self.net_stoich(substance_keys))}
 
 
@@ -1368,7 +1371,7 @@ class ReactionSystem(object):
                     result[index + (self.as_substance_index(k),)] = val
         return result, varied_keys
 
-    def rates(self, variables=None, backend=math, substance_keys=None):
+    def rates(self, variables=None, backend=math, substance_keys=None, ratexs=None):
         """ Per substance sums of reaction rates rates.
 
         Parameters
@@ -1376,6 +1379,7 @@ class ReactionSystem(object):
         variables : dict
         backend : module, optional
         substance_keys : iterable of str, optional
+        ratexs : iterable of RateExpr instances
 
         Returns
         -------
@@ -1392,8 +1396,10 @@ class ReactionSystem(object):
 
         """
         result = {}
-        for rxn in self.rxns:
-            for k, v in rxn.rate(variables, backend, substance_keys).items():
+        if ratexs is None:
+            ratexs = [None]*self.nr
+        for rxn, ratex in zip(self.rxns, ratexs):
+            for k, v in rxn.rate(variables, backend, substance_keys, ratex=ratex).items():
                 if k not in result:
                     result[k] = v
                 else:

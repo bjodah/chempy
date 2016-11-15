@@ -156,7 +156,7 @@ def test_ode_with_global_parameters():
     ratex = ArrheniusMassAction([1e10, 40e3/8.3145])
     rxn = Reaction({'A': 1}, {'B': 1}, ratex)
     rsys = ReactionSystem([rxn], 'A B')
-    odesys = get_odesys(rsys, include_params=True)[0]
+    odesys, param_keys, unique_keys, p_units = get_odesys(rsys, include_params=True)
     conc = {'A': 3, 'B': 5}
     x, y, p = odesys.pre_process(-37, conc, {'temperature': 298.15})
     fout = odesys.f_cb(x, y, p)
@@ -311,9 +311,23 @@ def test_get_odesys__time_dep_temperature():
     rxn = Reaction({'A': 1}, {'B': 3}, rate)
     rsys = ReactionSystem([rxn], 'A B')
     rt = RampedTemp([T0, dTdt], ('init_temp', 'ramp_rate'))
-    odesys = get_odesys(rsys, False, substitutions={'temperature': rt})[0]
+    odesys, all_pk, unique, p_units = get_odesys(rsys, False, substitutions={'temperature': rt})
     conc = {'A': A0, 'B': B0}
-    x, y, p = odesys.pre_process([2, 5, 10], conc)
+    tout = [2, 5, 10]
+
+    for ramp_rate in [2, 3, 4]:
+        unique['ramp_rate'] = ramp_rate
+        xout, yout, info = odesys.integrate(10, conc, unique, atol=1e-10, rtol=1e-12)
+        params[-1] = ramp_rate
+        Aref = np.array([float(refA(t, *params)) for t in xout])
+        # Aref = 1/(1/13 + 2*1e-6*t_unitless)
+        yref = np.zeros((xout.size, 2))
+        yref[:, 0] = Aref
+        yref[:, 1] = B0 + 3*(A0-Aref)
+        assert allclose(yout, yref)
+
+    unique['ramp_rate'] = 2
+    x, y, p = odesys.pre_process(tout, conc, unique)
     fout = odesys.f_cb(x, y, p)
 
     def r(t):
@@ -324,15 +338,3 @@ def test_get_odesys__time_dep_temperature():
         [3*r(2), 3*r(5), 3*r(10)]
     ]).T
     assert np.allclose(fout, ref)
-
-    for ramp_rate in [2, 3, 4]:
-        xout, yout, info = odesys.integrate(
-            10, rsys.as_per_substance_array(conc), {'ramp_rate': ramp_rate},
-            atol=1e-10, rtol=1e-12)
-        params[-1] = ramp_rate
-        Aref = np.array([float(refA(t, *params)) for t in xout])
-        # Aref = 1/(1/13 + 2*1e-6*t_unitless)
-        yref = np.zeros((xout.size, 2))
-        yref[:, 0] = Aref
-        yref[:, 1] = B0 + 3*(A0-Aref)
-        assert allclose(yout, yref)

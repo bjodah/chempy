@@ -7,7 +7,7 @@ from chempy.util._expr import Expr
 from chempy.util.testing import requires
 from chempy.units import allclose, units_library, Backend, default_units as du, default_constants as dc
 
-from ..expressions import GibbsEqConst
+from ..expressions import EqExpr, GibbsEqConst
 
 
 def test_GibbsEqConst():
@@ -17,13 +17,26 @@ def test_GibbsEqConst():
     ref = math.exp(-(dH - T*dS)/(R*T))
     assert abs((gee({'temperature': T}) - ref)/ref) < 1e-14
 
+
+def _gibbs(args, T, R, backend):
+    H, S, Cp, Tref = args
+    H2 = H + Cp*(T - Tref)
+    S2 = S + Cp*backend.log(T/Tref)
+    return backend.exp(-(H2 - T*S2)/(R*T))
+
+
+def test_custom_gibbs():
+    R, T = 8.314, 298.15
+    dH, dS = -4e3, 16
+    MyGibbs = EqExpr.from_callback(_gibbs, parameter_keys=('temperature', 'R'),
+                                   argument_names=('H', 'S', 'Cp', 'Tref'))
     dCp = 123.45
     Tref = 242
-    gee2 = GibbsEqConst([dH/R, dS/R, dCp/R, Tref])
+    gee2 = MyGibbs([dH, dS, dCp, Tref])
     dH2 = dH + dCp*(T - Tref)
     dS2 = dS + dCp*math.log(T/Tref)
     ref2 = math.exp(-(dH2 - T*dS2)/(R*T))
-    assert abs((gee2({'temperature': T}) - ref2)/ref2) < 1e-14
+    assert abs((gee2({'temperature': T, 'R': R}) - ref2)/ref2) < 1e-14
 
 
 def test_GibbsEqConst__unique_keys():

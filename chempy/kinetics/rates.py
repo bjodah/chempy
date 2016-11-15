@@ -224,7 +224,7 @@ class EyringMassAction(ArrheniusMassAction):
 class RampedTemp(Expr):
     """ Ramped temperature, pass as substitution to e.g. ``get_odesys`` """
     argument_names = ('T0', 'dTdt')
-    parameter_keys = ('time',)
+    parameter_keys = ('time',)  # consider e.g. a parameter such as 'init_time'
 
     def __call__(self, variables, backend=None):
         T0, dTdt = self.all_args(variables, backend=backend)

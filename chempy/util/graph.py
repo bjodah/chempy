@@ -50,7 +50,6 @@ def rsys2dot(rsys, tex=False, rprefix='r', rref0=1, nodeparams='[label="{}" shap
         reac_stoichs = rsys.active_reac_stoichs()
         prod_stoichs = rsys.active_prod_stoichs()
 
-
     for ri, rxn in enumerate(rsys.rxns):
         rid = rprefix + str(ri+rref0)
         lines.append(ind + '{')

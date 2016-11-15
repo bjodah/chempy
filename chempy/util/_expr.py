@@ -127,6 +127,19 @@ class Expr(object):
         if kwargs:
             raise ValueError("Unexpected keyword arguments %s" % kwargs)
 
+    # @property
+    # def _aug_args(self):
+    #     """ Returns self.args possible with defaults. """
+    #     if self.args is None:
+    #         ndefaults = (0 if self.argument_defaults is None else len(self.argument_defaults))
+    #         if self.nargs is None or ndefaults == 0:
+    #             return None
+    #         else:
+    #             args = [None]*(self.nargs - ndefaults)
+    #             return args + list(self.argument_defaults[len(args) - self.nargs:])
+    #     else:
+    #         return self.args
+
     @classmethod
     def from_callback(cls, callback, **kwargs):
         """ Factory of subclasses
@@ -224,10 +237,7 @@ class Expr(object):
                 res = variables[uk]
             except KeyError:
                 if self.args is None:
-                    if index < len(self.unique_keys):
-                        raise KeyError("Unique key missing: %s" % uk)
-                    else:
-                        res = self.argument_defaults[index - self.nargs + len(self.argument_defaults)]
+                    raise KeyError("Unique key missing: %s" % uk)
                 else:
                     res = self.args[index]
         else:
@@ -241,14 +251,18 @@ class Expr(object):
             return res
 
     def all_args(self, variables, backend=math, evaluate=True):
-        return [self.arg(variables, i, backend, evaluate) for i in range(self.nargs or len(self.args))]
+        if self.nargs is None or self.nargs == -1:
+            nargs = len(self.args)
+        else:
+            nargs = self.nargs
+        return [self.arg(variables, i, backend, evaluate) for i in range(nargs)]
 
     def all_params(self, variables, backend=math):
         return [v(variables, backend=backend) if isinstance(v, Expr) else v for v
                 in [variables[k] for k in self.parameter_keys]]
 
     def dedimensionalisation(self, unit_registry, variables={}, backend=math):
-        """ Create an instance with consistent units
+        """ Create an instance with consistent units from a unit_registry
 
         Parameters
         ----------
@@ -277,8 +291,8 @@ class Expr(object):
 
         Returns
         -------
-        A new instance where all args have been (recursively) expressed in the unit system
-        of unit_registry
+        new_units: list of units of the dedimensionalised args.
+        self.__class__ instance: with dedimensioanlised arguments
 
         """
         from ..units import default_unit_in_registry, to_unitless
@@ -433,7 +447,6 @@ class _MulExpr(_BinaryExpr):
 class _DivExpr(_BinaryExpr):
     _op = truediv
     _op_str = '/'
-
 
 
 def _eval_poly(x, offset, coeffs, reciprocal=False):

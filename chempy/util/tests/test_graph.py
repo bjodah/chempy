@@ -23,7 +23,7 @@ def _get_rsys():
 def test_rsys2dot():
     rsys = _get_rsys()
     assert list(map(str.strip, rsys2dot(rsys))) == [
-        'digraph None{',
+        'digraph "None" {',
         '{',
         'node [label="r1" shape=diamond]',
         'r1',
