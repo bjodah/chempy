@@ -9,7 +9,7 @@ from chempy import Reaction, ReactionSystem, Substance
 from chempy.units import allclose, Backend, to_unitless, units_library, default_units as u
 from chempy.util.parsing import parsing_library
 from chempy.util.testing import requires
-from ..rates import RateExpr, MassAction, ArrheniusMassAction, Radiolytic, mk_Radiolytic, EyringMassAction
+from ..rates import RateExpr, MassAction, Arrhenius, Radiolytic, mk_Radiolytic, Eyring
 
 
 class SpecialFraction(RateExpr):
@@ -97,7 +97,7 @@ def test_MassAction__subclass_from_callback__units():
 
 def test_ArrheniusMassAction():
     A, Ea_over_R = 1.2e11, 40e3/8.3145
-    ama = ArrheniusMassAction([A, Ea_over_R])
+    ama = MassAction(Arrhenius([A, Ea_over_R]))
     Reaction({'A': 2, 'B': 1}, {'C': 1}, ama, {'B': 1})
     T_ = 'temperature'
 
@@ -208,7 +208,7 @@ def test_mk_Radiolytic():
 
 def test_EyringMassAction():
     args = kB_h_times_exp_dS_R, dH_over_R = 1.2e11/273.15, 40e3/8
-    ama = EyringMassAction(args, ('Sfreq', 'Hact'))
+    ama = MassAction(Eyring(args, ('Sfreq', 'Hact')))
     rxn1 = Reaction({'A': 2, 'B': 1}, {'C': 1}, ama, {'B': 1})
     T_ = 'temperature'
 
@@ -222,11 +222,11 @@ def test_EyringMassAction():
         assert abs((ama(var) - r)/r) < 1e-14
 
     with pytest.raises(ValueError):
-        EyringMassAction([1, 1, 1, 1, 1])
+        MassAction(Eyring([1, 1, 1, 1, 1]))
 
     assert ama.as_mass_action({T_: 273.15}).args[0] == 1.2e11*math.exp(-40e3/8/273.15)
 
-    ama2 = EyringMassAction([1.2e11/273, 40e3/8, 1.2, 1e3], ('Sfreq', 'Hact', 'Sref', 'Href'))
+    ama2 = MassAction(Eyring([1.2e11/273, 40e3/8, 1.2, 1e3], ('Sfreq', 'Hact', 'Sref', 'Href')))
     rxn2 = Reaction({'C': 1}, {'A': 2, 'B': 2}, ama2)
     var2 = {'C': 29, 'temperature': 273}
 

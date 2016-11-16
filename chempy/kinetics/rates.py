@@ -16,7 +16,10 @@ from ..util._expr import Expr
 
 
 class RateExpr(Expr):
-    """ Baseclass for rate expressions, see source code of e.g. MassAction & Radiolytic. """
+    """ Baseclass for rate expressions, see source code of e.g. MassAction & Radiolytic.
+
+    Note that __call__ requires as :class:`Reaction` instance to be passed as ``rxn`` in ``variables``.
+    """
 
     kw = {'rxn': None, 'ref': None}
 
@@ -70,8 +73,8 @@ class RateExpr(Expr):
         ...     p0, p1 = all_args
         ...     return p0*backend.sqrt(O2)*backend.exp(-p1/T)
         >>> MyRateExpr = RateExpr.subclass_from_callback(cb, dict(parameter_keys=('temperature',),nargs=2))
-        >>> k = MyRateExpr([1.3e9, 4317.2], rxn=rxn)
-        >>> print('%.5g' % k({'temperature': 298.15, 'O2': 1.1e-3}))
+        >>> k = MyRateExpr([1.3e9, 4317.2])
+        >>> print('%.5g' % k({'temperature': 298.15, 'O2': 1.1e-3, 'rxn': rxn}))
         22.186
 
         """
@@ -136,55 +139,53 @@ class MassAction(RateExpr):
 
     argument_names = ('rate_constant',)
 
-    def rate_coeff(self, variables, backend=math):  # for subclasses
-        return self.arg(variables, 0, backend=backend)
-
     def __call__(self, variables, backend=math):
+        r_const, = self.all_args(variables, backend=backend)
         prod = self.rate_coeff(variables, backend=backend)
         for k, v in self.rxn.reac.items():
             prod *= variables[k]**v
         return prod
 
-    @classmethod
-    def subclass_from_callback(cls, cb, cls_attrs=None):
-        """ Override MassAction.rate_coeff
+    # @classmethod
+    # def subclass_from_callback(cls, cb, cls_attrs=None):
+    #     """ Override MassAction.rate_coeff
 
-        Parameters
-        ----------
-        cb : callback
-            With signature (variables, all_args, backend) -> scalar
-            where `variables` is a dict, `all_args` a tuple and `backend` a module.
-        cls_attrs : dict, optional
-            Attributes to set in subclass, e.g. parameter_keys, nargs
+    #     Parameters
+    #     ----------
+    #     cb : callback
+    #         With signature (variables, all_args, backend) -> scalar
+    #         where `variables` is a dict, `all_args` a tuple and `backend` a module.
+    #     cls_attrs : dict, optional
+    #         Attributes to set in subclass, e.g. parameter_keys, nargs
 
-        Examples
-        --------
-        >>> from functools import reduce
-        >>> from operator import add
-        >>> from chempy import Reaction # d[H2]/dt = 10**(p0 + p1/T + p2/T**2)*[e-]**2
-        >>> rxn = Reaction({'e-': 2}, {'OH-': 2, 'H2': 1}, None, {'H2O': 2})
-        >>> def cb(variables, all_args, backend):
-        ...     T = variables['temperature']
-        ...     return 10**reduce(add, [p*T**-i for i, p in enumerate(all_args)])
-        >>> MyMassAction = MassAction.subclass_from_callback(cb, dict(parameter_keys=('temperature',), nargs=-1))
-        >>> k = MyMassAction([9, 300, -75000], rxn=rxn)
-        >>> print('%.5g' % k({'temperature': 293., 'e-': 1e-10}))
-        1.4134e-11
+    #     Examples
+    #     --------
+    #     >>> from functools import reduce
+    #     >>> from operator import add
+    #     >>> from chempy import Reaction # d[H2]/dt = 10**(p0 + p1/T + p2/T**2)*[e-]**2
+    #     >>> rxn = Reaction({'e-': 2}, {'OH-': 2, 'H2': 1}, None, {'H2O': 2})
+    #     >>> def cb(variables, all_args, backend):
+    #     ...     T = variables['temperature']
+    #     ...     return 10**reduce(add, [p*T**-i for i, p in enumerate(all_args)])
+    #     >>> MyMassAction = MassAction.subclass_from_callback(cb, dict(parameter_keys=('temperature',), nargs=-1))
+    #     >>> k = MyMassAction([9, 300, -75000], rxn=rxn)
+    #     >>> print('%.5g' % k({'temperature': 293., 'e-': 1e-10}))
+    #     1.4134e-11
 
-        """
-        class _MassAction(cls):
+    #     """
+    #     class _MassAction(cls):
 
-            def rate_coeff(self, variables, backend=math):
-                return cb(variables, self.all_args(variables), backend=backend)
-        for k, v in (cls_attrs or {}).items():
-            setattr(_MassAction, k, v)
-        return _MassAction
+    #         def rate_coeff(self, variables, backend=math):
+    #             return cb(variables, self.all_args(variables), backend=backend)
+    #     for k, v in (cls_attrs or {}).items():
+    #         setattr(_MassAction, k, v)
+    #     return _MassAction
 
-    def as_mass_action(self, variables, backend=math):
-        return MassAction([self.rate_coeff(variables, backend=backend)], **self.kwargs)
+    # def as_mass_action(self, variables, backend=math):
+    #     return MassAction([self.rate_coeff(variables, backend=backend)], **self.kwargs)
 
 
-class ArrheniusMassAction(MassAction):
+class Arrhenius(Expr):
     """ Rate expression for a Arrhenius-type of rate: c0*exp(-c1/T)
 
     Examples
@@ -194,7 +195,7 @@ class ArrheniusMassAction(MassAction):
     >>> from chempy.units import allclose, default_units as u
     >>> A = 1e11 / u.second
     >>> Ea_over_R = 42e3/8.3145 * u.K**-1
-    >>> ratex = ArrheniusMassAction([A, Ea_over_R])
+    >>> ratex = MassAction(Arrhenius([A, Ea_over_R]))
     >>> rxn = Reaction({'R'}, {'P'}, ratex)
     >>> dRdt = rxn.rate({'R': 3*u.M, 'temperature': 298.15*u.K})['R']
     >>> allclose(dRdt, -3*1e11*exp(-42e3/8.3145/298.15)*u.M/u.s)
@@ -204,18 +205,17 @@ class ArrheniusMassAction(MassAction):
     argument_names = ('A', 'Ea_over_R')
     parameter_keys = ('temperature',)
 
-    def rate_coeff(self, variables, backend=math):
+    def __call__(self, variables, backend=math):
         A, Ea_over_R = self.all_args(variables, backend=backend)
         return A*backend.exp(-Ea_over_R/variables['temperature'])
 
 
-class EyringMassAction(ArrheniusMassAction):
-    """ Rate expression for Eyring eq: c0/c2*T*exp((c3-c1)/T) """
+class Eyring(Expr):
+    """ Rate expression for Eyring eq: c0*T*exp(-c1/T) """
 
-    argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R', 'kB_h_times_exp_refS_R', 'rH_over_R')
-    argument_defaults = (1, 0)
+    argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R')
 
-    def rate_coeff(self, variables, backend=math):
+    def __call__(self, variables, backend=math):
         Sact_fact, Hact_exp, Sref_fact, Href_exp = self.all_args(variables, backend=backend)
         T = variables['temperature']
         return T * Sact_fact / Sref_fact * backend.exp((Href_exp-Hact_exp)/T)

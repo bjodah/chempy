@@ -103,7 +103,9 @@ class Expr(object):
                 if n_missing > 0:
                     args = tuple(chain(args, self.argument_defaults[-n_missing:]))
 
-        if self.nargs == 1 and (isinstance(args, (float, int)) or getattr(args, 'ndim', -1) == 0):
+        if self.nargs == 1 and (isinstance(args, (float, int)) or
+                                getattr(args, 'ndim', -1) == 0 or
+                                isinstance(args, Expr)):
             args = [args]
             nargs = 1
         elif args is None:
@@ -127,27 +129,16 @@ class Expr(object):
         if kwargs:
             raise ValueError("Unexpected keyword arguments %s" % kwargs)
 
-    # @property
-    # def _aug_args(self):
-    #     """ Returns self.args possible with defaults. """
-    #     if self.args is None:
-    #         ndefaults = (0 if self.argument_defaults is None else len(self.argument_defaults))
-    #         if self.nargs is None or ndefaults == 0:
-    #             return None
-    #         else:
-    #             args = [None]*(self.nargs - ndefaults)
-    #             return args + list(self.argument_defaults[len(args) - self.nargs:])
-    #     else:
-    #         return self.args
-
     @classmethod
-    def from_callback(cls, callback, **kwargs):
+    def from_callback(cls, callback, attr='__call__', **kwargs):
         """ Factory of subclasses
 
         Parameters
         ----------
         callback : callable
             signature: *args, backend=math
+        attr : str
+            What attribute to override
         argument_names : tuple of str, optional
         argument_defaults : tuple of floats, optional
         parameter_keys : tuple of str, optional,
@@ -170,11 +161,14 @@ class Expr(object):
         True
 
         """
+        def body(self, variables, backend=math):
+            args = self.all_args(variables, backend=backend)
+            params = self.all_params(variables, backend=backend)
+            return callback(args, *params, backend=backend)
+
         class Wrapper(cls):
-            def __call__(self, variables, backend=math):
-                args = self.all_args(variables, backend=backend)
-                params = self.all_params(variables, backend=backend)
-                return callback(args, *params, backend=backend)
+            pass
+        setattr(Wrapper, attr, body)
         Wrapper.__name__ = callback.__name__
         for k, v in kwargs.items():
             setattr(Wrapper, k, v)
@@ -356,6 +350,12 @@ class Expr(object):
 
         """
         return self._sympy_format('latex', variables, backend=backend, default=default)
+
+    # def update_attr_recur_cond(self, attr, value, cond=lambda old: old is None):
+    #     if hasattr(self, attr):
+    #         if cond(getattr(self, attr)):
+    #             setattr(self, attr, value)
+
 
     def __eq__(self, other):
         if self.__class__ != other.__class__:

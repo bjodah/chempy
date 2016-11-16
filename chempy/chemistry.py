@@ -799,10 +799,14 @@ class Reaction(object):
         True
 
         """
-        from chempy.kinetics.rates import RateExpr, MassAction
-        if isinstance(self.param, RateExpr):
+        from chempy.util._expr import Expr
+        print(self.reac)#DO-NOT-MERGE!
+        print(self.param)#DO-NOT-MERGE!
+        if isinstance(self.param, Expr):
+
             if self.param.rxn is None:
                 self.param.rxn = self
+            print(self.param.rxn)#DO-NOT-MERGE!
             return self.param
         else:
             try:

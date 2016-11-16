@@ -8,7 +8,7 @@ try:
 except ImportError:
     np = None
 
-from chempy.chemistry import Substance, Reaction, ReactionSystem
+from chempy.chemistry import Equilibrium, Reaction, ReactionSystem, Substance
 from chempy.thermodynamics.expressions import EqExpr
 from chempy.units import (
     SI_base_registry, get_derived_unit, allclose, units_library,
@@ -18,7 +18,7 @@ from chempy.util._expr import Expr
 from chempy.util.testing import requires
 from .test_rates import _get_SpecialFraction_rsys
 from ..arrhenius import ArrheniusParam
-from ..rates import ArrheniusMassAction, MassAction, Radiolytic, RampedTemp
+from ..rates import Arrhenius, MassAction, Radiolytic, RampedTemp
 from .._rates import TPolyMassAction
 from ..ode import get_odesys
 from ..integrated import dimerization_irrev
@@ -31,13 +31,14 @@ def test_get_odesys_1():
     b = Substance('B')
     r = Reaction({'A': 1}, {'B': 1}, param=k)
     rsys = ReactionSystem([r], [a, b])
+    assert sorted(rsys.substances.keys()) == ['A', 'B']
     odesys = get_odesys(rsys, include_params=True)[0]
     c0 = {
         'A': 1.0,
         'B': 3.0,
     }
     t = np.linspace(0.0, 10.0)
-    xout, yout, info = odesys.integrate(t, rsys.as_per_substance_array(c0))
+    xout, yout, info = odesys.integrate(t, c0)
     yref = np.zeros((t.size, 2))
     yref[:, 0] = np.exp(-k*t)
     yref[:, 1] = 4 - np.exp(-k*t)
@@ -154,7 +155,7 @@ def test_SpecialFraction_with_units():
 
 @requires('pyodesys')
 def test_ode_with_global_parameters():
-    ratex = ArrheniusMassAction([1e10, 40e3/8.3145])
+    ratex = MassAction(Arrhenius([1e10, 40e3/8.3145]))
     rxn = Reaction({'A': 1}, {'B': 1}, ratex)
     rsys = ReactionSystem([rxn], 'A B')
     odesys, param_keys, unique_keys, p_units = get_odesys(rsys, include_params=True)
@@ -308,7 +309,7 @@ def test_get_odesys__time_dep_temperature():
 
     params = A0, A, Ea_over_R, T0, dTdt = [13, 1e10, 56e3/8, 273, 2]
     B0 = 11
-    rate = ArrheniusMassAction([A, Ea_over_R])
+    rate = MassAction(Arrhenius([A, Ea_over_R]))
     rxn = Reaction({'A': 1}, {'B': 3}, rate)
     rsys = ReactionSystem([rxn], 'A B')
     rt = RampedTemp([T0, dTdt], ('init_temp', 'ramp_rate'))
@@ -351,13 +352,19 @@ def test_get_odesys__late_binding():
         return k_B/h*T*backend.exp(-(H - T*S)/(R*T))
 
     gibbs_pk = ('temperature', 'molar_gas_constant')
-    eyring_pk = ('temperature', 'molar_gas_constant', 'Boltzmann_constant', 'Planck_constant')
+    eyring_pk = gibbs_pk + ('Boltzmann_constant', 'Planck_constant')
 
-    GibbsEC = EqExpr.from_callback(_gibbs, parameter_keys=gibbs_pk)
-    EyringMA = MassAction.from_callback(_eyring, parameter_keys=eyring_pk)
+    GibbsEC = EqExpr.from_callback(_gibbs, argument_names=('H', 'S'), parameter_keys=gibbs_pk)
+    EyringMA = MassAction.from_callback(_eyring, argument_names=('H', 'S'), parameter_keys=eyring_pk)
 
-    beta = GibbsEC(unique_keys=('He_assoc', 'Se_assoc'))  # equilibrium parameters
-    bimol_barrier = EyringMA(unique_keys=('Ha_assoc', 'Sa_assoc'))  # activation parameters
+    uk_equil = ('He_assoc', 'Se_assoc')
+    beta = GibbsEC(unique_keys=uk_equil)  # equilibrium parameters
+
+    uk_kinet = ('Ha_assoc', 'Sa_assoc')
+    bimol_barrier = EyringMA(unique_keys=uk_kinet)  # activation parameters
+
     eq = Equilibrium({'Fe+3', 'SCN-'}, {'FeSCN+2'}, beta)
     rsys = ReactionSystem(eq.as_reactions(kf=bimol_barrier))
-    odesys,  = get_odesys()
+    odesys, pk, unique, p_units = get_odesys(rsys, include_params=False)
+    assert sorted(unique) == sorted(uk_equil + uk_kinet)
+    assert sorted(pk) == sorted(eyring_pk)

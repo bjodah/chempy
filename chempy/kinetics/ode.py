@@ -85,10 +85,8 @@ def dCdt_list(rsys, rates):
     return f
 
 
-def get_odesys(rsys, include_params=True, substitutions=None,
-               SymbolicSys=None,
-               unit_registry=None, output_conc_unit=None,
-               output_time_unit=None, **kwargs):
+def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, unit_registry=None,
+               output_conc_unit=None, output_time_unit=None, **kwargs):
     """ Creates a :class:`pyneqsys.SymbolicSys` from a :class:`ReactionSystem`
 
     The parameters passed to RateExpr will contain the key ``'time'`` corresponding to the
@@ -119,9 +117,9 @@ def get_odesys(rsys, include_params=True, substitutions=None,
     Returns
     -------
     pyodesys.symbolic.SymbolicSys
-    param_keys
-    unique_keys
-    p_units
+    param_keys : list of str instances
+    unique : OrderedDict mapping str to value (possibly None)
+    p_units : list of units
 
     Examples
     --------
@@ -150,16 +148,17 @@ def get_odesys(rsys, include_params=True, substitutions=None,
     unique = OrderedDict()
 
     def _reg_unique(expr):
-        if expr.unique_keys is not None:
-            if expr.args is None:
-                for k in expr.unique_keys:
-                    unique[k] = None
-            else:
-                for k, v in zip(expr.unique_keys, expr.args):
-                    if isinstance(v, Expr):
-                        _reg_unique(v)
-                    else:
-                        unique[k] = v
+        if not isinstance(expr, Expr):
+            raise NotImplementedError("Currently only Expr sub classes are supported.")
+        if expr.args is None:
+            for k in expr.unique_keys:
+                unique[k] = None
+        else:
+            for idx, arg in enumerate(expr.args):
+                if isinstance(arg, Expr):
+                    _reg_unique(arg)
+                elif expr.unique_keys is not None and idx < len(expr.unique_keys):
+                    unique[expr.unique_keys[idx]] = arg
 
     for sk, sv in substitutions.items():
         if sk not in _ori_pk:
@@ -229,7 +228,8 @@ def get_odesys(rsys, include_params=True, substitutions=None,
         variables.update(_passive_subst)
         return rsys.rates(variables, backend=backend, ratexs=r_exprs)
 
-    return SymbolicSys.from_callback(dydt, dep_by_name=True, par_by_name=True,
-                                     names=[s.name for s in rsys.substances.values()],
-                                     latex_names=[s.latex_name for s in rsys.substances.values()],
-                                     param_names=param_names_for_odesys, **kwargs), all_pk, unique, p_units
+    names = [s.name for s in rsys.substances.values()]
+    latex_names = [s.latex_name for s in rsys.substances.values()]
+    return SymbolicSys.from_callback(
+        dydt, dep_by_name=True, par_by_name=True, names=names,
+        latex_names=latex_names, param_names=param_names_for_odesys, **kwargs), all_pk, unique, p_units
