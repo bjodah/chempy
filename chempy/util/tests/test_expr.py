@@ -14,13 +14,12 @@ from chempy.units import (
 )
 from ..testing import requires
 from ..pyutil import defaultkeydict
-from .._expr import Expr, mk_Poly, mk_PiecewisePoly
+from .._expr import Expr, mk_Poly, mk_PiecewisePoly, mk_Piecewise
 from ..parsing import parsing_library
 
 
 class HeatCapacity(Expr):
     parameter_keys = ('temperature',)
-    kw = {'substance': None}
 
 
 class EinsteinSolid(HeatCapacity):
@@ -42,7 +41,7 @@ def _get_cv(kelvin=1, gram=1, mol=1):
 
     def einT(s):
         return 0.806*s.data['DebyeT']
-    return {s.name: EinsteinSolid([einT(s), s.mass * gram/mol], substance=s) for s in (Al, Be)}
+    return {s.name: EinsteinSolid([einT(s), s.mass * gram/mol]) for s in (Al, Be)}
 
 
 @requires(parsing_library)
@@ -50,7 +49,6 @@ def test_Expr():
     cv = _get_cv()
     _ref = 0.8108020083055849
     assert abs(cv['Al']({'temperature': 273.15, 'molar_gas_constant': 8.3145}) - _ref) < 1e-14
-    assert cv['Al'].kwargs['substance'].name == 'Al'
 
 
 def _poly(args, x, backend=None):
@@ -401,3 +399,17 @@ def test_Expr__no_args__arg_defaults():
     S1p = 5 + 13*math.log(T/298.15)
     ref = math.exp(-(H1p - T*S1p)/RT) + math.exp(-(3 - T*7)/RT)
     assert abs(res - ref) < 1e-14
+
+
+def test_mk_Piecewise():
+    PW = mk_Piecewise('T')
+    Ha, Sa, Hb, Sb, Ta, Tb = 40e3, -60, 37e3, -42, 293.15, 303.15
+    a = MyK([Ha, Sa])
+    b = MyK([Hb, Sb])
+    pw = PW([273.15, a, 298.15, b, 323.15])  # 0, 25, 50 *C
+    res_a = pw({'T': Ta})  # 20 *C
+    res_b = pw({'T': Tb})  # 30 *C
+    ref_a = math.exp(-(Ha - Ta*Sa)/(MyK.R*Ta))
+    ref_b = math.exp(-(Hb - Tb*Sb)/(MyK.R*Tb))
+    assert abs(res_a - ref_a) < 1e-14
+    assert abs(res_b - ref_b) < 1e-14

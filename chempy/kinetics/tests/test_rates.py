@@ -35,13 +35,13 @@ def _get_SpecialFraction_rsys(k, kprime):
 @requires('numpy')
 def test_specialfraction_rateexpr():
     rsys = _get_SpecialFraction_rsys(11, 13)
-    p = rsys.rxns[0].param
+    r = rsys.rxns[0]
 
     conc = {'H2': 2, 'Br2': 3, 'HBr': 5}
 
     def _check(k, kprime, c):
         ref = k*c['H2']*c['Br2']**1.5/(c['Br2'] + kprime*c['HBr'])
-        assert abs(p(c) - ref) < 1e-15
+        assert abs(r.rate(c) - ref) < 1e-15
 
     _check(11, 13, conc)
 
@@ -51,25 +51,22 @@ def test_RateExpr__subclass_from_callback():
         lambda v, a, backend: a[0]*v['H2']*v['Br2']**(3/2) / (v['Br2'] + a[1]*v['HBr'])
     )
     ratex = SF([11, 13], ['k_HBr', 'kprime_HBr'])
-    Reaction({'H2': 1, 'Br2': 1}, {'HBr': 2}, ratex)
+    r = Reaction({'H2': 1, 'Br2': 1}, {'HBr': 2}, ratex)
 
-    res1 = ratex({'H2': 5, 'Br2': 7, 'HBr': 15})
+    res1 = r.rate_expr()({'H2': 5, 'Br2': 7, 'HBr': 15})
     ref1 = 11*5*7**1.5/(7+13*15)
     assert abs((res1-ref1)/ref1) < 1e-14
 
-    res2 = ratex({'H2': 5, 'Br2': 7, 'HBr': 15, 'k_HBr': 23, 'kprime_HBr': 42})
+    res2 = r.rate_expr()({'H2': 5, 'Br2': 7, 'HBr': 15, 'k_HBr': 23, 'kprime_HBr': 42})
     ref2 = 23*5*7**1.5/(7+42*15)
     assert abs((res2-ref2)/ref2) < 1e-14
 
 
 def test_MassAction():
     ma = MassAction([3.14], ['my_rate'])
-    Reaction({'A': 2, 'B': 1}, {'C': 1}, ma, {'B': 1})
-    assert abs(ma({'A': 11, 'B': 13, 'C': 17}) - 3.14*13*11**2) < 1e-14
-    assert abs(ma({'A': 11, 'B': 13, 'C': 17, 'my_rate': 2.72}) - 2.72*13*11**2) < 1e-12
-    ma2 = ma.as_mass_action({})
-    assert ma == ma2
-    assert abs(ma2({'A': 11, 'B': 13, 'C': 17}) - 3.14*13*11**2) < 1e-14
+    r = Reaction({'A': 2, 'B': 1}, {'C': 1}, ma, {'B': 1})
+    assert abs(r.rate_expr()({'A': 11, 'B': 13, 'C': 17}) - 3.14*13*11**2) < 1e-14
+    assert abs(r.rate_expr()({'A': 11, 'B': 13, 'C': 17, 'my_rate': 2.72}) - 2.72*13*11**2) < 1e-12
 
 
 def test_MassAction__subclass_from_callback():
@@ -77,8 +74,9 @@ def test_MassAction__subclass_from_callback():
         return all_args[0]*backend.exp(all_args[1]/variables['temperature'])
     CustomMassAction = MassAction.subclass_from_callback(
         rate_coeff, cls_attrs=dict(parameter_keys=('temperature',), nargs=2))
-    k1 = CustomMassAction([2.1e10, -5132.2], rxn=Reaction({'H2': 2, 'O2': 1}, {'H2O': 2}))
-    res = k1({'temperature': 273.15, 'H2': 7, 'O2': 13})
+    k1 = CustomMassAction([2.1e10, -5132.2])
+    rxn=Reaction({'H2': 2, 'O2': 1}, {'H2O': 2}, k1)
+    res = rxn.rate_expr()({'temperature': 273.15, 'H2': 7, 'O2': 13})
     ref = 7*7*13*2.1e10*math.exp(-5132.2/273.15)
     assert abs((res-ref)/ref) < 1e-14
 
@@ -89,8 +87,9 @@ def test_MassAction__subclass_from_callback__units():
         return all_args[0]*backend.exp(all_args[1]/variables['temperature'])
     CustomMassAction = MassAction.subclass_from_callback(
         rate_coeff, cls_attrs=dict(parameter_keys=('temperature',), nargs=2))
-    k1 = CustomMassAction([2.1e10/u.molar**2/u.second, -5132.2*u.kelvin], rxn=Reaction({'H2': 2, 'O2': 1}, {'H2O': 2}))
-    res = k1({'temperature': 491.67*u.rankine, 'H2': 7000*u.mol/u.metre**3, 'O2': 13*u.molar}, backend=Backend())
+    k1 = CustomMassAction([2.1e10/u.molar**2/u.second, -5132.2*u.kelvin])
+    rxn = Reaction({'H2': 2, 'O2': 1}, {'H2O': 2}, k1)
+    res = rxn.rate_expr()({'temperature': 491.67*u.rankine, 'H2': 7000*u.mol/u.metre**3, 'O2': 13*u.molar}, backend=Backend())
     ref = 7*7*13*2.1e10*math.exp(-5132.2/273.15) * u.molar/u.second
     assert allclose(res, ref)
 
@@ -98,7 +97,7 @@ def test_MassAction__subclass_from_callback__units():
 def test_ArrheniusMassAction():
     A, Ea_over_R = 1.2e11, 40e3/8.3145
     ama = MassAction(Arrhenius([A, Ea_over_R]))
-    Reaction({'A': 2, 'B': 1}, {'C': 1}, ama, {'B': 1})
+    r = Reaction({'A': 2, 'B': 1}, {'C': 1}, ama, {'B': 1})
     T_ = 'temperature'
 
     def ref(v):
@@ -108,25 +107,25 @@ def test_ArrheniusMassAction():
                    (12, 8, 5, 270)]:
         var = dict(zip(['A', 'B', 'C', T_], params))
         r = ref(var)
-        assert abs((ama(var) - r)/r) < 1e-14
+        assert abs((r.rate_expr()(var) - r)/r) < 1e-14
 
     with pytest.raises(ValueError):
         ArrheniusMassAction([A, Ea_over_R, A])
 
-    assert ama.as_mass_action({T_: 273.15}).args[0] == A*math.exp(-Ea_over_R/273.15)
+    # assert ama.as_mass_action({T_: 273.15}).args[0] == A*math.exp(-Ea_over_R/273.15)
 
 
 @requires(units_library)
 def test_specialfraction_rateexpr__units():
     _k, _kprime = 3.5 * u.s**-1 * u.molar**-0.5, 9.2
     rsys = _get_SpecialFraction_rsys(_k, _kprime)
-    p = rsys.rxns[0].param
+    r = rsys.rxns[0]
 
     conc = {'H2': 2*u.molar, 'Br2': 3000*u.mol/u.m**3, 'HBr': 5*u.molar}
 
     def _check(k, kprime, c):
         ref = k*c['H2']*c['Br2']**1.5/(c['Br2'] + kprime*c['HBr'])
-        assert abs(p(c) - ref) < 1e-15*u.molar/u.second
+        assert abs(r.rate(c) - ref) < 1e-15*u.molar/u.second
 
     _check(_k, _kprime, conc)
     alt_k, alt_kprime = 2*u.s**-1*u.molar**-0.5, 5
@@ -138,7 +137,7 @@ def test_specialfraction_rateexpr__units():
 def test_ArrheniusMassAction__units():
     A, Ea_over_R = 1.2e11/u.molar**2/u.second, 40e3/8.3145*u.kelvin
     ama = ArrheniusMassAction([A, Ea_over_R])
-    Reaction({'A': 2, 'B': 1}, {'C': 1}, ama, {'B': 1})
+    r = Reaction({'A': 2, 'B': 1}, {'C': 1}, ama, {'B': 1})
     T_ = 'temperature'
 
     def ref(v):
@@ -149,7 +148,7 @@ def test_ArrheniusMassAction__units():
                    (12*u.molar, 8*u.molar, 5*u.molar, 270*u.kelvin)]:
         var = dict(zip(['A', 'B', 'C', T_], params))
         r = ref(var)
-        assert abs((ama(var) - r)/r) < 1e-14
+        assert abs((r.rate_expr()(var) - r)/r) < 1e-14
 
 
 def test_Radiolytic():
@@ -219,12 +218,12 @@ def test_EyringMassAction():
                    (12, 8, 5, 270)]:
         var = dict(zip(['A', 'B', 'C', T_], params))
         r = ref(var)
-        assert abs((ama(var) - r)/r) < 1e-14
+        assert abs((rxn1.rate_expr()(var) - r)/r) < 1e-14
 
     with pytest.raises(ValueError):
         MassAction(Eyring([1, 1, 1, 1, 1]))
 
-    assert ama.as_mass_action({T_: 273.15}).args[0] == 1.2e11*math.exp(-40e3/8/273.15)
+    # assert ama.as_mass_action({T_: 273.15}).args[0] == 1.2e11*math.exp(-40e3/8/273.15)
 
     ama2 = MassAction(Eyring([1.2e11/273, 40e3/8, 1.2, 1e3], ('Sfreq', 'Hact', 'Sref', 'Href')))
     rxn2 = Reaction({'C': 1}, {'A': 2, 'B': 2}, ama2)
@@ -235,7 +234,7 @@ def test_EyringMassAction():
             (var.get('Href', 1e3) - var.get('Hact', 5e3))/var.get('temperature', 273))
 
     r2 = ref2(var2)
-    assert abs((ama2(var2) - r2)/r2) < 1e-14
+    assert abs((rxn2.rate_expr()(var2) - r2)/r2) < 1e-14
 
     rsys = ReactionSystem([rxn1, rxn2])
     var3 = {'A': 11, 'B': 13, 'C': 17, 'temperature': 298, 'Sfreq': 1.2e11/298}

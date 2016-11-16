@@ -803,7 +803,6 @@ class Reaction(object):
         print(self.reac)#DO-NOT-MERGE!
         print(self.param)#DO-NOT-MERGE!
         if isinstance(self.param, Expr):
-
             if self.param.rxn is None:
                 self.param.rxn = self
             print(self.param.rxn)#DO-NOT-MERGE!
@@ -840,9 +839,12 @@ class Reaction(object):
             substance_keys = self.keys()
         if ratex is None:
             ratex = self.rate_expr()
+
         if isinstance(ratex, Expr):
-            ratex = ratex(variables, backend)
-        return {k: ratex*v for k, v in zip(substance_keys, self.net_stoich(substance_keys))}
+            srat = ratex(variables, backend)
+        else:
+            srat = ratex
+        return {k: srat*v for k, v in zip(substance_keys, self.net_stoich(substance_keys))}
 
 
 def equilibrium_quotient(concs, stoich):
@@ -1247,10 +1249,6 @@ class ReactionSystem(object):
         if candidate is None:
             raise KeyError("No reaction with name %s found" % key)
         return candidate
-
-    def __iter__(self):
-        for r in self.rxns:
-            yield r
 
     def __iadd__(self, other):
         try:

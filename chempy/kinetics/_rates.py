@@ -12,48 +12,17 @@ TPoly = mk_Poly('temperature')
 RTPoly = mk_Poly('temperature', reciprocal=True)
 
 
-class TPolyMassAction(TPoly, MassAction):
+class TPoly(TPoly):
     argument_names = ('temperature_offset', Ellipsis)
     parameter_keys = TPoly.parameter_keys
 
-    def rate_coeff(self, variables, backend=math):
+    def __call__(self, variables, backend=math):
         return self.eval_poly(variables, backend)
 
 
 TPiecewisePoly = mk_PiecewisePoly('temperature')
 RTPiecewisePoly = mk_PiecewisePoly('temperature', reciprocal=True)
 
-
-class PiecewiseTPolyMassAction(TPiecewisePoly, MassAction):
-    parameter_keys = TPoly.parameter_keys
-
-    def rate_coeff(self, variables, backend=math):
-        return self.eval_poly(variables, backend)
-
-
-class TPolyRadiolytic(TPoly, Radiolytic):
-    nargs = None
-    parameter_keys = Radiolytic.parameter_keys + TPoly.parameter_keys
-
-    def g_value(self, variables, backend):
-        return self.eval_poly(variables, backend)
-
-
-class RTPolyRadiolytic(RTPoly, Radiolytic):
-    nargs = None
-    parameter_keys = Radiolytic.parameter_keys + RTPoly.parameter_keys
-
-    def g_value(self, variables, backend):
-        return self.eval_poly(variables, backend)
-
-
-class RTPolyMassAction(RTPoly, MassAction):
-    """ Arguments: temperature_offset, c0, c1, ... """
-    parameter_keys = RTPoly.parameter_keys
-    nargs = None
-
-    def rate_coeff(self, variables, backend=math):
-        return self.eval_poly(variables, backend)
 
 
 class _Log10XPolyMassAction(MassAction):

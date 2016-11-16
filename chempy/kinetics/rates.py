@@ -16,40 +16,7 @@ from ..util._expr import Expr
 
 
 class RateExpr(Expr):
-    """ Baseclass for rate expressions, see source code of e.g. MassAction & Radiolytic.
-
-    Note that __call__ requires as :class:`Reaction` instance to be passed as ``rxn`` in ``variables``.
-    """
-
-    kw = {'rxn': None, 'ref': None}
-
-    @property
-    def rxn(self):
-        return self._rxn
-
-    @rxn.setter
-    def rxn(self, value):
-        self._rxn = value
-        if self.args is not None:
-            for arg in self.args:
-                if isinstance(arg, RateExpr):
-                    arg.rxn = value
-
-    def _recursive_as_RateExpr(self):
-        new_args = []
-        for arg in self.args:
-            if isinstance(arg, Expr):
-                new_args.append(arg)
-            else:
-                if hasattr(arg, 'as_RateExpr'):
-                    new_args.append(arg.as_RateExpr(self.rxn))
-                else:
-                    new_args.append(arg)
-        if self.kw is None:
-            kw = {}
-        else:
-            kw = {k: getattr(self, k) for k in self.kw}
-        return self.__class__(new_args, self.unique_keys, **kw)
+    """ Baseclass for rate expressions, see source code of e.g. MassAction & Radiolytic. """
 
     @classmethod
     @deprecated(use_instead=Expr.from_callback)
@@ -105,17 +72,21 @@ def mk_Radiolytic(doserate_name='doserate'):
     >>> dihydrogen_alpha = RadiolyticAlpha([0.8e-7])
     >>> dihydrogen_gamma = RadiolyticGamma([0.45e-7])
 
+    Notes
+    -----
+    The instance __call__ will require ``'density'`` and ``doserate_name``
+    in variables.
+
     """
     class _Radiolytic(RadiolyticBase):
         argument_names = ('radiolytic_yield',)  # [amount/energy]
         parameter_keys = (doserate_name, 'density')
-        print_name = 'Radiolytic' if doserate_name == 'doserate' else ('Radiolytic{'+doserate_name+'}')
-
-        def g_value(self, variables, backend=math):  # for subclasses
-            return self.arg(variables, 0, backend=backend)
 
         def __call__(self, variables, backend=math):
-            return self.g_value(variables, 0)*variables[doserate_name]*variables['density']
+            g_value, = self.all_args(variables, backend=backend)
+            return g_value*variables[doserate_name]*variables['density']
+
+    _Radiolytic.__name__ = 'Radiolytic' if doserate_name == 'doserate' else ('Radiolytic{'+doserate_name+'}')
     return _Radiolytic
 
 
@@ -125,11 +96,14 @@ Radiolytic = mk_Radiolytic()
 class MassAction(RateExpr):
     """ Rate-expression of mass-action type
 
+    Notes
+    -----
+    :meth:`__call__` requires a :class:`Reaction` instance to be passed as ``reaction``
+    keyword argument.
+
     Examples
     --------
     >>> ma = MassAction([3.14])
-    >>> ma.rate_coeff({})
-    3.14
     >>> from chempy import Reaction
     >>> r = Reaction.from_string('3 A -> B', param=ma)
     >>> r.rate({'A': 2}) == {'A': -75.36, 'B': 25.12}
@@ -139,50 +113,11 @@ class MassAction(RateExpr):
 
     argument_names = ('rate_constant',)
 
-    def __call__(self, variables, backend=math):
-        r_const, = self.all_args(variables, backend=backend)
-        prod = self.rate_coeff(variables, backend=backend)
-        for k, v in self.rxn.reac.items():
-            prod *= variables[k]**v
-        return prod
-
-    # @classmethod
-    # def subclass_from_callback(cls, cb, cls_attrs=None):
-    #     """ Override MassAction.rate_coeff
-
-    #     Parameters
-    #     ----------
-    #     cb : callback
-    #         With signature (variables, all_args, backend) -> scalar
-    #         where `variables` is a dict, `all_args` a tuple and `backend` a module.
-    #     cls_attrs : dict, optional
-    #         Attributes to set in subclass, e.g. parameter_keys, nargs
-
-    #     Examples
-    #     --------
-    #     >>> from functools import reduce
-    #     >>> from operator import add
-    #     >>> from chempy import Reaction # d[H2]/dt = 10**(p0 + p1/T + p2/T**2)*[e-]**2
-    #     >>> rxn = Reaction({'e-': 2}, {'OH-': 2, 'H2': 1}, None, {'H2O': 2})
-    #     >>> def cb(variables, all_args, backend):
-    #     ...     T = variables['temperature']
-    #     ...     return 10**reduce(add, [p*T**-i for i, p in enumerate(all_args)])
-    #     >>> MyMassAction = MassAction.subclass_from_callback(cb, dict(parameter_keys=('temperature',), nargs=-1))
-    #     >>> k = MyMassAction([9, 300, -75000], rxn=rxn)
-    #     >>> print('%.5g' % k({'temperature': 293., 'e-': 1e-10}))
-    #     1.4134e-11
-
-    #     """
-    #     class _MassAction(cls):
-
-    #         def rate_coeff(self, variables, backend=math):
-    #             return cb(variables, self.all_args(variables), backend=backend)
-    #     for k, v in (cls_attrs or {}).items():
-    #         setattr(_MassAction, k, v)
-    #     return _MassAction
-
-    # def as_mass_action(self, variables, backend=math):
-    #     return MassAction([self.rate_coeff(variables, backend=backend)], **self.kwargs)
+    def __call__(self, variables, backend=math, reaction=None):
+        rate, = self.all_args(variables, backend=backend)
+        for k, v in reaction.reac.items():
+            rate *= variables[k]**v
+        return rate
 
 
 class Arrhenius(Expr):
