@@ -8,26 +8,27 @@ import pytest
 from chempy import Reaction
 from chempy.units import allclose, Backend, to_unitless, units_library, default_units as u
 from chempy.util.testing import requires
-from ..rates import MassAction, Radiolytic
+from ..rates import MassAction, Radiolytic, create_Poly, Log10,
 from .._rates import (
-    TPoly, RTPoly, Log10TPolyMassAction, TPolyInLog10MassAction, TPoly,
-    TPoly, RTPoly, PiecewiseTPolyMassAction, Log10PiecewiseRTPolyMassAction, TPiecewise
+    ShiftedTPoly
+    # create_Poly, TPolyMassAction, TPolyInLog10MassAction,
+    # PiecewiseTPolyMassAction, Log10PiecewiseRTPolyMassAction, TPiecewise
 )
 
 
 def test_TPolyMassAction():
-    p = MassAction(TPoly([273.15, 7, .2, .03, .004]))
-    r = Reaction({'A': 2, 'B': 1}, {'C': 1}, p, {'B': 1})
-    res = r.rate_expr()({'A': 11, 'B': 13, 'temperature': 298.15})
+    r = Reaction({'A': 2, 'B': 1}, {'C': 1}, inact_reac={'B': 1})
+    p = MassAction(ShiftedTPoly([273.15, 7, .2, .03, .004]))
+    res = p({'A': 11, 'B': 13, 'temperature': 298.15}, reaction=r)
     ref = 7 + .2*25 + 0.03 * 25**2 + 0.004 * 25**3
     assert abs(res - ref*13*11**2) < 1e-15
 
 
 def test_TPoly__2():
-    rate = MassAction(TPoly([100, 2, 5, 7]))
+    rate = MassAction(ShiftedTPoly([100, 2, 5, 7]))
     assert rate.args == [100, 2, 5, 7]
     r = Reaction({'A': 2, 'B': 1}, {'P': 1}, rate)
-    res = r.rate_expr()({'A': 11, 'B': 13, 'temperature': 273.15})
+    res = r.rate_expr()({'A': 11, 'B': 13, 'temperature': 273.15}, reaction=r)
     x = 273.15-100
     ref = 11*11*13*(2 + 5*x + 7*x**2)
     assert abs((res - ref)/ref) < 1e-14
@@ -37,17 +38,17 @@ def test_TPoly__2():
 def test_TPolyMassAction__units():
     Mps = u.molar/u.second
     kunit = 1/u.molar**2/u.second
-    p = MassAction(TPoly([273.15*u.K, 7*kunit, .2*kunit/u.K, .03*kunit/u.K**2, .004*kunit/u.K**3]))
-    r = Reaction({'A': 2, 'B': 1}, {'C': 1}, p, {'B': 1})
-    res = r.rate_expr()({'A': 11*u.molar, 'B': 13*u.molar, 'temperature': 298.15*u.K})
+    r = Reaction({'A': 2, 'B': 1}, {'C': 1}, None, {'B': 1})
+    p = MassAction(ShiftedTPoly([273.15*u.K, 7*kunit, .2*kunit/u.K, .03*kunit/u.K**2, .004*kunit/u.K**3]))
+    res = p({'A': 11*u.molar, 'B': 13*u.molar, 'temperature': 298.15*u.K}, reaction=r)
     ref = 7 + .2*25 + 0.03 * 25**2 + 0.004 * 25**3
     assert abs(res - ref*13*11**2*Mps) < 1e-15
 
 
 def test_RTPolyMassAction():
-    p = MassAction(RTPoly([273.15, 7, .2, .03, .004]))
-    r = Reaction({'A': 2, 'B': 1}, {'C': 1}, p, {'B': 1})
-    res = r.rate_expr()({'A': 11, 'B': 13, 'temperature': 298.15})
+    p = MassAction(ShiftedRTPoly([273.15, 7, .2, .03, .004]))
+    r = Reaction({'A': 2, 'B': 1}, {'C': 1}, inact_reac={'B': 1})
+    res = p({'A': 11, 'B': 13, 'temperature': 298.15}, reaction=r)
     ref = 7 + .2/25 + 0.03 / 25**2 + 0.004 / 25**3
     assert abs(res - ref*13*11**2) < 1e-15
 
@@ -56,17 +57,17 @@ def test_RTPolyMassAction():
 def test_RTPolyMassAction__units():
     Mps = u.molar/u.second
     kunit = 1/u.molar**2/u.second
-    p = MassAction(RTPoly([273.15*u.K, 7*kunit, .2*kunit*u.K, .03*kunit*u.K**2, .004*kunit*u.K**3]))
-    r = Reaction({'A': 2, 'B': 1}, {'C': 1}, p, {'B': 1})
-    res = r.rate_expr()({'A': 11*u.molar, 'B': 13*u.molar, 'temperature': 298.15*u.K})
+    p = MassAction(ShiftedRTPoly([273.15*u.K, 7*kunit, .2*kunit*u.K, .03*kunit*u.K**2, .004*kunit*u.K**3]))
+    r = Reaction({'A': 2, 'B': 1}, {'C': 1}, None, {'B': 1})
+    res = p({'A': 11*u.molar, 'B': 13*u.molar, 'temperature': 298.15*u.K}, reaction=r)
     ref = 7 + .2/25 + 0.03 / 25**2 + 0.004 / 25**3
     assert abs(res - ref*13*11**2*Mps) < 1e-15
 
 
 def test_Log10TPolyMassAction():
-    p = MassAction(Log10TPoly([1, 273.15, .7, .02, .003, .0004]))
+    p = MassAction(10**ShiftedTPoly([1, 273.15, .7, .02, .003, .0004]))
     r = Reaction({'A': 2, 'B': 1}, {'C': 1}, p, {'B': 1})
-    res = r.rate_expr()({'A': 11, 'B': 13, 'temperature': 298.15})
+    res = p.rate_expr()({'A': 11, 'B': 13, 'temperature': 298.15}, reaction=r)
     ref = 10**(.7 + .02*25 + 0.003 * 25**2 + 0.0004 * 25**3)
     assert abs(res - ref*13*11**2) < 1e-15
 
@@ -75,17 +76,17 @@ def test_Log10TPolyMassAction():
 def test_Log10TPolyMassAction__units():
     Mps = u.molar/u.second
     kunit = 1/u.molar**2/u.second
-    p = MassAction(Log10TPoly([kunit, 273.15*u.K, .7, .02/u.K, .003/u.K**2, .0004/u.K**3]))
+    p = MassAction(10**TPoly([kunit, 273.15*u.K, .7, .02/u.K, .003/u.K**2, .0004/u.K**3]))
     r = Reaction({'A': 2, 'B': 1}, {'C': 1}, p, {'B': 1})
-    res = r.rate_expr()({'A': 11*u.molar, 'B': 13*u.molar, 'temperature': 298.15*u.K})
+    res = p({'A': 11*u.molar, 'B': 13*u.molar, 'temperature': 298.15*u.K}, reaction=r)
     ref = 10**(.7 + .02*25 + 0.003 * 25**2 + 0.0004 * 25**3)
     assert abs(res - ref*13*11**2*Mps) < 1e-15
 
 
 def test_TPolyInLog10MassAction():
-    p = MassAction(TPolyInLog10([1, 2, 0.3, .2, .03, .004]))
+    p = MassAction(Log10(TPoly([1, 2, 0.3, .2, .03, .004])))
     r = Reaction({'A': 2, 'B': 1}, {'C': 1}, p, {'B': 1})
-    res = r.rate_expr()({'A': 11, 'B': 13, 'temperature': 298.15})
+    res = p({'A': 11, 'B': 13, 'temperature': 298.15}, reaction=r)
     _T = math.log10(298.15) - 2
     ref = .3 + .2*_T + 0.03 * _T**2 + 0.004 * _T**3
     assert abs(res - ref*13*11**2) < 1e-15
@@ -95,16 +96,16 @@ def test_TPolyInLog10MassAction():
 def test_TPolyInLog10MassAction__units():
     Mps = u.molar/u.second
     kunit = 1/u.molar**2/u.second
-    p = MassAction(TPolyInLog10([u.K, 2, 0.3*kunit, .2*kunit, .03*kunit, .004*kunit]))
+    p = MassAction(Constant(kunit)*Log10(TPoly([0.3, .2*kunit, .03*kunit, .004*kunit])))
     r = Reaction({'A': 2, 'B': 1}, {'C': 1}, p, {'B': 1})
-    res = r.rate_expr()({'A': 11*u.molar, 'B': 13*u.molar, 'temperature': 298.15*u.K}, backend=Backend())
+    res = r.rate_expr()({'A': 11*u.molar, 'B': 13*u.molar, 'temperature': 298.15*u.K}, backend=Backend(), reaction=r)
     _T = math.log10(298.15) - 2
     ref = .3 + .2*_T + 0.03 * _T**2 + 0.004 * _T**3
     assert abs(res - ref*13*11**2*Mps) < 1e-15
 
 
 def test_TPolyRadiolytic():
-    tpr = Radiolytic(TPoly([273.15, 1.85e-7, 1e-9]))
+    tpr = Radiolytic(ShiftedTPoly([273.15, 1.85e-7, 1e-9]))
     res = tpr({'doserate': 0.15, 'density': 0.998, 'temperature': 298.15})
     assert abs(res - 0.15*0.998*2.1e-7) < 1e-15
 

@@ -437,11 +437,6 @@ class Reaction(object):
         self.name = name
         self.ref = ref
         self.data = data or {}
-
-        from .kinetics.rates import RateExpr
-        if isinstance(self.param, RateExpr) and self.param.rxn is None:
-            self.param.rxn = self  # register instance in rate expression
-
         for check in checks:
             if not getattr(self, 'check_'+check)():
                 raise ValueError("Check failed %s" % check)
@@ -800,12 +795,7 @@ class Reaction(object):
 
         """
         from chempy.util._expr import Expr
-        print(self.reac)#DO-NOT-MERGE!
-        print(self.param)#DO-NOT-MERGE!
         if isinstance(self.param, Expr):
-            if self.param.rxn is None:
-                self.param.rxn = self
-            print(self.param.rxn)#DO-NOT-MERGE!
             return self.param
         else:
             try:
@@ -841,7 +831,7 @@ class Reaction(object):
             ratex = self.rate_expr()
 
         if isinstance(ratex, Expr):
-            srat = ratex(variables, backend)
+            srat = ratex(variables, backend=backend, reaction=self)
         else:
             srat = ratex
         return {k: srat*v for k, v in zip(substance_keys, self.net_stoich(substance_keys))}

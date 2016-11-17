@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
-""" Classes in this module are prone to unannounced changes. """
+"""
+Non-public API (classes in this module may change without notice).
+
+The purpose here is to define conventions, e.g. lower-case string
+ 'temperature' is used, opposed to e.g. 'T', 'Temperature', etc.
+"""
 from __future__ import (absolute_import, division, print_function)
 
 import math
@@ -10,6 +15,8 @@ from .rates import RateExpr, MassAction, Radiolytic
 
 TPoly = mk_Poly('temperature')
 RTPoly = mk_Poly('temperature', reciprocal=True)
+ShiftedTPoly = create_Poly('T', shift='Tref')
+ShiftedRTPoly = create_Poly('T', shift='Tref', reciprocal=True)
 
 
 class TPoly(TPoly):

@@ -82,7 +82,7 @@ def mk_Radiolytic(doserate_name='doserate'):
         argument_names = ('radiolytic_yield',)  # [amount/energy]
         parameter_keys = (doserate_name, 'density')
 
-        def __call__(self, variables, backend=math):
+        def __call__(self, variables, backend=math, reaction=None):
             g_value, = self.all_args(variables, backend=backend)
             return g_value*variables[doserate_name]*variables['density']
 
@@ -120,6 +120,17 @@ class MassAction(RateExpr):
         return rate
 
 
+    @classmethod
+    @deprecated(use_instead=Expr.from_callback)
+    def subclass_from_callback(cls, cb, cls_attrs=None):
+        """ Override MassAction.__call__ """
+        _RateExpr = super(MassAction, cls).subclass_from_callback(cb, cls_attrs=cls_attrs)
+        def wrapper(*args, **kwargs):
+            obj = _RateExpr(*args, **kwargs)
+            return cls(obj)
+        return wrapper
+
+
 class Arrhenius(Expr):
     """ Rate expression for a Arrhenius-type of rate: c0*exp(-c1/T)
 
@@ -151,9 +162,9 @@ class Eyring(Expr):
     argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R')
 
     def __call__(self, variables, backend=math):
-        Sact_fact, Hact_exp, Sref_fact, Href_exp = self.all_args(variables, backend=backend)
+        c0, c1 = self.all_args(variables, backend=backend)
         T = variables['temperature']
-        return T * Sact_fact / Sref_fact * backend.exp((Href_exp-Hact_exp)/T)
+        return c0*T*backend.exp(-c1/T)
 
 
 class RampedTemp(Expr):

@@ -12,10 +12,18 @@ something that should be relied upon in external code.
 from __future__ import (absolute_import, division, print_function)
 
 import math
-from functools import reduce
 from itertools import chain
 from operator import add, mul, truediv, sub
-from .pyutil import defaultkeydict
+from .pyutil import defaultkeydict, deprecated
+
+def _implicit_conversion(obj):
+    if isinstance(obj, (int, float)):
+        return Constant(obj)
+    elif isinstance(obj, Expr):
+        return obj
+    else:
+        raise NotImplementedError(
+            "Don't know how to convert %s (of type %s)" % (obj, type(obj)))
 
 
 class Expr(object):
@@ -324,12 +332,6 @@ class Expr(object):
         """
         return self._sympy_format('latex', variables, backend=backend, default=default)
 
-    # def update_attr_recur_cond(self, attr, value, cond=lambda old: old is None):
-    #     if hasattr(self, attr):
-    #         if cond(getattr(self, attr)):
-    #             setattr(self, attr, value)
-
-
     def __eq__(self, other):
         if self.__class__ != other.__class__:
             return False
@@ -343,22 +345,22 @@ class Expr(object):
     def __add__(self, other):
         if other == other*0:
             return self
-        return _AddExpr([self, other])
+        return _AddExpr([self, _implicit_conversion(other)])
 
     def __sub__(self, other):
         if other == other*0:
             return self
-        return _SubExpr([self, other])
+        return _SubExpr([self, _implicit_conversion(other)])
 
     def __mul__(self, other):
         if other == 1:
             return self
-        return _MulExpr([self, other])
+        return _MulExpr([self, _implicit_conversion(other)])
 
     def __truediv__(self, other):
         if other == 1:
             return self
-        return _DivExpr([self, other])
+        return _DivExpr([self, _implicit_conversion(other)])
 
     def __neg__(self):
         if isinstance(self, _NegExpr):
@@ -375,7 +377,7 @@ class Expr(object):
         return (-self) + other
 
     def __rtruediv__(self, other):
-        return _DivExpr([other, self])
+        return _DivExpr([_implicit_conversion(other), self])
 
 
 class _NegExpr(Expr):
@@ -416,7 +418,36 @@ class _DivExpr(_BinaryExpr):
     _op_str = '/'
 
 
-def mk_Piecewise(parameter_name):
+class Constant(Expr):
+    nargs = 1
+
+    def __call__(self, variables, backend=None, **kwargs):
+        return self.args[0]
+
+
+class Function(Expr):
+    pass
+
+
+class UnaryFunction(Function):
+    nargs = 1
+    _func_name = None
+
+    def __call__(self, variables, backend=math, **kwargs):
+        arg, = self.all_args(variables, backend=backend, **kwargs)
+        return getattr(backend, self._func_name)(arg)
+
+
+class BinaryFunction(Function):
+    nargs = 2
+    _func_name = None
+
+
+class Log10(UnaryFunction):
+    _func_name = 'log10'
+
+
+def create_Piecewise(parameter_name):
     """
     Examples
     --------
@@ -450,114 +481,62 @@ def mk_Piecewise(parameter_name):
             else:
                 raise ValueError("not within any bounds: %s" % x)
         else:
-            return pw(*[(ex, backend.And(lo <= x, x <= up)) for (lo, up, ex), a in zip(lower, upper, exprs)])
+            return pw(*[(ex, backend.And(lo <= x, x <= up)) for lo, up, ex in zip(lower, upper, exprs)])
 
     return Expr.from_callback(_pw, parameter_keys=(parameter_name,))
 
 
-def _eval_poly(x, offset, coeffs, reciprocal=False):
-    _x0 = x - offset
-    _x = _x0/_x0
-    res = None
-    for coeff in coeffs:
-        if res is None:
-            res = coeff*_x
-        else:
-            res += coeff*_x
-
-        if reciprocal:
-            _x /= _x0
-        else:
-            _x *= _x0
-    return res
-
-
-def mk_Poly(parameter_name, reciprocal=False, shift_name='shift'):
-    """ Class factory of Expr subclass for (shifted) polynomial
-
-    Parameters
-    ----------
-    parameter: str
-        name of paramter
-    reciprocal: bool
-        whether the polynomial is in the reciprocal of the parameter
-
-    Returns
-    -------
-    Expr subclass for a shifted polynomial with the args: offset, p0, p1, ...
-    the class has the method "eval_poly" with same signature as __call__
-
-
+def create_Poly(parameter_name, reciprocal=False, shift=None):
+    """
     Examples
     --------
-    >>> P = mk_Poly('x')
-    >>> p = P([3, 5, 7, 2])
-    >>> p({'x': 13}) == 5 + 7*(13-3) + 2*(13-3)**2
+    >>> Poly = create_Poly('x')
+    >>> p1 = Poly([3, 4, 5])
+    >>> p1({'x': 7}) == 3 + 4*7 + 5*49
+    True
+    >>> RPoly = create_Poly('T', reciprocal=True)
+    >>> p2 = RPoly([64, 32, 16, 8])
+    >>> p2({'T': 2}) == 64 + 16 + 4 + 1
+    True
+    >>> SPoly = create_Poly('z', shift_name='z0')
+    >>> p3 = SPoly([7, 2, 3, 5])
+    >>> p3({'z': 9}) == 2 + 3*(9-7) + 5*(9-7)**2
     True
 
     """
-    class Poly(Expr):
-        """ Args: shift, p0, p1, ... """
-        argument_names = (shift_name, Ellipsis)
-        parameter_keys = (parameter_name,)
-        skip_poly = 0
+    if shift is True:
+        shift = 'shift'
 
-        def __call__(self, variables, backend=math):
-            all_args = self.all_args(variables, backend=backend)
-            x = variables[parameter]
-            offset, coeffs = all_args[self.skip_poly], all_args[self.skip_poly+1:]
-            return _eval_poly(x, offset, coeffs, reciprocal)
-    return Poly
-
-
-
-
-def mk_PiecewisePoly(parameter, reciprocal=False):
-    """ Class factory of Expr subclass for piecewise (shifted) polynomial """
-    class PiecewisePoly(Expr):
-        """ Args: npolys, ncoeff0, lower0, upper0, ncoeff1, ..., shift0, p0_0, p0_1, ... shiftn, p0_n, p1_n, ... """
-        argument_names = ('npolys', Ellipsis)
-        parameter_keys = (parameter,)
-        skip_poly = 0
-
-        def eval_poly(self, variables, backend=math):
-            all_args = self.all_args(variables, backend=backend)[self.skip_poly:]
-            npoly = all_args[0]
-            arg_idx = 1
-            poly_args = []
-            meta = []
-            for poly_idx in range(npoly):
-                meta.append(all_args[arg_idx:arg_idx+3])  # nargs, lower, upper
-                arg_idx += 3
-            for poly_idx in range(npoly):
-                narg = 1+meta[poly_idx][0]
-                poly_args.append(all_args[arg_idx:arg_idx+narg])
-                arg_idx += narg
-            if arg_idx != len(all_args):
-                raise Exception("Bug in PiecewisePoly.eval_poly")
-
-            x = variables[parameter]
-            try:
-                pw = backend.Piecewise
-            except AttributeError:
-                for (ncoeff, lower, upper), args in zip(meta, poly_args):
-                    if lower <= x <= upper:
-                        return _eval_poly(x, args[0], args[1:], reciprocal)
-                else:
-                    raise ValueError("not within any bounds: %s" % str(x))
+    def _poly(args, x, backend=math):
+        if shift is None:
+            coeffs = args
+            x0 = x
+        else:
+            coeffs = args[1:]
+            x_shift = args[0]
+            x0 = x - x_shift
+        _x = x0/x0
+        res = None
+        for coeff in coeffs:
+            if res is None:
+                res = coeff*_x
             else:
-                return pw(*[(_eval_poly(x, a[0], a[1:], reciprocal),
-                             backend.And(l <= x, x <= u)) for (n, l, u), a in zip(meta, poly_args)])
+                res += coeff*_x
 
-        @classmethod
-        def from_polynomials(cls, bounds, polys, inject=[], **kwargs):
-            if any(p.parameter_keys != (parameter,) for p in polys):
-                raise ValueError("Mixed parameter_keys")
-            npolys = len(polys)
-            if len(bounds) != npolys:
-                raise ValueError("Length mismatch")
+            if reciprocal:
+                _x /= x0
+            else:
+                _x *= x0
+        return res
 
-            meta = reduce(add, [[len(p.args[p.skip_poly:]) - 1, l, u] for (l, u), p in zip(bounds, polys)])
-            p_args = reduce(add, [p.args[p.skip_poly:] for p in polys])
-            return cls(inject + [npolys] + meta + p_args, **kwargs)
-    return PiecewisePoly
+    if shift is None:
+        argument_names = None
+    else:
+        argument_names = (shift, Ellipsis)
+    return Expr.from_callback(_poly, parameter_keys=(parameter_name,), argument_names=argument_names)
+
+
+from ._expr_deprecated import _mk_PiecewisePoly, _mk_Poly
+
+mk_PiecewisePoly = deprecated(use_instead=create_Piecewise)(_mk_PiecewisePoly)
+mk_Poly = deprecated(use_instead=create_Poly)(_mk_Poly)

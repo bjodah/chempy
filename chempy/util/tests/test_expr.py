@@ -14,7 +14,7 @@ from chempy.units import (
 )
 from ..testing import requires
 from ..pyutil import defaultkeydict
-from .._expr import Expr, mk_Poly, mk_PiecewisePoly, mk_Piecewise
+from .._expr import Expr, mk_Poly, mk_PiecewisePoly, create_Piecewise, create_Poly, Log10
 from ..parsing import parsing_library
 
 
@@ -215,6 +215,25 @@ def test_PiecewisePoly():
         tpwp.eval_poly({'temperature': 21})
 
 
+def test_create_Piecewise_Poly():
+    PolyT = create_Poly('Tmpr')
+
+    p1 = PolyT([1, 0.1])
+    assert p1({'Tmpr': 10}) == 2
+
+    p2 = PolyT([3, -.1])
+    assert p2({'Tmpr': 10}) == 2
+
+    PiecewiseT = create_Piecewise('Tmpr')
+    pw = PiecewiseT([0, p1, 10, p2, 20])
+    assert pw({'Tmpr': 5}) == 1.5
+    assert pw({'Tmpr': 15}) == 1.5
+    assert pw.parameter_keys == ('Tmpr',)
+
+    with pytest.raises(ValueError):
+        pw({'Tmpr': 21})
+
+
 @requires('sympy')
 def test_PiecewisePoly__sympy():
     import sympy as sp
@@ -227,13 +246,31 @@ def test_PiecewisePoly__sympy():
     x = sp.Symbol('x')
     res = tpwp.eval_poly({'temperature': x}, backend=sp)
     assert isinstance(res, sp.Piecewise)
-    assert res.args[0][0] == 1+0.1*x
+    assert res.args[0][0] == 1 + 0.1*x
     assert res.args[0][1] == sp.And(0 <= x, x <= 10)
-    assert res.args[1][0] == 3-0.1*x
+    assert res.args[1][0] == 3 - 0.1*x
     assert res.args[1][1] == sp.And(10 <= x, x <= 20)
 
     with pytest.raises(ValueError):
         tpwp.from_polynomials([(0, 10), (10, 20)], [p1, p2])
+
+
+@requires('sympy')
+def test_create_Piecewise_Poly__sympy():
+    import sympy as sp
+    Poly = create_Poly('Tmpr')
+    p1 = Poly([1, 0.1])
+    p2 = Poly([3, -.1])
+
+    TPw = create_Piecewise('Tmpr')
+    pw = TPw([0, p1, 10, p2, 20])
+    x = sp.Symbol('x')
+    res = pw({'Tmpr': x}, backend=sp)
+    assert isinstance(res, sp.Piecewise)
+    assert res.args[0][0] == 1 + 0.1*x
+    assert res.args[0][1] == sp.And(0 <= x, x <= 10)
+    assert res.args[1][0] == 3 - 0.1*x
+    assert res.args[1][1] == sp.And(10 <= x, x <= 20)
 
 
 def test_BinaryExpr():
@@ -401,8 +438,8 @@ def test_Expr__no_args__arg_defaults():
     assert abs(res - ref) < 1e-14
 
 
-def test_mk_Piecewise():
-    PW = mk_Piecewise('T')
+def test_create_Piecewise():
+    PW = create_Piecewise('T')
     Ha, Sa, Hb, Sb, Ta, Tb = 40e3, -60, 37e3, -42, 293.15, 303.15
     a = MyK([Ha, Sa])
     b = MyK([Hb, Sb])
@@ -413,3 +450,18 @@ def test_mk_Piecewise():
     ref_b = math.exp(-(Hb - Tb*Sb)/(MyK.R*Tb))
     assert abs(res_a - ref_a) < 1e-14
     assert abs(res_b - ref_b) < 1e-14
+
+
+def test_create_Poly():
+    PolyT = create_Poly('T')
+    p = PolyT([1, 2, 3, 4, 5])
+    assert p({'T': 11}) == 1 + 2*11 + 3*11**2 + 4*11**3 + 5*11**4
+
+
+def test_functions():
+    PolyT = create_Poly('T')
+    p = PolyT([1, 2, 3])
+    lgp = Log10(p)
+    res = lgp({'T': 3})
+    ref = math.log10(1 + 2*3 + 3*9)
+    assert abs(res - ref) < 1e-12
