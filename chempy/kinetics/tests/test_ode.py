@@ -342,6 +342,7 @@ def test_get_odesys__time_dep_temperature():
     assert np.allclose(fout, ref)
 
 
+@requires('numpy', 'pyodesys')
 def test_get_odesys__late_binding():
     def _gibbs(args, T, R, backend, **kwargs):
         H, S = args

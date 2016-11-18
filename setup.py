@@ -49,7 +49,7 @@ else:
             warnings.warn("A git-archive is being installed - version information incomplete.")
         else:
             warnings.warn("Using git to derive version: dev-branches may compete.")
-            __version__ = re.sub('v([0-9.]+)-(\d+)-(\w+)', r'\1.dev\2+\3', _git_version)
+            __version__ = re.sub('v([0-9.]+)-(\d+)-(\w+)', r'\1.post\2+\3', _git_version)  # .dev < '' < .post
 
 submodules = [
     'chempy.electrochemistry',
