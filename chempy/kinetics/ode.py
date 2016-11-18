@@ -38,8 +38,8 @@ def law_of_mass_action_rates(conc, rsys, variables=None):
     >>> rsys = ReactionSystem([rxn], keys)
     >>> next(law_of_mass_action_rates([55.4, 1e-7, 1e-7], rsys))
     0.00554
-    >>> from chempy.kinetics.rates import ArrheniusMassAction
-    >>> rxn.param = ArrheniusMassAction({'A': 1e10, 'Ea_over_R': 9314}, rxn=rxn)
+    >>> from chempy.kinetics.rates import Arrhenius, MassAction
+    >>> rxn.param = MassAction(Arrhenius({'A': 1e10, 'Ea_over_R': 9314}))
     >>> print('%.5g' % next(law_of_mass_action_rates([55.4, 1e-7, 1e-7], rsys, {'temperature': 293})))
     0.0086693
 
@@ -47,7 +47,7 @@ def law_of_mass_action_rates(conc, rsys, variables=None):
     for idx_r, rxn in enumerate(rsys.rxns):
         if isinstance(rxn.param, RateExpr):
             if isinstance(rxn.param, MassAction):
-                yield rxn.param(dict(chain(variables.items(), zip(rsys.substances.keys(), conc))))
+                yield rxn.param(dict(chain(variables.items(), zip(rsys.substances.keys(), conc))), reaction=rxn)
             else:
                 raise ValueError("Not mass-action rate in reaction %d" % idx_r)
         else:
@@ -139,7 +139,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
 
     r_exprs = [rxn.rate_expr() for rxn in rsys.rxns]
 
-    _ori_pk = set.union(*(set(ratex.parameter_keys) for ratex in r_exprs))  # parameter_keys
+    _ori_pk = set.union(*(ratex.all_parameter_keys() for ratex in r_exprs))  # parameter_keys
     _subst_pk = set()
     _active_subst = {}
     _passive_subst = {}
@@ -192,7 +192,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         p_units = pk_units if include_params else (pk_units + unique_units)
         new_r_exprs = []
         for ratex in r_exprs:
-            _pu, _new_rate = ratex._recursive_as_RateExpr().dedimensionalisation(unit_registry)
+            _pu, _new_rate = ratex.dedimensionalisation(unit_registry)
             new_r_exprs.append(_new_rate)
         r_exprs = new_r_exprs
 

@@ -43,9 +43,9 @@ def _mk_Poly(parameter_name, reciprocal=False, shift_name='shift'):
 
     Examples
     --------
-    >>> P = mk_Poly('x')
+    >>> P = _mk_Poly('x')
     >>> p = P([3, 5, 7, 2])
-    >>> p({'x': 13}) == 5 + 7*(13-3) + 2*(13-3)**2
+    >>> p.eval_poly({'x': 13}) == 5 + 7*(13-3) + 2*(13-3)**2
     True
 
     """
@@ -61,6 +61,7 @@ def _mk_Poly(parameter_name, reciprocal=False, shift_name='shift'):
             offset, coeffs = all_args[self.skip_poly], all_args[self.skip_poly+1:]
             return _eval_poly(x, offset, coeffs, reciprocal)
     return Poly
+
 
 def _mk_PiecewisePoly(parameter, reciprocal=False):
     """ Class factory of Expr subclass for piecewise (shifted) polynomial """

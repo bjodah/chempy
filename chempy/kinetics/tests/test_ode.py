@@ -19,7 +19,7 @@ from chempy.util.testing import requires
 from .test_rates import _get_SpecialFraction_rsys
 from ..arrhenius import ArrheniusParam
 from ..rates import Arrhenius, MassAction, Radiolytic, RampedTemp
-from .._rates import TPolyMassAction
+from .._rates import ShiftedTPoly
 from ..ode import get_odesys
 from ..integrated import dimerization_irrev
 
@@ -158,7 +158,7 @@ def test_ode_with_global_parameters():
     ratex = MassAction(Arrhenius([1e10, 40e3/8.3145]))
     rxn = Reaction({'A': 1}, {'B': 1}, ratex)
     rsys = ReactionSystem([rxn], 'A B')
-    odesys, param_keys, unique_keys, p_units = get_odesys(rsys, include_params=True)
+    odesys, param_keys, unique_keys, p_units = get_odesys(rsys, include_params=False)
     conc = {'A': 3, 'B': 5}
     x, y, p = odesys.pre_process(-37, conc, {'temperature': 298.15})
     fout = odesys.f_cb(x, y, p)
@@ -260,7 +260,7 @@ def test_get_ode__Radiolytic__substitutions__units():
 
 @requires('pyodesys', units_library)
 def test_get_ode__TPoly():
-    rate = TPolyMassAction([273.15*u.K, 10/u.molar/u.s, 2/u.molar/u.s/u.K])
+    rate = MassAction(ShiftedTPoly([273.15*u.K, 10/u.molar/u.s, 2/u.molar/u.s/u.K]))
     rxn = Reaction({'A': 1, 'B': 1}, {'C': 3, 'D': 2}, rate, {'A': 3})
     rsys = ReactionSystem([rxn], 'A B C D')
     odesys = get_odesys(rsys, unit_registry=SI_base_registry)[0]
@@ -275,14 +275,14 @@ def test_get_ode__TPoly():
 @requires('pyodesys', units_library)
 def test_get_odesys__time_dep_rate():
 
-    class RampedRate(MassAction):
+    class RampedRate(Expr):
         argument_names = ('rate_constant', 'ramping_rate')
 
-        def rate_coeff(self, variables, backend=math):
+        def __call__(self, variables, backend=math):
             rate_constant, ramping_rate = self.all_args(variables, backend=backend)
             return rate_constant * ramping_rate * variables['time']
 
-    rate = RampedRate([7, 2])
+    rate = MassAction(RampedRate([7, 2]))
     rxn = Reaction({'A': 1}, {'B': 3}, rate)
     rsys = ReactionSystem([rxn], 'A B')
     odesys = get_odesys(rsys)[0]
@@ -343,11 +343,11 @@ def test_get_odesys__time_dep_temperature():
 
 
 def test_get_odesys__late_binding():
-    def _gibbs(args, T, R, backend):
+    def _gibbs(args, T, R, backend, **kwargs):
         H, S = args
         return backend.exp(-(H - T*S)/(R*T))
 
-    def _eyring(args, T, R, k_B, h, backend):
+    def _eyring(args, T, R, k_B, h, backend, **kwargs):
         H, S = args
         return k_B/h*T*backend.exp(-(H - T*S)/(R*T))
 

@@ -113,18 +113,33 @@ class MassAction(RateExpr):
 
     argument_names = ('rate_constant',)
 
-    def __call__(self, variables, backend=math, reaction=None):
-        rate, = self.all_args(variables, backend=backend)
+    def active_conc_prod(self, variables, backend=math, reaction=None):
+        result = None
         for k, v in reaction.reac.items():
-            rate *= variables[k]**v
-        return rate
+            if result is None:
+                result = variables[k]**v
+            else:
+                result *= variables[k]**v
+        return result
 
+    def rate_coeff(self, variables, backend=math, **kwargs):
+        rat_c, = self.all_args(variables, backend=backend)
+        return rat_c
+
+    def __call__(self, variables, backend=math, reaction=None):
+        return self.rate_coeff(variables, backend=backend)*self.active_conc_prod(
+            variables, backend=backend, reaction=reaction)
+
+    @classmethod
+    def from_callback(cls, callback, attr='rate_coeff', **kwargs):
+        return super(MassAction, cls).from_callback(callback, attr=attr, **kwargs)
 
     @classmethod
     @deprecated(use_instead=Expr.from_callback)
     def subclass_from_callback(cls, cb, cls_attrs=None):
         """ Override MassAction.__call__ """
         _RateExpr = super(MassAction, cls).subclass_from_callback(cb, cls_attrs=cls_attrs)
+
         def wrapper(*args, **kwargs):
             obj = _RateExpr(*args, **kwargs)
             return cls(obj)

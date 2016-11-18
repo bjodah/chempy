@@ -137,11 +137,11 @@ class EyringParam(defaultnamedtuple('EyringParam', 'dH dS ref', [None])):
         R = _get_R(constants, units)
         return self.dH/R
 
-    def as_RateExpr(self, rxn=None, unique_keys=None, constants=None, units=None, backend=math):
-        from .rates import EyringMassAction as EMA
+    def as_RateExpr(self, unique_keys=None, constants=None, units=None, backend=math):
+        from .rates import Eyring, MassAction
         args = [self.kB_h_times_exp_dS_R(constants, units, backend),
                 self.dH_over_R(constants, units)]
-        return EMA(args, unique_keys, rxn=rxn, ref=self.ref)
+        return MassAction(Eyring(args, unique_keys))
 
     def format(self, precision, tex=False):
         try:
@@ -175,7 +175,7 @@ class EyringParamWithUnits(EyringParam):
         return super(EyringParamWithUnits, self).__call__(
             state, constants, units, backend)
 
-    def as_RateExpr(self, rxn, unique_keys=None, constants=default_constants, units=default_units, backend=None):
+    def as_RateExpr(self, unique_keys=None, constants=default_constants, units=default_units, backend=None):
         if backend is None:
             backend = Backend()
-        return super(EyringParamWithUnits, self).as_RateExpr(rxn, unique_keys, constants, units, backend)
+        return super(EyringParamWithUnits, self).as_RateExpr(unique_keys, constants, units, backend)

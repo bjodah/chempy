@@ -13,14 +13,17 @@ from __future__ import (absolute_import, division, print_function)
 
 import math
 from itertools import chain
-from operator import add, mul, truediv, sub
+from operator import add, mul, truediv, sub, pow
 from .pyutil import defaultkeydict, deprecated
+
 
 def _implicit_conversion(obj):
     if isinstance(obj, (int, float)):
         return Constant(obj)
     elif isinstance(obj, Expr):
         return obj
+    elif isinstance(obj, str):
+        return Symbol(obj)
     else:
         raise NotImplementedError(
             "Don't know how to convert %s (of type %s)" % (obj, type(obj)))
@@ -89,6 +92,8 @@ class Expr(object):
     nargs = None
 
     def __init__(self, args=None, unique_keys=None):
+        if isinstance(args, str):
+            args = (args,)
         if self.argument_names is not None and self.argument_names[-1] != Ellipsis and self.nargs is None:
             self.nargs = len(self.argument_names)
         if self.argument_defaults is not None:
@@ -154,10 +159,10 @@ class Expr(object):
         True
 
         """
-        def body(self, variables, backend=math):
+        def body(self, variables, backend=math, **kwargs):
             args = self.all_args(variables, backend=backend)
             params = self.all_params(variables, backend=backend)
-            return callback(args, *params, backend=backend)
+            return callback(args, *params, backend=backend, **kwargs)
 
         class Wrapper(cls):
             pass
@@ -169,6 +174,14 @@ class Expr(object):
 
     def __call__(self, variables, backend=math, **kwargs):
         raise NotImplementedError("Subclass and implement __call__")
+
+    def all_parameter_keys(self):
+        all_pk = set(self.parameter_keys)
+        if self.args is not None:
+            for arg in self.args:
+                if isinstance(arg, Expr):
+                    all_pk = all_pk.union(arg.all_parameter_keys())
+        return all_pk
 
     def _str(self, arg_fmt, unique_keys_fmt=str):
         if self.args is None or len(self.args) == 0:
@@ -189,7 +202,7 @@ class Expr(object):
     def string(self, arg_fmt=str, **kwargs):
         return self._str(arg_fmt, **kwargs)
 
-    def arg(self, variables, index, backend=math, evaluate=True):
+    def arg(self, variables, index, backend=math, evaluate=True, **kwargs):
         """
         Parameters
         ----------
@@ -224,17 +237,23 @@ class Expr(object):
                 res = self.argument_defaults[index - self.nargs + len(self.argument_defaults)]
             else:
                 res = self.args[index]
+
+        if isinstance(res, str):
+            res = variables[res]
+        elif isinstance(res, Symbol):
+            res = variables[res.args[0]]
+
         if isinstance(res, Expr) and evaluate:
-            return res(variables, backend=backend)
+            return res(variables, backend=backend, **kwargs)
         else:
             return res
 
-    def all_args(self, variables, backend=math, evaluate=True):
+    def all_args(self, variables, backend=math, evaluate=True, **kwargs):
         if self.nargs is None or self.nargs == -1:
             nargs = len(self.args)
         else:
             nargs = self.nargs
-        return [self.arg(variables, i, backend, evaluate) for i in range(nargs)]
+        return [self.arg(variables, i, backend, evaluate, **kwargs) for i in range(nargs)]
 
     def all_params(self, variables, backend=math):
         return [v(variables, backend=backend) if isinstance(v, Expr) else v for v
@@ -362,6 +381,9 @@ class Expr(object):
             return self
         return _DivExpr([self, _implicit_conversion(other)])
 
+    def __rtruediv(self, other):
+        return _DivExpr([_implicit_conversion(other), self])
+
     def __neg__(self):
         if isinstance(self, _NegExpr):
             return self.args[0]
@@ -378,6 +400,12 @@ class Expr(object):
 
     def __rtruediv__(self, other):
         return _DivExpr([_implicit_conversion(other), self])
+
+    def __pow__(self, other):
+        return _PowExpr([self, _implicit_conversion(other)])
+
+    def __rpow__(self, other):
+        return _PowExpr([_implicit_conversion(other), self])
 
 
 class _NegExpr(Expr):
@@ -418,11 +446,23 @@ class _DivExpr(_BinaryExpr):
     _op_str = '/'
 
 
+class _PowExpr(_BinaryExpr):
+    _op = pow
+    _op_str = '**'
+
+
 class Constant(Expr):
     nargs = 1
 
     def __call__(self, variables, backend=None, **kwargs):
         return self.args[0]
+
+
+class Symbol(Expr):
+    nargs = 1
+
+    def __call__(self, variables, backend=None, **kwargs):
+        return variables[self.args[0]]
 
 
 class Function(Expr):
@@ -452,10 +492,11 @@ def create_Piecewise(parameter_name):
     Examples
     --------
     >>> Power = Expr.from_callback(lambda args, x, backend=None: args[0]*x**args[1],
-    ...     argument_names=('scale',) parameter_keys=('x',))
+    ...     argument_names=('scale', 'pow'), parameter_keys=('x',))
     >>> minus_x = Power([-1, 1])
     >>> cube = Power([1, 3])
-    >>> pw = Piecewise([-float('inf), minus_x, 0, cube, float('inf')])
+    >>> PW = create_Piecewise('x')
+    >>> pw = PW([-float('inf'), minus_x, 0, cube, float('inf')])
     >>> pw({'x': -5}) == 5
     True
     >>> pw({'x': 2}) == 8
@@ -498,7 +539,7 @@ def create_Poly(parameter_name, reciprocal=False, shift=None):
     >>> p2 = RPoly([64, 32, 16, 8])
     >>> p2({'T': 2}) == 64 + 16 + 4 + 1
     True
-    >>> SPoly = create_Poly('z', shift_name='z0')
+    >>> SPoly = create_Poly('z', shift='z0')
     >>> p3 = SPoly([7, 2, 3, 5])
     >>> p3({'z': 9}) == 2 + 3*(9-7) + 5*(9-7)**2
     True
@@ -535,8 +576,7 @@ def create_Poly(parameter_name, reciprocal=False, shift=None):
         argument_names = (shift, Ellipsis)
     return Expr.from_callback(_poly, parameter_keys=(parameter_name,), argument_names=argument_names)
 
-
-from ._expr_deprecated import _mk_PiecewisePoly, _mk_Poly
+from ._expr_deprecated import _mk_PiecewisePoly, _mk_Poly  # noqa
 
 mk_PiecewisePoly = deprecated(use_instead=create_Piecewise)(_mk_PiecewisePoly)
 mk_Poly = deprecated(use_instead=create_Poly)(_mk_Poly)

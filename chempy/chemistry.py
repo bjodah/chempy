@@ -794,16 +794,17 @@ class Reaction(object):
         True
 
         """
-        from chempy.util._expr import Expr
+        from .util._expr import Expr
+        from .kinetics import MassAction
         if isinstance(self.param, Expr):
             return self.param
         else:
             try:
                 convertible = self.param.as_RateExpr
             except AttributeError:
-                return MassAction([self.param], rxn=self)
+                return MassAction([self.param])
             else:
-                return convertible(self)
+                return convertible()
 
     def rate(self, variables=None, backend=math, substance_keys=None, ratex=None):
         """ Evaluate the rate of a reaction

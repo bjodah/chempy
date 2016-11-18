@@ -458,6 +458,19 @@ def test_create_Poly():
     assert p({'T': 11}) == 1 + 2*11 + 3*11**2 + 4*11**3 + 5*11**4
 
 
+def test_pow():
+    PolyT = create_Poly('T')
+    p = PolyT([1, 2, 3])
+    p_to_two = p**2
+    res = p_to_two({'T': 3})
+    ref = (1 + 2*3 + 3*9)**2
+    assert abs(res - ref) < 1e-12
+    two_to_p = 2**p
+    res = two_to_p({'T': 3})
+    ref = 2**(1 + 2*3 + 3*9)
+    assert abs(res - ref) < 1e-12
+
+
 def test_functions():
     PolyT = create_Poly('T')
     p = PolyT([1, 2, 3])
@@ -465,3 +478,23 @@ def test_functions():
     res = lgp({'T': 3})
     ref = math.log10(1 + 2*3 + 3*9)
     assert abs(res - ref) < 1e-12
+
+
+def test_str_arg():
+    PolyT = create_Poly('x')
+    p = PolyT([1, 2, 3])
+    x = Log10('T')
+    res = p({'x': x, 'T': 1000})
+    ref = 1 + 2*3 + 3*9
+    assert abs(res - ref) < 1e-12
+
+
+def test_implicit_str():
+    PolyT = create_Poly('x')
+    p = PolyT([1, 2, 3])
+    expr1 = p / 'u'
+    assert abs(expr1({'x': 3, 'u': 5}) - (1 + 2*3 + 3*9)/5) < 1e-12
+    expr2 = 'u' / p
+    assert abs(expr2({'x': 3, 'u': 5}) - 5/(1 + 2*3 + 3*9)) < 1e-12
+    assert expr1.all_parameter_keys() == set(['x'])
+    assert expr2.all_parameter_keys() == set(['x'])
