@@ -3,6 +3,8 @@ build:
   commands:
     - python2 -m pip install --upgrade pip
     - python3 -m pip install --upgrade pip
+    - python2 -m pip install https://github.com/bjodah/pyodesys/archive/improve-native.tar.gz  # DO-NOT-MERGE!
+    - python3 -m pip install https://github.com/bjodah/pyodesys/archive/improve-native.tar.gz  # DO-NOT-MERGE!
     - ./scripts/ci.sh chempy
     - (cd examples/; python -m pip install --force bokeh==0.11.1; for f in bokeh_*.py; do python -m bokeh html $f; done)
     - ./scripts/prepare_deploy.sh
