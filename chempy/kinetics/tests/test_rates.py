@@ -198,6 +198,8 @@ def test_Radiolytic__parsing():
     ref = 0.15*0.998*2.1e-7
     assert abs((res['H'] - ref)/ref) < 1e-15
     assert abs((res['OH'] - ref)/ref) < 1e-15
+    gval = rxn.rate_expr().g_value({})
+    assert abs(gval - 2.1e-7) < 1e-15
 
 
 @requires(parsing_library, units_library)

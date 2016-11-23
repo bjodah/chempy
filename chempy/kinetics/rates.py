@@ -82,9 +82,13 @@ def mk_Radiolytic(doserate_name='doserate'):
         argument_names = ('radiolytic_yield',)  # [amount/energy]
         parameter_keys = (doserate_name, 'density')
 
+        def g_value(self, variables, backend=math):
+            g_val, = self.all_args(variables, backend=backend)
+            return g_val
+
         def __call__(self, variables, backend=math, reaction=None):
             g_value, = self.all_args(variables, backend=backend)
-            return g_value*variables[doserate_name]*variables['density']
+            return self.g_value(variables, backend=backend)*variables[doserate_name]*variables['density']
 
     _Radiolytic.__name__ = 'Radiolytic' if doserate_name == 'doserate' else ('Radiolytic{'+doserate_name+'}')
     return _Radiolytic
