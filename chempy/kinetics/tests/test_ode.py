@@ -369,3 +369,25 @@ def test_get_odesys__late_binding():
     odesys, pk, unique, p_units = get_odesys(rsys, include_params=False)
     assert sorted(unique) == sorted(uk_equil + uk_kinet)
     assert sorted(pk) == sorted(eyring_pk)
+
+
+@requires('numpy', 'pyodesys')
+def test_get_odesys__ScaledSys():
+    from pyodesys.symbolic import ScaledSys
+    k = .2
+    a = Substance('A')
+    b = Substance('B')
+    r = Reaction({'A': 1}, {'B': 1}, param=k)
+    rsys = ReactionSystem([r], [a, b])
+    assert sorted(rsys.substances.keys()) == ['A', 'B']
+    odesys = get_odesys(rsys, include_params=True, SymbolicSys=ScaledSys)[0]
+    c0 = {
+        'A': 1.0,
+        'B': 3.0,
+    }
+    t = np.linspace(0.0, 10.0)
+    xout, yout, info = odesys.integrate(t, c0)
+    yref = np.zeros((t.size, 2))
+    yref[:, 0] = np.exp(-k*t)
+    yref[:, 1] = 4 - np.exp(-k*t)
+    assert np.allclose(yout, yref)

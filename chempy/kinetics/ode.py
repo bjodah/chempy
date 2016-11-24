@@ -112,7 +112,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     output_conc_unit : unit (Optional)
     output_time_unit : unit (Optional)
     \*\*kwargs :
-        Keyword arguemnts pass on to `SymbolicSys`.
+        Keyword arguemnts passed on to `SymbolicSys`.
 
     Returns
     -------
