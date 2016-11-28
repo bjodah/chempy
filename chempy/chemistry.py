@@ -816,6 +816,10 @@ class Reaction(object):
         substance_keys : iterable of str, optional
         ratex : RateExpr
 
+        Returns
+        -------
+        Dictionary mapping substance keys to the reactions contribution to overall rates.
+
         Examples
         --------
         >>> rxn = Reaction.from_string('2 H2 + O2 -> 2 H2O; 3', None)
@@ -1146,9 +1150,9 @@ class ReactionSystem(object):
         for check in checks:
             getattr(self, 'check_'+check)(throw=True)
 
-    def _repr_html_(self):
+    def _repr_html_(self, with_param=True):
         def _format(r):
-            return r.html(self.substances, with_param=True)
+            return r.html(self.substances, with_param=with_param)
         return '<br>'.join(map(_format, self.rxns))
 
     def check_duplicate(self, throw=False):
@@ -1306,8 +1310,6 @@ class ReactionSystem(object):
 
         """
         import numpy as np
-        if unit is not None:
-            cont = to_unitless(cont, unit)
         if isinstance(cont, np.ndarray):
             pass
         elif isinstance(cont, dict):
@@ -1317,6 +1319,8 @@ class ReactionSystem(object):
                     if k not in substance_keys:
                         raise KeyError("Unkown substance key: %s" % k)
             cont = [cont[k] for k in substance_keys]
+        if unit is not None:
+            cont = to_unitless(cont, unit)
 
         cont = np.atleast_1d(np.asarray(cont, dtype=dtype).squeeze())
         if cont.shape[-1] != self.ns:

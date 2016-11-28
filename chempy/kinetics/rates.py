@@ -47,8 +47,8 @@ class RateExpr(Expr):
         """
         class _RateExpr(cls):
 
-            def __call__(self, variables, backend=math):
-                return cb(variables, self.all_args(variables), backend=backend)
+            def __call__(self, variables, backend=math, **kwargs):
+                return cb(variables, self.all_args(variables), backend=backend, **kwargs)
         for k, v in (cls_attrs or {}).items():
             setattr(_RateExpr, k, v)
         return _RateExpr
@@ -82,12 +82,12 @@ def mk_Radiolytic(doserate_name='doserate'):
         argument_names = ('radiolytic_yield',)  # [amount/energy]
         parameter_keys = (doserate_name, 'density')
 
-        def g_value(self, variables, backend=math):
-            g_val, = self.all_args(variables, backend=backend)
+        def g_value(self, variables, backend=math, **kwargs):
+            g_val, = self.all_args(variables, backend=backend, **kwargs)
             return g_val
 
-        def __call__(self, variables, backend=math, reaction=None):
-            g_value, = self.all_args(variables, backend=backend)
+        def __call__(self, variables, backend=math, reaction=None, **kwargs):
+            g_value, = self.all_args(variables, backend=backend, **kwargs)
             return self.g_value(variables, backend=backend)*variables[doserate_name]*variables['density']
 
     _Radiolytic.__name__ = 'Radiolytic' if doserate_name == 'doserate' else ('Radiolytic{'+doserate_name+'}')
@@ -127,12 +127,12 @@ class MassAction(RateExpr):
         return result
 
     def rate_coeff(self, variables, backend=math, **kwargs):
-        rat_c, = self.all_args(variables, backend=backend)
+        rat_c, = self.all_args(variables, backend=backend, **kwargs)
         return rat_c
 
-    def __call__(self, variables, backend=math, reaction=None):
+    def __call__(self, variables, backend=math, reaction=None, **kwargs):
         return self.rate_coeff(variables, backend=backend)*self.active_conc_prod(
-            variables, backend=backend, reaction=reaction)
+            variables, backend=backend, reaction=reaction, **kwargs)
 
     @classmethod
     def from_callback(cls, callback, attr='rate_coeff', **kwargs):
@@ -170,8 +170,8 @@ class Arrhenius(Expr):
     argument_names = ('A', 'Ea_over_R')
     parameter_keys = ('temperature',)
 
-    def __call__(self, variables, backend=math):
-        A, Ea_over_R = self.all_args(variables, backend=backend)
+    def __call__(self, variables, backend=math, **kwargs):
+        A, Ea_over_R = self.all_args(variables, backend=backend, **kwargs)
         return A*backend.exp(-Ea_over_R/variables['temperature'])
 
 
@@ -180,8 +180,8 @@ class Eyring(Expr):
 
     argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R')
 
-    def __call__(self, variables, backend=math):
-        c0, c1 = self.all_args(variables, backend=backend)
+    def __call__(self, variables, backend=math, **kwargs):
+        c0, c1 = self.all_args(variables, backend=backend, **kwargs)
         T = variables['temperature']
         return c0*T*backend.exp(-c1/T)
 
@@ -191,6 +191,6 @@ class RampedTemp(Expr):
     argument_names = ('T0', 'dTdt')
     parameter_keys = ('time',)  # consider e.g. a parameter such as 'init_time'
 
-    def __call__(self, variables, backend=None):
-        T0, dTdt = self.all_args(variables, backend=backend)
+    def __call__(self, variables, backend=None, **kwargs):
+        T0, dTdt = self.all_args(variables, backend=backend, **kwargs)
         return T0 + dTdt*variables['time']

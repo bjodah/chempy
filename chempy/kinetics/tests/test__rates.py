@@ -21,7 +21,7 @@ def test_TPolyMassAction():
     assert abs(res - ref*13*11**2) < 1e-15
 
 
-def test_TPoly__2():
+def test_ShiftedTPoly_MassAction():
     rate = MassAction(ShiftedTPoly([100, 2, 5, 7]))
     assert rate.args[0].args == [100, 2, 5, 7]
     r = Reaction({'A': 2, 'B': 1}, {'P': 1}, rate)
@@ -29,6 +29,16 @@ def test_TPoly__2():
     x = 273.15-100
     ref = 11*11*13*(2 + 5*x + 7*x**2)
     assert abs((res - ref)/ref) < 1e-14
+
+
+@requires(units_library)
+def test_ShiftedTPoly__units():
+    stp1 = ShiftedTPoly([273.15*u.kelvin, 5, 7/u.kelvin])
+    allclose(stp1({'temperature': 274.15*u.kelvin}), 5+7)
+    allclose(stp1({'temperature': 273.15*u.kelvin}), 5)
+    stp2 = ShiftedTPoly([273.15*u.kelvin, 5*u.m, 7*u.m/u.kelvin, 13*u.m*u.kelvin**-2])
+    allclose(stp2({'temperature': 274.15*u.kelvin}), (5+7+13)*u.m)
+    allclose(stp2({'temperature': 273.15*u.kelvin}), 5*u.m)
 
 
 @requires(units_library)
@@ -192,3 +202,18 @@ def test_TPiecewise():
     ref1 = 20.5*4e-26 * u.molar/u.s
     assert allclose(res1, ref1)
     assert not allclose(res1, ref1/2)
+
+
+@requires(units_library)
+def test_MassAction__rate_coeff():
+    perMolar_perSecond = u.perMolar_perSecond
+
+    p1 = MassAction(Constant(perMolar_perSecond) * 10**RTPoly([1, 2*u.kelvin, 3*u.kelvin**2]))
+    rcoeff1 = p1.rate_coeff({'temperature': 283.15*u.K})
+    ref1 = 10**(1 + 2/283.15 + 3/283.15**2) * perMolar_perSecond
+    assert allclose(rcoeff1, ref1)
+    rxn1 = Reaction({'A', 'B'}, {'C'}, p1)
+    rat1 = rxn1.rate({'A': 2, 'B': 3, 'temperature': 283.15*u.K})
+    assert allclose(rat1['A'], -2*3*ref1)
+    assert allclose(rat1['B'], -2*3*ref1)
+    assert allclose(rat1['C'], 2*3*ref1)

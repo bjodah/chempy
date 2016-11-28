@@ -503,7 +503,7 @@ def create_Piecewise(parameter_name):
     True
 
     """
-    def _pw(bounds_exprs, x, backend=math):
+    def _pw(bounds_exprs, x, backend=math, **kwargs):
         if len(bounds_exprs) < 3:
             raise ValueError("Need at least 3 args")
         if len(bounds_exprs) % 2 != 1:
@@ -527,7 +527,7 @@ def create_Piecewise(parameter_name):
     return Expr.from_callback(_pw, parameter_keys=(parameter_name,))
 
 
-def create_Poly(parameter_name, reciprocal=False, shift=None):
+def create_Poly(parameter_name, reciprocal=False, shift=None, name=None):
     """
     Examples
     --------
@@ -543,12 +543,14 @@ def create_Poly(parameter_name, reciprocal=False, shift=None):
     >>> p3 = SPoly([7, 2, 3, 5])
     >>> p3({'z': 9}) == 2 + 3*(9-7) + 5*(9-7)**2
     True
+    >>> p3({'z': 9, 'z0': 6}) == 2 + 3*(9-6) + 5*(9-6)**2
+    True
 
     """
     if shift is True:
         shift = 'shift'
 
-    def _poly(args, x, backend=math):
+    def _poly(args, x, backend=math, **kwargs):
         if shift is None:
             coeffs = args
             x0 = x
@@ -556,24 +558,26 @@ def create_Poly(parameter_name, reciprocal=False, shift=None):
             coeffs = args[1:]
             x_shift = args[0]
             x0 = x - x_shift
-        _x = x0/x0
+        cur = 1
         res = None
         for coeff in coeffs:
             if res is None:
-                res = coeff*_x
+                res = coeff*cur
             else:
-                res += coeff*_x
+                res += coeff*cur
 
             if reciprocal:
-                _x /= x0
+                cur /= x0
             else:
-                _x *= x0
+                cur *= x0
         return res
 
     if shift is None:
         argument_names = None
     else:
         argument_names = (shift, Ellipsis)
+    if name is not None:
+        _poly.__name__ = name
     return Expr.from_callback(_poly, parameter_keys=(parameter_name,), argument_names=argument_names)
 
 from ._expr_deprecated import _mk_PiecewisePoly, _mk_Poly  # noqa
