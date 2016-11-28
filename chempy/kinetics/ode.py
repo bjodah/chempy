@@ -117,9 +117,11 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     Returns
     -------
     pyodesys.symbolic.SymbolicSys
-    param_keys : list of str instances
-    unique : OrderedDict mapping str to value (possibly None)
-    p_units : list of units
+    extra : dict, with keys:
+        - param_keys : list of str instances
+        - unique : OrderedDict mapping str to value (possibly None)
+        - p_units : list of units
+        - max_euler_step_cb : callable or None
 
     Examples
     --------
@@ -228,8 +230,32 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         variables.update(_passive_subst)
         return rsys.rates(variables, backend=backend, ratexs=r_exprs)
 
+    if rsys.check_balance(strict=True):
+        # Composition available, we can provide callback for calculating
+        # maximum allowed Euler forward step at start of integration.
+        raise NotImplementedError(...)
+    else:
+        max_euler_step_cb = None
+
+
     names = [s.name for s in rsys.substances.values()]
     latex_names = [s.latex_name for s in rsys.substances.values()]
-    return SymbolicSys.from_callback(
+    odesys = SymbolicSys.from_callback(
         dydt, dep_by_name=True, par_by_name=True, names=names,
-        latex_names=latex_names, param_names=param_names_for_odesys, **kwargs), all_pk, unique, p_units
+        latex_names=latex_names, param_names=param_names_for_odesys, **kwargs)
+
+    return odesys, {
+        'param_keys': all_pk,
+        'unique' : unique,
+        'p_units' : p_units,
+        'max_euler_step_cb': max_euler_step_cb
+    }
+
+
+def max_euler_step(odesys, rsys, init_concs):
+    upper_lim = rsys.upper_conc_bounds(init_concs)
+
+    f_vec = rsys.as_per_substance_array(rsys.rates(init_concs))
+    max_step = None
+    for f, c in zip(f_vec, rsys.as_per_substance_array(init_concs)):
+        if f > 0:

@@ -338,3 +338,19 @@ def test_ReactionSystem__from_string():
     assert rs.rxns[0].param.args == [2.1e-7]
     ref = 2.1e-7 * 0.15 * 998
     assert rs.rates({'doserate': .15, 'density': 998}) == {'H': ref, 'OH': ref}
+
+
+@requires('numpy')
+def test_ReactionSystem__upper_conc_bounds():
+    rs = ReactionSystem.from_string('\n'.join(['2 NH3 -> N2 + 3 H2', 'N2H4 -> N2 + 2 H2']))
+    c0 = {'NH3': 5, 'N2': 7, 'H2': 11, 'N2H4': 2}
+    _N = 5 + 14 + 4
+    _H = 15 + 22 + 8
+    ref = {
+        'NH3': min(_N, _H/3),
+        'N2': _N/2,
+        'H2': _H/2,
+        'N2H4': min(_N/2, _H/4),
+    }
+    res = rs.as_per_substance_dict(rs.upper_conc_bounds(c0))
+    assert res == ref

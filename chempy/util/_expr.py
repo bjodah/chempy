@@ -539,8 +539,8 @@ def create_Poly(parameter_name, reciprocal=False, shift=None, name=None):
     >>> p2 = RPoly([64, 32, 16, 8])
     >>> p2({'T': 2}) == 64 + 16 + 4 + 1
     True
-    >>> SPoly = create_Poly('z', shift='z0')
-    >>> p3 = SPoly([7, 2, 3, 5])
+    >>> SPoly = create_Poly('z', shift=True)
+    >>> p3 = SPoly([7, 2, 3, 5], unique_keys=('z0',))
     >>> p3({'z': 9}) == 2 + 3*(9-7) + 5*(9-7)**2
     True
     >>> p3({'z': 9, 'z0': 6}) == 2 + 3*(9-6) + 5*(9-6)**2

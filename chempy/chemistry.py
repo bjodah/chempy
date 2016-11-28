@@ -1150,10 +1150,13 @@ class ReactionSystem(object):
         for check in checks:
             getattr(self, 'check_'+check)(throw=True)
 
-    def _repr_html_(self, with_param=True):
+    def html(with_param=True):
         def _format(r):
             return r.html(self.substances, with_param=with_param)
         return '<br>'.join(map(_format, self.rxns))
+
+    def _repr_html_(self):
+        return self.html()
 
     def check_duplicate(self, throw=False):
         """ Raies ValueError if there are duplicates in self.rxns """
@@ -1180,8 +1183,28 @@ class ReactionSystem(object):
                 names_seen[rxn.name] = idx
         return True
 
+    def check_substance_keys(self, throw=False):
+        for rxn in self.rxns:
+            for key in chain(rxn.reac, rxn.prod, rxn.inact_reac,
+                             rxn.inact_prod):
+                if key not in self.substances:
+                    if throw:
+                        raise ValueError("Unknown key: %s" % key)
+                    else:
+                        return False
+        return True
+
     def check_balance(self, strict=False, throw=False):
-        """ Raies ValueError there are unbalanecd reactions in self.rxns """
+        """ Checks if all reactions are balanced.
+
+        Parameters
+        ----------
+        strict : bool
+            Puts a requirement on all substances to have their ``composition`` attribute set.
+        throw : bool
+            Raies ValueError if there are unbalanecd reactions in self.rxns
+
+        """
         for subst in self.substances.values():
             if subst.composition is None:
                 if strict:
@@ -1200,15 +1223,18 @@ class ReactionSystem(object):
                         return False
         return True
 
-    def check_substance_keys(self, throw=False):
+    def obeys_mass_balance(self):
+        """ Returns True if all reactions obeys mass balance, else False. """
         for rxn in self.rxns:
-            for key in chain(rxn.reac, rxn.prod, rxn.inact_reac,
-                             rxn.inact_prod):
-                if key not in self.substances:
-                    if throw:
-                        raise ValueError("Unknown key: %s" % key)
-                    else:
-                        return False
+            if rxn.mass_balance_violation(self.substances) != 0:
+                return False
+        return True
+
+    def obeys_charge_neutrality(self):
+        """ Returns False if any reaction violate charge neutrality. """
+        for rxn in self.rxns:
+            if rxn.charge_neutrality_violation(self.substances) != 0:
+                return False
         return True
 
     @classmethod
@@ -1442,24 +1468,63 @@ class ReactionSystem(object):
             eq.non_precipitate_stoich(self.substances)
         ) for idx, eq in enumerate(self.rxns)], dtype=object)
 
-    def obeys_mass_balance(self):
-        """ Returns True if all reactions obeys mass balance, else False. """
-        for rxn in self.rxns:
-            if rxn.mass_balance_violation(self.substances) != 0:
-                return False
-        return True
-
-    def obeys_charge_neutrality(self):
-        """ Returns False if any reaction violate charge neutrality. """
-        for rxn in self.rxns:
-            if rxn.charge_neutrality_violation(self.substances) != 0:
-                return False
-        return True
-
     def composition_balance_vectors(self):
         subs = self.substances.values()
         ck = Substance.composition_keys(subs)
         return [[s.composition.get(k, 0) for s in subs] for k in ck], ck
+
+    def upper_conc_bounds(self, init_concs, min_=min, dtype=None):
+        """ Calculates upper concentration bounds per substance based on substance composition.
+
+        Parameters
+        ----------
+        init_concs : dict or array_like
+            Per substance initial conidtions.
+
+        Returns
+        -------
+        numpy.ndarray :
+            Per substance upper limit (ordered as :attr:`substances`).
+
+        Notes
+        -----
+        The function does not take into account wheter there actually exists a
+        reaction path leading to a substance. Note also that the upper limit is
+        per substance, i.e. the sum of all upper bounds amount to more substance than
+        available in ``init_conc``.
+
+        Examples
+        --------
+        >>> rs = ReactionSystem.from_string('2 HNO2 -> H2O + NO + NO2 \\n 2 NO2 -> N2O4')
+        >>> from collections import defaultdict
+        >>> c0 = defaultdict(float, HNO2=20)
+        >>> ref = {'HNO2': 20, 'H2O': 10, 'NO': 20, 'NO2': 20, 'N2O4': 10}
+        >>> rs.as_per_substance_dict(rs.upper_conc_bounds(c0)) == ref
+        True
+
+        """
+        import numpy as np
+        # A, composition_keys = self.composition_balance_vectors()
+        # composition_amounts = np.dot(A, self.as_per_substance_array(init_conc))
+        # return np.min(composition_amounts.reshape((composition_amounts.size, 1))/A, axis=0)
+        if dtype is None:
+            dtype = np.float64
+        init_concs_arr = self.as_per_substance_array(init_concs, dtype=dtype)
+        composition_conc = defaultdict(float)
+        for conc, s_obj in zip(init_concs_arr, self.substances.values()):
+            for comp_nr, coeff in s_obj.composition.items():
+                if comp_nr == 0:  # charge may be created (if compensated)
+                    continue
+                composition_conc[comp_nr] += coeff*conc
+        bounds = []
+        for s_obj in self.substances.values():
+            choose_from = []
+            for comp_nr, coeff in s_obj.composition.items():
+                if comp_nr == 0:
+                    continue
+                choose_from.append(composition_conc[comp_nr]/coeff)
+            bounds.append(min_(choose_from))
+        return bounds
 
     def _html_table_cell_factory(self, title=True):
         if title:
