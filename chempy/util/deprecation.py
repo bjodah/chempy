@@ -20,8 +20,7 @@ class Deprecation(object):
         Function or class to use instead or descriptive string.
     issue : str, optional
     issues_url : callback, optional
-        Converts issue to url, e.g. ``lambda s: 'https://github.com/user/repo/\
-issues/%s/' % s.lstrip('gh-')``.
+        Converts issue to url, e.g. ``lambda s: 'https://github.com/user/repo/issues/%s/' % s.lstrip('gh-')``.
     warning: DeprecationWarning, optional
         Any subclass of DeprecationWarning, tip: you may invoke:
         ``warnings.simplefilter('once', MyWarning)`` at module init.
