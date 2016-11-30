@@ -230,32 +230,34 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         variables.update(_passive_subst)
         return rsys.rates(variables, backend=backend, ratexs=r_exprs)
 
-    if rsys.check_balance(strict=True):
-        # Composition available, we can provide callback for calculating
-        # maximum allowed Euler forward step at start of integration.
-        raise NotImplementedError(...)
-    else:
-        max_euler_step_cb = None
-
-
     names = [s.name for s in rsys.substances.values()]
     latex_names = [s.latex_name for s in rsys.substances.values()]
     odesys = SymbolicSys.from_callback(
         dydt, dep_by_name=True, par_by_name=True, names=names,
         latex_names=latex_names, param_names=param_names_for_odesys, **kwargs)
 
+    if rsys.check_balance(strict=True):
+        # Composition available, we can provide callback for calculating
+        # maximum allowed Euler forward step at start of integration.
+        def max_euler_step_cb(x, y, p=()):
+            _x, _y, _p = odesys.pre_process(x, y, p)
+            upper_bounds = rsys.upper_conc_bounds(_y)
+            fvec = odesys.f_cb(_x[0], _y, _p)
+            h = []
+            for idx, fcomp in enumerate(fvec):
+                if fcomp == 0:
+                    h.append(float('inf'))
+                elif fcomp > 0:
+                    h.append((upper_bounds[idx] - _y[idx])/fcomp)
+                else:  # fcomp < 0
+                    h.append(-_y[idx]/fcomp)
+            min_h = min(h)
+    else:
+        max_euler_step_cb = None
+
     return odesys, {
         'param_keys': all_pk,
-        'unique' : unique,
-        'p_units' : p_units,
+        'unique': unique,
+        'p_units': p_units,
         'max_euler_step_cb': max_euler_step_cb
     }
-
-
-def max_euler_step(odesys, rsys, init_concs):
-    upper_lim = rsys.upper_conc_bounds(init_concs)
-
-    f_vec = rsys.as_per_substance_array(rsys.rates(init_concs))
-    max_step = None
-    for f, c in zip(f_vec, rsys.as_per_substance_array(init_concs)):
-        if f > 0:

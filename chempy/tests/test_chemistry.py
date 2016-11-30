@@ -30,7 +30,7 @@ def test_Substance():
 
 def test_Substance__2():
     H2O = Substance(name='H2O',  charge=0, latex_name=r'$\mathrm{H_{2}O}$',
-                    other_properties={'pKa': 14})  # will_be_missing_in='0.5.0', use data=...
+                    data={'pKa': 14})  # will_be_missing_in='0.5.0', use data=...
     OH_m = Substance(name='OH-',  charge=-1, latex_name=r'$\mathrm{OH^{-}}$')
     assert sorted([OH_m, H2O], key=attrgetter('name')) == [H2O, OH_m]
 
@@ -148,6 +148,13 @@ def test_ReactionSystem():
     rs.rxns.append(Reaction({}, {}, 0, name='r2', checks=()))
     with pytest.raises(ValueError):
         rs['r2']
+
+def test_ReactionSystem__check_balance():
+    rs1 = ReactionSystem.from_string('\n'.join(['2 NH3 -> N2 + 3 H2', 'N2H4 -> N2 + 2 H2']))
+    assert rs1.check_balance(strict=True)
+    rs2 = ReactionSystem.from_string('\n'.join(['2 A -> B', 'B -> 2A']),
+                                     substance_factory=Substance)
+    assert not rs2.check_balance(strict=True)
 
 
 def test_ReactionSystem__rates():
@@ -328,6 +335,10 @@ def test_balance_stoichiometry():
     assert p3 == {'CO2': 4, 'H2O': 6}
     with pytest.raises(ValueError):
         reac, prod = balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'})
+
+    r4, p4 = balance_stoichiometry({'C7H5(NO2)3', 'NH4NO3'}, {'CO', 'H2O', 'N2'})
+    assert r4 == {'C7H5(NO2)3': 2, 'NH4NO3': 7}
+    assert p4 == {'CO': 14, 'H2O': 19, 'N2': 10}
 
 
 @requires(parsing_library)

@@ -7,7 +7,6 @@ from itertools import chain
 from operator import itemgetter, mul
 import math
 import sys
-import warnings
 
 from .util.arithmeticdict import ArithmeticDict
 from .util._expr import Expr
@@ -19,7 +18,7 @@ from .util.parsing import (
 
 from .units import to_unitless, default_units
 from ._util import intdiv
-from .util.pyutil import deprecated, ChemPyDeprecationWarning
+from .util.pyutil import deprecated
 
 
 class Substance(object):
@@ -29,28 +28,28 @@ class Substance(object):
     ----------
     name : str
     charge : int (optional, default: None)
-        will be stored in composition[0], prefer composition when possible
+        Will be stored in composition[0], prefer composition when possible.
     latex_name : str
     unicode_name : str
     html_name : str
     composition : dict or None (default)
-        dict (int -> number) e.g. {atomic number: count}, zero has special
-        meaning (net charge)
+        Dictionary (int -> number) e.g. {atomic number: count}, zero has special
+        meaning (net charge).
     data : dict
-        free form dictionary. Could be simple such as ``{'mp': 0, 'bp': 100}``
+        Free form dictionary. Could be simple such as ``{'mp': 0, 'bp': 100}``
         or considerably more involved, e.g.: ``{'diffusion_coefficient': {\
- 'water': lambda T: 2.1*m**2/s/K*(T - 273.15*K)}}``
+ 'water': lambda T: 2.1*m**2/s/K*(T - 273.15*K)}}``.
 
     Attributes
     ----------
     mass
-        maps to data['mass'], and when unavailable looks for formula.mass
+        Maps to data['mass'], and when unavailable looks for ``formula.mass``.
     attrs
-        a tuple of attribute names for serialization
+        A tuple of attribute names for serialization.
+    composition : dict or None
+        Dictionary mapping fragment key (str) to amount (int).
     data
-        free form dict
-    other_properties
-        deprecated alias to :attr:`data`
+        Free form dictionary.
 
     Examples
     --------
@@ -106,16 +105,6 @@ class Substance(object):
     def mass(self, value):
         self.data['mass'] = value
 
-    @property
-    @deprecated(will_be_missing_in='0.5.0')
-    def other_properties(self):
-        return self.data
-
-    @other_properties.setter
-    @deprecated(will_be_missing_in='0.5.0')
-    def other_properties(self, value):
-        self.data = value
-
     def molar_mass(self, units=None):
         """ Returns the molar mass (with units) of the substance
 
@@ -132,24 +121,18 @@ class Substance(object):
         return self.mass*units.g/units.mol
 
     def __init__(self, name=None, charge=None, latex_name=None, unicode_name=None,
-                 html_name=None, composition=None, data=None, other_properties=None):
-        if other_properties is not None:  # will_be_missing_in='0.5.0'
-            if data is not None:
-                raise ValueError("Cannot take both data and other_properties")
-            else:
-                data = other_properties
-                warnings.warn("use data kwarg instead of other_properties", ChemPyDeprecationWarning)
+                 html_name=None, composition=None, data=None):
         self.name = name
         self.latex_name = latex_name
         self.unicode_name = unicode_name
         self.html_name = html_name
-        self.composition = composition or {}
+        self.composition = composition
 
-        if 0 in self.composition:
+        if self.composition is not None and 0 in self.composition:
             if charge is not None:
                 raise KeyError("Cannot give both charge and composition[0]")
         else:
-            if charge is not None:
+            if charge is not None and composition is not None:
                 self.composition[0] = charge
         self.data = data or {}
 
@@ -312,7 +295,7 @@ class Species(Substance):
 
 
 @deprecated(last_supported_version='0.3.0',
-            will_be_missing_in='0.5.0', use_instead=Species)
+            will_be_missing_in='0.6.0', use_instead=Species)
 class Solute(Substance):
     """ [DEPRECATED] Use `.Species` instead
 
@@ -365,9 +348,9 @@ class Reaction(object):
     Parameters
     ----------
     reac : dict (str -> int)
-        if reac is a set multiplicities are assumed to be 1
+        If ``reac`` is a ``set``, then multiplicities are assumed to be 1.
     prod : dict (str -> int)
-        if reac is a set multiplicities are assumed to be 1
+        If ``prod`` is a ``set``, then multiplicities are assumed to be 1.
     param : float or callable
         Special case (side-effect): if param is a subclass of
         :class:`.kinetics.rates.RateExpr` and its :attr:`rxn`
@@ -377,11 +360,11 @@ class Reaction(object):
     name : str (optional)
     k : deprecated (alias for param)
     ref : object
-        reference
+        Reference (e.g. a string containing doi number).
     data : dict (optional)
     checks : iterable of str
-        raises value error if any method check_%s returns False
-        for all %s in checks.
+        Raises ``ValueError`` if any method ``check_%s`` returns False
+        for all ``%s`` in ``checks``.
 
     Attributes
     ----------
@@ -1049,7 +1032,7 @@ class Equilibrium(Reaction):
         return [rcd//v for v in viol]
 
     def cancel(self, rxn):
-        """ multiplier of how many times rxn can be added/subtracted
+        """ Multiplier of how many times rxn can be added/subtracted.
 
         Parameters
         ----------
@@ -1077,33 +1060,32 @@ class Equilibrium(Reaction):
 
 
 class ReactionSystem(object):
-    """
-    Collection of reactions forming a system (model).
+    """ Collection of reactions forming a system (model).
 
     Parameters
     ----------
     rxns : sequence
-         sequence of :py:class:`Reaction` instances
+         Sequence of :py:class:`Reaction` instances.
     substances : OrderedDict or string or None
-         mapping str -> Substance instances, None => deduced from reactions.
+         Mapping str -> Substance instances, None => deduced from reactions.
     name : string (optional)
-         Name of ReactionSystem (e.g. model name / citation key)
+         Name of ReactionSystem (e.g. model name / citation key).
     checks : iterable of str, optional
-        raises value error if any method check_%s returns False
-        for all %s in checks.
+        Raises ``ValueError`` if any method ``check_%s`` returns False
+        for all ``%s`` in ``checks``.
     substance_factory : callback
-        e.g. :meth:`Substance.from_formula`
+        Could also be e.g. :meth:`Substance.from_formula`.
 
     Attributes
     ----------
     rxns : list of objects
-        sequence of :class:`Reaction` instances
+        Sequence of :class:`Reaction` instances.
     substances : OrderedDict or string or iterable of strings/Substance
-        mapping substance name to substance index
+        Mapping substance name to substance index.
     ns : int
-        number of substances
+        Number of substances.
     nr : int
-        number of reactions
+        Number of reactions.
 
     Examples
     --------
@@ -1150,7 +1132,7 @@ class ReactionSystem(object):
         for check in checks:
             getattr(self, 'check_'+check)(throw=True)
 
-    def html(with_param=True):
+    def html(self, with_param=True):
         def _format(r):
             return r.html(self.substances, with_param=with_param)
         return '<br>'.join(map(_format, self.rxns))
@@ -1244,7 +1226,7 @@ class ReactionSystem(object):
         Parameters
         ----------
         s : str
-            multiline string
+            Multiline string.
 
         Examples
         --------
@@ -1474,7 +1456,7 @@ class ReactionSystem(object):
         return [[s.composition.get(k, 0) for s in subs] for k in ck], ck
 
     def upper_conc_bounds(self, init_concs, min_=min, dtype=None):
-        """ Calculates upper concentration bounds per substance based on substance composition.
+        r""" Calculates upper concentration bounds per substance based on substance composition.
 
         Parameters
         ----------
@@ -1495,7 +1477,7 @@ class ReactionSystem(object):
 
         Examples
         --------
-        >>> rs = ReactionSystem.from_string('2 HNO2 -> H2O + NO + NO2 \\n 2 NO2 -> N2O4')
+        >>> rs = ReactionSystem.from_string('2 HNO2 -> H2O + NO + NO2 \n 2 NO2 -> N2O4')
         >>> from collections import defaultdict
         >>> c0 = defaultdict(float, HNO2=20)
         >>> ref = {'HNO2': 20, 'H2O': 10, 'NO': 20, 'NO2': 20, 'N2O4': 10}
@@ -1616,7 +1598,7 @@ class ReactionSystem(object):
 
         Parameters
         ----------
-        title: bool
+        title : bool
 
         Returns
         -------
@@ -1639,11 +1621,11 @@ def balance_stoichiometry(reactants, products, substances=None,
 
     Parameters
     ----------
-    reactants: iterable of reactant keys
-    products: iterable of product keys
-    substances: OrderedDict or string or None
-        mapping reactant/product keys to instances of :class:`Substance`
-    substance_factory: callback
+    reactants : iterable of reactant keys
+    products : iterable of product keys
+    substances : OrderedDict or string or None
+        Mapping reactant/product keys to instances of :class:`Substance`.
+    substance_factory : callback
 
     Examples
     --------
@@ -1760,8 +1742,8 @@ def mass_fractions(stoichiometries, substances=None, substance_factory=Substance
 
     Parameters
     ----------
-    stoichiometries: dict or set
-        if a set: all entries are assumed to correspond to unit multiplicity
+    stoichiometries : dict or set
+        If a ``set``: all entries are assumed to correspond to unit multiplicity.
     substances: dict or None
 
     Examples

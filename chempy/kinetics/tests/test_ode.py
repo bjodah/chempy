@@ -158,7 +158,8 @@ def test_ode_with_global_parameters():
     ratex = MassAction(Arrhenius([1e10, 40e3/8.3145]))
     rxn = Reaction({'A': 1}, {'B': 1}, ratex)
     rsys = ReactionSystem([rxn], 'A B')
-    odesys, param_keys, unique_keys, p_units = get_odesys(rsys, include_params=False)
+    odesys, extra = get_odesys(rsys, include_params=False)
+    param_keys, unique_keys, p_units = map(extra.get, 'param_keys unique p_units'.split())
     conc = {'A': 3, 'B': 5}
     x, y, p = odesys.pre_process(-37, conc, {'temperature': 298.15})
     fout = odesys.f_cb(x, y, p)
@@ -313,7 +314,8 @@ def test_get_odesys__time_dep_temperature():
     rxn = Reaction({'A': 1}, {'B': 3}, rate)
     rsys = ReactionSystem([rxn], 'A B')
     rt = RampedTemp([T0, dTdt], ('init_temp', 'ramp_rate'))
-    odesys, all_pk, unique, p_units = get_odesys(rsys, False, substitutions={'temperature': rt})
+    odesys, extra = get_odesys(rsys, False, substitutions={'temperature': rt})
+    all_pk, unique, p_units = map(extra.get, 'param_keys unique p_units'.split())
     conc = {'A': A0, 'B': B0}
     tout = [2, 5, 10]
 
@@ -366,7 +368,8 @@ def test_get_odesys__late_binding():
 
     eq = Equilibrium({'Fe+3', 'SCN-'}, {'FeSCN+2'}, beta)
     rsys = ReactionSystem(eq.as_reactions(kf=bimol_barrier))
-    odesys, pk, unique, p_units = get_odesys(rsys, include_params=False)
+    odesys, extra = get_odesys(rsys, include_params=False)
+    pk, unique, p_units = map(extra.get, 'param_keys unique p_units'.split())
     assert sorted(unique) == sorted(uk_equil + uk_kinet)
     assert sorted(pk) == sorted(eyring_pk)
 

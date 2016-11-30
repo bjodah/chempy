@@ -102,19 +102,19 @@ Balancing stoichiometry of a chemical reaction
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. code:: python
 
-   >>> from chempy import balance_stoichiometry
-   >>> reac, prod = balance_stoichiometry({'C7H5(NO2)3', 'NH4NO3'}, {'CO', 'H2O', 'N2'})
+   >>> from chempy import balance_stoichiometry  # Main reaction in NASA's booster rockets:
+   >>> reac, prod = balance_stoichiometry({'NH4ClO4', 'Al'}, {'Al2O3', 'HCl', 'H2O', 'N2'})
    >>> from pprint import pprint
    >>> pprint(reac)
-   {'C7H5(NO2)3': 2, 'NH4NO3': 7}
+   {'Al': 10, 'NH4ClO4': 6}
    >>> pprint(prod)
-   {'CO': 14, 'H2O': 19, 'N2': 10}
+   {'Al2O3': 5, 'H2O': 9, 'HCl': 6, 'N2': 3}
    >>> from chempy import mass_fractions
    >>> for fractions in map(mass_fractions, [reac, prod]):
    ...     pprint({k: '{0:.3g} wt%'.format(v*100) for k, v in fractions.items()})
    ...
-   {'C7H5(NO2)3': '44.8 wt%', 'NH4NO3': '55.2 wt%'}
-   {'CO': '38.7 wt%', 'H2O': '33.7 wt%', 'N2': '27.6 wt%'}
+   {'Al': '27.7 wt%', 'NH4ClO4': '72.3 wt%'}
+   {'Al2O3': '52.3 wt%', 'H2O': '16.6 wt%', 'HCl': '22.4 wt%', 'N2': '8.62 wt%'}
 
 
 Balancing reactions
