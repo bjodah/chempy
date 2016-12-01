@@ -34,7 +34,7 @@ chemistry (mainly physical/inorganic/analytical chemistry). Currently it include
 - Solver for equilibria (including multiphase systems)
 - Numerical integration routines for chemical kinetics (ODE solver front-end)
 - Integrated rate expressions (and convenience fitting routines)
-- Relations in Physical chemistry
+- Relations in physical chemistry:
 
   - Debye-Hückel expressions
   - Arrhenius equation
