@@ -564,30 +564,32 @@ class Reaction(object):
                 return True
         return False
 
-    def _get_str_parts(self, name_attr, arrow_attr, substances, _str=str):
+    def _get_str_parts(self, name_attr, arrow_attr, substances, str_=str, str_num=None):
         def not_None(arg, default):
             if arg is None:
                 return default
             return arg
-        nullstr, space = _str(''), _str(' ')
+        if str_num is None:
+            str_num = str_
+        nullstr, space = str_(''), str_(' ')
         reac, prod, i_reac, i_prod = [[
-            ((_str(v)+space) if v > 1 else nullstr) + _str(not_None(getattr(substances[k], name_attr, k), k))
+            ((str_num(v)+space) if v > 1 else nullstr) + str_(not_None(getattr(substances[k], name_attr, k), k))
             for k, v in filter(itemgetter(1), d.items())
         ] for d in (self.reac, self.prod, self.inact_reac, self.inact_prod)]
-        r_str = _str(" + ").join(sorted(reac))
-        ir_str = (_str(' (+ ') + _str(" + ").join(sorted(i_reac)) + _str(')')
+        r_str = str_(" + ").join(sorted(reac))
+        ir_str = (str_(' (+ ') + str_(" + ").join(sorted(i_reac)) + str_(')')
                   if len(i_reac) > 0 else nullstr)
         arrow_str = getattr(self, arrow_attr)
-        p_str = _str(" + ").join(sorted(prod))
-        ip_str = (_str(' (+ ') + _str(" + ").join(sorted(i_prod)) + _str(')')
+        p_str = str_(" + ").join(sorted(prod))
+        ip_str = (str_(' (+ ') + str_(" + ").join(sorted(i_prod)) + str_(')')
                   if len(i_prod) > 0 else nullstr)
         return r_str, ir_str, arrow_str, p_str, ip_str
 
     def _get_str(self, *args, **kwargs):
-        _str = kwargs.get('_str', str)
-        return _str("{}{} {} {}{}").format(*self._get_str_parts(*args, **kwargs))
+        str_ = kwargs.get('str_', str)
+        return str_("{}{} {} {}{}").format(*self._get_str_parts(*args, **kwargs))
 
-    def _str_param(self, magnitude_fmt=lambda x: '%.3g' % x, unit_fmt=str, _str=str):
+    def _str_param(self, magnitude_fmt=lambda x: '%.3g' % x, unit_fmt=str, str_=str):
         try:
             magnitude_str = magnitude_fmt(self.param.magnitude)
             unit_str = unit_fmt(self.param.dimensionality)
@@ -597,9 +599,9 @@ class Reaction(object):
             except TypeError:
                 return str(self.param)
         else:
-            return magnitude_str + _str(' ') + unit_str
+            return magnitude_str + str_(' ') + unit_str
 
-    def string(self, substances=None, with_param=False, magnitude_fmt=lambda m: r'\num{%s}' % m):
+    def string(self, substances=None, with_param=False):
         """ Returns a string representation of the reaction
 
         Parameters
@@ -630,7 +632,7 @@ class Reaction(object):
     def __str__(self):
         return self.string(with_param=True)
 
-    def latex(self, substances, with_param=False, magnitude_fmt=lambda m: r'\num{%s}' % m):
+    def latex(self, substances, with_param=False, **kwargs):
         r""" Returns a LaTeX representation of the reaction
 
         Parameters
@@ -639,8 +641,6 @@ class Reaction(object):
             mapping substance keys to Substance instances
         with_param: bool
             whether to print the parameter (default: False)
-        magnitude_fmt: callback
-            how to format the number (default requires siunitx's num)
 
         Examples
         --------
@@ -655,13 +655,13 @@ class Reaction(object):
         True
 
         """
-        res = self._get_str('latex_name', 'latex_arrow', substances)
+        res = self._get_str('latex_name', 'latex_arrow', substances, **kwargs)
         if with_param and self.param is not None:
             from .printing import number_to_scientific_latex as _fmt
             res += '; %s' % self._str_param(magnitude_fmt=_fmt, unit_fmt=lambda dim: dim.latex)
         return res
 
-    def unicode(self, substances, with_param=False):
+    def unicode(self, substances, with_param=False, **kwargs):
         u""" Returns a unicode string representation of the reaction
 
         Examples
@@ -677,7 +677,7 @@ class Reaction(object):
 
         """
         res = self._get_str('unicode_name', 'unicode_arrow', substances,
-                            _str=str if sys.version_info[0] > 2 else unicode)
+                            str_=str if sys.version_info[0] > 2 else unicode, **kwargs)
         if with_param and self.param is not None:
             from .printing import number_to_scientific_unicode
             res += u'; ' + self._str_param(
@@ -688,7 +688,7 @@ class Reaction(object):
                 ), _str=str if sys.version_info[0] > 2 else unicode)
         return res
 
-    def html(self, substances, with_param=False):
+    def html(self, substances, with_param=False, **kwargs):
         """ Returns a HTML representation of the reaction
 
         Examples
@@ -703,7 +703,7 @@ class Reaction(object):
         'H<sub>2</sub>O &rarr; H<sup>+</sup> + OH<sup>-</sup>&#59; 10<sup>-8</sup> 1/(s*M)'
 
         """
-        res = self._get_str('html_name', 'html_arrow', substances)
+        res = self._get_str('html_name', 'html_arrow', substances, **kwargs)
         if with_param and self.param is not None:
             from .printing import number_to_scientific_html as _fmt
             res += '&#59; '

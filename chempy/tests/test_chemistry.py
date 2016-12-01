@@ -269,13 +269,21 @@ def test_ReactioN__latex():
 
 
 @requires(parsing_library)
-def test_ReactioN__unicode():
+def test_Reaction__unicode():
     keys = u'H2O H2 O2'.split()
     subst = {k: Substance.from_formula(k) for k in keys}
     r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
     assert r2.unicode(subst) == u'2 H₂O → 2 H₂ + O₂'
+
+def test_Reaction__html():
+    keys = 'H2O H2 O2'.split()
+    subst = {k: Substance.from_formula(k) for k in keys}
+    r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
     assert r2.html(subst) == \
-        u'2 H<sub>2</sub>O &rarr; 2 H<sub>2</sub> + O<sub>2</sub>'
+        '2 H<sub>2</sub>O &rarr; 2 H<sub>2</sub> + O<sub>2</sub>'
+    assert r2.html(subst, str_num=lambda s: '<b>{0}</b>'.format(s)) == \
+        '<b>2</b> H<sub>2</sub>O &rarr; <b>2</b> H<sub>2</sub> + O<sub>2</sub>'
+
 
 
 def test_Reaction__idempotency():
