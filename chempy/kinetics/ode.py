@@ -252,6 +252,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                 else:  # fcomp < 0
                     h.append(-_y[idx]/fcomp)
             min_h = min(h)
+            return min(min_h, 1)
     else:
         max_euler_step_cb = None
 

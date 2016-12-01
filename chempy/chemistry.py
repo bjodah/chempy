@@ -34,7 +34,10 @@ class Substance(object):
     html_name : str
     composition : dict or None (default)
         Dictionary (int -> number) e.g. {atomic number: count}, zero has special
-        meaning (net charge).
+        meaning (net charge). Avoid using the key 0 unless you specifically mean
+        net charge. The motivation behind this is that it is easier to track a
+        net-charge of e.g. 6 for U(VI) than it is to remember that uranium has 92
+        electrons and use 86 as the value).
     data : dict
         Free form dictionary. Could be simple such as ``{'mp': 0, 'bp': 100}``
         or considerably more involved, e.g.: ``{'diffusion_coefficient': {\
@@ -685,7 +688,7 @@ class Reaction(object):
                 unit_fmt=lambda dim: (
                     dim.unicode if sys.version_info[0] > 2
                     else dim.unicode.decode(encoding='utf-8')
-                ), _str=str if sys.version_info[0] > 2 else unicode)
+                ), str_=str if sys.version_info[0] > 2 else unicode)
         return res
 
     def html(self, substances, with_param=False, **kwargs):
@@ -1220,7 +1223,7 @@ class ReactionSystem(object):
         return True
 
     @classmethod
-    def from_string(cls, s, rxn_parse_kwargs=None, **kwargs):
+    def from_string(cls, s, substance_keys=None, rxn_parse_kwargs=None, **kwargs):
         """ Create a reaction system from a string
 
         Parameters
@@ -1236,10 +1239,10 @@ class ReactionSystem(object):
         True
 
         """
-        rxns = [cls._BaseReaction.from_string(r, **(rxn_parse_kwargs or {})) for r in s.split('\n') if r != '']
+        rxns = [cls._BaseReaction.from_string(r, substance_keys, **(rxn_parse_kwargs or {})) for r in s.split('\n') if r != '']
         if 'substance_factory' not in kwargs:
             kwargs['substance_factory'] = cls._BaseSubstance.from_formula
-        return cls(rxns, **kwargs)
+        return cls(rxns, substance_keys, **kwargs)
 
     def __getitem__(self, key):
         candidate = None
