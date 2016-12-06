@@ -567,16 +567,18 @@ class Reaction(object):
                 return True
         return False
 
-    def _get_str_parts(self, name_attr, arrow_attr, substances, str_=str, str_num=None):
+    def _get_str_parts(self, name_attr, arrow_attr, substances, str_=str, str_num=None, str_formula=None):
         def not_None(arg, default):
             if arg is None:
                 return default
             return arg
         if str_num is None:
             str_num = str_
+        if str_formula is None:
+            str_formula = str_
         nullstr, space = str_(''), str_(' ')
         reac, prod, i_reac, i_prod = [[
-            ((str_num(v)+space) if v > 1 else nullstr) + str_(not_None(getattr(substances[k], name_attr, k), k))
+            ((str_num(v)+space) if v > 1 else nullstr) + str_formula(not_None(getattr(substances[k], name_attr, k), k))
             for k, v in filter(itemgetter(1), d.items())
         ] for d in (self.reac, self.prod, self.inact_reac, self.inact_prod)]
         r_str = str_(" + ").join(sorted(reac))
