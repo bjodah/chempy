@@ -6,6 +6,7 @@ from collections import defaultdict
 import numpy as np
 
 from chempy import ReactionSystem
+from chempy.util.testing import requires
 from ..ode import get_odesys
 from .._native import get_native
 
@@ -32,7 +33,7 @@ def decay_get_Cref(k, y0, tout):
         decay_analytic[i](y0, coeffs, tout) for i in range(
             min(3, len(k)+1))])
 
-
+@requires('pycvodes')
 def test_get_native__first_step():
     integrator = 'cvode'
     forgive = 20
