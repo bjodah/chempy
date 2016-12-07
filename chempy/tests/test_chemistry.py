@@ -149,6 +149,7 @@ def test_ReactionSystem():
     with pytest.raises(ValueError):
         rs['r2']
 
+
 def test_ReactionSystem__check_balance():
     rs1 = ReactionSystem.from_string('\n'.join(['2 NH3 -> N2 + 3 H2', 'N2H4 -> N2 + 2 H2']))
     assert rs1.check_balance(strict=True)
@@ -275,6 +276,7 @@ def test_Reaction__unicode():
     r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
     assert r2.unicode(subst) == u'2 H₂O → 2 H₂ + O₂'
 
+
 def test_Reaction__html():
     keys = 'H2O H2 O2'.split()
     subst = {k: Substance.from_formula(k) for k in keys}
@@ -285,7 +287,6 @@ def test_Reaction__html():
         '<b>2</b> H<sub>2</sub>O &rarr; <b>2</b> H<sub>2</sub> + O<sub>2</sub>'
     assert r2.html(subst, str_formula=lambda s: '<b>{0}</b>'.format(s)) == \
         '2 <b>H<sub>2</sub>O</b> &rarr; 2 <b>H<sub>2</sub></b> + <b>O<sub>2</sub></b>'
-
 
 
 def test_Reaction__idempotency():

@@ -33,6 +33,7 @@ def decay_get_Cref(k, y0, tout):
         decay_analytic[i](y0, coeffs, tout) for i in range(
             min(3, len(k)+1))])
 
+
 @requires('pycvodes')
 def test_get_native__first_step():
     integrator = 'cvode'

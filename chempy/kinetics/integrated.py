@@ -6,8 +6,12 @@ from __future__ import (absolute_import, division, print_function)
 
 from .._util import get_backend
 
-# Add documentation
-# Rename esoteric parameter names
+# TODO
+# ----
+#
+# - Add documentation
+# - Rename esoteric parameter names
+# - Derive more general expressions (e.g. which allows finite initial dimer concentration)
 
 
 def dimerization_irrev(t, kf, initial_C, P0=1, t0=0):
@@ -35,15 +39,14 @@ def binary_irrev(t, kf, P0, t0, excess_C, limiting_C, eps_l, backend=None):
 binary_irrev.name = 'Second order irreversible'
 
 
-def binary_rev(t, kf, P0, t0, excess_C, limiting_C, eps_l, beta, backend=None):
+def binary_rev(t, kf, kb, excess_C, limiting_C, t0=0, scaling=1, backend=None):
     be = get_backend(backend)
-    one = backend.pi**0
-    kb = kf/beta
+    one = be.pi**0
     a = kf
     b = -excess_C*kf - limiting_C*kf - kb
     c = excess_C*limiting_C*kf
     P = (b**2 - 4*a*c)**(one/2)
     Q = P + b
     R = P - b
-    return P0*eps_l*Q*(1 - be.exp(P*(t-t0)))/(2*a*(Q/R + be.exp(P*(t-t0))))
+    return scaling*Q*(1 - be.exp(P*(t-t0)))/(2*a*(Q/R + be.exp(P*(t-t0))))
 binary_rev.name = 'Second order reversible'

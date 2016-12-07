@@ -10,6 +10,11 @@ from collections import OrderedDict
 from itertools import chain
 import math
 
+try:
+    from sym.util import linear_rref
+except ImportError:
+    linear_rref = None
+
 from ..units import to_unitless, get_derived_unit, default_unit_in_registry
 from ..util._expr import Expr
 from .rates import RateExpr, MassAction
@@ -253,12 +258,49 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                     h.append(-_y[idx]/fcomp)
             min_h = min(h)
             return min(min_h, 1)
+
+        def linear_dependencies(preferred=None):
+            if preferred is not None:
+                if len(preferred) == 0:
+                    raise ValueError("No preferred substance keys provided")
+                if len(preferred) >= len(rsys.substances):
+                    raise ValueError("Cannot remove all concentrations from linear dependencies")
+                for k in preferred:
+                    if k not in rsys.substances:
+                        raise ValueError("Unknown substance key: %s" % k)
+            vectors, compo_names = rsys.composition_balance_vectors()
+
+            def analytic_factory(x0, y0, p0, be):
+                A = be.Matrix(vectors)
+                b = A.dot([y0[k] for k in rsys.substances])
+                A2, b2, colidxs = linear_rref(A, b, be)
+                analytic_exprs = OrderedDict()
+                for ri, (prev, curr) in enumerate(zip(colidxs, colidxs[1:] + [odesys.ny])):
+                    for idx in range(prev, curr):
+                        key = odesys.names[idx]
+                        if preferred is None or key in preferred:
+                            terms = [A2[ri, di]*odesys.dep[di] for di in range(prev, odesys.ny) if di != idx]
+                            expr = (b2[ri] - sum(terms))/A2[ri, idx]
+                            analytic_exprs[odesys[key]] = expr
+                            if preferred is not None:
+                                preferred.remove(key)
+                            break
+                for k in reversed(list(analytic_exprs.keys())):
+                    analytic_exprs[k] = analytic_exprs[k].subs(analytic_exprs)
+                if preferred is not None and len(preferred) > 0:
+                    raise ValueError("Failed to obtain analytic expression for: %s" % ', '.join(preferred))
+                return analytic_exprs
+
+            return analytic_factory
+
     else:
         max_euler_step_cb = None
+        linear_dependencies = None
 
     return odesys, {
         'param_keys': all_pk,
         'unique': unique,
         'p_units': p_units,
-        'max_euler_step_cb': max_euler_step_cb
+        'max_euler_step_cb': max_euler_step_cb,
+        'linear_dependencies': linear_dependencies
     }

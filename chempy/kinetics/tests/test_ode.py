@@ -21,7 +21,7 @@ from ..arrhenius import ArrheniusParam
 from ..rates import Arrhenius, MassAction, Radiolytic, RampedTemp
 from .._rates import ShiftedTPoly
 from ..ode import get_odesys
-from ..integrated import dimerization_irrev
+from ..integrated import dimerization_irrev, binary_rev
 
 
 @requires('numpy', 'pyodesys')
@@ -393,4 +393,46 @@ def test_get_odesys__ScaledSys():
     yref = np.zeros((t.size, 2))
     yref[:, 0] = np.exp(-k*t)
     yref[:, 1] = 4 - np.exp(-k*t)
+    assert np.allclose(yout, yref)
+
+
+@requires('numpy', 'pyodesys', 'sympy')
+def test_get_odesys__max_euler_step_cb():
+    rsys = ReactionSystem.from_string('\n'.join(['H2O -> H+ + OH-; 1e-4', 'OH- + H+ -> H2O; 1e10']))
+    odesys, extra = get_odesys(rsys)
+    r1 = 1.01e-4
+    r2 = 6e-4
+    dH2Odt = r2 - r1
+    euler_ref = 2e-7/dH2Odt
+    assert abs(extra['max_euler_step_cb'](0, {'H2O': 1.01, 'H+': 2e-7, 'OH-': 3e-7}) - euler_ref)/euler_ref < 1e-8
+
+
+@requires('numpy', 'pyodesys', 'sympy')
+def test_get_odesys__linear_dependencies():
+    rsys = ReactionSystem.from_string('\n'.join(['H2O -> H+ + OH-; 1e-4', 'OH- + H+ -> H2O; 1e10']))
+    odesys, extra = get_odesys(rsys)
+
+    af_H2O_H = extra['linear_dependencies'](['H2O', 'H+'])
+    import sympy
+    y0 = {k: sympy.Symbol(k+'0') for k in rsys.substances}
+    exprs_H2O_H = af_H2O_H(None, y0, None, sympy)
+    ref_H2O_H = {
+        'H2O': y0['H2O'] + y0['OH-'] - odesys['OH-'],  # oxygen
+        'H+': 2*y0['H2O'] + y0['H+'] + y0['OH-'] - odesys['OH-'] - 2*(
+            y0['H2O'] + y0['OH-'] - odesys['OH-'])  # hydrogen
+    }
+    for k, v in ref_H2O_H.items():
+        assert (exprs_H2O_H[odesys[k]] - v) == 0
+
+
+@requires('numpy', 'pyodesys', 'sympy')
+def test_get_odesys__linear_dependencies__PartiallySolvedSystem():
+    from pyodesys.symbolic import PartiallySolvedSystem
+    rsys = ReactionSystem.from_string('\n'.join(['H2O -> H+ + OH-; 1e-4', 'OH- + H+ -> H2O; 1e10']))
+    odesys, extra = get_odesys(rsys)
+    c0 = {'H2O': 0, 'H+': 2e-7, 'OH-': 3e-7}
+    h0max = extra['max_euler_step_cb'](0, c0)
+    psys = PartiallySolvedSystem(odesys, extra['linear_dependencies']())
+    xout, yout, info = psys.integrate(1, c0, atol=1e-12, rtol=1e-10, first_step=h0max*1e-12, integrator='cvode')
+    yref = binary_rev(xout, 1e10, 1e-4, 3e-7, 2e-7)
     assert np.allclose(yout, yref)

@@ -40,7 +40,7 @@ _anon = """
       % endfor
       return bounds;
     }
-"""
+"""  # noqa
 
 
 _first_step = """
