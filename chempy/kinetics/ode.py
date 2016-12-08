@@ -11,9 +11,11 @@ from itertools import chain
 import math
 
 try:
-    from sym.util import linear_rref
+    import sym
 except ImportError:
     linear_rref = None
+else:
+    from sym.util import linear_rref
 
 from ..units import to_unitless, get_derived_unit, default_unit_in_registry
 from ..util._expr import Expr
