@@ -273,24 +273,28 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
             vectors, compo_names = rsys.composition_balance_vectors()
 
             def analytic_factory(x0, y0, p0, be):
+                if preferred is None:
+                    _preferred = None
+                else:
+                    _preferred = list(preferred)
                 A = be.Matrix(vectors)
-                b = A.dot([y0[k] for k in rsys.substances])
+                b = A.dot([y0[odesys[k]] for k in rsys.substances])
                 A2, b2, colidxs = linear_rref(A, b, be)
                 analytic_exprs = OrderedDict()
                 for ri, (prev, curr) in enumerate(zip(colidxs, colidxs[1:] + [odesys.ny])):
                     for idx in range(prev, curr):
                         key = odesys.names[idx]
-                        if preferred is None or key in preferred:
+                        if _preferred is None or key in _preferred:
                             terms = [A2[ri, di]*odesys.dep[di] for di in range(prev, odesys.ny) if di != idx]
                             expr = (b2[ri] - sum(terms))/A2[ri, idx]
                             analytic_exprs[odesys[key]] = expr
-                            if preferred is not None:
-                                preferred.remove(key)
+                            if _preferred is not None:
+                                _preferred.remove(key)
                             break
                 for k in reversed(list(analytic_exprs.keys())):
                     analytic_exprs[k] = analytic_exprs[k].subs(analytic_exprs)
-                if preferred is not None and len(preferred) > 0:
-                    raise ValueError("Failed to obtain analytic expression for: %s" % ', '.join(preferred))
+                if _preferred is not None and len(_preferred) > 0:
+                    raise ValueError("Failed to obtain analytic expression for: %s" % ', '.join(_preferred))
                 return analytic_exprs
 
             return analytic_factory

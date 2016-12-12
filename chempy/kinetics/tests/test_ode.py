@@ -3,10 +3,12 @@ from __future__ import (absolute_import, division, print_function)
 
 import math
 
+import pytest
 try:
     import numpy as np
 except ImportError:
     np = None
+
 
 from chempy.chemistry import Equilibrium, Reaction, ReactionSystem, Substance
 from chempy.thermodynamics.expressions import EqExpr
@@ -415,7 +417,8 @@ def test_get_odesys__linear_dependencies():
     af_H2O_H = extra['linear_dependencies'](['H2O', 'H+'])
     import sympy
     y0 = {k: sympy.Symbol(k+'0') for k in rsys.substances}
-    exprs_H2O_H = af_H2O_H(None, y0, None, sympy)
+    af_H2O_H(None, {odesys[k]: v for k, v in y0.items()}, None, sympy)  # ensure idempotent
+    exprs_H2O_H = af_H2O_H(None, {odesys[k]: v for k, v in y0.items()}, None, sympy)
     ref_H2O_H = {
         'H2O': y0['H2O'] + y0['OH-'] - odesys['OH-'],  # oxygen
         'H+': 2*y0['H2O'] + y0['H+'] + y0['OH-'] - odesys['OH-'] - 2*(
@@ -426,13 +429,21 @@ def test_get_odesys__linear_dependencies():
 
 
 @requires('numpy', 'pyodesys', 'sympy')
-def test_get_odesys__linear_dependencies__PartiallySolvedSystem():
+@pytest.mark.parametrize('preferred', [None, ['H+', 'OH-'], ['H2O', 'H+'], ['H2O', 'OH-']])
+def test_get_odesys__linear_dependencies__PartiallySolvedSystem(preferred):
+    import sympy
     from pyodesys.symbolic import PartiallySolvedSystem
     rsys = ReactionSystem.from_string('\n'.join(['H2O -> H+ + OH-; 1e-4', 'OH- + H+ -> H2O; 1e10']))
     odesys, extra = get_odesys(rsys)
     c0 = {'H2O': 0, 'H+': 2e-7, 'OH-': 3e-7}
     h0max = extra['max_euler_step_cb'](0, c0)
-    psys = PartiallySolvedSystem(odesys, extra['linear_dependencies']())
+    analytic_factory = extra['linear_dependencies']()
+    y0 = {k: sympy.Symbol(k+'0') for k in rsys.substances}
+    analytic_factory(None, {odesys[k]: v for k, v in y0.items()}, None, sympy)
+    psys = PartiallySolvedSystem(odesys, analytic_factory)
     xout, yout, info = psys.integrate(1, c0, atol=1e-12, rtol=1e-10, first_step=h0max*1e-12, integrator='cvode')
-    yref = binary_rev(xout, 1e10, 1e-4, 3e-7, 2e-7)
-    assert np.allclose(yout, yref)
+    c_reac = c0['H+'], c0['OH-']
+    H2O_ref = binary_rev(xout, 1e10, 1e-4, c0['H2O'], max(c_reac), min(c_reac))
+    assert np.allclose(yout[:, psys.names.index('H2O')], H2O_ref)
+    assert np.allclose(yout[:, psys.names.index('H+')], c0['H+'] + c0['H2O'] - H2O_ref)
+    assert np.allclose(yout[:, psys.names.index('OH-')], c0['OH-'] + c0['H2O'] - H2O_ref)

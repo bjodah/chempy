@@ -53,7 +53,7 @@ def test_binary_irrev():
 
 @requires('sympy')
 def test_binary_rev():
-    f = binary_rev(t, kf, kf/beta, excess_C, limiting_C, t0, P0*eps_l, backend=sympy).subs(excl_params)
+    f = P0*eps_l*binary_rev(t-t0, kf, kf/beta, 0, excess_C, limiting_C, backend=sympy).subs(excl_params)
     dfdt = f.diff(t)
     num_dfdt = dfdt.subs(subsd)
     ans = kf*(limiting_C - f)*(excess_C - f) - kf/beta*f

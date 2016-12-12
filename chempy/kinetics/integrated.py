@@ -67,12 +67,13 @@ def binary_rev(t, kf, kb, prod, major, minor, backend=None):
     X, Y, Z = prod, major, minor
     x0 = Y*kf
     x1 = Z*kf
-    x2 = kb + x0 + x1
-    x3 = 2*X*kf
-    x4 = -kb - x0 - x1
-    x5 = -x3 + x4
-    x6 = be.sqrt(-4*kf*(X**2*kf + X*x0 + X*x1 + Z*x0) + x5**2)
-    x7 = -x6
-    x8 = (x4 + x7)*be.exp(t*x6)
-    return (-x5*x8 - x6*x8 - (x4 + x6)*(x2 + x3 + x6))/(2*kf*(x2 + x7 + x8))
+    x2 = 2*X*kf
+    x3 = -kb - x0 - x1
+    x4 = -x2 + x3
+    x5 = be.sqrt(-4*kf*(X**2*kf + X*x0 + X*x1 + Z*x0) + x4**2)
+    x6 = kb + x0 + x1 + x5
+    x7 = (x3 + x5)*be.exp(-t*x5)
+    x8 = x3 - x5
+    return (x4*x8 + x5*x8 + x7*(x2 + x6))/(2*kf*(x6 + x7))
+
 binary_rev.name = 'Second order reversible'
