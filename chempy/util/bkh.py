@@ -14,7 +14,7 @@ from chempy.units import to_unitless, linspace, logspace_from_lin
 def integration_with_sliders(
         rsys, tend, c0, parameters, fig_kwargs=None, unit_registry=None, output_conc_unit=None,
         output_time_unit=None, slider_kwargs=None, x_axis_type="linear", y_axis_type="linear",
-        integrate_kwargs=None, substitutions=None):
+        integrate_kwargs=None, substitutions=None, get_odesys_kw=None):
 
     import numpy as np
     from bokeh.plotting import Figure
@@ -23,10 +23,11 @@ def integration_with_sliders(
 
     if slider_kwargs is None:
         slider_kwargs = {}
-    odesys, state_keys, rarg_keys, p_units = get_odesys(
+    odesys, extra = get_odesys(
         rsys, unit_registry=unit_registry, substitutions=substitutions,
         output_conc_unit=output_conc_unit,
-        output_time_unit=output_time_unit)[:4]
+        output_time_unit=output_time_unit, **(get_odesys_kw or {}))[:4]
+    state_keys, rarg_keys, p_units = [extra[k] for k in ('param_keys', 'unique', 'p_units')]
     if output_conc_unit is None:
         output_conc_unit = 1
     if output_time_unit is None:
@@ -63,6 +64,8 @@ def integration_with_sliders(
 
     def _C(k):
         return to_unitless(c0[k], output_conc_unit)
+    if p_units is None:
+        p_units = [None]*len(param_keys)
     p_ul = [to_unitless(parameters[k], _u) for k, _u in zip(param_keys, p_units)]
     c0_widgets = OrderedDict([
         (k, Slider(

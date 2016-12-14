@@ -22,7 +22,7 @@ if __name__.startswith('bk_'):
     from bokeh.io import curdoc
     curdoc().add_root(integration_with_sliders(
         get_rsys(), tend=3,
-        c0=defaultdict(float, {'Fe+3': 3e-3, 'SCN-': 1.5e-3}),
+        c0=defaultdict(float, {'Fe+3': 3e-3, 'SCN-': 1.5e-3, 'FeSCN+2': .1e-3}),
         parameters={'temperature': 298.15},
         slider_kwargs={'temperature': dict(start=273.15, end=313.15, step=.05)}
     ))
