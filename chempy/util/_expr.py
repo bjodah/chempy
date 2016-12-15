@@ -487,7 +487,7 @@ class Log10(UnaryFunction):
     _func_name = 'log10'
 
 
-def create_Piecewise(parameter_name):
+def create_Piecewise(parameter_name, nan_fallback=False):
     """
     Examples
     --------
@@ -522,7 +522,9 @@ def create_Piecewise(parameter_name):
             else:
                 raise ValueError("not within any bounds: %s" % x)
         else:
-            return pw(*[(ex, backend.And(lo <= x, x <= up)) for lo, up, ex in zip(lower, upper, exprs)])
+            _NAN = backend.Symbol('NAN')
+            return pw(*([(ex, backend.And(lo <= x, x <= up)) for lo, up, ex in zip(lower, upper, exprs)] +
+                        ([(_NAN, True)] if nan_fallback else [])))
 
     return Expr.from_callback(_pw, parameter_keys=(parameter_name,))
 

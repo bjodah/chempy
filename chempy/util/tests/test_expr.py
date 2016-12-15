@@ -273,6 +273,23 @@ def test_create_Piecewise_Poly__sympy():
     assert res.args[1][1] == sp.And(10 <= x, x <= 20)
 
 
+@requires('sympy')
+def test_create_Piecewise__nan_fallback__sympy():
+    import sympy as sp
+
+    TPw = create_Piecewise('Tmpr', nan_fallback=True)
+    pw = TPw([0, 42, 10, 43, 20])
+    x = sp.Symbol('x')
+    res = pw({'Tmpr': x}, backend=sp)
+    assert isinstance(res, sp.Piecewise)
+    assert res.args[0][0] == 42
+    assert res.args[0][1] == sp.And(0 <= x, x <= 10)
+    assert res.args[1][0] == 43
+    assert res.args[1][1] == sp.And(10 <= x, x <= 20)
+    assert res.args[2][0].name.lower() == 'nan'
+    assert res.args[2][1] == True
+
+
 def test_BinaryExpr():
     Poly = Expr.from_callback(_poly, parameter_keys=('x',), argument_names=('x0', Ellipsis))
     p1 = Poly([1, 2, 3])
