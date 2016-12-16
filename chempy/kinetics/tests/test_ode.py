@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function)
 
+from collections import defaultdict
 import math
 
 import pytest
@@ -441,9 +442,41 @@ def test_get_odesys__linear_dependencies__PartiallySolvedSystem(preferred):
     y0 = {k: sympy.Symbol(k+'0') for k in rsys.substances}
     analytic_factory(None, {odesys[k]: v for k, v in y0.items()}, None, sympy)
     psys = PartiallySolvedSystem(odesys, analytic_factory)
-    xout, yout, info = psys.integrate(1, c0, atol=1e-12, rtol=1e-10, first_step=h0max*1e-12, integrator='cvode')
+    xout, yout, info = psys.integrate(1, c0, atol=1e-12, rtol=1e-10, first_step=h0max*1e-12,
+                                      integrator='cvode')
     c_reac = c0['H+'], c0['OH-']
     H2O_ref = binary_rev(xout, 1e10, 1e-4, c0['H2O'], max(c_reac), min(c_reac))
     assert np.allclose(yout[:, psys.names.index('H2O')], H2O_ref)
     assert np.allclose(yout[:, psys.names.index('H+')], c0['H+'] + c0['H2O'] - H2O_ref)
     assert np.allclose(yout[:, psys.names.index('OH-')], c0['OH-'] + c0['H2O'] - H2O_ref)
+
+
+@requires('numpy', 'pyodesys', 'sympy', 'pycvodes')
+def test_get_odesys__Expr_as_param():
+    def _eyring_pe(args, T, backend=math, **kwargs):
+        freq, = args
+        return freq*T
+
+    EyringPreExp = Expr.from_callback(_eyring_pe, argument_names=('freq',),
+                                      parameter_keys=('temperature',))
+
+    def _k(args, T, backend=math, **kwargs):
+        A, H, S = args
+        return A*backend.exp(-(H - T*S)/(8.314511*T))
+
+    EyringMA = MassAction.from_callback(_k, parameter_keys=('temperature',),
+                                        argument_names=('Aa', 'Ha', 'Sa'))
+    kb_h = 2.08e10
+    k = EyringMA(unique_keys=('A_u', 'H_u', 'S_u'))
+    rxn = Reaction({'A'}, {'B'}, k)
+    rsys = ReactionSystem([rxn], ['A', 'B'])
+    odesys = get_odesys(rsys, include_params=False, substitutions={'A_u': EyringPreExp(kb_h)})
+    xend = 5
+    y0 = defaultdict(float, {'A': 7.0})
+    rt = 293.15
+    xout, yout, info = odesys.integrate(xend, y0, {'H_u': 40e3, 'S_u': 150, 'temperature': rt},
+                                        integrator='cvode')
+    kref = kb_h*rt*np.exp(-(40e3 - rt*150)/(8.314511*rt))
+    ref = y0['A']*np.exp(-kref*xout)
+    assert np.allclose(yout[:, 0], ref)
+    assert np.allclose(yout[:, 1], y0['A'] - ref)
