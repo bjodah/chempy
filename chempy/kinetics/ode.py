@@ -148,7 +148,8 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
 
     r_exprs = [rxn.rate_expr() for rxn in rsys.rxns]
 
-    _ori_pk = set.union(*(ratex.all_parameter_keys() for ratex in r_exprs))  # parameter_keys
+    _ori_pk = set.union(*(ratex.all_parameter_keys() for ratex in r_exprs))
+    _ori_uk = set.union(*(ratex.all_unique_keys() for ratex in r_exprs))
     _subst_pk = set()
     _active_subst = {}
     _passive_subst = {}
@@ -161,16 +162,19 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
             raise NotImplementedError("Currently only Expr sub classes are supported.")
         if expr.args is None:
             for k in expr.unique_keys:
-                unique[k] = None
+                if k not in substitutions:
+                    unique[k] = None
         else:
             for idx, arg in enumerate(expr.args):
                 if isinstance(arg, Expr):
                     _reg_unique(arg)
                 elif expr.unique_keys is not None and idx < len(expr.unique_keys):
-                    unique[expr.unique_keys[idx]] = arg
+                    uk = expr.unique_keys[idx]
+                    if uk not in substitutions:
+                        unique[uk] = arg
 
     for sk, sv in substitutions.items():
-        if sk not in _ori_pk:
+        if sk not in _ori_pk and sk not in _ori_uk:
             raise ValueError("Substitution: '%s' does not appear in any rate expressions." % sk)
         if isinstance(sv, Expr):
             _subst_pk.update(sv.parameter_keys)

@@ -175,13 +175,20 @@ class Expr(object):
     def __call__(self, variables, backend=math, **kwargs):
         raise NotImplementedError("Subclass and implement __call__")
 
-    def all_parameter_keys(self):
-        all_pk = set(self.parameter_keys)
+    def _all_keys(self, attr):
+        _keys = getattr(self, attr)
+        _all = set() if _keys is None else set(_keys)
         if self.args is not None:
             for arg in self.args:
                 if isinstance(arg, Expr):
-                    all_pk = all_pk.union(arg.all_parameter_keys())
-        return all_pk
+                    _all = _all.union(arg._all_keys(attr))
+        return _all
+
+    def all_parameter_keys(self):
+        return self._all_keys('parameter_keys')
+
+    def all_unique_keys(self):
+        return self._all_keys('unique_keys')
 
     def _str(self, arg_fmt, unique_keys_fmt=str):
         if self.args is None or len(self.args) == 0:

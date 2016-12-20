@@ -470,12 +470,12 @@ def test_get_odesys__Expr_as_param():
     k = EyringMA(unique_keys=('A_u', 'H_u', 'S_u'))
     rxn = Reaction({'A'}, {'B'}, k)
     rsys = ReactionSystem([rxn], ['A', 'B'])
-    odesys = get_odesys(rsys, include_params=False, substitutions={'A_u': EyringPreExp(kb_h)})
+    odesys, extra = get_odesys(rsys, include_params=False, substitutions={'A_u': EyringPreExp(kb_h)})
     xend = 5
     y0 = defaultdict(float, {'A': 7.0})
     rt = 293.15
     xout, yout, info = odesys.integrate(xend, y0, {'H_u': 40e3, 'S_u': 150, 'temperature': rt},
-                                        integrator='cvode')
+                                        integrator='cvode', atol=1e-12, rtol=1e-10, nsteps=1000)
     kref = kb_h*rt*np.exp(-(40e3 - rt*150)/(8.314511*rt))
     ref = y0['A']*np.exp(-kref*xout)
     assert np.allclose(yout[:, 0], ref)
