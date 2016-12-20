@@ -14,7 +14,15 @@ from chempy.units import to_unitless, linspace, logspace_from_lin
 def integration_with_sliders(
         rsys, tend, c0, parameters, fig_kwargs=None, unit_registry=None, output_conc_unit=None,
         output_time_unit=None, slider_kwargs=None, x_axis_type="linear", y_axis_type="linear",
-        integrate_kwargs=None, substitutions=None, get_odesys_kw=None):
+        integrate_kwargs=None, odesys_extra=None, get_odesys_kw=None):
+    """
+    Parameters
+    ----------
+    odesys_extra : tuple of :class:`pyodesys.ODESys` & dict
+        From :func:`chempy.kinetics.ode.get_odesys`.
+    get_odesys_kw : dict
+        If odesys_extra is ``None`` the user may pass this for :func:`chempy.kinetics.ode.get_odesys`.
+    """
 
     import numpy as np
     from bokeh.plotting import Figure
@@ -23,10 +31,13 @@ def integration_with_sliders(
 
     if slider_kwargs is None:
         slider_kwargs = {}
-    odesys, extra = get_odesys(
-        rsys, unit_registry=unit_registry, substitutions=substitutions,
-        output_conc_unit=output_conc_unit,
-        output_time_unit=output_time_unit, **(get_odesys_kw or {}))[:4]
+    if get_odesys_kw is None:
+        get_odesys_kw = {}
+    if odesys_extra is None:
+        odesys, extra = get_odesys(rsys, **get_odesys_kw)
+    else:
+        odesys, extra = odesys_extra
+
     state_keys, rarg_keys, p_units = [extra[k] for k in ('param_keys', 'unique', 'p_units')]
     if output_conc_unit is None:
         output_conc_unit = 1

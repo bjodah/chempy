@@ -429,7 +429,7 @@ def test_get_odesys__linear_dependencies():
         assert (exprs_H2O_H[odesys[k]] - v) == 0
 
 
-@requires('numpy', 'pyodesys', 'sympy')
+@requires('numpy', 'pyodesys', 'sympy', 'pycvodes')
 @pytest.mark.parametrize('preferred', [None, ['H+', 'OH-'], ['H2O', 'H+'], ['H2O', 'OH-']])
 def test_get_odesys__linear_dependencies__PartiallySolvedSystem(preferred):
     import sympy

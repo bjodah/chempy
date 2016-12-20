@@ -22,9 +22,11 @@ if __name__.startswith('bk_'):
         c0=defaultdict(lambda: 0*u.molar, {'Fe+3': 3e-3*u.molar, 'SCN-': 1.5e-3*u.molar}),
         parameters={'temperature': 298.15*u.K},
         slider_kwargs={'temperature': dict(start=273.15*u.K, end=313.15*u.K, step=.05*u.K)},
-        unit_registry=SI_base_registry,
-        output_conc_unit=u.molar,
-        output_time_unit=u.second
+        get_odesys_kw=dict(
+            unit_registry=SI_base_registry,
+            output_conc_unit=u.molar,
+            output_time_unit=u.second
+        )
     ))
 elif __name__ == '__main__':
     import warnings

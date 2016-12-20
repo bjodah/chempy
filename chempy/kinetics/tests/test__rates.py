@@ -172,7 +172,8 @@ def test_PiecewiseTPolyMassAction__sympy():
     res1 = pwp({'A': 11, 'B': 13, 'temperature': T}, backend=sp, reaction=r)
     ref1 = 11**2 * 13 * sp.Piecewise(
         (10+0.1*T, sp.And(0 <= T, T <= 273.15)),
-        (37.315 - 0.1*(T-273.15), sp.And(273.15 <= T, T <= 373.15))
+        (37.315 - 0.1*(T-273.15), sp.And(273.15 <= T, T <= 373.15)),
+        (sp.nan, True)
     )
     assert res1 == ref1
 

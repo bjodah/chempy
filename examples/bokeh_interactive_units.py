@@ -21,9 +21,11 @@ if __name__.startswith('bk_'):
         get_rsys(kf, kb), tend=3*u.s,
         c0=defaultdict(lambda: 0*u.molar, {'Fe+3': .9*u.molar, 'SCN-': .7*u.molar}),
         parameters={'kf': kf, 'kb': kb},
-        unit_registry=SI_base_registry,
-        output_conc_unit=u.molar,
-        output_time_unit=u.second
+        get_odesys_kw = dict(
+            unit_registry=SI_base_registry,
+            output_conc_unit=u.molar,
+            output_time_unit=u.second
+        )
     ))
 elif __name__ == '__main__':
     import warnings
