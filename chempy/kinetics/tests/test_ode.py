@@ -467,16 +467,43 @@ def test_get_odesys__Expr_as_param():
     EyringMA = MassAction.from_callback(_k, parameter_keys=('temperature',),
                                         argument_names=('Aa', 'Ha', 'Sa'))
     kb_h = 2.08e10
-    k = EyringMA(unique_keys=('A_u', 'H_u', 'S_u'))
-    rxn = Reaction({'A'}, {'B'}, k)
+    rxn = Reaction({'A'}, {'B'}, EyringMA(unique_keys=('A_u', 'H_u', 'S_u')))
     rsys = ReactionSystem([rxn], ['A', 'B'])
     odesys, extra = get_odesys(rsys, include_params=False, substitutions={'A_u': EyringPreExp(kb_h)})
-    xend = 5
     y0 = defaultdict(float, {'A': 7.0})
     rt = 293.15
-    xout, yout, info = odesys.integrate(xend, y0, {'H_u': 40e3, 'S_u': 150, 'temperature': rt},
+    xout, yout, info = odesys.integrate(5, y0, {'H_u': 117e3, 'S_u': 150, 'temperature': rt},
                                         integrator='cvode', atol=1e-12, rtol=1e-10, nsteps=1000)
-    kref = kb_h*rt*np.exp(-(40e3 - rt*150)/(8.314511*rt))
+    kref = kb_h*rt*np.exp(-(117e3 - rt*150)/(8.314511*rt))
     ref = y0['A']*np.exp(-kref*xout)
     assert np.allclose(yout[:, 0], ref)
     assert np.allclose(yout[:, 1], y0['A'] - ref)
+
+@requires('numpy', 'pyodesys', 'sympy', 'pycvodes')
+def test_get_odesys__Expr_as_param__unique_as_param():
+    def _eyring_pe_coupled(args, T, S, backend=math, **kwargs):
+        freq, = args
+        return freq*T/S
+
+    EyringPreExpCoupled = Expr.from_callback(_eyring_pe_coupled, argument_names=('freq',),
+                                             parameter_keys=('temperature', 'S_u'))
+
+    def _k(args, T, backend=math, **kwargs):
+        A, H, S = args
+        return A*backend.exp(-(H - T*S)/(8.314511*T))
+
+    EyringMA = MassAction.from_callback(_k, parameter_keys=('temperature',),
+                                        argument_names=('Aa', 'Ha', 'Sa'))
+    kb_h = 2.08e10
+    rxn = Reaction({'A'}, {'B'}, EyringMA(unique_keys=('A_u', 'H_u', 'S_u')))
+    rsys = ReactionSystem([rxn], ['A', 'B'])
+    odesys2, extra2 = get_odesys(rsys, include_params=False,
+                                 substitutions={'A_u': EyringPreExpCoupled(kb_h)})
+    y0 = defaultdict(float, {'A': 7.0})
+    rt = 293.15
+    xout2, yout2, info2 = odesys2.integrate(5, y0, {'H_u': 107e3, 'S_u': 150, 'temperature': rt},
+                                           integrator='cvode', atol=1e-12, rtol=1e-10, nsteps=1000)
+    kref2 = kb_h*rt*np.exp(-(107e3 - rt*150)/(8.314511*rt))/150
+    ref2 = y0['A']*np.exp(-kref2*xout2)
+    assert np.allclose(yout2[:, 0], ref2)
+    assert np.allclose(yout2[:, 1], y0['A'] - ref2)

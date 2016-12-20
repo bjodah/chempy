@@ -189,7 +189,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         for ratex in r_exprs:
             _reg_unique(ratex)
 
-    all_pk_with_unique = list(chain(all_pk, unique.keys()))
+    all_pk_with_unique = list(set(chain(all_pk, unique.keys())))
     if include_params:
         param_names_for_odesys = all_pk
     else:
@@ -233,6 +233,8 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
 
     def dydt(t, y, p, backend=math):
         variables = dict(chain(y.items(), p.items()))
+        if 'time' in variables:
+            raise ValueError("Key 'time' is reserved.")
         variables['time'] = t
         for k, act in _active_subst.items():
             if unit_registry is not None:

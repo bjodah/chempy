@@ -6,6 +6,7 @@ Add --show argument or navigate to:
     http://localhost:5006/interactive
 """
 from collections import defaultdict
+import sys
 
 from chempy.util.bkh import integration_with_sliders
 from chempy.units import SI_base_registry, default_units as u
@@ -24,6 +25,7 @@ if __name__.startswith('bk_'):
         output_conc_unit=u.molar,
         output_time_unit=u.second
     ))
-else:
+elif __name__ == '__main__':
     import warnings
     warnings.warn("Run using 'bokeh serve %s'" % __file__)
+    sys.exit(1)

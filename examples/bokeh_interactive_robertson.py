@@ -6,6 +6,7 @@ Add --show argument or navigate to:
     http://localhost:5006/interactive
 """
 from collections import defaultdict
+import sys
 
 from chempy import Reaction, ReactionSystem
 from chempy.kinetics.rates import MassAction
@@ -29,6 +30,7 @@ if __name__.startswith('bk_'):
         x_axis_type='log', y_axis_type='log',
         integrate_kwargs=dict(integrator='cvode')
     ))
-else:
+elif __name__ == '__main__':
     import warnings
     warnings.warn("Run using 'bokeh serve %s'" % __file__)
+    sys.exit(1)

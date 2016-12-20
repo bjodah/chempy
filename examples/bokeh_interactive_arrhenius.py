@@ -6,6 +6,7 @@ Add --show argument or navigate to:
     http://localhost:5006/interactive
 """
 from collections import defaultdict
+import sys
 
 from chempy import Reaction, ReactionSystem
 from chempy.arrhenius import ArrheniusParam
@@ -26,6 +27,7 @@ if __name__.startswith('bk_'):
         parameters={'temperature': 298.15},
         slider_kwargs={'temperature': dict(start=273.15, end=313.15, step=.05)}
     ))
-else:
+elif __name__ == '__main__':
     import warnings
     warnings.warn("Run using 'bokeh serve %s'" % __file__)
+    sys.exit(1)
