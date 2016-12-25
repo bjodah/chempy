@@ -11,7 +11,7 @@ from itertools import chain
 import math
 
 try:
-    import sym
+    import sym  # noqa
 except ImportError:
     linear_rref = None
 else:

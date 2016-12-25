@@ -47,17 +47,17 @@ def binary_rev(t, kf, kb, prod, major, minor, backend=None):
     Parameters
     ----------
     t : float, Symbol or array_like
-        time
+        Time.
     kf : number or Symbol
         Forward rate constant.
     kb : number or Symbol
         Backward rate constant.
     prod : number or Symbol
-        Initial concentration of the complex
+        Initial concentration of the complex.
     major : number or Symbol
-        Initial concentration of the more abundant reactant
+        Initial concentration of the more abundant reactant.
     minor : number or Symbol
-        Initial concentration of the less abundant reactant
+        Initial concentration of the less abundant reactant.
     backend : module or str
         Default is 'numpy', can also be e.g. ``sympy``.
 

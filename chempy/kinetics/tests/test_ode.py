@@ -479,6 +479,7 @@ def test_get_odesys__Expr_as_param():
     assert np.allclose(yout[:, 0], ref)
     assert np.allclose(yout[:, 1], y0['A'] - ref)
 
+
 @requires('numpy', 'pyodesys', 'sympy', 'pycvodes')
 def test_get_odesys__Expr_as_param__unique_as_param():
     def _eyring_pe_coupled(args, T, S, backend=math, **kwargs):
@@ -502,7 +503,7 @@ def test_get_odesys__Expr_as_param__unique_as_param():
     y0 = defaultdict(float, {'A': 7.0})
     rt = 293.15
     xout2, yout2, info2 = odesys2.integrate(5, y0, {'H_u': 107e3, 'S_u': 150, 'temperature': rt},
-                                           integrator='cvode', atol=1e-12, rtol=1e-10, nsteps=1000)
+                                            integrator='cvode', atol=1e-12, rtol=1e-10, nsteps=1000)
     kref2 = kb_h*rt*np.exp(-(107e3 - rt*150)/(8.314511*rt))/150
     ref2 = y0['A']*np.exp(-kref2*xout2)
     assert np.allclose(yout2[:, 0], ref2)
