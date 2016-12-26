@@ -4,6 +4,7 @@ from __future__ import (absolute_import, division, print_function)
 from collections import defaultdict
 
 import numpy as np
+import pytest
 
 from chempy import ReactionSystem
 from chempy.util.testing import requires
@@ -34,8 +35,9 @@ def decay_get_Cref(k, y0, tout):
             min(3, len(k)+1))])
 
 
-@requires('pycvodes')
-def test_get_native__first_step():
+@requires('pycvodes', 'pyodesys')
+@pytest.mark.parametrize('solve', [(), ('CNO',)])
+def test_get_native__first_step(solve):
     integrator = 'cvode'
     forgive = 20
 
@@ -49,6 +51,9 @@ def test_get_native__first_step():
     ]
     rsys = ReactionSystem.from_string('\n'.join(lines), 'CNO ONC NCO CON')
     odesys, extra = get_odesys(rsys, include_params=False)
+    if len(solve) > 0:
+        from pyodesys.symbolic import PartiallySolvedSystem
+        odesys = PartiallySolvedSystem(odesys, extra['linear_dependencies'](solve))
     c0 = defaultdict(float, {'CNO': .7})
     rate_coeffs = (1e78, 2, 3.)
     args = (5, c0, dict(zip('k1 k2 k3'.split(), rate_coeffs)))

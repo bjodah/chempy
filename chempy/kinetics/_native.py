@@ -38,7 +38,7 @@ _anon = """
       % for si, subst_key in enumerate(odesys.names):
         bounds[${si}] = vecmin(${', '.join([('cc[%d]/%d' % (ci, n)) if n != 1 else 'cc[%d]' % ci for ci, n in subst_comp[si].items()])});
       % endfor
-      return bounds;
+        return bounds;
     }
 """  # noqa
 
