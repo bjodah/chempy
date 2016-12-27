@@ -11,10 +11,12 @@ import sys
 
 try:
     from pyodesys.native import native_sys
-    from pyodesys.symboli import PartiallySolvedSystem
 except ImportError:
     native_sys = None
     PartiallySolvedSystem = None
+else:
+    from pyodesys.symbolic import PartiallySolvedSystem
+
 
 from .. import Substance
 
@@ -42,29 +44,12 @@ _anon = """
       % endfor
         return bounds;
     }
-  %if hasattr(odesys, 'anayltic_exprs'):
-    std::vector<double> solved_conc(double t, const double * const y){
-        std::vector result(${len(odesys.analytic_exprs)});
-     <%
-      subsd = {odesys.init_indep: odesys.be.Symbol('t')}
-      subsd.update({y: odesys.be.Symbol('y[%d]' % idx) for idx, y in enumerate(odesys.init_dep)})
-      subsd.update({p: odesys.be.Symbol('m_p[%d]' % idx) for idx, p in enumerate(odesys.params[:-(1+len(self.original_dep))])})
-     %>
-      % for idx, expr in enumerate(odesys.analytic_exprs):
-        result[idx] = ${expr.subs(subsd)};
-      % endfor
-    }
-    std::vector<double> all_init_conc(double t, const double * const y){
-      % for ...
-      % endfor
-    }
-  %endif
 """  # noqa
 
 
 _first_step = """
     double max_euler_step;
-    auto init_conc = ${init_conc}
+    auto init_conc = ${init_conc};
     auto bounds = upper_conc_bounds(&init_conc[0]);
     auto fvec = std::vector<double>(${odesys.ny});
     auto hvec = std::vector<double>(${odesys.ny});
@@ -107,19 +92,19 @@ def _get_subst_comp(rsys, odesys, comp_keys):
     return subst_comp
 
 def _render(tmpl, **kwargs):
+    from mako.template import Template
+    from mako.exceptions import text_error_template
     try:
-        return Template(tmpl).render(**kwargs)
+        return str(Template(tmpl).render(**kwargs))
     except:
         sys.stderr.write(text_error_template().render())
         raise
 
 
 def get_native(rsys, odesys, integrator):
-    from mako.template import Template
-    from mako.exceptions import text_error_template
     comp_keys = Substance.composition_keys(rsys.substances.values())
     if isinstance(odesys, PartiallySolvedSystem):
-        init_conc = 'all_init_conc(t, y)'
+        init_conc = '&m_p[%d]' % (len(odesys.params) - len(odesys.original_dep))
     else:
         init_conc = 'y'
 
