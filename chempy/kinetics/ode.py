@@ -17,6 +17,11 @@ except ImportError:
 else:
     from sym.util import linear_rref
 
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
 from ..units import to_unitless, get_derived_unit, default_unit_in_registry
 from ..util._expr import Expr
 from .rates import RateExpr, MassAction
@@ -136,7 +141,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     >>> eq = Equilibrium({'Fe+3', 'SCN-'}, {'FeSCN+2'}, 10**2)
     >>> substances = 'Fe+3 SCN- FeSCN+2'.split()
     >>> rsys = ReactionSystem(eq.as_reactions(kf=3.0), substances)
-    >>> odesys = get_odesys(rsys)[0]
+    >>> odesys, extra = get_odesys(rsys)
     >>> init_conc = {'Fe+3': 1.0, 'SCN-': .3, 'FeSCN+2': 0}
     >>> tout, Cout, info = odesys.integrate(5, init_conc)
     >>> Cout[-1, :].round(4)
@@ -316,3 +321,45 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         'max_euler_step_cb': max_euler_step_cb,
         'linear_dependencies': linear_dependencies
     }
+
+def chained_parameter_variation(odesys, durations, init_conc, varied_params, default_params, integrate_kwargs=None):
+    """ Integrate an ODE-system for a serie of durations with some parameters changed in-between
+
+    Parameters
+    ----------
+    odesys : :class:`pyodesys.ODESys` instance
+    durations : iterable of floats
+    init_conc : dict or array_like
+    varied_params : dict mapping parameter name to array_like
+        Each array_like need to be of same length as durations.
+    default_params : dict or array_like
+        Default values for the parameters of the ODE system.
+    integrate_kwargs : dict
+        Keyword arguments passed on to :meth:`pyodesys.ODESys.integrate`.
+
+    """
+    for k, v in varied_params.items():
+        if len(v) != len(durations):
+            raise ValueError("Mismathced lengths of durations and varied_params")
+    integrate_kwargs = integrate_kwargs or {}
+    touts = []
+    couts = []
+    infos = {}
+    c0 = init_conc.copy()
+    for idx, duration in enumerate(durations):
+        params = default_params.copy()
+        for k, v in varied_params.items():
+            params[k] = v[idx]
+        tout, cout, info = odesys.integrate(duration, c0, params, **integrate_kwargs)
+        c0 = cout[-1, :]
+        idx0 = 0 if idx == 0 else 1
+        touts.append(tout[idx0:] + sum(_[-1] for _ in touts))
+        couts.append(cout[idx0:, ...])
+        for k, v in info.items():
+            if k.startswith('internal'):
+                continue
+            if k in infos:
+                infos[k] += v
+            else:
+                infos[k] = v
+    return np.concatenate(touts), np.concatenate(couts), infos

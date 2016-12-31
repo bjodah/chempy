@@ -23,7 +23,7 @@ from .test_rates import _get_SpecialFraction_rsys
 from ..arrhenius import ArrheniusParam
 from ..rates import Arrhenius, MassAction, Radiolytic, RampedTemp
 from .._rates import ShiftedTPoly
-from ..ode import get_odesys
+from ..ode import get_odesys, chained_parameter_variation
 from ..integrated import dimerization_irrev, binary_rev
 
 
@@ -508,3 +508,39 @@ def test_get_odesys__Expr_as_param__unique_as_param():
     ref2 = y0['A']*np.exp(-kref2*xout2)
     assert np.allclose(yout2[:, 0], ref2)
     assert np.allclose(yout2[:, 1], y0['A'] - ref2)
+
+
+@requires('pyodesys', 'pycvodes')
+def test_chained_parameter_variation():
+    ratex = MassAction(Arrhenius([1e10, 63e3/8.3145]))
+    rxn = Reaction({'A': 1}, {'B': 1}, ratex)
+    rsys = ReactionSystem([rxn], 'A B')
+    odesys, extra = get_odesys(rsys, include_params=False)
+    param_keys, unique_keys, p_units = map(extra.get, 'param_keys unique p_units'.split())
+    conc = {'A': 3, 'B': 5}
+    Ts = (294, 297, 304)
+    tout, cout, info = chained_parameter_variation(
+        odesys, [3, 4, 5], conc, {'temperature': Ts},
+        {}, integrate_kwargs={'integrator': 'cvode'})
+    assert info['nfev'] > 3
+    assert np.all(np.diff(tout) > 0)
+    tout1 = tout[tout <= 3]
+    tout23 = tout[tout > 3]
+    tout2 = tout23[tout23 <= 3+4]
+    tout3 = tout23[tout23 > 3+4]
+
+    def _ref(y0, x, T):
+        k = 1e10*np.exp(-63e3/8.3145/T)
+        return y0*np.exp(-k*(x-x[0]))
+
+    Aref1 = _ref(3, tout1, Ts[0])
+    Bref1 = 5 + 3 - Aref1
+
+    Aref2 = _ref(Aref1[-1], tout2, Ts[1])
+    Bref2 = Bref1[-1] + Aref1[-1] - Aref2
+
+    Aref3 = _ref(Aref2[-1], tout3, Ts[2])
+    Bref3 = Bref2[-1] + Aref2[-1] - Aref3
+
+    cref = np.concatenate([np.vstack((a, b)).T for a, b in [(Aref1, Bref1), (Aref2, Bref2), (Aref3, Bref3)]])
+    assert np.allclose(cref, cout)
