@@ -322,6 +322,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         'linear_dependencies': linear_dependencies
     }
 
+
 def chained_parameter_variation(odesys, durations, init_conc, varied_params, default_params, integrate_kwargs=None):
     """ Integrate an ODE-system for a serie of durations with some parameters changed in-between
 
@@ -353,7 +354,8 @@ def chained_parameter_variation(odesys, durations, init_conc, varied_params, def
         tout, cout, info = odesys.integrate(duration, c0, params, **integrate_kwargs)
         c0 = cout[-1, :]
         idx0 = 0 if idx == 0 else 1
-        touts.append(tout[idx0:] + sum(_[-1] for _ in touts))
+        t_global = 0 if idx == 0 else touts[-1][-1]
+        touts.append(tout[idx0:] + t_global)
         couts.append(cout[idx0:, ...])
         for k, v in info.items():
             if k.startswith('internal'):

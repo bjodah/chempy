@@ -49,9 +49,9 @@ def binary_rev(t, kf, kb, prod, major, minor, backend=None):
     t : float, Symbol or array_like
         Time.
     kf : number or Symbol
-        Forward rate constant.
+        Forward (bimolecular) rate constant.
     kb : number or Symbol
-        Backward rate constant.
+        Backward (unimolecular) rate constant.
     prod : number or Symbol
         Initial concentration of the complex.
     major : number or Symbol

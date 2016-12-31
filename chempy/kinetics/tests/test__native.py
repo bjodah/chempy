@@ -3,7 +3,11 @@ from __future__ import (absolute_import, division, print_function)
 
 from collections import defaultdict
 
-import numpy as np
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
 import pytest
 
 from chempy import ReactionSystem

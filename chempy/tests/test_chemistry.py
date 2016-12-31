@@ -150,6 +150,7 @@ def test_ReactionSystem():
         rs['r2']
 
 
+@requires(parsing_library)
 def test_ReactionSystem__check_balance():
     rs1 = ReactionSystem.from_string('\n'.join(['2 NH3 -> N2 + 3 H2', 'N2H4 -> N2 + 2 H2']))
     assert rs1.check_balance(strict=True)

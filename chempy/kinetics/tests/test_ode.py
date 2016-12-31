@@ -517,24 +517,25 @@ def test_chained_parameter_variation():
     rsys = ReactionSystem([rxn], 'A B')
     odesys, extra = get_odesys(rsys, include_params=False)
     param_keys, unique_keys, p_units = map(extra.get, 'param_keys unique p_units'.split())
-    conc = {'A': 3, 'B': 5}
-    Ts = (294, 297, 304)
+    conc = {'A': 3.17, 'B': 5.03}
+    Ts = (294, 304, 317)
+    times = [3.1, 2.1, 5.3]
+    kw = dict(integrator='cvode', atol=1e-12, rtol=1e-13, first_step=1e-14)
     tout, cout, info = chained_parameter_variation(
-        odesys, [3, 4, 5], conc, {'temperature': Ts},
-        {}, integrate_kwargs={'integrator': 'cvode'})
+        odesys, times, conc, {'temperature': Ts}, {}, integrate_kwargs=kw)
     assert info['nfev'] > 3
     assert np.all(np.diff(tout) > 0)
-    tout1 = tout[tout <= 3]
-    tout23 = tout[tout > 3]
-    tout2 = tout23[tout23 <= 3+4]
-    tout3 = tout23[tout23 > 3+4]
+    tout1 = tout[tout <= times[0]]
+    tout23 = tout[tout > times[0]]
+    tout2 = tout23[tout23 <= times[0] + times[1]]
+    tout3 = tout23[tout23 > times[0] + times[1]]
 
     def _ref(y0, x, T):
         k = 1e10*np.exp(-63e3/8.3145/T)
         return y0*np.exp(-k*(x-x[0]))
 
-    Aref1 = _ref(3, tout1, Ts[0])
-    Bref1 = 5 + 3 - Aref1
+    Aref1 = _ref(conc['A'], tout1, Ts[0])
+    Bref1 = conc['B'] + conc['A'] - Aref1
 
     Aref2 = _ref(Aref1[-1], tout2, Ts[1])
     Bref2 = Bref1[-1] + Aref1[-1] - Aref2
@@ -543,4 +544,5 @@ def test_chained_parameter_variation():
     Bref3 = Bref2[-1] + Aref2[-1] - Aref3
 
     cref = np.concatenate([np.vstack((a, b)).T for a, b in [(Aref1, Bref1), (Aref2, Bref2), (Aref3, Bref3)]])
-    assert np.allclose(cref, cout)
+    forgive = 27*1.1
+    assert np.allclose(cref, cout, atol=kw['atol']*forgive, rtol=kw['rtol']*forgive)
