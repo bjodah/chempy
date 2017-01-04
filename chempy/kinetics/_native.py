@@ -48,25 +48,10 @@ _anon = """
 
 
 _first_step = """
-    double max_euler_step;
-    auto init_conc = ${init_conc};
-    auto bounds = upper_conc_bounds(&init_conc[0]);
-    auto fvec = std::vector<double>(${odesys.ny});
-    auto hvec = std::vector<double>(${odesys.ny});
-    rhs(t, y, &fvec[0]);
-    for (int idx=0; idx<${odesys.ny}; ++idx){
-        if (fvec[idx] == 0) {
-            hvec[idx] = std::numeric_limits<double>::infinity();
-        } else if (fvec[idx] > 0) {
-            hvec[idx] = (bounds[idx] - y[idx])/fvec[idx];
-        } else { // fvec[idx] < 0
-            hvec[idx] = -y[idx]/fvec[idx];
-        }
-    }
-    max_euler_step = *std::min_element(std::begin(hvec), std::end(hvec));
-    return m_rtol*std::min(max_euler_step, 1.0);
-"""
-
+    m_upper_bounds = upper_conc_bounds(${init_conc});
+    m_lower_bounds.resize(${odesys.ny});
+    return m_rtol*std::min(max_euler_step(t, y), 1.0);
+"""  #  if (m_upper_bounds.size() == 0)
 
 def _get_comp_conc(rsys, odesys, comp_keys):
     comp_conc = []
@@ -113,7 +98,8 @@ def get_native(rsys, odesys, integrator):
         'p_anon': _render(_anon, odesys=odesys, ncomp=len(comp_keys),
                           comp_conc=_get_comp_conc(rsys, odesys, comp_keys),
                           subst_comp=_get_subst_comp(rsys, odesys, comp_keys)),
-        'p_first_step': _render(_first_step, odesys=odesys, init_conc=init_conc)
+        'p_first_step': _render(_first_step, init_conc=init_conc, odesys=odesys),
+        'p_max_euler_step': True
     }, namespace_extend={
-        'p_includes': ["<algorithm>", "<limits>", "<type_traits>",  "<vector>"]
+        'p_includes': ["<type_traits>",  "<vector>"]
     })
