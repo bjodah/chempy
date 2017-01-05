@@ -50,8 +50,9 @@ _anon = """
 _first_step = """
     m_upper_bounds = upper_conc_bounds(${init_conc});
     m_lower_bounds.resize(${odesys.ny});
-    return m_rtol*std::min(max_euler_step(t, y), 1.0);
-"""  #  if (m_upper_bounds.size() == 0)
+    return m_rtol*std::min(get_dx_max(x, y), 1.0);
+"""  # if (m_upper_bounds.size() == 0)
+
 
 def _get_comp_conc(rsys, odesys, comp_keys):
     comp_conc = []
@@ -99,7 +100,7 @@ def get_native(rsys, odesys, integrator):
                           comp_conc=_get_comp_conc(rsys, odesys, comp_keys),
                           subst_comp=_get_subst_comp(rsys, odesys, comp_keys)),
         'p_first_step': _render(_first_step, init_conc=init_conc, odesys=odesys),
-        'p_max_euler_step': True
+        'p_get_dx_max': True
     }, namespace_extend={
         'p_includes': ["<type_traits>",  "<vector>"]
     })
