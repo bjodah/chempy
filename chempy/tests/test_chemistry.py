@@ -278,6 +278,7 @@ def test_Reaction__unicode():
     assert r2.unicode(subst) == u'2 H₂O → 2 H₂ + O₂'
 
 
+@requires(parsing_library)
 def test_Reaction__html():
     keys = 'H2O H2 O2'.split()
     subst = {k: Substance.from_formula(k) for k in keys}
