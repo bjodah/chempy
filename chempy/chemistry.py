@@ -181,11 +181,13 @@ class Substance(object):
         return self.html_name
 
     @staticmethod
-    def composition_keys(substance_iter):
+    def composition_keys(substance_iter, skip_keys=()):
         """ Occuring :attr:`composition` keys among a series of substances """
         keys = set()
         for s in substance_iter:
             for k in s.composition.keys():
+                if k in skip_keys:
+                    continue
                 keys.add(k)
         return sorted(keys)
 
@@ -1461,13 +1463,17 @@ class ReactionSystem(object):
         ck = Substance.composition_keys(subs)
         return [[s.composition.get(k, 0) for s in subs] for k in ck], ck
 
-    def upper_conc_bounds(self, init_concs, min_=min, dtype=None):
+    def upper_conc_bounds(self, init_concs, min_=min, dtype=None, skip_keys=(0,)):
         r""" Calculates upper concentration bounds per substance based on substance composition.
 
         Parameters
         ----------
         init_concs : dict or array_like
             Per substance initial conidtions.
+        min_ : callbable
+        dtype : dtype or None
+        skip_keys : tuple
+            What composition keys to skip.
 
         Returns
         -------
@@ -1501,7 +1507,7 @@ class ReactionSystem(object):
         composition_conc = defaultdict(float)
         for conc, s_obj in zip(init_concs_arr, self.substances.values()):
             for comp_nr, coeff in s_obj.composition.items():
-                if comp_nr == 0:  # charge may be created (if compensated)
+                if comp_nr in skip_keys:  # charge may be created (if compensated)
                     continue
                 composition_conc[comp_nr] += coeff*conc
         bounds = []

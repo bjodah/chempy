@@ -40,7 +40,11 @@ _anon = """
         cc[${ci}] = ${' + '.join([('%d*y[%d]' % (v, k)) if v != 1 else 'y[%d]' % k for k, v in comp_conc[ci].items()])};
       % endfor
       % for si, subst_key in enumerate(getattr(odesys, 'free_names', odesys.names)):
+       % if len(subst_comp[si]) > 0:
         bounds[${si}] = vecmin(${', '.join([('cc[%d]/%d' % (ci, n)) if n != 1 else 'cc[%d]' % ci for ci, n in subst_comp[si].items()])});
+       % else:
+        bounds[${si}] = INFINITY;
+       % endif
       % endfor
         return bounds;
     }
@@ -54,10 +58,10 @@ _first_step = """
 """  # if (m_upper_bounds.size() == 0)
 
 
-def _get_comp_conc(rsys, odesys, comp_keys):
+def _get_comp_conc(rsys, odesys, comp_keys, skip_keys):
     comp_conc = []
     for comp_key in comp_keys:
-        if comp_key == 0:
+        if comp_key in skip_keys:
             continue  # see Substance.__doc__
         _d = OrderedDict()
         for si, subst_key in enumerate(odesys.names):
@@ -68,11 +72,13 @@ def _get_comp_conc(rsys, odesys, comp_keys):
     return comp_conc
 
 
-def _get_subst_comp(rsys, odesys, comp_keys):
+def _get_subst_comp(rsys, odesys, comp_keys, skip_keys):
     subst_comp = []
     for subst_key in odesys.names:
         _d = OrderedDict()
         for k, v in rsys.substances[subst_key].composition.items():
+            if k in skip_keys:
+                continue
             _d[comp_keys.index(k)] = v
         subst_comp.append(_d)
     return subst_comp
@@ -88,8 +94,8 @@ def _render(tmpl, **kwargs):
         raise
 
 
-def get_native(rsys, odesys, integrator):
-    comp_keys = Substance.composition_keys(rsys.substances.values())
+def get_native(rsys, odesys, integrator, skip_keys=(0,)):
+    comp_keys = Substance.composition_keys(rsys.substances.values(), skip_keys=skip_keys)
     if isinstance(odesys, PartiallySolvedSystem):
         init_conc = '&m_p[%d]' % (len(odesys.params) - len(odesys.original_dep))
     else:
@@ -97,8 +103,8 @@ def get_native(rsys, odesys, integrator):
 
     return native_sys[integrator].from_other(odesys, namespace_override={
         'p_anon': _render(_anon, odesys=odesys, ncomp=len(comp_keys),
-                          comp_conc=_get_comp_conc(rsys, odesys, comp_keys),
-                          subst_comp=_get_subst_comp(rsys, odesys, comp_keys)),
+                          comp_conc=_get_comp_conc(rsys, odesys, comp_keys, skip_keys),
+                          subst_comp=_get_subst_comp(rsys, odesys, comp_keys, skip_keys)),
         'p_first_step': _render(_first_step, init_conc=init_conc, odesys=odesys),
         'p_get_dx_max': True
     }, namespace_extend={
