@@ -51,7 +51,7 @@ chemistry (mainly physical/inorganic/analytical chemistry). Currently it include
 Documentation
 -------------
 Auto-generated API documentation for the latest stable release is found here:
-`<https://bjodah.github.io/chempy/latest>`_
+`<http://pythonhosted.org/chempy>`_
 (and the development version for the current master branch is found here:
 `<http://hera.physchem.kth.se/~chempy/branches/master/html>`_).
 
