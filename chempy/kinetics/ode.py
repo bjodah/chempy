@@ -101,7 +101,7 @@ def get_odesys(rsys, include_params=True, substitutions=None,
         Note that if :attr:`Reaction.param` is not a :class:`RateExpr` (or convertible to
         one through :meth:`as_RateExpr`) it will be used to construct a :class:`MassAction`
         instance.
-    include_params : bool (default: False)
+    include_params : bool (default: True)
         Whether rate constants should be included into the rate expressions or
         left as free parameters in the :class:`pyneqsys.SymbolicSys` instance.
     substitutions : dict, optional
