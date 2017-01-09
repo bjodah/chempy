@@ -361,7 +361,7 @@ def chained_parameter_variation(odesys, durations, init_conc, varied_params, def
             if k.startswith('internal'):
                 continue
             if k in infos:
-                infos[k] += v
+                infos[k] += (v,)
             else:
-                infos[k] = v
+                infos[k] = (v,)
     return np.concatenate(touts), np.concatenate(couts), infos

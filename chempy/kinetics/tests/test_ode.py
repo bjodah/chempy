@@ -523,7 +523,10 @@ def test_chained_parameter_variation():
     kw = dict(integrator='cvode', atol=1e-12, rtol=1e-13, first_step=1e-14)
     tout, cout, info = chained_parameter_variation(
         odesys, times, conc, {'temperature': Ts}, {}, integrate_kwargs=kw)
-    assert info['nfev'] > 3
+    assert len(info['nfev']) == 3
+    assert info['nfev'][0] > 2
+    assert info['nfev'][1] > 2
+    assert info['nfev'][2] > 2
     assert np.all(np.diff(tout) > 0)
     tout1 = tout[tout <= times[0]]
     tout23 = tout[tout > times[0]]
