@@ -1,0 +1,898 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.util.parsing &mdash; chempy 0.4.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="chempy 0.4.1 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.4.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../index.html">chempy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      
+    <li>chempy.util.parsing</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.util.parsing</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot; Functions for chemical formulae and reactions &quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">.pyutil</span> <span class="k">import</span> <span class="n">ChemPyDeprecationWarning</span><span class="p">,</span> <span class="n">memoize</span>
+
+<span class="n">parsing_library</span> <span class="o">=</span> <span class="s1">&#39;pyparsing&#39;</span>  <span class="c1"># info used for selective testing.</span>
+
+
+<span class="nd">@memoize</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">_get_formula_parser</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; Create a forward pyparsing parser for chemical formulae</span>
+
+<span class="sd">    BNF for simple chemical formula (no nesting)</span>
+
+<span class="sd">        integer :: &#39;0&#39;..&#39;9&#39;+</span>
+<span class="sd">        element :: &#39;A&#39;..&#39;Z&#39; &#39;a&#39;..&#39;z&#39;*</span>
+<span class="sd">        term :: element [integer]</span>
+<span class="sd">        formula :: term+</span>
+
+
+<span class="sd">    BNF for nested chemical formula</span>
+
+<span class="sd">        integer :: &#39;0&#39;..&#39;9&#39;+</span>
+<span class="sd">        element :: &#39;A&#39;..&#39;Z&#39; &#39;a&#39;..&#39;z&#39;*</span>
+<span class="sd">        term :: (element | &#39;(&#39; formula &#39;)&#39;) [integer]</span>
+<span class="sd">        formula :: term+</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The code in this function is from an answer on StackOverflow:</span>
+<span class="sd">        http://stackoverflow.com/a/18555142/790973</span>
+<span class="sd">        written by:</span>
+<span class="sd">            Paul McGuire, http://stackoverflow.com/users/165216/paul-mcguire</span>
+<span class="sd">        in answer to the question formulated by:</span>
+<span class="sd">            Thales MG, http://stackoverflow.com/users/2708711/thales-mg</span>
+<span class="sd">        the code is licensed under &#39;CC-WIKI&#39;.</span>
+<span class="sd">        (see: http://blog.stackoverflow.com/2009/06/attribution-required/)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_p</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span><span class="n">parsing_library</span><span class="p">)</span>
+    <span class="n">Forward</span><span class="p">,</span> <span class="n">Group</span><span class="p">,</span> <span class="n">OneOrMore</span> <span class="o">=</span> <span class="n">_p</span><span class="o">.</span><span class="n">Forward</span><span class="p">,</span> <span class="n">_p</span><span class="o">.</span><span class="n">Group</span><span class="p">,</span> <span class="n">_p</span><span class="o">.</span><span class="n">OneOrMore</span>
+    <span class="n">Optional</span><span class="p">,</span> <span class="n">ParseResults</span><span class="p">,</span> <span class="n">Regex</span> <span class="o">=</span> <span class="n">_p</span><span class="o">.</span><span class="n">Optional</span><span class="p">,</span> <span class="n">_p</span><span class="o">.</span><span class="n">ParseResults</span><span class="p">,</span> <span class="n">_p</span><span class="o">.</span><span class="n">Regex</span>
+    <span class="n">Suppress</span><span class="p">,</span> <span class="n">Word</span><span class="p">,</span> <span class="n">nums</span> <span class="o">=</span> <span class="n">_p</span><span class="o">.</span><span class="n">Suppress</span><span class="p">,</span> <span class="n">_p</span><span class="o">.</span><span class="n">Word</span><span class="p">,</span> <span class="n">_p</span><span class="o">.</span><span class="n">nums</span>
+
+    <span class="n">LPAR</span><span class="p">,</span> <span class="n">RPAR</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">Suppress</span><span class="p">,</span> <span class="s2">&quot;()&quot;</span><span class="p">)</span>
+    <span class="n">integer</span> <span class="o">=</span> <span class="n">Word</span><span class="p">(</span><span class="n">nums</span><span class="p">)</span>
+
+    <span class="c1"># add parse action to convert integers to ints, to support doing addition</span>
+    <span class="c1"># and multiplication at parse time</span>
+    <span class="n">integer</span><span class="o">.</span><span class="n">setParseAction</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+    <span class="c1"># element = Word(alphas.upper(), alphas.lower())</span>
+    <span class="c1"># or if you want to be more specific, use this Regex</span>
+    <span class="n">element</span> <span class="o">=</span> <span class="n">Regex</span><span class="p">(</span>
+        <span class="s2">r&quot;A[cglmrstu]|B[aehikr]?|C[adeflmorsu]?|D[bsy]|E[rsu]|F[emr]?|&quot;</span>
+        <span class="s2">&quot;G[ade]|H[efgos]?|I[nr]?|Kr?|L[airu]|M[dgnot]|N[abdeiop]?|&quot;</span>
+        <span class="s2">&quot;Os?|P[abdmortu]?|R[abefghnu]|S[bcegimnr]?|T[abcehilm]|&quot;</span>
+        <span class="s2">&quot;Uu[bhopqst]|U|V|W|Xe|Yb?|Z[nr]&quot;</span><span class="p">)</span>
+
+    <span class="c1"># forward declare &#39;formula&#39; so it can be used in definition of &#39;term&#39;</span>
+    <span class="n">formula</span> <span class="o">=</span> <span class="n">Forward</span><span class="p">()</span>
+
+    <span class="n">term</span> <span class="o">=</span> <span class="n">Group</span><span class="p">((</span><span class="n">element</span> <span class="o">|</span> <span class="n">Group</span><span class="p">(</span><span class="n">LPAR</span> <span class="o">+</span> <span class="n">formula</span> <span class="o">+</span> <span class="n">RPAR</span><span class="p">)(</span><span class="s2">&quot;subgroup&quot;</span><span class="p">))</span> <span class="o">+</span>
+                 <span class="n">Optional</span><span class="p">(</span><span class="n">integer</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)(</span><span class="s2">&quot;mult&quot;</span><span class="p">))</span>
+
+    <span class="c1"># define contents of a formula as one or more terms</span>
+    <span class="n">formula</span> <span class="o">&lt;&lt;</span> <span class="n">OneOrMore</span><span class="p">(</span><span class="n">term</span><span class="p">)</span>
+
+    <span class="c1"># add parse actions for parse-time processing</span>
+
+    <span class="c1"># parse action to multiply out subgroups</span>
+    <span class="k">def</span> <span class="nf">multiplyContents</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># if these tokens contain a subgroup, then use multiplier to</span>
+        <span class="c1"># extend counts of all elements in the subgroup</span>
+        <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">subgroup</span><span class="p">:</span>
+            <span class="n">mult</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">mult</span>
+            <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">subgroup</span><span class="p">:</span>
+                <span class="n">term</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*=</span> <span class="n">mult</span>
+            <span class="k">return</span> <span class="n">t</span><span class="o">.</span><span class="n">subgroup</span>
+    <span class="n">term</span><span class="o">.</span><span class="n">setParseAction</span><span class="p">(</span><span class="n">multiplyContents</span><span class="p">)</span>
+
+    <span class="c1"># add parse action to sum up multiple references to the same element</span>
+    <span class="k">def</span> <span class="nf">sumByElement</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
+        <span class="n">elementsList</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">]</span>
+
+        <span class="c1"># construct set to see if there are duplicates</span>
+        <span class="n">duplicates</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elementsList</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">elementsList</span><span class="p">))</span>
+
+        <span class="c1"># if there are duplicate element names, sum up by element and</span>
+        <span class="c1"># return a new nested ParseResults</span>
+        <span class="k">if</span> <span class="n">duplicates</span><span class="p">:</span>
+            <span class="n">ctr</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+                <span class="n">ctr</span><span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+=</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">ParseResults</span><span class="p">([</span><span class="n">ParseResults</span><span class="p">([</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ctr</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+    <span class="n">formula</span><span class="o">.</span><span class="n">setParseAction</span><span class="p">(</span><span class="n">sumByElement</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">formula</span>
+
+<span class="n">symbols</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;He&#39;</span><span class="p">,</span> <span class="s1">&#39;Li&#39;</span><span class="p">,</span> <span class="s1">&#39;Be&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="s1">&#39;Ne&#39;</span><span class="p">,</span> <span class="s1">&#39;Na&#39;</span><span class="p">,</span> <span class="s1">&#39;Mg&#39;</span><span class="p">,</span> <span class="s1">&#39;Al&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Si&#39;</span><span class="p">,</span> <span class="s1">&#39;P&#39;</span><span class="p">,</span> <span class="s1">&#39;S&#39;</span><span class="p">,</span> <span class="s1">&#39;Cl&#39;</span><span class="p">,</span> <span class="s1">&#39;Ar&#39;</span><span class="p">,</span> <span class="s1">&#39;K&#39;</span><span class="p">,</span> <span class="s1">&#39;Ca&#39;</span><span class="p">,</span> <span class="s1">&#39;Sc&#39;</span><span class="p">,</span> <span class="s1">&#39;Ti&#39;</span><span class="p">,</span> <span class="s1">&#39;V&#39;</span><span class="p">,</span> <span class="s1">&#39;Cr&#39;</span><span class="p">,</span> <span class="s1">&#39;Mn&#39;</span><span class="p">,</span> <span class="s1">&#39;Fe&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Co&#39;</span><span class="p">,</span> <span class="s1">&#39;Ni&#39;</span><span class="p">,</span> <span class="s1">&#39;Cu&#39;</span><span class="p">,</span> <span class="s1">&#39;Zn&#39;</span><span class="p">,</span> <span class="s1">&#39;Ga&#39;</span><span class="p">,</span> <span class="s1">&#39;Ge&#39;</span><span class="p">,</span> <span class="s1">&#39;As&#39;</span><span class="p">,</span> <span class="s1">&#39;Se&#39;</span><span class="p">,</span> <span class="s1">&#39;Br&#39;</span><span class="p">,</span> <span class="s1">&#39;Kr&#39;</span><span class="p">,</span> <span class="s1">&#39;Rb&#39;</span><span class="p">,</span> <span class="s1">&#39;Sr&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="s1">&#39;Zr&#39;</span><span class="p">,</span> <span class="s1">&#39;Nb&#39;</span><span class="p">,</span> <span class="s1">&#39;Mo&#39;</span><span class="p">,</span> <span class="s1">&#39;Tc&#39;</span><span class="p">,</span> <span class="s1">&#39;Ru&#39;</span><span class="p">,</span> <span class="s1">&#39;Rh&#39;</span><span class="p">,</span> <span class="s1">&#39;Pd&#39;</span><span class="p">,</span> <span class="s1">&#39;Ag&#39;</span><span class="p">,</span> <span class="s1">&#39;Cd&#39;</span><span class="p">,</span> <span class="s1">&#39;In&#39;</span><span class="p">,</span> <span class="s1">&#39;Sn&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Sb&#39;</span><span class="p">,</span> <span class="s1">&#39;Te&#39;</span><span class="p">,</span> <span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="s1">&#39;Xe&#39;</span><span class="p">,</span> <span class="s1">&#39;Cs&#39;</span><span class="p">,</span> <span class="s1">&#39;Ba&#39;</span><span class="p">,</span> <span class="s1">&#39;La&#39;</span><span class="p">,</span> <span class="s1">&#39;Ce&#39;</span><span class="p">,</span> <span class="s1">&#39;Pr&#39;</span><span class="p">,</span> <span class="s1">&#39;Nd&#39;</span><span class="p">,</span> <span class="s1">&#39;Pm&#39;</span><span class="p">,</span> <span class="s1">&#39;Sm&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Eu&#39;</span><span class="p">,</span> <span class="s1">&#39;Gd&#39;</span><span class="p">,</span> <span class="s1">&#39;Tb&#39;</span><span class="p">,</span> <span class="s1">&#39;Dy&#39;</span><span class="p">,</span> <span class="s1">&#39;Ho&#39;</span><span class="p">,</span> <span class="s1">&#39;Er&#39;</span><span class="p">,</span> <span class="s1">&#39;Tm&#39;</span><span class="p">,</span> <span class="s1">&#39;Yb&#39;</span><span class="p">,</span> <span class="s1">&#39;Lu&#39;</span><span class="p">,</span> <span class="s1">&#39;Hf&#39;</span><span class="p">,</span> <span class="s1">&#39;Ta&#39;</span><span class="p">,</span> <span class="s1">&#39;W&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Re&#39;</span><span class="p">,</span> <span class="s1">&#39;Os&#39;</span><span class="p">,</span> <span class="s1">&#39;Ir&#39;</span><span class="p">,</span> <span class="s1">&#39;Pt&#39;</span><span class="p">,</span> <span class="s1">&#39;Au&#39;</span><span class="p">,</span> <span class="s1">&#39;Hg&#39;</span><span class="p">,</span> <span class="s1">&#39;Tl&#39;</span><span class="p">,</span> <span class="s1">&#39;Pb&#39;</span><span class="p">,</span> <span class="s1">&#39;Bi&#39;</span><span class="p">,</span> <span class="s1">&#39;Po&#39;</span><span class="p">,</span> <span class="s1">&#39;At&#39;</span><span class="p">,</span> <span class="s1">&#39;Rn&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Fr&#39;</span><span class="p">,</span> <span class="s1">&#39;Ra&#39;</span><span class="p">,</span> <span class="s1">&#39;Ac&#39;</span><span class="p">,</span> <span class="s1">&#39;Th&#39;</span><span class="p">,</span> <span class="s1">&#39;Pa&#39;</span><span class="p">,</span> <span class="s1">&#39;U&#39;</span><span class="p">,</span> <span class="s1">&#39;Np&#39;</span><span class="p">,</span> <span class="s1">&#39;Pu&#39;</span><span class="p">,</span> <span class="s1">&#39;Am&#39;</span><span class="p">,</span> <span class="s1">&#39;Cm&#39;</span><span class="p">,</span> <span class="s1">&#39;Bk&#39;</span><span class="p">,</span> <span class="s1">&#39;Cf&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Es&#39;</span><span class="p">,</span> <span class="s1">&#39;Fm&#39;</span><span class="p">,</span> <span class="s1">&#39;Md&#39;</span><span class="p">,</span> <span class="s1">&#39;No&#39;</span><span class="p">,</span> <span class="s1">&#39;Lr&#39;</span><span class="p">,</span> <span class="s1">&#39;Rf&#39;</span><span class="p">,</span> <span class="s1">&#39;Db&#39;</span><span class="p">,</span> <span class="s1">&#39;Sg&#39;</span><span class="p">,</span> <span class="s1">&#39;Bh&#39;</span><span class="p">,</span> <span class="s1">&#39;Hs&#39;</span><span class="p">,</span> <span class="s1">&#39;Mt&#39;</span><span class="p">,</span> <span class="s1">&#39;Ds&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Rg&#39;</span><span class="p">,</span> <span class="s1">&#39;Cn&#39;</span><span class="p">,</span> <span class="s1">&#39;Uut&#39;</span><span class="p">,</span> <span class="s1">&#39;Fl&#39;</span><span class="p">,</span> <span class="s1">&#39;Uup&#39;</span><span class="p">,</span> <span class="s1">&#39;Lv&#39;</span><span class="p">,</span> <span class="s1">&#39;Uus&#39;</span><span class="p">,</span> <span class="s1">&#39;Uuo&#39;</span>
+<span class="p">)</span>
+
+<span class="n">names</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s1">&#39;Hydrogen&#39;</span><span class="p">,</span> <span class="s1">&#39;Helium&#39;</span><span class="p">,</span> <span class="s1">&#39;Lithium&#39;</span><span class="p">,</span> <span class="s1">&#39;Beryllium&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Boron&#39;</span><span class="p">,</span> <span class="s1">&#39;Carbon&#39;</span><span class="p">,</span> <span class="s1">&#39;Nitrogen&#39;</span><span class="p">,</span> <span class="s1">&#39;Oxygen&#39;</span><span class="p">,</span> <span class="s1">&#39;Fluorine&#39;</span><span class="p">,</span> <span class="s1">&#39;Neon&#39;</span><span class="p">,</span> <span class="s1">&#39;Sodium&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Magnesium&#39;</span><span class="p">,</span> <span class="s1">&#39;Aluminium&#39;</span><span class="p">,</span> <span class="s1">&#39;Silicon&#39;</span><span class="p">,</span> <span class="s1">&#39;Phosphorus&#39;</span><span class="p">,</span> <span class="s1">&#39;Sulfur&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Chlorine&#39;</span><span class="p">,</span> <span class="s1">&#39;Argon&#39;</span><span class="p">,</span> <span class="s1">&#39;Potassium&#39;</span><span class="p">,</span> <span class="s1">&#39;Calcium&#39;</span><span class="p">,</span> <span class="s1">&#39;Scandium&#39;</span><span class="p">,</span> <span class="s1">&#39;Titanium&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Vanadium&#39;</span><span class="p">,</span> <span class="s1">&#39;Chromium&#39;</span><span class="p">,</span> <span class="s1">&#39;Manganese&#39;</span><span class="p">,</span> <span class="s1">&#39;Iron&#39;</span><span class="p">,</span> <span class="s1">&#39;Cobalt&#39;</span><span class="p">,</span> <span class="s1">&#39;Nickel&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Copper&#39;</span><span class="p">,</span> <span class="s1">&#39;Zinc&#39;</span><span class="p">,</span> <span class="s1">&#39;Gallium&#39;</span><span class="p">,</span> <span class="s1">&#39;Germanium&#39;</span><span class="p">,</span> <span class="s1">&#39;Arsenic&#39;</span><span class="p">,</span> <span class="s1">&#39;Selenium&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Bromine&#39;</span><span class="p">,</span> <span class="s1">&#39;Krypton&#39;</span><span class="p">,</span> <span class="s1">&#39;Rubidium&#39;</span><span class="p">,</span> <span class="s1">&#39;Strontium&#39;</span><span class="p">,</span> <span class="s1">&#39;Yttrium&#39;</span><span class="p">,</span> <span class="s1">&#39;Zirconium&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Niobium&#39;</span><span class="p">,</span> <span class="s1">&#39;Molybdenum&#39;</span><span class="p">,</span> <span class="s1">&#39;Technetium&#39;</span><span class="p">,</span> <span class="s1">&#39;Ruthenium&#39;</span><span class="p">,</span> <span class="s1">&#39;Rhodium&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Palladium&#39;</span><span class="p">,</span> <span class="s1">&#39;Silver&#39;</span><span class="p">,</span> <span class="s1">&#39;Cadmium&#39;</span><span class="p">,</span> <span class="s1">&#39;Indium&#39;</span><span class="p">,</span> <span class="s1">&#39;Tin&#39;</span><span class="p">,</span> <span class="s1">&#39;Antimony&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Tellurium&#39;</span><span class="p">,</span> <span class="s1">&#39;Iodine&#39;</span><span class="p">,</span> <span class="s1">&#39;Xenon&#39;</span><span class="p">,</span> <span class="s1">&#39;Caesium&#39;</span><span class="p">,</span> <span class="s1">&#39;Barium&#39;</span><span class="p">,</span> <span class="s1">&#39;Lanthanum&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Cerium&#39;</span><span class="p">,</span> <span class="s1">&#39;Praseodymium&#39;</span><span class="p">,</span> <span class="s1">&#39;Neodymium&#39;</span><span class="p">,</span> <span class="s1">&#39;Promethium&#39;</span><span class="p">,</span> <span class="s1">&#39;Samarium&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Europium&#39;</span><span class="p">,</span> <span class="s1">&#39;Gadolinium&#39;</span><span class="p">,</span> <span class="s1">&#39;Terbium&#39;</span><span class="p">,</span> <span class="s1">&#39;Dysprosium&#39;</span><span class="p">,</span> <span class="s1">&#39;Holmium&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Erbium&#39;</span><span class="p">,</span> <span class="s1">&#39;Thulium&#39;</span><span class="p">,</span> <span class="s1">&#39;Ytterbium&#39;</span><span class="p">,</span> <span class="s1">&#39;Lutetium&#39;</span><span class="p">,</span> <span class="s1">&#39;Hafnium&#39;</span><span class="p">,</span> <span class="s1">&#39;Tantalum&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Tungsten&#39;</span><span class="p">,</span> <span class="s1">&#39;Rhenium&#39;</span><span class="p">,</span> <span class="s1">&#39;Osmium&#39;</span><span class="p">,</span> <span class="s1">&#39;Iridium&#39;</span><span class="p">,</span> <span class="s1">&#39;Platinum&#39;</span><span class="p">,</span> <span class="s1">&#39;Gold&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Mercury&#39;</span><span class="p">,</span> <span class="s1">&#39;Thallium&#39;</span><span class="p">,</span> <span class="s1">&#39;Lead&#39;</span><span class="p">,</span> <span class="s1">&#39;Bismuth&#39;</span><span class="p">,</span> <span class="s1">&#39;Polonium&#39;</span><span class="p">,</span> <span class="s1">&#39;Astatine&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Radon&#39;</span><span class="p">,</span> <span class="s1">&#39;Francium&#39;</span><span class="p">,</span> <span class="s1">&#39;Radium&#39;</span><span class="p">,</span> <span class="s1">&#39;Actinium&#39;</span><span class="p">,</span> <span class="s1">&#39;Thorium&#39;</span><span class="p">,</span> <span class="s1">&#39;Protactinium&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Uranium&#39;</span><span class="p">,</span> <span class="s1">&#39;Neptunium&#39;</span><span class="p">,</span> <span class="s1">&#39;Plutonium&#39;</span><span class="p">,</span> <span class="s1">&#39;Americium&#39;</span><span class="p">,</span> <span class="s1">&#39;Curium&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Berkelium&#39;</span><span class="p">,</span> <span class="s1">&#39;Californium&#39;</span><span class="p">,</span> <span class="s1">&#39;Einsteinium&#39;</span><span class="p">,</span> <span class="s1">&#39;Fermium&#39;</span><span class="p">,</span> <span class="s1">&#39;Mendelevium&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Nobelium&#39;</span><span class="p">,</span> <span class="s1">&#39;Lawrencium&#39;</span><span class="p">,</span> <span class="s1">&#39;Rutherfordium&#39;</span><span class="p">,</span> <span class="s1">&#39;Dubnium&#39;</span><span class="p">,</span> <span class="s1">&#39;Seaborgium&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Bohrium&#39;</span><span class="p">,</span> <span class="s1">&#39;Hassium&#39;</span><span class="p">,</span> <span class="s1">&#39;Meitnerium&#39;</span><span class="p">,</span> <span class="s1">&#39;Darmstadtium&#39;</span><span class="p">,</span> <span class="s1">&#39;Roentgenium&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Copernicium&#39;</span><span class="p">,</span> <span class="s1">&#39;(Ununtrium)&#39;</span><span class="p">,</span> <span class="s1">&#39;Flerovium&#39;</span><span class="p">,</span> <span class="s1">&#39;(Ununpentium)&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Livermorium&#39;</span><span class="p">,</span> <span class="s1">&#39;(Ununseptium)&#39;</span><span class="p">,</span> <span class="s1">&#39;(Ununoctium)&#39;</span>
+<span class="p">)</span>
+
+<span class="n">lower_names</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39;(&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;)&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="atomic_number"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.parsing.atomic_number">[docs]</a><span class="k">def</span> <span class="nf">atomic_number</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">symbols</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">lower_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span></div>
+
+<span class="c1"># The data in &#39;_relative_atomic_masses&#39; is licensed under the CC-SA license</span>
+<span class="c1"># https://en.wikipedia.org/w/index.php?title=List_of_elements&amp;oldid=700476748</span>
+<span class="n">_relative_atomic_masses</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;1.008 4.002602(2) 6.94 9.0121831(5) 10.81 12.011 14.007 15.999&quot;</span>
+    <span class="s2">&quot; 18.998403163(6) 20.1797(6) 22.98976928(2) 24.305 26.9815385(7) 28.085&quot;</span>
+    <span class="s2">&quot; 30.973761998(5) 32.06 35.45 39.948(1) 39.0983(1) 40.078(4)&quot;</span>
+    <span class="s2">&quot; 44.955908(5) 47.867(1) 50.9415(1) 51.9961(6) 54.938044(3) 55.845(2)&quot;</span>
+    <span class="s2">&quot; 58.933194(4) 58.6934(4) 63.546(3) 65.38(2) 69.723(1) 72.630(8)&quot;</span>
+    <span class="s2">&quot; 74.921595(6) 78.971(8) 79.904 83.798(2) 85.4678(3) 87.62(1)&quot;</span>
+    <span class="s2">&quot; 88.90584(2) 91.224(2) 92.90637(2) 95.95(1) [98] 101.07(2) 102.90550(2)&quot;</span>
+    <span class="s2">&quot; 106.42(1) 107.8682(2) 112.414(4) 114.818(1) 118.710(7) 121.760(1)&quot;</span>
+    <span class="s2">&quot; 127.60(3) 126.90447(3) 131.293(6) 132.90545196(6) 137.327(7)&quot;</span>
+    <span class="s2">&quot; 138.90547(7) 140.116(1) 140.90766(2) 144.242(3) [145] 150.36(2)&quot;</span>
+    <span class="s2">&quot; 151.964(1) 157.25(3) 158.92535(2) 162.500(1) 164.93033(2) 167.259(3)&quot;</span>
+    <span class="s2">&quot; 168.93422(2) 173.045(10) 174.9668(1) 178.49(2) 180.94788(2) 183.84(1)&quot;</span>
+    <span class="s2">&quot; 186.207(1) 190.23(3) 192.217(3) 195.084(9) 196.966569(5) 200.592(3)&quot;</span>
+    <span class="s2">&quot; 204.38 207.2(1) 208.98040(1) [209] [210] [222] [223] [226] [227]&quot;</span>
+    <span class="s2">&quot; 232.0377(4) 231.03588(2) 238.02891(3) [237] [244] [243] [247] [247]&quot;</span>
+    <span class="s2">&quot; [251] [252] [257] [258] [259] [266] [267] [268] [269] [270] [269]&quot;</span>
+    <span class="s2">&quot; [278] [281] [282] [285] [286] [289] [289] [293] [294] [294]&quot;</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_get_relative_atomic_masses</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">mass</span> <span class="ow">in</span> <span class="n">_relative_atomic_masses</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">mass</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;[&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">mass</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;]&#39;</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="nb">float</span><span class="p">(</span><span class="n">mass</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="s1">&#39;(&#39;</span> <span class="ow">in</span> <span class="n">mass</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="nb">float</span><span class="p">(</span><span class="n">mass</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;(&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">yield</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">mass</span><span class="p">))</span>
+
+<span class="n">relative_atomic_masses</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_get_relative_atomic_masses</span><span class="p">())</span>
+
+
+<div class="viewcode-block" id="mass_from_composition"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.parsing.mass_from_composition">[docs]</a><span class="k">def</span> <span class="nf">mass_from_composition</span><span class="p">(</span><span class="n">composition</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Calculates molecular mass from atomic weights</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    composition: dict</span>
+<span class="sd">        Dictionary mapping int (atomic number) to int (coefficient)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        molecular weight in atomic mass units</span>
+
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Atomic number 0 denotes charge or &quot;net electron defficiency&quot;</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; &#39;%.2f&#39; % mass_from_composition({0: -1, 1: 1, 8: 1})</span>
+<span class="sd">    &#39;17.01&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mass</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">composition</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># electron</span>
+            <span class="n">mass</span> <span class="o">-=</span> <span class="n">v</span><span class="o">*</span><span class="mf">5.489e-4</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mass</span> <span class="o">+=</span> <span class="n">v</span><span class="o">*</span><span class="n">relative_atomic_masses</span><span class="p">[</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">mass</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_charge</span><span class="p">(</span><span class="n">chgstr</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="n">chgstr</span> <span class="o">==</span> <span class="s1">&#39;+&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">chgstr</span> <span class="o">==</span> <span class="s1">&#39;-&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">for</span> <span class="n">token</span><span class="p">,</span> <span class="n">anti</span><span class="p">,</span> <span class="n">sign</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="s1">&#39;+-&#39;</span><span class="p">,</span> <span class="s1">&#39;-+&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">chgstr</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">anti</span> <span class="ow">in</span> <span class="n">chgstr</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid charge description (+ &amp; - present)&quot;</span><span class="p">)</span>
+            <span class="n">before</span><span class="p">,</span> <span class="n">after</span> <span class="o">=</span> <span class="n">chgstr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">before</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">after</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Values both before and after charge token&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">before</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># will_be_missing_in=&#39;0.5.0&#39;</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;&#39;Fe/3+&#39; deprecated, use e.g. &#39;Fe+3&#39;&quot;</span><span class="p">,</span>
+                              <span class="n">ChemPyDeprecationWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">sign</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="n">before</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span> <span class="k">else</span> <span class="n">before</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">after</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">sign</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="n">after</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span> <span class="k">else</span> <span class="n">after</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid charge description (+ or - missing)&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_formula_to_parts</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">prefixes</span><span class="p">,</span> <span class="n">suffixes</span><span class="p">):</span>
+    <span class="c1"># Drop prefixes and suffixes</span>
+    <span class="n">drop_pref</span><span class="p">,</span> <span class="n">drop_suff</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ign</span> <span class="ow">in</span> <span class="n">prefixes</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">formula</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">ign</span><span class="p">):</span>
+            <span class="n">drop_pref</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ign</span><span class="p">)</span>
+            <span class="n">formula</span> <span class="o">=</span> <span class="n">formula</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">ign</span><span class="p">):]</span>
+    <span class="k">for</span> <span class="n">ign</span> <span class="ow">in</span> <span class="n">suffixes</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">formula</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">ign</span><span class="p">):</span>
+            <span class="n">drop_suff</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ign</span><span class="p">)</span>
+            <span class="n">formula</span> <span class="o">=</span> <span class="n">formula</span><span class="p">[:</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">ign</span><span class="p">)]</span>
+
+    <span class="c1"># Extract charge</span>
+    <span class="k">if</span> <span class="s1">&#39;/&#39;</span> <span class="ow">in</span> <span class="n">formula</span><span class="p">:</span>
+        <span class="c1"># will_be_missing_in=&#39;0.5.0&#39;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;/ depr. (before 0.5.0): use &#39;Fe+3&#39; over &#39;Fe/3+&#39;&quot;</span><span class="p">,</span>
+                      <span class="n">ChemPyDeprecationWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">formula</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;+&#39;</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="s1">&#39;-&#39;</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Charge needs to be separated with a /&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">wo_pm</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">wo_pm</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">str</span><span class="o">.</span><span class="n">isdigit</span><span class="p">(</span><span class="n">wo_pm</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Non-digits in charge specifier&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;At most one &#39;/&#39; allowed in formula&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="s1">&#39;+-&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">formula</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">formula</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Multiple tokens: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">token</span><span class="p">)</span>
+                <span class="n">parts</span> <span class="o">=</span> <span class="n">formula</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+                <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">token</span> <span class="o">+</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">formula</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">parts</span> <span class="o">+</span> <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">drop_pref</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">drop_suff</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])]</span>
+
+
+<span class="k">def</span> <span class="nf">_parse_stoich</span><span class="p">(</span><span class="n">stoich</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">stoich</span> <span class="o">==</span> <span class="s1">&#39;e&#39;</span><span class="p">:</span>  <span class="c1"># special case, the electron is not an element</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">symbols</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span> <span class="n">n</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">n</span>
+            <span class="ow">in</span> <span class="n">_get_formula_parser</span><span class="p">()</span><span class="o">.</span><span class="n">parseString</span><span class="p">(</span><span class="n">stoich</span><span class="p">)}</span>
+
+<span class="n">_greek_letters</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s1">&#39;alpha&#39;</span><span class="p">,</span> <span class="s1">&#39;beta&#39;</span><span class="p">,</span> <span class="s1">&#39;gamma&#39;</span><span class="p">,</span> <span class="s1">&#39;delta&#39;</span><span class="p">,</span> <span class="s1">&#39;epsilon&#39;</span><span class="p">,</span> <span class="s1">&#39;zeta&#39;</span><span class="p">,</span> <span class="s1">&#39;eta&#39;</span><span class="p">,</span> <span class="s1">&#39;theta&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;iota&#39;</span><span class="p">,</span> <span class="s1">&#39;kappa&#39;</span><span class="p">,</span> <span class="s1">&#39;lambda&#39;</span><span class="p">,</span> <span class="s1">&#39;mu&#39;</span><span class="p">,</span> <span class="s1">&#39;nu&#39;</span><span class="p">,</span> <span class="s1">&#39;xi&#39;</span><span class="p">,</span> <span class="s1">&#39;omicron&#39;</span><span class="p">,</span> <span class="s1">&#39;pi&#39;</span><span class="p">,</span> <span class="s1">&#39;rho&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;sigma&#39;</span><span class="p">,</span> <span class="s1">&#39;tau&#39;</span><span class="p">,</span> <span class="s1">&#39;upsilon&#39;</span><span class="p">,</span> <span class="s1">&#39;phi&#39;</span><span class="p">,</span> <span class="s1">&#39;chi&#39;</span><span class="p">,</span> <span class="s1">&#39;psi&#39;</span><span class="p">,</span> <span class="s1">&#39;omega&#39;</span>
+<span class="p">)</span>
+<span class="n">_greek_u</span> <span class="o">=</span> <span class="s1">u&#39;αβγδεζηθικλμνξοπρστυφχψω&#39;</span>
+
+<span class="n">_latex_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">k</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_greek_letters</span><span class="p">}</span>
+<span class="n">_latex_mapping</span><span class="p">[</span><span class="s1">&#39;epsilon-&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">varepsilon-&#39;</span>
+<span class="n">_latex_mapping</span><span class="p">[</span><span class="s1">&#39;omicron-&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;o-&#39;</span>
+<span class="n">_latex_mapping</span><span class="p">[</span><span class="s1">&#39;.&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;^</span><span class="se">\\</span><span class="s1">bullet &#39;</span>
+<span class="n">_latex_infix_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;.&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">cdot &#39;</span><span class="p">}</span>
+
+<span class="n">_unicode_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span><span class="p">:</span> <span class="n">v</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">_greek_letters</span><span class="p">,</span> <span class="n">_greek_u</span><span class="p">)}</span>
+<span class="n">_unicode_mapping</span><span class="p">[</span><span class="s1">&#39;.&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">u&#39;⋅&#39;</span>
+<span class="n">_unicode_infix_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;.&#39;</span><span class="p">:</span> <span class="s1">u&#39;·&#39;</span><span class="p">}</span>
+
+<span class="n">_html_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span><span class="p">:</span> <span class="s1">&#39;&amp;&#39;</span> <span class="o">+</span> <span class="n">k</span> <span class="o">+</span> <span class="s1">&#39;;-&#39;</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_greek_letters</span><span class="p">}</span>
+<span class="n">_html_mapping</span><span class="p">[</span><span class="s1">&#39;.&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&amp;sdot;&#39;</span>
+<span class="n">_html_infix_mapping</span> <span class="o">=</span> <span class="n">_html_mapping</span>
+
+
+<span class="k">def</span> <span class="nf">_get_leading_integer</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">r&#39;^\d+&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">]):]</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Failed to parse: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">s</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">m</span><span class="p">,</span> <span class="n">s</span>
+
+
+<div class="viewcode-block" id="formula_to_composition"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.parsing.formula_to_composition">[docs]</a><span class="k">def</span> <span class="nf">formula_to_composition</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">prefixes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">suffixes</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;(s)&#39;</span><span class="p">,</span> <span class="s1">&#39;(l)&#39;</span><span class="p">,</span> <span class="s1">&#39;(g)&#39;</span><span class="p">,</span> <span class="s1">&#39;(aq)&#39;</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot; Parse composition of formula representing a chemical formula</span>
+
+<span class="sd">    Composition is represented as a dict mapping int -&gt; int (atomic</span>
+<span class="sd">    number -&gt; multiplicity). &quot;Atomic number&quot; 0 represents net charge.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    formula: str</span>
+<span class="sd">        Chemical formula, e.g. &#39;H2O&#39;, &#39;Fe+3&#39;, &#39;Cl-&#39;</span>
+<span class="sd">    prefixes: iterable strings</span>
+<span class="sd">        Prefixes to ignore, e.g. (&#39;.&#39;, &#39;alpha-&#39;)</span>
+<span class="sd">    suffixes: tuple of strings</span>
+<span class="sd">        Suffixes to ignore, e.g. (&#39;(g)&#39;, &#39;(s)&#39;)</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_composition(&#39;NH4+&#39;) == {0: 1, 1: 4, 7: 1}</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_composition(&#39;.NHO-(aq)&#39;) == {0: -1, 1: 1, 7: 1, 8: 1}</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_composition(&#39;Na2CO3.7H2O&#39;) == {11: 2, 6: 1, 8: 10, 1: 14}</span>
+<span class="sd">    True</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">prefixes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">prefixes</span> <span class="o">=</span> <span class="n">_latex_mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="n">stoich_tok</span><span class="p">,</span> <span class="n">chg_tok</span> <span class="o">=</span> <span class="n">_formula_to_parts</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">prefixes</span><span class="p">,</span> <span class="n">suffixes</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">tot_comp</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="n">stoich_tok</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">stoich</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parts</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">m</span><span class="p">,</span> <span class="n">stoich</span> <span class="o">=</span> <span class="n">_get_leading_integer</span><span class="p">(</span><span class="n">stoich</span><span class="p">)</span>
+        <span class="n">comp</span> <span class="o">=</span> <span class="n">_parse_stoich</span><span class="p">(</span><span class="n">stoich</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">comp</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tot_comp</span><span class="p">:</span>
+                <span class="n">tot_comp</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">m</span><span class="o">*</span><span class="n">v</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">tot_comp</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="n">m</span><span class="o">*</span><span class="n">v</span>
+    <span class="k">if</span> <span class="n">chg_tok</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tot_comp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_charge</span><span class="p">(</span><span class="n">chg_tok</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tot_comp</span></div>
+
+
+<span class="k">def</span> <span class="nf">_subs</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">patterns</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">patt</span><span class="p">,</span> <span class="n">repl</span> <span class="ow">in</span> <span class="n">patterns</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">repl</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">string</span>
+
+
+<span class="k">def</span> <span class="nf">_parse_multiplicity</span><span class="p">(</span><span class="n">strings</span><span class="p">,</span> <span class="n">substance_keys</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; _parse_multiplicity([&#39;2 H2O2&#39;, &#39;O2&#39;]) == {&#39;H2O2&#39;: 2, &#39;O2&#39;: 1}</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; _parse_multiplicity([&#39;2 * H2O2&#39;, &#39;O2&#39;]) == {&#39;H2O2&#39;: 2, &#39;O2&#39;: 1}</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; _parse_multiplicity([&#39;&#39;]) == {}</span>
+<span class="sd">    True</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">items</span> <span class="ow">in</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; \* | &#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">strings</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">items</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;To many parts in substring&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">substance_keys</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">substance_keys</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unkown substance_key: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">k</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<div class="viewcode-block" id="to_reaction"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.parsing.to_reaction">[docs]</a><span class="k">def</span> <span class="nf">to_reaction</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">substance_keys</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">Cls</span><span class="p">,</span> <span class="n">globals_</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Parses a string into a Reaction object and substances</span>
+
+<span class="sd">    Reac1 + 2 Reac2 + (2 Reac1) -&gt; Prod1 + Prod2; 10**3.7; ref=&#39;doi:12/ab&#39;</span>
+<span class="sd">    Reac1 = Prod1; 2.1;</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    line: str</span>
+<span class="sd">        string representation to be parsed</span>
+<span class="sd">    substance_keys: iterable of strings</span>
+<span class="sd">        Allowed names, e.g. (&#39;H2O&#39;, &#39;H+&#39;, &#39;OH-&#39;)</span>
+<span class="sd">    token : str</span>
+<span class="sd">        delimiter token between reactant and product side</span>
+<span class="sd">    Cls : class</span>
+<span class="sd">        e.g. subclass of Reaction</span>
+<span class="sd">    globals_: dict (optional)</span>
+<span class="sd">        Globals passed on to :func:`eval`, when ``None``:</span>
+<span class="sd">        `chempy.units.default_units` is used with &#39;chempy&#39;</span>
+<span class="sd">        and &#39;default_units&#39; extra entries.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    This function calls :func:`eval`, hence there are severe security concerns</span>
+<span class="sd">    with running this on untrusted data.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: add handling of units.</span>
+    <span class="k">if</span> <span class="n">globals_</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">chempy</span>
+        <span class="kn">from</span> <span class="nn">chempy.kinetics</span> <span class="k">import</span> <span class="n">rates</span>
+        <span class="kn">from</span> <span class="nn">chempy.units</span> <span class="k">import</span> <span class="n">default_units</span>
+        <span class="n">globals_</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">rates</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">rates</span><span class="p">)}</span>
+        <span class="n">globals_</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;chempy&#39;</span><span class="p">:</span> <span class="n">chempy</span><span class="p">,</span> <span class="s1">&#39;default_units&#39;</span><span class="p">:</span> <span class="n">default_units</span><span class="p">})</span>
+        <span class="k">if</span> <span class="n">default_units</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">globals_</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">default_units</span><span class="o">.</span><span class="n">as_dict</span><span class="p">())</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">stoich</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="n">kw</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">strip</span><span class="p">,</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;;&#39;</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;;&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+            <span class="n">stoich</span><span class="p">,</span> <span class="n">param</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">strip</span><span class="p">,</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;;&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">stoich</span><span class="p">,</span> <span class="n">param</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;param&#39;</span><span class="p">,</span> <span class="s1">&#39;None&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">({}</span> <span class="k">if</span> <span class="n">globals_</span> <span class="ow">is</span> <span class="kc">False</span> <span class="k">else</span> <span class="nb">eval</span><span class="p">(</span><span class="s1">&#39;dict(&#39;</span><span class="o">+</span><span class="n">kw</span><span class="o">+</span><span class="s1">&#39;)&#39;</span><span class="p">,</span> <span class="n">globals_</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">param</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">globals_</span> <span class="ow">is</span> <span class="kc">False</span> <span class="k">else</span> <span class="nb">eval</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">globals_</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">token</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stoich</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Missing token: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">token</span><span class="p">)</span>
+
+    <span class="n">reac_prod</span> <span class="o">=</span> <span class="p">[[</span><span class="n">y</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; + &#39;</span><span class="p">)]</span> <span class="k">for</span>
+                 <span class="n">x</span> <span class="ow">in</span> <span class="n">stoich</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">token</span><span class="p">)]</span>
+
+    <span class="n">act</span><span class="p">,</span> <span class="n">inact</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">side</span> <span class="ow">in</span> <span class="n">reac_prod</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">side</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;(&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">side</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;)&#39;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Bad format (missing closing paren)&quot;</span><span class="p">)</span>
+            <span class="n">inact</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_parse_multiplicity</span><span class="p">(</span><span class="n">side</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; + &#39;</span><span class="p">),</span>
+                                             <span class="n">substance_keys</span><span class="p">))</span>
+            <span class="n">act</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_parse_multiplicity</span><span class="p">(</span><span class="n">side</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">substance_keys</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">inact</span><span class="o">.</span><span class="n">append</span><span class="p">({})</span>
+            <span class="n">act</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_parse_multiplicity</span><span class="p">(</span><span class="n">side</span><span class="p">,</span> <span class="n">substance_keys</span><span class="p">))</span>
+
+    <span class="c1"># stoich coeff -&gt; dict</span>
+    <span class="k">return</span> <span class="n">Cls</span><span class="p">(</span><span class="n">act</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">act</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">param</span><span class="p">,</span> <span class="n">inact_reac</span><span class="o">=</span><span class="n">inact</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+               <span class="n">inact_prod</span><span class="o">=</span><span class="n">inact</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_formula_to_format</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">sup</span><span class="p">,</span> <span class="n">formula</span><span class="p">,</span> <span class="n">prefixes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">infixes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">suffixes</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;(s)&#39;</span><span class="p">,</span> <span class="s1">&#39;(l)&#39;</span><span class="p">,</span> <span class="s1">&#39;(g)&#39;</span><span class="p">,</span> <span class="s1">&#39;(aq)&#39;</span><span class="p">)):</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="n">_formula_to_parts</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">prefixes</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">suffixes</span><span class="p">)</span>
+    <span class="n">stoichs</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+    <span class="n">string</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">stoich</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">stoichs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">m</span><span class="p">,</span> <span class="n">stoich</span> <span class="o">=</span> <span class="n">_get_leading_integer</span><span class="p">(</span><span class="n">stoich</span><span class="p">)</span>
+            <span class="n">string</span> <span class="o">+=</span> <span class="n">_subs</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">infixes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">m</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">string</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">r&#39;([0-9]+)&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="n">sub</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)),</span> <span class="n">stoich</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">chg</span> <span class="o">=</span> <span class="n">_get_charge</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">chg</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">token</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span> <span class="k">if</span> <span class="n">chg</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">-&#39;</span> <span class="o">%</span> <span class="o">-</span><span class="n">chg</span>
+        <span class="k">if</span> <span class="n">chg</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">token</span> <span class="o">=</span> <span class="s1">&#39;+&#39;</span> <span class="k">if</span> <span class="n">chg</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">+&#39;</span> <span class="o">%</span> <span class="n">chg</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="n">sup</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect formula&quot;</span><span class="p">)</span>
+    <span class="n">pre_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">_subs</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">prefixes</span><span class="p">),</span> <span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">pre_str</span> <span class="o">+</span> <span class="n">string</span> <span class="o">+</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="formula_to_latex"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.parsing.formula_to_latex">[docs]</a><span class="k">def</span> <span class="nf">formula_to_latex</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">prefixes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">infixes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">r&quot;&quot;&quot; Convert formula string to latex representation</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    formula: str</span>
+<span class="sd">        Chemical formula, e.g. &#39;H2O&#39;, &#39;Fe+3&#39;, &#39;Cl-&#39;</span>
+<span class="sd">    prefixes: dict</span>
+<span class="sd">        Prefix transofmrations, default: greek letters and .</span>
+<span class="sd">    infixes: dict</span>
+<span class="sd">        Infix transformations, default: .</span>
+<span class="sd">    suffixes: iterable of str</span>
+<span class="sd">        What suffixes not to interpret, default: (s), (l), (g), (aq)</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_latex(&#39;NH4+&#39;)</span>
+<span class="sd">    &#39;NH_{4}^{+}&#39;</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_latex(&#39;Fe(CN)6+2&#39;)</span>
+<span class="sd">    &#39;Fe(CN)_{6}^{2+}&#39;</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_latex(&#39;Fe(CN)6+2(aq)&#39;)</span>
+<span class="sd">    &#39;Fe(CN)_{6}^{2+}(aq)&#39;</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_latex(&#39;.NHO-(aq)&#39;)</span>
+<span class="sd">    &#39;^\\bullet NHO^{-}(aq)&#39;</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_latex(&#39;alpha-FeOOH(s)&#39;)</span>
+<span class="sd">    &#39;\\alpha-FeOOH(s)&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">prefixes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">prefixes</span> <span class="o">=</span> <span class="n">_latex_mapping</span>
+    <span class="k">if</span> <span class="n">infixes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">infixes</span> <span class="o">=</span> <span class="n">_latex_infix_mapping</span>
+    <span class="k">return</span> <span class="n">_formula_to_format</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s1">&#39;_{</span><span class="si">%s</span><span class="s1">}&#39;</span> <span class="o">%</span> <span class="n">x</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s1">&#39;^{</span><span class="si">%s</span><span class="s1">}&#39;</span> <span class="o">%</span> <span class="n">x</span><span class="p">,</span>
+                              <span class="n">formula</span><span class="p">,</span> <span class="n">prefixes</span><span class="p">,</span> <span class="n">infixes</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="number_to_scientific_latex"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.parsing.number_to_scientific_latex">[docs]</a><span class="k">def</span> <span class="nf">number_to_scientific_latex</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%.3g</span><span class="s1">&#39;</span><span class="p">):</span>
+    <span class="sd">r&quot;&quot;&quot;</span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_latex(3.14) == &#39;3.14&#39;</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_latex(3.14159265e-7)</span>
+<span class="sd">    &#39;3.14\\cdot 10^{-7}&#39;</span>
+<span class="sd">    &gt;&gt;&gt; import quantities as pq</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_latex(2**0.5 * pq.m / pq.s)</span>
+<span class="sd">    &#39;1.41 \\mathrm{\\frac{m}{s}}&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">unit</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">number</span><span class="o">.</span><span class="n">dimensionality</span><span class="o">.</span><span class="n">latex</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;$&#39;</span><span class="p">)</span>
+        <span class="n">number</span> <span class="o">=</span> <span class="n">number</span><span class="o">.</span><span class="n">magnitude</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="n">unit</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">fmt</span> <span class="o">%</span> <span class="n">number</span>
+    <span class="k">if</span> <span class="s1">&#39;e&#39;</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="n">prefix</span><span class="p">,</span> <span class="n">suffix</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;e&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">prefix</span> <span class="o">+</span> <span class="s1">r&#39;\cdot 10^{</span><span class="si">%s</span><span class="s1">}&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">suffix</span><span class="p">))</span> <span class="o">+</span> <span class="n">unit</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">s</span> <span class="o">+</span> <span class="n">unit</span></div>
+
+<span class="n">_unicode_sub</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="s2">u&quot;₀₁₂₃₄₅₆₇₈₉&quot;</span><span class="p">):</span>
+    <span class="n">_unicode_sub</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)]</span> <span class="o">=</span> <span class="n">v</span>
+
+<span class="n">_unicode_sup</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;+&#39;</span><span class="p">:</span> <span class="s1">u&#39;⁺&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;-&#39;</span><span class="p">:</span> <span class="s1">u&#39;⁻&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="s2">u&quot;⁰¹²³⁴⁵⁶⁷⁸⁹&quot;</span><span class="p">):</span>
+    <span class="n">_unicode_sup</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)]</span> <span class="o">=</span> <span class="n">v</span>
+
+
+<div class="viewcode-block" id="formula_to_unicode"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.parsing.formula_to_unicode">[docs]</a><span class="k">def</span> <span class="nf">formula_to_unicode</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">prefixes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">infixes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">u&quot;&quot;&quot; Convert formula string to unicode string representation</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    formula : str</span>
+<span class="sd">        Chemical formula, e.g. &#39;H2O&#39;, &#39;Fe+3&#39;, &#39;Cl-&#39;</span>
+<span class="sd">    prefixes : dict</span>
+<span class="sd">        Prefix transofmrations, default: greek letters and .</span>
+<span class="sd">    infixes : dict</span>
+<span class="sd">        Infix transofmrations, default: .</span>
+<span class="sd">    suffixes : tuple of strings</span>
+<span class="sd">        Suffixes to keep, e.g. (&#39;(g)&#39;, &#39;(s)&#39;)</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_unicode(&#39;NH4+&#39;) == u&#39;NH₄⁺&#39;</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_unicode(&#39;Fe(CN)6+2&#39;) == u&#39;Fe(CN)₆²⁺&#39;</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_unicode(&#39;Fe(CN)6+2(aq)&#39;) == u&#39;Fe(CN)₆²⁺(aq)&#39;</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_unicode(&#39;.NHO-(aq)&#39;) == u&#39;⋅NHO⁻(aq)&#39;</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_unicode(&#39;alpha-FeOOH(s)&#39;) == u&#39;α-FeOOH(s)&#39;</span>
+<span class="sd">    True</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">prefixes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">prefixes</span> <span class="o">=</span> <span class="n">_unicode_mapping</span>
+    <span class="k">if</span> <span class="n">infixes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">infixes</span> <span class="o">=</span> <span class="n">_unicode_infix_mapping</span>
+    <span class="k">return</span> <span class="n">_formula_to_format</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_unicode_sub</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">_</span><span class="p">)]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">x</span><span class="p">),</span>
+        <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_unicode_sup</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">_</span><span class="p">)]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">x</span><span class="p">),</span>
+        <span class="n">formula</span><span class="p">,</span> <span class="n">prefixes</span><span class="p">,</span> <span class="n">infixes</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="number_to_scientific_unicode"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.parsing.number_to_scientific_unicode">[docs]</a><span class="k">def</span> <span class="nf">number_to_scientific_unicode</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%.3g</span><span class="s1">&#39;</span><span class="p">):</span>
+    <span class="sd">u&quot;&quot;&quot;</span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_unicode(3.14) == u&#39;3.14&#39;</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_unicode(3.14159265e-7) == u&#39;3.14·10⁻⁷&#39;</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; import quantities as pq</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_html(2**0.5 * pq.m / pq.s)</span>
+<span class="sd">    &#39;1.41 m/s&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">unit</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">number</span><span class="o">.</span><span class="n">dimensionality</span><span class="o">.</span><span class="n">unicode</span>
+        <span class="n">number</span> <span class="o">=</span> <span class="n">number</span><span class="o">.</span><span class="n">magnitude</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="n">unit</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">fmt</span> <span class="o">%</span> <span class="n">number</span>
+    <span class="k">if</span> <span class="s1">&#39;e&#39;</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="n">prefix</span><span class="p">,</span> <span class="n">suffix</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;e&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">prefix</span> <span class="o">+</span> <span class="s1">u&#39;·10&#39;</span> <span class="o">+</span> <span class="s1">u&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">_unicode_sup</span><span class="o">.</span><span class="n">get</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">suffix</span><span class="p">))))</span> <span class="o">+</span> <span class="n">unit</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">s</span> <span class="o">+</span> <span class="n">unit</span></div>
+
+
+<div class="viewcode-block" id="formula_to_html"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.parsing.formula_to_html">[docs]</a><span class="k">def</span> <span class="nf">formula_to_html</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">prefixes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">infixes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">u&quot;&quot;&quot; Convert formula string to html string representation</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    formula : str</span>
+<span class="sd">        Chemical formula, e.g. &#39;H2O&#39;, &#39;Fe+3&#39;, &#39;Cl-&#39;</span>
+<span class="sd">    prefixes : dict</span>
+<span class="sd">        Prefix transformations, default: greek letters and .</span>
+<span class="sd">    infixes : dict</span>
+<span class="sd">        Infix transformations, default: .</span>
+<span class="sd">    suffixes : tuple of strings</span>
+<span class="sd">        Suffixes to keep, e.g. (&#39;(g)&#39;, &#39;(s)&#39;)</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_html(&#39;NH4+&#39;)</span>
+<span class="sd">    &#39;NH&lt;sub&gt;4&lt;/sub&gt;&lt;sup&gt;+&lt;/sup&gt;&#39;</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_html(&#39;Fe(CN)6+2&#39;)</span>
+<span class="sd">    &#39;Fe(CN)&lt;sub&gt;6&lt;/sub&gt;&lt;sup&gt;2+&lt;/sup&gt;&#39;</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_html(&#39;Fe(CN)6+2(aq)&#39;)</span>
+<span class="sd">    &#39;Fe(CN)&lt;sub&gt;6&lt;/sub&gt;&lt;sup&gt;2+&lt;/sup&gt;(aq)&#39;</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_html(&#39;.NHO-(aq)&#39;)</span>
+<span class="sd">    &#39;&amp;sdot;NHO&lt;sup&gt;-&lt;/sup&gt;(aq)&#39;</span>
+<span class="sd">    &gt;&gt;&gt; formula_to_html(&#39;alpha-FeOOH(s)&#39;)</span>
+<span class="sd">    &#39;&amp;alpha;-FeOOH(s)&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">prefixes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">prefixes</span> <span class="o">=</span> <span class="n">_html_mapping</span>
+    <span class="k">if</span> <span class="n">infixes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">infixes</span> <span class="o">=</span> <span class="n">_html_infix_mapping</span>
+    <span class="k">return</span> <span class="n">_formula_to_format</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s1">&#39;&lt;sub&gt;</span><span class="si">%s</span><span class="s1">&lt;/sub&gt;&#39;</span> <span class="o">%</span> <span class="n">x</span><span class="p">,</span>
+                              <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s1">&#39;&lt;sup&gt;</span><span class="si">%s</span><span class="s1">&lt;/sup&gt;&#39;</span> <span class="o">%</span> <span class="n">x</span><span class="p">,</span>
+                              <span class="n">formula</span><span class="p">,</span> <span class="n">prefixes</span><span class="p">,</span> <span class="n">infixes</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="number_to_scientific_html"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.parsing.number_to_scientific_html">[docs]</a><span class="k">def</span> <span class="nf">number_to_scientific_html</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%.3g</span><span class="s1">&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_html(3.14) == &#39;3.14&#39;</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_html(3.14159265e-7)</span>
+<span class="sd">    &#39;3.14&amp;sdot;10&lt;sup&gt;-7&lt;/sup&gt;&#39;</span>
+<span class="sd">    &gt;&gt;&gt; import quantities as pq</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_html(2**0.5 * pq.m / pq.s)</span>
+<span class="sd">    &#39;1.41 m/s&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">unit</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">number</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">)</span>
+        <span class="n">number</span> <span class="o">=</span> <span class="n">number</span><span class="o">.</span><span class="n">magnitude</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="n">unit</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">fmt</span> <span class="o">%</span> <span class="n">number</span>
+    <span class="k">if</span> <span class="s1">&#39;e&#39;</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="n">prefix</span><span class="p">,</span> <span class="n">suffix</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;e&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">prefix</span> <span class="o">+</span> <span class="s1">&#39;&amp;sdot;10&lt;sup&gt;&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">suffix</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;&lt;/sup&gt;&#39;</span> <span class="o">+</span> <span class="n">unit</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">s</span> <span class="o">+</span> <span class="n">unit</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.4.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
