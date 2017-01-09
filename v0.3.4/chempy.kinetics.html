@@ -1,0 +1,375 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.kinetics package &mdash; chempy 0.3.4 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="chempy 0.3.4 documentation" href="index.html"/>
+        <link rel="up" title="chempy package" href="chempy.html"/>
+        <link rel="next" title="chempy.properties package" href="chempy.properties.html"/>
+        <link rel="prev" title="chempy package" href="chempy.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="chempy.html">chempy package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="chempy.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">chempy.kinetics package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.kinetics.integrated">chempy.kinetics.integrated module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.kinetics.ode">chempy.kinetics.ode module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.properties.html">chempy.properties package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.util.html">chempy.util package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.arrhenius">chempy.arrhenius module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.chemistry">chempy.chemistry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.core">chempy.core module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.debye_huckel">chempy.debye_huckel module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.einstein_smoluchowski">chempy.einstein_smoluchowski module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.equilibria">chempy.equilibria module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.henry">chempy.henry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.symbolic">chempy.symbolic module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.units">chempy.units module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">chempy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="chempy.html">chempy package</a> &raquo;</li>
+      
+    <li>chempy.kinetics package</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/chempy.kinetics.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-chempy.kinetics">
+<span id="chempy-kinetics-package"></span><h1>chempy.kinetics package<a class="headerlink" href="#module-chempy.kinetics" title="Permalink to this headline">¶</a></h1>
+<p>This package collects functions useful for studying chemical kinetics problems.</p>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-chempy.kinetics.integrated">
+<span id="chempy-kinetics-integrated-module"></span><h2>chempy.kinetics.integrated module<a class="headerlink" href="#module-chempy.kinetics.integrated" title="Permalink to this headline">¶</a></h2>
+<p>This module collects special cases of systems for which analytic solutions
+are available.</p>
+<dl class="function">
+<dt id="chempy.kinetics.integrated.binary_irrev">
+<code class="descclassname">chempy.kinetics.integrated.</code><code class="descname">binary_irrev</code><span class="sig-paren">(</span><em>t</em>, <em>kf</em>, <em>P0</em>, <em>t0</em>, <em>excess_C</em>, <em>limiting_C</em>, <em>eps_l</em>, <em>exp=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/integrated.html#binary_irrev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.integrated.binary_irrev" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.integrated.binary_rev">
+<code class="descclassname">chempy.kinetics.integrated.</code><code class="descname">binary_rev</code><span class="sig-paren">(</span><em>t</em>, <em>kf</em>, <em>P0</em>, <em>t0</em>, <em>excess_C</em>, <em>limiting_C</em>, <em>eps_l</em>, <em>beta</em>, <em>exp=None</em>, <em>one=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/integrated.html#binary_rev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.integrated.binary_rev" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.integrated.dimerization_irrev">
+<code class="descclassname">chempy.kinetics.integrated.</code><code class="descname">dimerization_irrev</code><span class="sig-paren">(</span><em>t</em>, <em>kf</em>, <em>initial_C</em>, <em>P0=1</em>, <em>t0=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/integrated.html#dimerization_irrev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.integrated.dimerization_irrev" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.integrated.pseudo_irrev">
+<code class="descclassname">chempy.kinetics.integrated.</code><code class="descname">pseudo_irrev</code><span class="sig-paren">(</span><em>t</em>, <em>kf</em>, <em>P0</em>, <em>t0</em>, <em>excess_C</em>, <em>limiting_C</em>, <em>eps_l</em>, <em>exp=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/integrated.html#pseudo_irrev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.integrated.pseudo_irrev" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.integrated.pseudo_rev">
+<code class="descclassname">chempy.kinetics.integrated.</code><code class="descname">pseudo_rev</code><span class="sig-paren">(</span><em>t</em>, <em>kf</em>, <em>P0</em>, <em>t0</em>, <em>excess_C</em>, <em>limiting_C</em>, <em>eps_l</em>, <em>beta</em>, <em>exp=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/integrated.html#pseudo_rev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.integrated.pseudo_rev" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-chempy.kinetics.ode">
+<span id="chempy-kinetics-ode-module"></span><h2>chempy.kinetics.ode module<a class="headerlink" href="#module-chempy.kinetics.ode" title="Permalink to this headline">¶</a></h2>
+<p>This module contains functions for formulating systems of Ordinary Differential
+Equations (ODE-systems) which may be integrated numerically to model temporal
+evolution of concentrations in reaction systems.</p>
+<dl class="function">
+<dt id="chempy.kinetics.ode.dCdt">
+<code class="descclassname">chempy.kinetics.ode.</code><code class="descname">dCdt</code><span class="sig-paren">(</span><em>rsys</em>, <em>rates</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/ode.html#dCdt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.ode.dCdt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of the time derivatives of the concentrations</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>rsys: ReactionSystem instance</strong></p>
+<p><strong>rates: array_like</strong></p>
+<blockquote class="last">
+<div><p>rates (to be weighted by stoichiometries) of the reactions
+in <code class="docutils literal"><span class="pre">rsys</span></code></p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">chempy</span> <span class="k">import</span> <span class="n">ReactionSystem</span><span class="p">,</span> <span class="n">Reaction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">line</span><span class="p">,</span> <span class="n">keys</span> <span class="o">=</span> <span class="s1">&#39;H2O -&gt; H+ + OH- ; 1e-4&#39;</span><span class="p">,</span> <span class="s1">&#39;H2O H+ OH-&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rsys</span> <span class="o">=</span> <span class="n">ReactionSystem</span><span class="p">([</span><span class="n">Reaction</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">keys</span><span class="p">)],</span> <span class="n">keys</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dCdt</span><span class="p">(</span><span class="n">rsys</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.0054</span><span class="p">])</span>
+<span class="go">[-0.0054, 0.0054, 0.0054]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.ode.get_odesys">
+<code class="descclassname">chempy.kinetics.ode.</code><code class="descname">get_odesys</code><span class="sig-paren">(</span><em>rsys</em>, <em>include_params=False</em>, <em>SymbolicSys=None</em>, <em>unit_registry=None</em>, <em>output_conc_unit=None</em>, <em>output_time_unit=None</em>, <em>state=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/ode.html#get_odesys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.ode.get_odesys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a <code class="xref py py-class docutils literal"><span class="pre">pyneqsys.SymbolicSys</span></code> from a <code class="xref py py-class docutils literal"><span class="pre">ReactionSystem</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>rsys: ReactionSystem</strong></p>
+<p><strong>include_params: bool (default: False)</strong></p>
+<blockquote>
+<div><p>whether rate constants should be included into the rate expressions or
+left as free parameters in the <code class="xref py py-class docutils literal"><span class="pre">pyneqsys.SymbolicSys</span></code> instance.</p>
+</div></blockquote>
+<p><strong>SymbolicSys: class (optional)</strong></p>
+<blockquote>
+<div><p>default: <code class="xref py py-class docutils literal"><span class="pre">pyneqsys.SymbolicSys</span></code></p>
+</div></blockquote>
+<p><strong>unit_registry: dict (optional)</strong></p>
+<blockquote>
+<div><p>see <code class="xref py py-func docutils literal"><span class="pre">chempy.units.get_derived_units()</span></code></p>
+</div></blockquote>
+<p><strong>output_conc_unit: unit (Optional)</strong></p>
+<p><strong>output_time_unit: unit (Optional)</strong></p>
+<p><strong>state: object (optional)</strong></p>
+<blockquote>
+<div><p>argument for reaction parameters</p>
+</div></blockquote>
+<p><strong>**kwargs:</strong></p>
+<blockquote class="last">
+<div><p>Keyword arguemnts pass on to <cite>SymbolicSys</cite></p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.ode.law_of_mass_action_rates">
+<code class="descclassname">chempy.kinetics.ode.</code><code class="descname">law_of_mass_action_rates</code><span class="sig-paren">(</span><em>conc</em>, <em>rsys</em>, <em>k=None</em>, <em>state=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/ode.html#law_of_mass_action_rates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.ode.law_of_mass_action_rates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a generator of reaction rate expressions</p>
+<p>Rates according to the law of mass action (<code class="xref py py-attr docutils literal"><span class="pre">rsys.inact_reac</span></code> ignored)
+from a <code class="xref py py-class docutils literal"><span class="pre">ReactionSystem</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>conc: array_like</strong></p>
+<blockquote>
+<div><p>concentrations (floats or symbolic objects)</p>
+</div></blockquote>
+<p><strong>rsys: ReactionSystem instance</strong></p>
+<blockquote>
+<div><p>See <code class="xref py py-class docutils literal"><span class="pre">ReactionSystem</span></code></p>
+</div></blockquote>
+<p><strong>k: array_like (optional)</strong></p>
+<blockquote>
+<div><p>to override rate parameters of the reactions</p>
+</div></blockquote>
+<p><strong>state: object (optional)</strong></p>
+<blockquote class="last">
+<div><p>argument for reaction parameters</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">chempy</span> <span class="k">import</span> <span class="n">ReactionSystem</span><span class="p">,</span> <span class="n">Reaction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">line</span><span class="p">,</span> <span class="n">keys</span> <span class="o">=</span> <span class="s1">&#39;H2O -&gt; H+ + OH- ; 1e-4&#39;</span><span class="p">,</span> <span class="s1">&#39;H2O H+ OH-&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rsys</span> <span class="o">=</span> <span class="n">ReactionSystem</span><span class="p">([</span><span class="n">Reaction</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">keys</span><span class="p">)],</span> <span class="n">keys</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">next</span><span class="p">(</span><span class="n">law_of_mass_action_rates</span><span class="p">([</span><span class="mf">55.4</span><span class="p">,</span> <span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">7</span><span class="p">],</span> <span class="n">rsys</span><span class="p">))</span>
+<span class="go">0.00554</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="chempy.properties.html" class="btn btn-neutral float-right" title="chempy.properties package" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="chempy.html" class="btn btn-neutral" title="chempy package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.3.4',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

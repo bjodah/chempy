@@ -1,0 +1,342 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.kinetics.ode &mdash; chempy 0.3.4 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="chempy 0.3.4 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../index.html">chempy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      
+    <li>chempy.kinetics.ode</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.kinetics.ode</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains functions for formulating systems of Ordinary Differential</span>
+<span class="sd">Equations (ODE-systems) which may be integrated numerically to model temporal</span>
+<span class="sd">evolution of concentrations in reaction systems.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">chempy.units</span> <span class="k">import</span> <span class="n">get_derived_unit</span><span class="p">,</span> <span class="n">to_unitless</span>
+
+
+<div class="viewcode-block" id="law_of_mass_action_rates"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.ode.law_of_mass_action_rates">[docs]</a><span class="k">def</span> <span class="nf">law_of_mass_action_rates</span><span class="p">(</span><span class="n">conc</span><span class="p">,</span> <span class="n">rsys</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns a generator of reaction rate expressions</span>
+
+<span class="sd">    Rates according to the law of mass action (:attr:`rsys.inact_reac` ignored)</span>
+<span class="sd">    from a :class:`ReactionSystem`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    conc: array_like</span>
+<span class="sd">        concentrations (floats or symbolic objects)</span>
+<span class="sd">    rsys: ReactionSystem instance</span>
+<span class="sd">        See :class:`ReactionSystem`</span>
+<span class="sd">    k: array_like (optional)</span>
+<span class="sd">        to override rate parameters of the reactions</span>
+<span class="sd">    state: object (optional)</span>
+<span class="sd">        argument for reaction parameters</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from chempy import ReactionSystem, Reaction</span>
+<span class="sd">    &gt;&gt;&gt; line, keys = &#39;H2O -&gt; H+ + OH- ; 1e-4&#39;, &#39;H2O H+ OH-&#39;</span>
+<span class="sd">    &gt;&gt;&gt; rsys = ReactionSystem([Reaction.from_string(line, keys)], keys)</span>
+<span class="sd">    &gt;&gt;&gt; next(law_of_mass_action_rates([55.4, 1e-7, 1e-7], rsys))</span>
+<span class="sd">    0.00554</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_eval_k</span><span class="p">(</span><span class="n">_k</span><span class="p">):</span>
+        <span class="n">is_func</span> <span class="o">=</span> <span class="n">callable</span><span class="p">(</span><span class="n">_k</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">_k</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span> <span class="o">==</span> <span class="s1">&#39;Symbol&#39;</span>
+        <span class="k">return</span> <span class="n">_k</span><span class="p">(</span><span class="n">state</span><span class="p">)</span> <span class="k">if</span> <span class="n">is_func</span> <span class="k">else</span> <span class="n">_k</span>
+    <span class="k">for</span> <span class="n">rxn_idx</span><span class="p">,</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rsys</span><span class="o">.</span><span class="n">rxns</span><span class="p">):</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">substance_key</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="n">rxn</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">s_idx</span> <span class="o">=</span> <span class="n">rsys</span><span class="o">.</span><span class="n">as_substance_index</span><span class="p">(</span><span class="n">substance_key</span><span class="p">)</span>
+            <span class="n">rate</span> <span class="o">*=</span> <span class="n">conc</span><span class="p">[</span><span class="n">s_idx</span><span class="p">]</span><span class="o">**</span><span class="n">coeff</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">_eval_k</span><span class="p">(</span><span class="n">rxn</span><span class="o">.</span><span class="n">param</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">_eval_k</span><span class="p">(</span><span class="n">k</span><span class="p">[</span><span class="n">rxn_idx</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="dCdt"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.ode.dCdt">[docs]</a><span class="k">def</span> <span class="nf">dCdt</span><span class="p">(</span><span class="n">rsys</span><span class="p">,</span> <span class="n">rates</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns a list of the time derivatives of the concentrations</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rsys: ReactionSystem instance</span>
+<span class="sd">    rates: array_like</span>
+<span class="sd">        rates (to be weighted by stoichiometries) of the reactions</span>
+<span class="sd">        in ``rsys``</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from chempy import ReactionSystem, Reaction</span>
+<span class="sd">    &gt;&gt;&gt; line, keys = &#39;H2O -&gt; H+ + OH- ; 1e-4&#39;, &#39;H2O H+ OH-&#39;</span>
+<span class="sd">    &gt;&gt;&gt; rsys = ReactionSystem([Reaction.from_string(line, keys)], keys)</span>
+<span class="sd">    &gt;&gt;&gt; dCdt(rsys, [0.0054])</span>
+<span class="sd">    [-0.0054, 0.0054, 0.0054]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">rsys</span><span class="o">.</span><span class="n">ns</span>
+    <span class="n">net_stoichs</span> <span class="o">=</span> <span class="n">rsys</span><span class="o">.</span><span class="n">net_stoichs</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">idx_s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rsys</span><span class="o">.</span><span class="n">ns</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">idx_r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rsys</span><span class="o">.</span><span class="n">nr</span><span class="p">):</span>
+            <span class="n">f</span><span class="p">[</span><span class="n">idx_s</span><span class="p">]</span> <span class="o">+=</span> <span class="n">net_stoichs</span><span class="p">[</span><span class="n">idx_r</span><span class="p">,</span> <span class="n">idx_s</span><span class="p">]</span><span class="o">*</span><span class="n">rates</span><span class="p">[</span><span class="n">idx_r</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">f</span></div>
+
+
+<span class="k">class</span> <span class="nc">_Always</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;value&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+
+
+<div class="viewcode-block" id="get_odesys"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.ode.get_odesys">[docs]</a><span class="k">def</span> <span class="nf">get_odesys</span><span class="p">(</span><span class="n">rsys</span><span class="p">,</span> <span class="n">include_params</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">SymbolicSys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">unit_registry</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_conc_unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">output_time_unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Creates a :class:`pyneqsys.SymbolicSys` from a :class:`ReactionSystem`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rsys: ReactionSystem</span>
+<span class="sd">    include_params: bool (default: False)</span>
+<span class="sd">        whether rate constants should be included into the rate expressions or</span>
+<span class="sd">        left as free parameters in the :class:`pyneqsys.SymbolicSys` instance.</span>
+<span class="sd">    SymbolicSys: class (optional)</span>
+<span class="sd">        default: :class:`pyneqsys.SymbolicSys`</span>
+<span class="sd">    unit_registry: dict (optional)</span>
+<span class="sd">        see :func:`chempy.units.get_derived_units`</span>
+<span class="sd">    output_conc_unit: unit (Optional)</span>
+<span class="sd">    output_time_unit: unit (Optional)</span>
+<span class="sd">    state: object (optional)</span>
+<span class="sd">        argument for reaction parameters</span>
+<span class="sd">    \*\*kwargs:</span>
+<span class="sd">        Keyword arguemnts pass on to `SymbolicSys`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">SymbolicSys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">pyodesys.symbolic</span> <span class="k">import</span> <span class="n">SymbolicSys</span>
+
+    <span class="k">if</span> <span class="s1">&#39;names&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;names&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">rsys</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="k">if</span> <span class="n">unit_registry</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># We need to make rsys_params unitless and create</span>
+        <span class="c1"># a post- &amp; pre-processor for SymbolicSys</span>
+        <span class="n">time_unit</span> <span class="o">=</span> <span class="n">get_derived_unit</span><span class="p">(</span><span class="n">unit_registry</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">)</span>
+        <span class="n">conc_unit</span> <span class="o">=</span> <span class="n">get_derived_unit</span><span class="p">(</span><span class="n">unit_registry</span><span class="p">,</span> <span class="s1">&#39;concentration&#39;</span><span class="p">)</span>
+        <span class="n">p_units</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">law_of_mass_action_rates</span><span class="p">(</span><span class="n">_Always</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">conc_unit</span><span class="p">),</span> <span class="n">rsys</span><span class="p">,</span>
+                                                <span class="n">_Always</span><span class="p">(</span><span class="n">conc_unit</span><span class="o">/</span><span class="n">time_unit</span><span class="p">),</span> <span class="n">state</span><span class="p">))</span>
+        <span class="n">rsys_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">elem</span><span class="p">(</span><span class="n">state</span><span class="p">)</span> <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="k">else</span> <span class="n">to_unitless</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">p_unit</span><span class="p">)</span> <span class="k">for</span> <span class="n">elem</span><span class="p">,</span> <span class="n">p_unit</span>
+                       <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">rsys</span><span class="o">.</span><span class="n">params</span><span class="p">(),</span> <span class="n">p_units</span><span class="p">)]</span>
+
+        <span class="k">def</span> <span class="nf">pre_processor</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">to_unitless</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">time_unit</span><span class="p">),</span> <span class="n">to_unitless</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">conc_unit</span><span class="p">),</span> <span class="p">[</span>
+                <span class="n">to_unitless</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">p_unit</span><span class="p">)</span> <span class="k">for</span> <span class="n">elem</span><span class="p">,</span> <span class="n">p_unit</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">p_units</span><span class="p">)]</span>
+
+        <span class="k">def</span> <span class="nf">post_processor</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+            <span class="n">time</span> <span class="o">=</span> <span class="n">x</span><span class="o">*</span><span class="n">time_unit</span>
+            <span class="k">if</span> <span class="n">output_time_unit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="n">output_time_unit</span><span class="p">)</span>
+            <span class="n">conc</span> <span class="o">=</span> <span class="n">y</span><span class="o">*</span><span class="n">conc_unit</span>
+            <span class="k">if</span> <span class="n">output_conc_unit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">conc</span> <span class="o">=</span> <span class="n">conc</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="n">output_conc_unit</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">time</span><span class="p">,</span> <span class="n">conc</span><span class="p">,</span> <span class="p">[</span><span class="n">elem</span><span class="o">*</span><span class="n">p_unit</span> <span class="k">for</span> <span class="n">elem</span><span class="p">,</span> <span class="n">p_unit</span>
+                                <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">p_units</span><span class="p">)]</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;pre_processors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">pre_processor</span><span class="p">]</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;post_processors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">post_processor</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">rsys_params</span> <span class="o">=</span> <span class="n">rsys</span><span class="o">.</span><span class="n">params</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">dydt</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="n">rates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">law_of_mass_action_rates</span><span class="p">(</span>
+            <span class="n">y</span><span class="p">,</span> <span class="n">rsys</span><span class="p">,</span> <span class="n">rsys_params</span> <span class="k">if</span> <span class="n">include_params</span> <span class="k">else</span> <span class="n">p</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">dCdt</span><span class="p">(</span><span class="n">rsys</span><span class="p">,</span> <span class="n">rates</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">SymbolicSys</span><span class="o">.</span><span class="n">from_callback</span><span class="p">(</span>
+        <span class="n">dydt</span><span class="p">,</span> <span class="n">rsys</span><span class="o">.</span><span class="n">ns</span><span class="p">,</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">include_params</span> <span class="k">else</span> <span class="n">rsys</span><span class="o">.</span><span class="n">nr</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.3.4',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

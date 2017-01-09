@@ -1,0 +1,93 @@
+chempy package
+==============
+
+.. automodule:: chempy
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Subpackages
+-----------
+
+.. toctree::
+
+    chempy.kinetics
+    chempy.properties
+    chempy.util
+
+Submodules
+----------
+
+chempy.arrhenius module
+-----------------------
+
+.. automodule:: chempy.arrhenius
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.chemistry module
+-----------------------
+
+.. automodule:: chempy.chemistry
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.core module
+------------------
+
+.. automodule:: chempy.core
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.debye_huckel module
+--------------------------
+
+.. automodule:: chempy.debye_huckel
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.einstein_smoluchowski module
+-----------------------------------
+
+.. automodule:: chempy.einstein_smoluchowski
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.equilibria module
+------------------------
+
+.. automodule:: chempy.equilibria
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.henry module
+-------------------
+
+.. automodule:: chempy.henry
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.symbolic module
+----------------------
+
+.. automodule:: chempy.symbolic
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.units module
+-------------------
+
+.. automodule:: chempy.units
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+

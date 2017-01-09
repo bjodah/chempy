@@ -1,0 +1,68 @@
+chempy.util package
+===================
+
+.. automodule:: chempy.util
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Submodules
+----------
+
+chempy.util.arithmeticdict module
+---------------------------------
+
+.. automodule:: chempy.util.arithmeticdict
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.util.deprecation module
+------------------------------
+
+.. automodule:: chempy.util.deprecation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.util.graph module
+------------------------
+
+.. automodule:: chempy.util.graph
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.util.parsing module
+--------------------------
+
+.. automodule:: chempy.util.parsing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.util.pyutil module
+-------------------------
+
+.. automodule:: chempy.util.pyutil
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.util.stoich module
+-------------------------
+
+.. automodule:: chempy.util.stoich
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.util.table module
+------------------------
+
+.. automodule:: chempy.util.table
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+

@@ -1,0 +1,1044 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.chemistry &mdash; chempy 0.3.4 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="chempy 0.3.4 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">chempy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>chempy.chemistry</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.chemistry</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">chain</span>
+<span class="kn">from</span> <span class="nn">operator</span> <span class="k">import</span> <span class="n">itemgetter</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">.arrhenius</span> <span class="k">import</span> <span class="n">arrhenius_equation</span>
+<span class="kn">from</span> <span class="nn">.util.arithmeticdict</span> <span class="k">import</span> <span class="n">ArithmeticDict</span>
+<span class="kn">from</span> <span class="nn">.util.parsing</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">to_composition</span><span class="p">,</span> <span class="n">mass_from_composition</span><span class="p">,</span> <span class="n">to_latex</span><span class="p">,</span> <span class="n">to_reaction</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.util.pyutil</span> <span class="k">import</span> <span class="n">defaultnamedtuple</span><span class="p">,</span> <span class="n">deprecated</span>
+<span class="kn">from</span> <span class="nn">.units</span> <span class="k">import</span> <span class="n">to_unitless</span><span class="p">,</span> <span class="n">default_constants</span><span class="p">,</span> <span class="n">default_units</span>
+
+
+<div class="viewcode-block" id="Substance"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Substance">[docs]</a><span class="k">class</span> <span class="nc">Substance</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Class representing a chemical substance</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name: str</span>
+<span class="sd">    charge: int (optional, default: None)</span>
+<span class="sd">        will be stored in composition[0], prefer composition when possible</span>
+<span class="sd">    latex_name: str</span>
+<span class="sd">    composition: dict or None (default)</span>
+<span class="sd">        dict (int -&gt; number) e.g. {atomic number: count}, zero has special</span>
+<span class="sd">        meaning (net charge)</span>
+<span class="sd">    other_properties: dict</span>
+<span class="sd">        free form dictionary. Could be simple such as ``{&#39;mp&#39;: 0, &#39;bp&#39;: 100}``</span>
+<span class="sd">        or considerably more involved, e.g.: ``{&#39;diffusion_coefficient&#39;: {\</span>
+<span class="sd"> &#39;water&#39;: lambda T: 2.1*m**2/s/K*(T - 273.15*K)}}``</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mass</span>
+<span class="sd">        maps to other_properties, and when unavailable looks for formula.mass</span>
+<span class="sd">    attrs</span>
+<span class="sd">        a tuple of attribute names for serialization</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; ammonium = Substance(&#39;NH4+&#39;, 1, &#39;NH_4^+&#39;, composition={14:1, 1: 4},</span>
+<span class="sd">    ...     other_properties={&#39;mass&#39;: 18.0385, &#39;pKa&#39;: 9.24})</span>
+<span class="sd">    &gt;&gt;&gt; ammonium.name</span>
+<span class="sd">    &#39;NH4+&#39;</span>
+<span class="sd">    &gt;&gt;&gt; ammonium.composition  # note that charge was inserted as composition[0]</span>
+<span class="sd">    {0: 1, 1: 4, 14: 1}</span>
+<span class="sd">    &gt;&gt;&gt; ammonium.other_properties[&#39;mass&#39;]</span>
+<span class="sd">    18.0385</span>
+<span class="sd">    &gt;&gt;&gt; ammonium.other_properties[&#39;pKa&#39;]</span>
+<span class="sd">    9.24</span>
+<span class="sd">    &gt;&gt;&gt; ammonium.mass  # mass is a special case (also attribute)</span>
+<span class="sd">    18.0385</span>
+<span class="sd">    &gt;&gt;&gt; ammonium.pKa</span>
+<span class="sd">    Traceback (most recent call last):</span>
+<span class="sd">        ...</span>
+<span class="sd">    AttributeError: &#39;Substance&#39; object has no attribute &#39;pKa&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">attrs</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;latex_name&#39;</span><span class="p">,</span> <span class="s1">&#39;composition&#39;</span><span class="p">,</span> <span class="s1">&#39;other_properties&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">charge</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Convenience property for accessing ``composition[0]`` &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># electron (net) deficiency</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mass</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Convenience property for accessing ``other_properties[&#39;mass&#39;]``</span>
+
+<span class="sd">        when ``other_properties[&#39;mass&#39;]`` is missing the mass is calculated</span>
+<span class="sd">        from the :attr:`composition` using</span>
+<span class="sd">        :func:`chempy.util.parsing.mass_from_composition`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">other_properties</span><span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">composition</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">mass_from_composition</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">composition</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latex_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">composition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">other_properties</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">latex_name</span> <span class="o">=</span> <span class="n">latex_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">composition</span> <span class="o">=</span> <span class="n">composition</span> <span class="ow">or</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="mi">0</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">composition</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">charge</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Cannot give both charge and composition[0]&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">charge</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">composition</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">charge</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">other_properties</span> <span class="o">=</span> <span class="n">other_properties</span> <span class="ow">or</span> <span class="p">{}</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Substance.from_formula"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Substance.from_formula">[docs]</a>    <span class="k">def</span> <span class="nf">from_formula</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">formula</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates a :class:`Substance` instance from its formula</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        formula: str</span>
+<span class="sd">            e.g. &#39;Na+&#39;, &#39;H2O&#39;, &#39;Fe(CN)6-4&#39;</span>
+<span class="sd">        \*\*kwargs:</span>
+<span class="sd">            keyword arguments passed on to `.Substance`</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; NH3 = Substance.from_formula(&#39;NH3&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; NH3.composition == {1: 3, 7: 1}</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; &#39;%.2f&#39; % NH3.mass</span>
+<span class="sd">        &#39;17.03&#39;</span>
+<span class="sd">        &gt;&gt;&gt; NH3.charge</span>
+<span class="sd">        0</span>
+<span class="sd">        &gt;&gt;&gt; NH3.latex_name</span>
+<span class="sd">        &#39;NH_{3}&#39;</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">latex_name</span><span class="o">=</span><span class="n">to_latex</span><span class="p">(</span><span class="n">formula</span><span class="p">),</span>
+                   <span class="n">composition</span><span class="o">=</span><span class="n">to_composition</span><span class="p">(</span><span class="n">formula</span><span class="p">),</span>
+                   <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">kw</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;name=&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;, ...&#39;</span><span class="p">]</span>  <span class="c1"># Too verbose to print all</span>
+        <span class="k">return</span> <span class="s2">&quot;&lt;</span><span class="si">{}</span><span class="s2">(</span><span class="si">{}</span><span class="s2">)&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">kw</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Substance.composition_keys"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Substance.composition_keys">[docs]</a>    <span class="k">def</span> <span class="nf">composition_keys</span><span class="p">(</span><span class="n">substance_iter</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Occuring :attr:`composition` keys among a series of substances &quot;&quot;&quot;</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">substance_iter</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">keys</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Species"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Species">[docs]</a><span class="k">class</span> <span class="nc">Species</span><span class="p">(</span><span class="n">Substance</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Substance belonging to a phase</span>
+
+<span class="sd">    Species extends :class:`Substance` with the new attribute :attr:`phase_idx`</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    phase_idx: int</span>
+<span class="sd">        Index of the phase (default is 0)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">phase_idx</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;phase_idx&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Species</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phase_idx</span> <span class="o">=</span> <span class="n">phase_idx</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@deprecated</span><span class="p">(</span><span class="n">last_supported_version</span><span class="o">=</span><span class="s1">&#39;0.3.0&#39;</span><span class="p">,</span> <span class="n">will_be_missing_in</span><span class="o">=</span><span class="s1">&#39;0.4.0&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">precipitate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; deprecated attribute, provided for compatibility for now &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase_idx</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Species.from_formula"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Species.from_formula">[docs]</a>    <span class="k">def</span> <span class="nf">from_formula</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">formula</span><span class="p">,</span> <span class="n">phases</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;(s)&#39;</span><span class="p">,</span> <span class="s1">&#39;(l)&#39;</span><span class="p">,</span> <span class="s1">&#39;(g)&#39;</span><span class="p">),</span>
+                     <span class="n">default_phase_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Create a :class:`Species` instance from its formula</span>
+
+<span class="sd">        Analogous to :meth:`Substance.from_formula` but with the addition that</span>
+<span class="sd">        phase_idx is determined from the formula (and a mapping provided by</span>
+<span class="sd">        ``phases``)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        formula: str</span>
+<span class="sd">            e.g. &#39;H2O&#39;, &#39;NaCl(s)&#39;, &#39;CO2(aq)&#39;, &#39;CO2(g)&#39;</span>
+<span class="sd">        phases: iterable of str or dict mapping str -&gt; int</span>
+<span class="sd">            if not in \*\*kwargs, ``phase_idx`` is determined from the suffix</span>
+<span class="sd">            of ``formula`` where the suffixes is mapped from phases:</span>
+<span class="sd">                if ``phases`` is a dictionary:</span>
+<span class="sd">                    ``phase_idx = phases[suffix]``</span>
+<span class="sd">                else:</span>
+<span class="sd">                    ``phase_idx = phases.index(suffix) + 1``</span>
+<span class="sd">            and if suffixes is missing in phases phase_idx is taken to be 0</span>
+<span class="sd">        default_phase_idx: int or None (default: 0)</span>
+<span class="sd">            If ``default_phase_idx`` is ``None``, ``ValueError`` is raised for</span>
+<span class="sd">                unkown suffixes.</span>
+<span class="sd">            Else ``default_phase_idx`` is used as ``phase_idx`` in those cases.</span>
+<span class="sd">        \*\*kwargs:</span>
+<span class="sd">            Keyword arguments passed on.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; water = Species.from_formula(&#39;H2O&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; water.phase_idx</span>
+<span class="sd">        0</span>
+<span class="sd">        &gt;&gt;&gt; NaCl = Species.from_formula(&#39;NaCl(s)&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; NaCl.phase_idx</span>
+<span class="sd">        1</span>
+<span class="sd">        &gt;&gt;&gt; Hg_l = Species.from_formula(&#39;Hg(l)&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Hg_l.phase_idx</span>
+<span class="sd">        2</span>
+<span class="sd">        &gt;&gt;&gt; CO2g = Species.from_formula(&#39;CO2(g)&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; CO2g.phase_idx</span>
+<span class="sd">        3</span>
+<span class="sd">        &gt;&gt;&gt; CO2aq = Species.from_formula(&#39;CO2(aq)&#39;, default_phase_idx=None)</span>
+<span class="sd">        Traceback (most recent call last):</span>
+<span class="sd">            ...</span>
+<span class="sd">        ValueError: Could not determine phase_idx</span>
+<span class="sd">        &gt;&gt;&gt; CO2aq = Species.from_formula(&#39;CO2(aq)&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; CO2aq.phase_idx</span>
+<span class="sd">        0</span>
+<span class="sd">        &gt;&gt;&gt; CO2aq = Species.from_formula(&#39;CO2(aq)&#39;, [&#39;(aq)&#39;],</span>
+<span class="sd">        ...     default_phase_idx=None)</span>
+<span class="sd">        &gt;&gt;&gt; CO2aq.phase_idx</span>
+<span class="sd">        1</span>
+<span class="sd">        &gt;&gt;&gt; Species.from_formula(&#39;CO2(aq)&#39;, {&#39;(aq)&#39;: 0}, None).phase_idx</span>
+<span class="sd">        0</span>
+
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError:</span>
+<span class="sd">            if ``default_phase_idx`` is ``None`` and no suffix found in phases</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;phase_idx&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">p_i</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;phase_idx&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">p_i</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phases</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">phases</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">formula</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+                        <span class="n">p_i</span> <span class="o">=</span> <span class="n">v</span>
+                        <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">phase</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">phases</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">formula</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">phase</span><span class="p">):</span>
+                        <span class="n">p_i</span> <span class="o">=</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span>
+                        <span class="k">break</span>
+            <span class="k">if</span> <span class="n">p_i</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">default_phase_idx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Could not determine phase_idx&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">p_i</span> <span class="o">=</span> <span class="n">default_phase_idx</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">Species</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">from_formula</span><span class="p">(</span>
+            <span class="n">formula</span><span class="p">,</span> <span class="n">phase_idx</span><span class="o">=</span><span class="n">p_i</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div></div>
+
+
+<span class="nd">@deprecated</span><span class="p">(</span><span class="n">last_supported_version</span><span class="o">=</span><span class="s1">&#39;0.3.0&#39;</span><span class="p">,</span>
+            <span class="n">will_be_missing_in</span><span class="o">=</span><span class="s1">&#39;0.4.0&#39;</span><span class="p">,</span> <span class="n">use_instead</span><span class="o">=</span><span class="n">Species</span><span class="p">)</span>
+<div class="viewcode-block" id="Solute"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Solute">[docs]</a><span class="k">class</span> <span class="nc">Solute</span><span class="p">(</span><span class="n">Substance</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; [DEPRECATED] Use `.Species` instead</span>
+
+<span class="sd">    Counter-intuitive to its name Solute has an additional</span>
+<span class="sd">    property &#39;precipitate&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">precipitate</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;precipitate&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">Substance</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">precipitate</span> <span class="o">=</span> <span class="n">precipitate</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_formula</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">formula</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">formula</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;(s)&#39;</span><span class="p">):</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;precipitate&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">latex_name</span><span class="o">=</span><span class="n">to_latex</span><span class="p">(</span><span class="n">formula</span><span class="p">),</span>
+                   <span class="n">composition</span><span class="o">=</span><span class="n">to_composition</span><span class="p">(</span><span class="n">formula</span><span class="p">),</span>
+                   <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Reaction"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Reaction">[docs]</a><span class="k">class</span> <span class="nc">Reaction</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Class representing a chemical reaction</span>
+
+<span class="sd">    Consider for example:</span>
+
+<span class="sd">        A + R --&gt; A + P; r = k*A*R</span>
+
+<span class="sd">    this would be represented as ``Reaction({&#39;A&#39;: 1, &#39;R&#39;: 1},</span>
+<span class="sd">    {&#39;A&#39;: 1, &#39;P&#39;: 1}, param=k)``. Some reactions have a larger</span>
+<span class="sd">    stoichiometric coefficient than what appears in the rate</span>
+<span class="sd">    expression, e.g.:</span>
+
+<span class="sd">        5*C1 + C2 --&gt; B; r = k*C1*C2</span>
+
+<span class="sd">    this can be represented as ``Reaction({&#39;C1&#39;: 1, &#39;C2&#39;: 1},</span>
+<span class="sd">    {&#39;B&#39;: 1}, inact_reac={&#39;C1&#39;: 4}, param=k)``.</span>
+
+<span class="sd">    The rate constant information in ``param`` may be callable (with a single</span>
+<span class="sd">    argument representing the state, e.g. temperature)</span>
+
+<span class="sd">    Additional data may be stored in the ``other_properties`` dict.</span>
+
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    reac: dict (str -&gt; int)</span>
+<span class="sd">    prod: dict (str -&gt; int)</span>
+<span class="sd">    param: float or callable</span>
+<span class="sd">    inact_reac: dict (optional)</span>
+<span class="sd">    inact_prod: dict (optional)</span>
+<span class="sd">    name: str (optional)</span>
+<span class="sd">    k: deprecated (alias for param)</span>
+<span class="sd">    ref: object</span>
+<span class="sd">        reference</span>
+<span class="sd">    other_properties: dict (optional)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">str_arrow</span> <span class="o">=</span> <span class="s1">&#39;-&gt;&#39;</span>
+    <span class="n">latex_arrow</span> <span class="o">=</span> <span class="s1">r&#39;\rightarrow&#39;</span>
+    <span class="n">param_char</span> <span class="o">=</span> <span class="s1">&#39;k&#39;</span>  <span class="c1"># convention</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">prod</span><span class="p">,</span> <span class="n">param</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inact_reac</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">inact_prod</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">other_properties</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reac</span> <span class="o">=</span> <span class="n">reac</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prod</span> <span class="o">=</span> <span class="n">prod</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param</span> <span class="o">=</span> <span class="n">param</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inact_reac</span> <span class="o">=</span> <span class="n">inact_reac</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inact_prod</span> <span class="o">=</span> <span class="n">inact_prod</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ref</span> <span class="o">=</span> <span class="n">ref</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">other_properties</span> <span class="o">=</span> <span class="n">other_properties</span> <span class="ow">or</span> <span class="p">{}</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Reaction.from_string"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Reaction.from_string">[docs]</a>    <span class="k">def</span> <span class="nf">from_string</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">substance_keys</span><span class="p">,</span> <span class="n">globals_</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Parses a string into an instance</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        string : str</span>
+<span class="sd">            string representation of the reaction</span>
+<span class="sd">        substance_keys : iterable of strings or string</span>
+<span class="sd">        globals_ : dict (optional)</span>
+<span class="sd">            dict for eval for (default: None -&gt; {&#39;chempy&#39;: chempy})</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; r = Reaction.from_string(&quot;H2O -&gt; H+ + OH-; 1e-4&quot;, &#39;H2O H+ OH-&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; r.reac == {&#39;H2O&#39;: 1} and r.prod == {&#39;H+&#39;: 1, &#39;OH-&#39;: 1}</span>
+<span class="sd">        True</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        :func:`chempy.util.parsing.to_reaction` is used which in turn calls</span>
+<span class="sd">        eval which is a severe security concern for untrusted input.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">substance_keys</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s1">&#39; &#39;</span> <span class="ow">in</span> <span class="n">substance_keys</span><span class="p">:</span>
+                <span class="n">substance_keys</span> <span class="o">=</span> <span class="n">substance_keys</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">to_reaction</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">substance_keys</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">str_arrow</span><span class="p">,</span> <span class="n">cls</span><span class="p">,</span> <span class="n">globals_</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lhs</span><span class="p">,</span> <span class="n">Reaction</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="n">Reaction</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">NotImplemented</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;reac&#39;</span><span class="p">,</span> <span class="s1">&#39;prod&#39;</span><span class="p">,</span> <span class="s1">&#39;param&#39;</span><span class="p">,</span> <span class="s1">&#39;inact_reac&#39;</span><span class="p">,</span> <span class="s1">&#39;inact_prod&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">lhs</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="Reaction.order"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Reaction.order">[docs]</a>    <span class="k">def</span> <span class="nf">order</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Sum of (active) reactant stoichiometries &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">values</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="Reaction.net_stoich"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Reaction.net_stoich">[docs]</a>    <span class="k">def</span> <span class="nf">net_stoich</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substance_keys</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Per substance net stoichiometry tuple (active &amp; inactive) &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prod</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">inact_prod</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">inact_reac</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">substance_keys</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Reaction.all_reac_stoich"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Reaction.all_reac_stoich">[docs]</a>    <span class="k">def</span> <span class="nf">all_reac_stoich</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substances</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Per substance reactant stoichiometry tuple (active &amp; inactive) &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">inact_reac</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">substances</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Reaction.all_prod_stoich"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Reaction.all_prod_stoich">[docs]</a>    <span class="k">def</span> <span class="nf">all_prod_stoich</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substances</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Per substance product stoichiometry tuple (active &amp; inactive) &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prod</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">inact_prod</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">substances</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_xprecipitate_stoich</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substances</span><span class="p">,</span> <span class="n">xor</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">((</span>
+            <span class="mi">0</span> <span class="k">if</span> <span class="n">xor</span> <span class="o">^</span> <span class="n">v</span><span class="o">.</span><span class="n">precipitate</span> <span class="k">else</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prod</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">inact_prod</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">inact_reac</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">substances</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+
+<div class="viewcode-block" id="Reaction.precipitate_stoich"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Reaction.precipitate_stoich">[docs]</a>    <span class="k">def</span> <span class="nf">precipitate_stoich</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substances</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Only stoichiometry of precipitates &quot;&quot;&quot;</span>
+        <span class="n">net</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_xprecipitate_stoich</span><span class="p">(</span><span class="n">substances</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">found1</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">net</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">net</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">found1</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">found1</span> <span class="o">=</span> <span class="n">idx</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Only one precipitate assumed.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">net</span><span class="p">,</span> <span class="n">net</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">idx</span></div>
+
+<div class="viewcode-block" id="Reaction.non_precipitate_stoich"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Reaction.non_precipitate_stoich">[docs]</a>    <span class="k">def</span> <span class="nf">non_precipitate_stoich</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substances</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Only stoichiometry of non-precipitates &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_xprecipitate_stoich</span><span class="p">(</span><span class="n">substances</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Reaction.has_precipitates"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Reaction.has_precipitates">[docs]</a>    <span class="k">def</span> <span class="nf">has_precipitates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substances</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">s_name</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">prod</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">inact_reac</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">inact_prod</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="n">substances</span><span class="p">[</span><span class="n">s_name</span><span class="p">]</span><span class="o">.</span><span class="n">precipitate</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_str_parts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name_attr</span><span class="p">,</span> <span class="n">arrow_attr</span><span class="p">,</span> <span class="n">substances</span><span class="p">):</span>
+        <span class="n">reac</span><span class="p">,</span> <span class="n">prod</span><span class="p">,</span> <span class="n">i_reac</span><span class="p">,</span> <span class="n">i_prod</span> <span class="o">=</span> <span class="p">[[</span>
+            <span class="p">((</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39; &#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">v</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span>
+                <span class="n">substances</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">name_attr</span><span class="p">,</span> <span class="n">k</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">filter</span><span class="p">(</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+        <span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prod</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inact_reac</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">inact_prod</span><span class="p">)]</span>
+        <span class="n">r_str</span> <span class="o">=</span> <span class="s2">&quot; + &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">reac</span><span class="p">))</span>
+        <span class="n">ir_str</span> <span class="o">=</span> <span class="s1">&#39; (+ &#39;</span> <span class="o">+</span> <span class="s2">&quot; + &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">i_reac</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">i_reac</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">arrow_str</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arrow_attr</span><span class="p">)</span>
+        <span class="n">p_str</span> <span class="o">=</span> <span class="s2">&quot; + &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">prod</span><span class="p">))</span>
+        <span class="n">ip_str</span> <span class="o">=</span> <span class="s1">&#39; (+ &#39;</span> <span class="o">+</span> <span class="s2">&quot; + &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">i_prod</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">i_prod</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">r_str</span><span class="p">,</span> <span class="n">ir_str</span><span class="p">,</span> <span class="n">arrow_str</span><span class="p">,</span> <span class="n">p_str</span><span class="p">,</span> <span class="n">ip_str</span>
+
+    <span class="k">def</span> <span class="nf">_get_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_str_parts</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">str_param</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%.3g</span><span class="s1"> </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">param</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">str_param</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%.3g</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">param</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="n">str_param</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;; &#39;</span> <span class="o">+</span> <span class="n">str_param</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_str</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;str_arrow&#39;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">prod</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">inact_reac</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">inact_prod</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="p">})</span> <span class="o">+</span> <span class="n">s</span>
+
+<div class="viewcode-block" id="Reaction.latex"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Reaction.latex">[docs]</a>    <span class="k">def</span> <span class="nf">latex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substances</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns a LaTeX representation of the reaction &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_str</span><span class="p">(</span><span class="s1">&#39;latex_name&#39;</span><span class="p">,</span> <span class="s1">&#39;latex_arrow&#39;</span><span class="p">,</span> <span class="n">substances</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_violation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substances</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="n">net</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">substance</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">substances</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">net_stoich</span><span class="p">(</span><span class="n">substances</span><span class="o">.</span><span class="n">keys</span><span class="p">())):</span>
+            <span class="n">net</span> <span class="o">+=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">substance</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="o">*</span> <span class="n">coeff</span>
+        <span class="k">return</span> <span class="n">net</span>
+
+<div class="viewcode-block" id="Reaction.mass_balance_violation"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Reaction.mass_balance_violation">[docs]</a>    <span class="k">def</span> <span class="nf">mass_balance_violation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substances</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Net amount of mass produced</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        substances: dict</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float: amount of net mass produced/consumed</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_violation</span><span class="p">(</span><span class="n">substances</span><span class="p">,</span> <span class="s1">&#39;mass&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Reaction.charge_neutrality_violation"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Reaction.charge_neutrality_violation">[docs]</a>    <span class="k">def</span> <span class="nf">charge_neutrality_violation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substances</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Net amount of charge produced</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        substances: dict</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float: amount of net charge produced/consumed</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_violation</span><span class="p">(</span><span class="n">substances</span><span class="p">,</span> <span class="s1">&#39;charge&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Reaction.composition_violation"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Reaction.composition_violation">[docs]</a>    <span class="k">def</span> <span class="nf">composition_violation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substances</span><span class="p">,</span> <span class="n">composition_keys</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Net amount of constituent produced</span>
+
+<span class="sd">        If composition keys correspond to conserved entities e.g. atoms</span>
+<span class="sd">        in chemical reactions, this function should return a list of zeros.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">composition_keys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">composition_keys</span> <span class="o">=</span> <span class="n">Substance</span><span class="o">.</span><span class="n">composition_keys</span><span class="p">(</span><span class="n">substances</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">net</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">composition_keys</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">substance</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">substances</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">net_stoich</span><span class="p">(</span><span class="n">substances</span><span class="o">.</span><span class="n">keys</span><span class="p">())):</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">composition_keys</span><span class="p">):</span>
+                <span class="n">net</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">+=</span> <span class="n">substance</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">coeff</span>
+        <span class="k">return</span> <span class="n">net</span></div></div>
+
+
+<div class="viewcode-block" id="equilibrium_quotient"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.equilibrium_quotient">[docs]</a><span class="k">def</span> <span class="nf">equilibrium_quotient</span><span class="p">(</span><span class="n">concs</span><span class="p">,</span> <span class="n">stoich</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Calculates the equilibrium quotient of an equilbrium</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    concs: array_like</span>
+<span class="sd">        per substance concentration</span>
+<span class="sd">    stoich: iterable of integers</span>
+<span class="sd">        per substance stoichiometric coefficient</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; &#39;%.12g&#39; % equilibrium_quotient([1.0, 1e-7, 1e-7], [-1, 1, 1])</span>
+<span class="sd">    &#39;1e-14&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">concs</span><span class="p">,</span> <span class="s1">&#39;ndim&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">concs</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">tot</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">concs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">concs</span> <span class="o">=</span> <span class="n">concs</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">for</span> <span class="n">nr</span><span class="p">,</span> <span class="n">conc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">stoich</span><span class="p">,</span> <span class="n">concs</span><span class="p">):</span>
+        <span class="n">tot</span> <span class="o">*=</span> <span class="n">conc</span><span class="o">**</span><span class="n">nr</span>
+    <span class="k">return</span> <span class="n">tot</span></div>
+
+
+<div class="viewcode-block" id="ArrheniusRate"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.ArrheniusRate">[docs]</a><span class="k">class</span> <span class="nc">ArrheniusRate</span><span class="p">(</span><span class="n">defaultnamedtuple</span><span class="p">(</span><span class="s1">&#39;ArrheniusRate&#39;</span><span class="p">,</span> <span class="s1">&#39;A Ea ref&#39;</span><span class="p">,</span> <span class="p">[</span><span class="kc">None</span><span class="p">])):</span>
+    <span class="sd">&quot;&quot;&quot; Kinetic data in the form of an Arrhenius parametrization</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Ea: float</span>
+<span class="sd">        activation energy</span>
+<span class="sd">    A: float</span>
+<span class="sd">        preexponential prefactor (Arrhenius type eq.)</span>
+<span class="sd">    ref: object (default: None)</span>
+<span class="sd">        arbitrary reference (e.g. string representing citation key)</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; k = ArrheniusRate(1e13, 40e3)</span>
+<span class="sd">    &gt;&gt;&gt; &#39;%.5g&#39; % k(298.15)</span>
+<span class="sd">    &#39;9.8245e+05&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">constants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exp</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See :func:`chempy.arrhenius.arrhenius_equation`. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">arrhenius_equation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ea</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">constants</span><span class="o">=</span><span class="n">constants</span><span class="p">,</span>
+                                  <span class="n">units</span><span class="o">=</span><span class="n">units</span><span class="p">,</span> <span class="n">exp</span><span class="o">=</span><span class="n">exp</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_fmt</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">tex</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">tex</span><span class="p">:</span>
+            <span class="n">unit_str</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">dimensionality</span><span class="o">.</span><span class="n">latex</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;$&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">quantities.markup</span> <span class="k">import</span> <span class="n">config</span>
+            <span class="n">attr</span> <span class="o">=</span> <span class="s1">&#39;unicode&#39;</span> <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">use_unicode</span> <span class="k">else</span> <span class="s1">&#39;string&#39;</span>
+            <span class="n">unit_str</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">precision</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">magnitude</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="n">unit_str</span>
+
+<div class="viewcode-block" id="ArrheniusRate.format"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.ArrheniusRate.format">[docs]</a>    <span class="k">def</span> <span class="nf">format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">str_A</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fmt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">tex</span><span class="p">)</span>
+            <span class="n">str_Ea</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fmt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Ea</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">tex</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">str_A</span> <span class="o">=</span> <span class="n">precision</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="p">)</span>
+            <span class="n">str_Ea</span> <span class="o">=</span> <span class="n">precision</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Ea</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">str_A</span><span class="p">,</span> <span class="n">str_Ea</span></div>
+
+<div class="viewcode-block" id="ArrheniusRate.equation_as_string"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.ArrheniusRate.equation_as_string">[docs]</a>    <span class="k">def</span> <span class="nf">equation_as_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">tex</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">r&quot;</span><span class="si">{}</span><span class="s2">\exp \left(\frac{{</span><span class="si">{}</span><span class="s2">}}{{RT}} \right)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">precision</span><span class="p">,</span> <span class="n">tex</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">*exp(</span><span class="si">{}</span><span class="s2">/(R*T))&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">precision</span><span class="p">,</span> <span class="n">tex</span><span class="p">))</span></div>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">equation_as_string</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{0:.5g}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ArrheniusRateWithUnits"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.ArrheniusRateWithUnits">[docs]</a><span class="k">class</span> <span class="nc">ArrheniusRateWithUnits</span><span class="p">(</span><span class="n">ArrheniusRate</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">constants</span><span class="o">=</span><span class="n">default_constants</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="n">default_units</span><span class="p">,</span>
+                 <span class="n">exp</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See :func:`chempy.arrhenius.arrhenius_equation`. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">ArrheniusRateWithUnits</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__call__</span><span class="p">(</span>
+            <span class="n">T</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">units</span><span class="p">,</span> <span class="n">exp</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Equilibrium"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Equilibrium">[docs]</a><span class="k">class</span> <span class="nc">Equilibrium</span><span class="p">(</span><span class="n">Reaction</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Represents an equilibrium reaction</span>
+
+<span class="sd">    See :class:`Reaction` for parameters</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">str_arrow</span> <span class="o">=</span> <span class="s1">&#39;=&#39;</span>
+    <span class="n">latex_arrow</span> <span class="o">=</span> <span class="s1">r&#39;\rightleftharpoons&#39;</span>
+    <span class="n">param_char</span> <span class="o">=</span> <span class="s1">&#39;K&#39;</span>  <span class="c1"># convention</span>
+
+<div class="viewcode-block" id="Equilibrium.as_reactions"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Equilibrium.as_reactions">[docs]</a>    <span class="k">def</span> <span class="nf">as_reactions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kf</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kb</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates a forward and backward :class:`Reaction` pair &quot;&quot;&quot;</span>
+        <span class="n">nb</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prod</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">nf</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">units</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">kf</span><span class="p">,</span> <span class="s1">&#39;units&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">kb</span><span class="p">,</span> <span class="s1">&#39;units&#39;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;units missing&quot;</span><span class="p">)</span>
+            <span class="n">c0</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">c0</span> <span class="o">=</span> <span class="mi">1</span><span class="o">*</span><span class="n">units</span><span class="o">.</span><span class="n">molar</span>  <span class="c1"># standard concentration IUPAC</span>
+
+        <span class="k">if</span> <span class="n">kf</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kb</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Exactly one rate needs to be provided&quot;</span><span class="p">)</span>
+            <span class="n">kf</span> <span class="o">=</span> <span class="n">kb</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">(</span><span class="n">state</span><span class="p">)</span> <span class="o">*</span> <span class="n">c0</span><span class="o">**</span><span class="p">(</span><span class="n">nb</span> <span class="o">-</span> <span class="n">nf</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">kb</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">kb</span> <span class="o">=</span> <span class="n">kf</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">(</span><span class="n">state</span><span class="p">)</span> <span class="o">*</span> <span class="n">c0</span><span class="o">**</span><span class="p">(</span><span class="n">nb</span> <span class="o">-</span> <span class="n">nf</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Exactly one rate needs to be provided&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">Reaction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prod</span><span class="p">,</span> <span class="n">kf</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inact_reac</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">inact_prod</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">),</span>
+            <span class="n">Reaction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prod</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="p">,</span> <span class="n">kb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inact_prod</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">inact_reac</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Equilibrium.K"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Equilibrium.K">[docs]</a>    <span class="k">def</span> <span class="nf">K</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return equilibrium quotient (possibly state dependent) &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param</span><span class="p">):</span>
+            <span class="c1"># For some cases a default might be obvious:</span>
+            <span class="c1"># if state is None:</span>
+            <span class="c1">#     raise ValueError(&quot;No state provided&quot;)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;state provided but param not callable&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">param</span></div>
+
+<div class="viewcode-block" id="Equilibrium.Q"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Equilibrium.Q">[docs]</a>    <span class="k">def</span> <span class="nf">Q</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substances</span><span class="p">,</span> <span class="n">concs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Calculates the equilibrium qoutient &quot;&quot;&quot;</span>
+        <span class="n">stoich</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">non_precipitate_stoich</span><span class="p">(</span><span class="n">substances</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">equilibrium_quotient</span><span class="p">(</span><span class="n">concs</span><span class="p">,</span> <span class="n">stoich</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Equilibrium.precipitate_factor"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Equilibrium.precipitate_factor">[docs]</a>    <span class="k">def</span> <span class="nf">precipitate_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substances</span><span class="p">,</span> <span class="n">sc_concs</span><span class="p">):</span>
+        <span class="n">factor</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">precipitate</span><span class="p">:</span>
+                <span class="n">factor</span> <span class="o">*=</span> <span class="n">sc_concs</span><span class="p">[</span><span class="n">substances</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">r</span><span class="p">)]</span><span class="o">**-</span><span class="n">n</span>
+        <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">prod</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">precipitate</span><span class="p">:</span>
+                <span class="n">factor</span> <span class="o">*=</span> <span class="n">sc_concs</span><span class="p">[</span><span class="n">substances</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">p</span><span class="p">)]</span><span class="o">**</span><span class="n">n</span>
+        <span class="k">return</span> <span class="n">factor</span></div>
+
+<div class="viewcode-block" id="Equilibrium.dimensionality"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.Equilibrium.dimensionality">[docs]</a>    <span class="k">def</span> <span class="nf">dimensionality</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">precipitate</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">result</span> <span class="o">-=</span> <span class="n">n</span>
+        <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">prod</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">precipitate</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">result</span> <span class="o">+=</span> <span class="n">n</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+    <span class="k">def</span> <span class="nf">__rmul__</span><span class="p">(</span><span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">):</span>  <span class="c1"># This works on both Py2 and Py3</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lhs</span><span class="p">,</span> <span class="n">Equilibrium</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">NotImplemented</span>
+        <span class="k">return</span> <span class="n">Equilibrium</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">rhs</span><span class="o">*</span><span class="n">ArithmeticDict</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">lhs</span><span class="o">.</span><span class="n">reac</span><span class="p">)),</span>
+                           <span class="nb">dict</span><span class="p">(</span><span class="n">rhs</span><span class="o">*</span><span class="n">ArithmeticDict</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">lhs</span><span class="o">.</span><span class="n">prod</span><span class="p">)),</span>
+                           <span class="n">lhs</span><span class="o">.</span><span class="n">param</span><span class="o">**</span><span class="n">rhs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">):</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span><span class="n">lhs</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">lhs</span><span class="o">.</span><span class="n">prod</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+                         <span class="n">rhs</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">rhs</span><span class="o">.</span><span class="n">prod</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">keys</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">reac</span><span class="p">,</span> <span class="n">prod</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="n">lhs</span><span class="o">.</span><span class="n">prod</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">lhs</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span>
+                 <span class="n">rhs</span><span class="o">.</span><span class="n">prod</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">rhs</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">reac</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">n</span>
+            <span class="k">elif</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">prod</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">pass</span>  <span class="c1"># n == 0</span>
+        <span class="k">return</span> <span class="n">Equilibrium</span><span class="p">(</span><span class="n">reac</span><span class="p">,</span> <span class="n">prod</span><span class="p">,</span> <span class="n">lhs</span><span class="o">.</span><span class="n">param</span> <span class="o">*</span> <span class="n">rhs</span><span class="o">.</span><span class="n">param</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__sub__</span><span class="p">(</span><span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">lhs</span> <span class="o">+</span> <span class="o">-</span><span class="mi">1</span><span class="o">*</span><span class="n">rhs</span></div>
+
+
+<div class="viewcode-block" id="ReactionSystem"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.ReactionSystem">[docs]</a><span class="k">class</span> <span class="nc">ReactionSystem</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Collection of reactions forming a system (model).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rxns: sequence</span>
+<span class="sd">         sequence of :py:class:`Reaction` instances</span>
+<span class="sd">    substances: OrderedDict</span>
+<span class="sd">         mapping str -&gt; Substance instances</span>
+<span class="sd">    name: string (optional)</span>
+<span class="sd">         Name of ReactionSystem (e.g. model name / citation key)</span>
+<span class="sd">    check_balance: bool (default: None)</span>
+<span class="sd">        if None =&gt; True if all substances has composition attribute.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rxns: list of objects</span>
+<span class="sd">        sequence of :class:`Reaction` instances</span>
+<span class="sd">    substances: OrderedDict</span>
+<span class="sd">        mapping substance name to substance index</span>
+<span class="sd">    ns: int</span>
+<span class="sd">        number of substances</span>
+<span class="sd">    nr: int</span>
+<span class="sd">        number of reactions</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from chempy import Reaction</span>
+<span class="sd">    &gt;&gt;&gt; r1 = Reaction({&#39;R1&#39;: 1}, {&#39;P1&#39;: 1}, 42.0)</span>
+<span class="sd">    &gt;&gt;&gt; rsys = ReactionSystem([r1], &#39;R1 P1&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; rsys.as_per_substance_array({&#39;R1&#39;: 2, &#39;P1&#39;: 3})</span>
+<span class="sd">    array([ 2.,  3.])</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rxns</span><span class="p">,</span> <span class="n">substances</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">check_balance</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span> <span class="o">=</span> <span class="n">rxns</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">substances</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">substances</span> <span class="o">=</span> <span class="n">substances</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">substances</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s1">&#39; &#39;</span> <span class="ow">in</span> <span class="n">substances</span><span class="p">:</span>
+                <span class="n">substances</span> <span class="o">=</span> <span class="n">substances</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">substances</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([</span>
+                <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">Substance</span><span class="p">(</span><span class="n">s</span><span class="p">))</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">substances</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">substances</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">substances</span><span class="p">])</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">substances</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">substances</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sanity_check</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="k">if</span> <span class="n">check_balance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">subst</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">subst</span><span class="o">.</span><span class="n">composition</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">check_balance</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">check_balance</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">check_balance</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_balance_check</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_balance_check</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">net</span> <span class="ow">in</span> <span class="n">rxn</span><span class="o">.</span><span class="n">composition_violation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">net</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Reaction not balanced: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">rxn</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_sanity_check</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span><span class="n">rxn</span><span class="o">.</span><span class="n">reac</span><span class="p">,</span> <span class="n">rxn</span><span class="o">.</span><span class="n">prod</span><span class="p">,</span> <span class="n">rxn</span><span class="o">.</span><span class="n">inact_reac</span><span class="p">,</span>
+                             <span class="n">rxn</span><span class="o">.</span><span class="n">inact_prod</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unkown substance: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ReactionSystem.substance_names"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.ReactionSystem.substance_names">[docs]</a>    <span class="k">def</span> <span class="nf">substance_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns a tuple of the substances&#39; names &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">substance</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">substance</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">values</span><span class="p">())</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Number of reactions &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ns</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Number of substances &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ReactionSystem.params"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.ReactionSystem.params">[docs]</a>    <span class="k">def</span> <span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns list of per reaction ``param`` value &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">rxn</span><span class="o">.</span><span class="n">param</span> <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.as_per_substance_array"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.ReactionSystem.as_per_substance_array">[docs]</a>    <span class="k">def</span> <span class="nf">as_per_substance_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cont</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Turns a dict into an ordered array &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">unit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cont</span> <span class="o">=</span> <span class="n">to_unitless</span><span class="p">(</span><span class="n">cont</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cont</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cont</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">substance_keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">cont</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">substance_keys</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Unkown substance key: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">k</span><span class="p">)</span>
+            <span class="n">cont</span> <span class="o">=</span> <span class="p">[</span><span class="n">cont</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">substance_keys</span><span class="p">]</span>
+
+        <span class="n">cont</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">cont</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cont</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ns</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect size&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cont</span><span class="o">*</span><span class="p">(</span><span class="n">unit</span> <span class="k">if</span> <span class="n">unit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.as_substance_index"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.ReactionSystem.as_substance_index">[docs]</a>    <span class="k">def</span> <span class="nf">as_substance_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sbstnc</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns the index of a Substance in the system&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sbstnc</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">sbstnc</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">sbstnc</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_stoichs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="c1"># dtype: see https://github.com/sympy/sympy/issues/10295</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">eq</span><span class="p">,</span> <span class="n">attr</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span> <span class="k">for</span>
+                         <span class="n">eq</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">],</span>
+                        <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ReactionSystem.net_stoichs"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.ReactionSystem.net_stoichs">[docs]</a>    <span class="k">def</span> <span class="nf">net_stoichs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stoichs</span><span class="p">(</span><span class="s1">&#39;net_stoich&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.all_reac_stoichs"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.ReactionSystem.all_reac_stoichs">[docs]</a>    <span class="k">def</span> <span class="nf">all_reac_stoichs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stoichs</span><span class="p">(</span><span class="s1">&#39;all_reac_stoich&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.all_prod_stoichs"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.ReactionSystem.all_prod_stoichs">[docs]</a>    <span class="k">def</span> <span class="nf">all_prod_stoichs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stoichs</span><span class="p">(</span><span class="s1">&#39;all_prod_stoich&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.stoichs"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.ReactionSystem.stoichs">[docs]</a>    <span class="k">def</span> <span class="nf">stoichs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">non_precip_rids</span><span class="o">=</span><span class="p">()):</span>
+        <span class="sd">&quot;&quot;&quot; Conditional stoichiometries depending on precipitation status &quot;&quot;&quot;</span>
+        <span class="c1"># dtype: see https://github.com/sympy/sympy/issues/10295</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span>
+            <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">eq</span><span class="o">.</span><span class="n">precipitate_stoich</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="n">idx</span>
+            <span class="ow">in</span> <span class="n">non_precip_rids</span> <span class="k">else</span>
+            <span class="n">eq</span><span class="o">.</span><span class="n">non_precipitate_stoich</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">)</span>
+        <span class="p">)</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">eq</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">)],</span>
+                        <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.obeys_mass_balance"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.ReactionSystem.obeys_mass_balance">[docs]</a>    <span class="k">def</span> <span class="nf">obeys_mass_balance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns True if all reactions obeys mass balance, else False. &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rxn</span><span class="o">.</span><span class="n">mass_balance_violation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.obeys_charge_neutrality"><a class="viewcode-back" href="../../chempy.html#chempy.chemistry.ReactionSystem.obeys_charge_neutrality">[docs]</a>    <span class="k">def</span> <span class="nf">obeys_charge_neutrality</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns False if any reaction violate charge neutrality. &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rxn</span><span class="o">.</span><span class="n">charge_neutrality_violation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.3.4',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

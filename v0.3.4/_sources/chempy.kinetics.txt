@@ -1,0 +1,28 @@
+chempy.kinetics package
+=======================
+
+.. automodule:: chempy.kinetics
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Submodules
+----------
+
+chempy.kinetics.integrated module
+---------------------------------
+
+.. automodule:: chempy.kinetics.integrated
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.kinetics.ode module
+--------------------------
+
+.. automodule:: chempy.kinetics.ode
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
