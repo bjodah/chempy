@@ -58,7 +58,7 @@ Auto-generated API documentation for the latest stable release is found here:
 
 Installation
 ------------
-Simplest way to install ChemPy and its (optional) dependencies is to use the `conda pacakge manager <https://conda.pydata.org/docs/>`_::
+Simplest way to install ChemPy and its (optional) dependencies is to use the `conda package manager <https://conda.pydata.org/docs/>`_::
 
    $ conda install -c bjodah chempy pytest
    $ python -m pytest --pyargs chempy  # runs the test-suite
