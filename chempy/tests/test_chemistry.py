@@ -378,3 +378,18 @@ def test_ReactionSystem__upper_conc_bounds():
     }
     res = rs.as_per_substance_dict(rs.upper_conc_bounds(c0))
     assert res == ref
+
+
+@requires('numpy')
+def test_ReactionSystem__upper_conc_bounds__a_substance_no_composition():
+    rs = ReactionSystem.from_string('\n'.join(['H2O -> e-(aq) + H2O+', 'H2O+ + e-(aq) -> H2O']))
+    c0 = {'H2O': 55.0, 'e-(aq)': 2e-3, 'H2O+': 3e-3}
+    _O = 55 + 3e-3
+    _H = 2*55 + 2*3e-3
+    ref = {
+        'H2O': min(_O, _H/2),
+        'e-(aq)': float('inf'),
+        'H2O+': min(_O, _H/2),
+    }
+    res = rs.as_per_substance_dict(rs.upper_conc_bounds(c0))
+    assert res == ref

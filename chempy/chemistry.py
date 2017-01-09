@@ -1517,7 +1517,10 @@ class ReactionSystem(object):
                 if comp_nr == 0:
                     continue
                 choose_from.append(composition_conc[comp_nr]/coeff)
-            bounds.append(min_(choose_from))
+            if len(choose_from) == 0:
+                bounds.append(float('inf'))
+            else:
+                bounds.append(min_(choose_from))
         return bounds
 
     def _html_table_cell_factory(self, title=True):

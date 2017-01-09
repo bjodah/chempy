@@ -1,8 +1,6 @@
 build:
   image: bjodah/bjodahimg16dev:latest
   commands:
-    - python2 -m pip install --upgrade pip
-    - python3 -m pip install --upgrade pip
     - python2 -m pip install git+https://github.com/bjodah/pyodesys.git@improve-native  # DO-NOT-MERGE!
     - python3 -m pip install git+https://github.com/bjodah/pyodesys.git@improve-native  # DO-NOT-MERGE!
     - ./scripts/ci.sh chempy
