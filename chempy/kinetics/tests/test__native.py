@@ -82,7 +82,6 @@ def test_get_native__first_step(solve):
 @requires('pygslodeiv2', 'pyodesys')
 @pytest.mark.parametrize('solve', [(), ('H2O',)])
 def test_get_native__a_substance_no_composition(solve):
-    import sympy
     rsys = ReactionSystem.from_string('\n'.join(['H2O -> H2O+ + e-(aq); 1e-8', 'e-(aq) + H2O+ -> H2O; 1e10']))
     odesys, extra = get_odesys(rsys)
     c0 = {'H2O': 0, 'H2O+': 2e-9, 'e-(aq)': 3e-9}
