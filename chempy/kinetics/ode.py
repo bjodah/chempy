@@ -301,7 +301,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                             analytic_exprs[odesys[key]] = expr
                             if _preferred is not None:
                                 _preferred.remove(key)
-                            break
+                            continue
                 for k in reversed(list(analytic_exprs.keys())):
                     analytic_exprs[k] = analytic_exprs[k].subs(analytic_exprs)
                 if _preferred is not None and len(_preferred) > 0:

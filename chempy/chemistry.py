@@ -913,6 +913,29 @@ class Equilibrium(Reaction):
                      self.inact_reac, ref=self.ref, name=bw_name)
         )
 
+    def equilibrium_expr(self):
+        """ Turns self.param into a :class:`EqExpr` instance (if not already)
+
+        Examples
+        --------
+        >>> r = Equilibrium.from_string('2 A + B = 3 C; 7')
+        >>> eqex = r.equilibrium_expr()
+        >>> eqex.args[0] == 7
+        True
+
+        """
+        from .util._expr import Expr
+        from .thermodynamics import MassActionEq
+        if isinstance(self.param, Expr):
+            return self.param
+        else:
+            try:
+                convertible = self.param.as_EqExpr
+            except AttributeError:
+                return MassActionEq([self.param])
+            else:
+                return convertible()
+
     def equilibrium_constant(self, variables=None, backend=math):
         """ Return equilibrium constant
 
@@ -922,12 +945,9 @@ class Equilibrium(Reaction):
         backend : module, optional
 
         """
-        try:
-            return self.param(variables, backend=backend)
-        except TypeError:
-            return self.param
+        return self.equilibrium_expr().eq_const(variables, backend=backend, equilibrium=self)
 
-    K = equilibrium_constant
+    K = deprecated(use_instead=equilibrium_constant)(equilibrium_constant)
 
     def Q(self, substances, concs):
         """ Calculates the equilibrium qoutient """
@@ -1459,6 +1479,28 @@ class ReactionSystem(object):
         ) for idx, eq in enumerate(self.rxns)], dtype=object)
 
     def composition_balance_vectors(self):
+        """ Returns a list of lists with compositions and a list of composition keys.
+
+        The list of lists can be viewed as a matrix with rows corresponding to composition keys
+        (which are given as the second item in the returned tuple) and columns corresponding to
+        substances. Multiplying the matrix with a vector of concentrations give an equation which
+        is an invariant (corresponds to mass & charge conservation).
+
+        Examples
+        --------
+        >>> s = 'Cu+2 + NH3 -> CuNH3+2'
+        >>> import re
+        >>> substances = re.split(' \+ | -> ', s)
+        >>> rsys = ReactionSystem.from_string(s, substances)
+        >>> rsys.composition_balance_vectors()
+        ([[2, 0, 2], [0, 3, 3], [0, 1, 1], [1, 0, 1]], [0, 1, 7, 29])
+
+        Returns
+        -------
+        A: list of lists
+        ck: (sorted) tuple of composition keys
+
+        """
         subs = self.substances.values()
         ck = Substance.composition_keys(subs)
         return [[s.composition.get(k, 0) for s in subs] for k in ck], ck
