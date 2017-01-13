@@ -454,7 +454,7 @@ def test_get_odesys__linear_dependencies__PartiallySolvedSystem(preferred):
     assert np.allclose(yout[:, psys.names.index('OH-')], c0['OH-'] + c0['H2O'] - H2O_ref)
 
 
-@requires('numpy', 'pyodesys', 'sympy', 'scipy')
+@requires('numpy', 'pyodesys', 'sympy', 'pycvodes')
 def test_get_odesys__Equilibrium_as_reactions():
     from chempy import Equilibrium, ReactionSystem
     eq = Equilibrium({'Fe+3', 'SCN-'}, {'FeSCN+2'}, 10**2)

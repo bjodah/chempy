@@ -14,7 +14,7 @@ else:
 
 from ..util.testing import requires
 from ..chemistry import (
-    Substance, Reaction, Equilibrium, Species, Solute,
+    Substance, Reaction, Equilibrium, Species
 )
 
 
@@ -27,7 +27,7 @@ def test_EqSystem():
 
 
 def _get_es1():
-    a, b = sbstncs = Solute('a'), Solute('b')
+    a, b = sbstncs = Species('a'), Species('b')
     rxns = [Equilibrium({'a': 1}, {'b': 1}, 3)]
     return EqSystem(rxns, sbstncs)
 
@@ -66,7 +66,7 @@ def test_Equilibria_root():
     assert sol['success'] and sane
 
 
-def _solutes(Cls):
+def _species(Cls):
     return (
         Cls('H2O', 0, composition={1: 2, 8: 1}),
         Cls('H+', 1, composition={1: 1}),
@@ -77,9 +77,8 @@ def _solutes(Cls):
 
 
 @requires('numpy')
-@pytest.mark.parametrize('Cls', [Solute, Species])
-def test_Equilibria_root_simple(Cls):
-    solutes = water, hydronium, hydroxide, ammonium, ammonia = _solutes(Cls)
+def test_Equilibria_root_simple():
+    species = water, hydronium, hydroxide, ammonium, ammonia = _species(Species)
 
     water_auto_protolysis = Equilibrium(
         {water.name: 1}, {hydronium.name: 1, hydroxide.name: 1}, 1e-14/55.5)
@@ -87,7 +86,7 @@ def test_Equilibria_root_simple(Cls):
         {ammonium.name: 1}, {hydronium.name: 1, ammonia.name: 1},
         10**-9.26/55.5
     )
-    eqsys = EqSystem([water_auto_protolysis, ammonia_protolysis], solutes)
+    eqsys = EqSystem([water_auto_protolysis, ammonia_protolysis], species)
 
     init_concs = collections.defaultdict(float, {
         water.name: 55.5, ammonia.name: 1e-3})
@@ -125,12 +124,8 @@ def _get_NaCl(Cls, **precipitate_kwargs):
 
 
 @requires('numpy')
-@pytest.mark.parametrize('kwargs', [
-    dict(Cls=Solute, precipitate=True),
-    dict(Cls=Species, phase_idx=1)
-])
-def test_EqSystem_dissolved(kwargs):
-    eqsys, names, _ = _get_NaCl(**kwargs)
+def test_EqSystem_dissolved():
+    eqsys, names, _ = _get_NaCl(Cls=Species, phase_idx=1)
     inp = eqsys.as_per_substance_array({'Na+': 1, 'Cl-': 2, 'NaCl': 4})
     result = eqsys.dissolved(inp)
     ref = eqsys.as_per_substance_array({'Na+': 5, 'Cl-': 6, 'NaCl': 0})
@@ -141,7 +136,7 @@ def test_EqSystem_dissolved(kwargs):
 @pytest.mark.parametrize('NumSys', [(NumSysLin,), (NumSysLog,),
                                     (NumSysLog, NumSysLin)])
 def test_precipitate(NumSys):
-    eqsys, species, cases = _get_NaCl(Solute, precipitate=True)
+    eqsys, species, cases = _get_NaCl(Species, phase_idx=1)
 
     for init, final in cases:
         x, sol, sane = eqsys.root(dict(zip(species, init)),

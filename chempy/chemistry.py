@@ -542,7 +542,7 @@ class Reaction(object):
 
     def _xprecipitate_stoich(self, substances, xor):
         return tuple((
-            0 if xor ^ v.precipitate else
+            0 if xor ^ v.phase_idx > 0 else
             self.prod.get(k, 0) + self.inact_prod.get(k, 0) -
             self.reac.get(k, 0) - self.inact_reac.get(k, 0)
         ) for k, v in substances.items())
@@ -565,7 +565,7 @@ class Reaction(object):
 
     def has_precipitates(self, substances):
         for s_name in chain(self.reac.keys(), self.prod.keys(), self.inact_reac.keys(), self.inact_prod.keys()):
-            if substances[s_name].precipitate:
+            if substances[s_name].phase_idx > 0:
                 return True
         return False
 
@@ -947,7 +947,9 @@ class Equilibrium(Reaction):
         """
         return self.equilibrium_expr().eq_const(variables, backend=backend)
 
-    K = deprecated(use_instead=equilibrium_constant)(equilibrium_constant)
+    @deprecated(use_instead=equilibrium_constant)
+    def K(self, *args, **kwargs):
+        return self.equilibrium_constant(*args, **kwargs)
 
     def Q(self, substances, concs):
         """ Calculates the equilibrium qoutient """

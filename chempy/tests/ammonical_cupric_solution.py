@@ -2,24 +2,24 @@
 
 from __future__ import (absolute_import, division, print_function)
 
-from chempy.chemistry import Solute, Equilibrium
+from chempy.chemistry import Species, Equilibrium
 from chempy.equilibria import EqSystem
 
 
 def get_ammonical_cupric_eqsys():
-    NH3_complexes = ['CuNH3/2+', 'Cu(NH3)2/2+', 'Cu(NH3)3/2+', 'Cu(NH3)4/2+',
-                     'Cu(NH3)5/2+']
-    OH_complexes = ['Cu2(OH)2/2+', 'Cu(OH)3-', 'Cu(OH)4/2-']
+    NH3_complexes = ['CuNH3+2', 'Cu(NH3)2+2', 'Cu(NH3)3+2', 'Cu(NH3)4+2',
+                     'Cu(NH3)5+2']
+    OH_complexes = ['Cu2(OH)2+2', 'Cu(OH)3-', 'Cu(OH)4-2']
     substances = [
-        Solute.from_formula(n) for n in [
-            'H+', 'OH-', 'NH4+', 'NH3', 'H2O', 'Cu/2+'] +
+        Species.from_formula(n) for n in [
+            'H+', 'OH-', 'NH4+', 'NH3', 'H2O', 'Cu+2'] +
         NH3_complexes + OH_complexes + ['Cu(OH)2(s)']
     ]
 
     (Hp, OHm, NH4p, NH3, H2O, Cupp, CuNH31pp, CuNH32pp,
      CuNH33pp, CuNH34pp, CuNH35pp, Cu2OH2pp, CuOH3m,
      CuOH4mm, CuOH2) = [s.name for s in substances]
-    substances[-1].precipitate = True
+    substances[-1].phase_idx = 1
     init_conc = {Hp: 1e-7, OHm: 1e-7, NH4p: 0, NH3: 1.0, Cupp: 1e-2,
                  CuNH31pp: 0, CuNH32pp: 0, CuNH33pp: 0, CuNH34pp: 0,
                  CuNH35pp: 0, H2O: 55.5, Cu2OH2pp: 0, CuOH2: 0, CuOH3m: 0,

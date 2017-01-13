@@ -98,7 +98,7 @@ class EqSystem(ReactionSystem):
         def fw_cond(x, p):
             precip_stoich_coeff, precip_idx = rxn.precipitate_stoich(self.substances)[1:3]
             q = rxn.Q(self.substances, self.dissolved(x))
-            k = rxn.K()
+            k = rxn.equilibrium_constant()
             if precip_stoich_coeff > 0:
                 return q*(1+rtol) < k
             elif precip_stoich_coeff < 0:
