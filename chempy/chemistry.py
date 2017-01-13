@@ -897,11 +897,11 @@ class Equilibrium(Reaction):
         if kf is None:
             if kb is None:
                 raise ValueError("Exactly one rate needs to be provided")
-            kf = kb * self.equilibrium_constant(variables, backend=backend) * c0**(nb - nf)
+            kf = kb * self.param * c0**(nb - nf)
             fw_name = self.name
             bw_name = new_name
         elif kb is None:
-            kb = kf / (self.equilibrium_constant(variables, backend=backend) * c0**(nb - nf))
+            kb = kf / (self.param * c0**(nb - nf))
             fw_name = new_name
             bw_name = self.name
         else:
@@ -945,7 +945,7 @@ class Equilibrium(Reaction):
         backend : module, optional
 
         """
-        return self.equilibrium_expr().eq_const(variables, backend=backend, equilibrium=self)
+        return self.equilibrium_expr().eq_const(variables, backend=backend)
 
     K = deprecated(use_instead=equilibrium_constant)(equilibrium_constant)
 

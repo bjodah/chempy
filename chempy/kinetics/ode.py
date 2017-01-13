@@ -11,13 +11,6 @@ from itertools import chain
 import math
 
 try:
-    import sym  # noqa
-except ImportError:
-    linear_rref = None
-else:
-    from sym.util import linear_rref
-
-try:
     import numpy as np
 except ImportError:
     np = None
@@ -289,19 +282,21 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                 else:
                     _preferred = list(preferred)
                 A = be.Matrix(vectors)
-                b = A.dot([y0[odesys[k]] for k in rsys.substances])
-                A2, b2, colidxs = linear_rref(A, b, be)
+                rA, pivots = A.rref()
+
                 analytic_exprs = OrderedDict()
-                for ri, (prev, curr) in enumerate(zip(colidxs, colidxs[1:] + [odesys.ny])):
-                    for idx in range(prev, curr):
+                for ri, ci1st in enumerate(pivots):
+                    for idx in range(ci1st, odesys.ny):
                         key = odesys.names[idx]
+                        if rA[ri, idx] == 0:
+                            continue
                         if _preferred is None or key in _preferred:
-                            terms = [A2[ri, di]*odesys.dep[di] for di in range(prev, odesys.ny) if di != idx]
-                            expr = (b2[ri] - sum(terms))/A2[ri, idx]
-                            analytic_exprs[odesys[key]] = expr
+                            terms = [rA[ri, di]*(odesys.dep[di] - y0[odesys.dep[di]])
+                                     for di in range(ci1st, odesys.ny) if di != idx]
+                            analytic_exprs[odesys[key]] = y0[odesys.dep[idx]] - sum(terms)/rA[ri, idx]
                             if _preferred is not None:
                                 _preferred.remove(key)
-                            continue
+                            break
                 for k in reversed(list(analytic_exprs.keys())):
                     analytic_exprs[k] = analytic_exprs[k].subs(analytic_exprs)
                 if _preferred is not None and len(_preferred) > 0:

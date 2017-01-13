@@ -25,7 +25,10 @@ class MassActionEq(Expr):
         eq_c, = self.all_args(variables, backend=backend, **kwargs)
         return eq_c
 
-    def __call__(self, variables, backend=math, equilibrium=None, **kwargs):
+    def __call__(self, *args, **kwargs):
+        return self.eq_const(*args, **kwargs)
+
+    def equilibrium_equation(self, variables, backend=math, equilibrium=None, **kwargs):
         return self.eq_const(variables, backend=backend, **kwargs) - self.active_conc_prod(
             variables, backend=backend, equilibrium=equilibrium, **kwargs)
 

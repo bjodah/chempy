@@ -18,7 +18,7 @@ def test_MassActionEq_symbolic():
     K, A, B, C = sp.symbols('K A B C')
     mae = MassActionEq([K])
     eq = Equilibrium({'A'}, {'B', 'C'})
-    expr = mae({'A': A, 'B': B, 'C': C}, equilibrium=eq)
+    expr = mae.equilibrium_equation({'A': A, 'B': B, 'C': C}, equilibrium=eq)
     assert expr - K + B*C/A == 0
 
 
@@ -27,7 +27,7 @@ def test_GibbsEqConst():
     dH, dS = -4e3, 16
     gee = GibbsEqConst([dH/R, dS/R])
     ref = math.exp(-(dH - T*dS)/(R*T))
-    assert abs((gee.eq_const({'temperature': T}) - ref)/ref) < 1e-14
+    assert abs((gee({'temperature': T}) - ref)/ref) < 1e-14
 
 
 def _gibbs(args, T, R, backend):

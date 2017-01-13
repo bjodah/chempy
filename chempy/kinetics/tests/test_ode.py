@@ -13,7 +13,7 @@ except ImportError:
 
 
 from chempy.chemistry import Equilibrium, Reaction, ReactionSystem, Substance
-from chempy.thermodynamics.expressions import EqExpr
+from chempy.thermodynamics.expressions import MassActionEq
 from chempy.units import (
     SI_base_registry, get_derived_unit, allclose, units_library,
     to_unitless, default_units as u
@@ -361,7 +361,7 @@ def test_get_odesys__late_binding():
     gibbs_pk = ('temperature', 'molar_gas_constant')
     eyring_pk = gibbs_pk + ('Boltzmann_constant', 'Planck_constant')
 
-    GibbsEC = EqExpr.from_callback(_gibbs, argument_names=('H', 'S'), parameter_keys=gibbs_pk)
+    GibbsEC = MassActionEq.from_callback(_gibbs, argument_names=('H', 'S'), parameter_keys=gibbs_pk)
     EyringMA = MassAction.from_callback(_eyring, argument_names=('H', 'S'), parameter_keys=eyring_pk)
 
     uk_equil = ('He_assoc', 'Se_assoc')
@@ -452,6 +452,19 @@ def test_get_odesys__linear_dependencies__PartiallySolvedSystem(preferred):
     assert np.allclose(yout[:, psys.names.index('H2O')], H2O_ref)
     assert np.allclose(yout[:, psys.names.index('H+')], c0['H+'] + c0['H2O'] - H2O_ref)
     assert np.allclose(yout[:, psys.names.index('OH-')], c0['OH-'] + c0['H2O'] - H2O_ref)
+
+
+@requires('numpy', 'pyodesys', 'sympy', 'scipy')
+def test_get_odesys__Equilibrium_as_reactions():
+    from chempy import Equilibrium, ReactionSystem
+    eq = Equilibrium({'Fe+3', 'SCN-'}, {'FeSCN+2'}, 10**2)
+    substances = 'Fe+3 SCN- FeSCN+2'.split()
+    rsys = ReactionSystem(eq.as_reactions(kf=3.0), substances)
+    odesys, extra = get_odesys(rsys)
+    init_conc = {'Fe+3': 1.0, 'SCN-': .3, 'FeSCN+2': 0}
+    tout, Cout, info = odesys.integrate(5, init_conc, integrator='cvode', atol=1e-11, rtol=1e-12)
+    cmplx_ref = binary_rev(tout, 3, 3.0/100, init_conc['FeSCN+2'], init_conc['Fe+3'], init_conc['SCN-'])
+    assert np.allclose(Cout[:, 2], cmplx_ref)
 
 
 @requires('numpy', 'pyodesys', 'sympy', 'pycvodes')
