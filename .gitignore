@@ -9,6 +9,7 @@ MANIFEST
 *.egg-info
 dist/
 examples/*.png
+!examples/kinetics.png
 examples/*.html
 examples/pyneqsys
 examples/pyodesys

@@ -175,6 +175,36 @@ Ionic strength
    >>> ionic_strength({'Fe+3': 0.050, 'ClO4-': 0.150}) == .3
    True
 
+Chemical kinetics (system of ordinary differential equations)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. code:: python
+
+   >>> from chempy import ReactionSystem  # The rate constants below are arbitrary
+   >>> rsys = ReactionSystem.from_string("""2 Fe+2 + H2O2 -> 2 Fe+3 + 2 OH-; 42
+   ...     2 Fe+3 + H2O2 -> 2 Fe+2 + O2 + 2 H+; 17
+   ...     H+ + OH- -> H2O; 1e10
+   ...     H2O -> H+ + OH-; 1e-4
+   ...     Fe+3 + 2 H2O -> FeOOH(s) + 3 H+; 1
+   ...     FeOOH(s) + 3 H+ -> Fe+3 + 2 H2O; 2.5""")  # "[H2O]" = 1.0 (actually 55.4 at RT)
+   >>> from chempy.kinetics.ode import get_odesys
+   >>> odesys, extra = get_odesys(rsys)
+   >>> from collections import defaultdict
+   >>> import numpy as np
+   >>> tout = sorted(np.concatenate((np.linspace(0, 23), np.logspace(-8, 1))))
+   >>> c0 = defaultdict(float, {'Fe+2': 0.05, 'H2O2': 0.1, 'H2O': 1.0, 'H+': 1e-7, 'OH-': 1e-7})
+   >>> result = odesys.integrate(tout, c0, atol=1e-12, rtol=1e-14)
+   >>> import matplotlib.pyplot as plt
+   >>> _ = plt.subplot(1, 2, 1)
+   >>> _ = result.plot(names=[k for k in rsys.substances if k != 'H2O'])
+   >>> _ = plt.legend(loc='best', prop={'size': 9}); _ = plt.xlabel('Time'); _ = plt.ylabel('Concentration')
+   >>> _ = plt.subplot(1, 2, 2)
+   >>> _ = result.plot(names=[k for k in rsys.substances if k != 'H2O'], xscale='log', yscale='log')
+   >>> _ = plt.legend(loc='best', prop={'size': 9}); _ = plt.xlabel('Time'); _ = plt.ylabel('Concentration')
+   >>> _ = plt.tight_layout()
+   >>> plt.show()  # doctest: +SKIP
+
+.. image:: https://raw.githubusercontent.com/bjodah/chempy/master/examples/kinetics.png
+
 
 License
 -------
