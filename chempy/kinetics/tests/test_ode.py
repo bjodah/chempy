@@ -125,7 +125,6 @@ def test_get_odesys__with_units():
     yref = np.zeros((xout.size, 2))
     yref[:, 0] = Aref
     yref[:, 1] = 200 + (13-Aref)/2
-    print((yout - yref*conc_unit)/yout)
     assert allclose(yout, yref*conc_unit)
 
 

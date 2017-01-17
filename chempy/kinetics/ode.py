@@ -242,7 +242,8 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         return rsys.rates(variables, backend=backend, ratexs=r_exprs)
 
     names = [s.name for s in rsys.substances.values()]
-    latex_names = ['$\\mathrm{' + s.latex_name + '}$' for s in rsys.substances.values()]
+    latex_names = [None if s.latex_name is None else ('$\\mathrm{' + s.latex_name + '}$')
+                   for s in rsys.substances.values()]
     odesys = SymbolicSys.from_callback(
         dydt, dep_by_name=True, par_by_name=True, names=names,
         latex_names=latex_names, param_names=param_names_for_odesys, **kwargs)
