@@ -185,6 +185,8 @@ class Substance(object):
         """ Occuring :attr:`composition` keys among a series of substances """
         keys = set()
         for s in substance_iter:
+            if s.composition is None:
+                continue
             for k in s.composition.keys():
                 if k in skip_keys:
                     continue

@@ -157,6 +157,7 @@ def test_ReactionSystem__check_balance():
     rs2 = ReactionSystem.from_string('\n'.join(['2 A -> B', 'B -> 2A']),
                                      substance_factory=Substance)
     assert not rs2.check_balance(strict=True)
+    assert rs2.composition_balance_vectors() == ([], [])
 
 
 def test_ReactionSystem__rates():

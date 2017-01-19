@@ -244,9 +244,15 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     names = [s.name for s in rsys.substances.values()]
     latex_names = [None if s.latex_name is None else ('$\\mathrm{' + s.latex_name + '}$')
                    for s in rsys.substances.values()]
+
+    compo_vecs, compo_names = rsys.composition_balance_vectors()
+
     odesys = SymbolicSys.from_callback(
         dydt, dep_by_name=True, par_by_name=True, names=names,
-        latex_names=latex_names, param_names=param_names_for_odesys, **kwargs)
+        latex_names=latex_names, param_names=param_names_for_odesys,
+        linear_invariants=None if len(compo_vecs) == 0 else compo_vecs,
+        linear_invariant_names=None if len(compo_names) == 0 else compo_names,
+        **kwargs)
 
     if rsys.check_balance(strict=True):
         # Composition available, we can provide callback for calculating
@@ -275,14 +281,13 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                 for k in preferred:
                     if k not in rsys.substances:
                         raise ValueError("Unknown substance key: %s" % k)
-            vectors, compo_names = rsys.composition_balance_vectors()
 
             def analytic_factory(x0, y0, p0, be):
                 if preferred is None:
                     _preferred = None
                 else:
                     _preferred = list(preferred)
-                A = be.Matrix(vectors)
+                A = be.Matrix(compo_vecs)
                 rA, pivots = A.rref()
 
                 analytic_exprs = OrderedDict()
