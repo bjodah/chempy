@@ -1268,7 +1268,7 @@ class ReactionSystem(object):
 
         """
         rxns = [cls._BaseReaction.from_string(r, substance_keys, **(rxn_parse_kwargs or {}))
-                for r in s.split('\n') if r != '']
+                for r in s.split('\n') if r.strip() != '']
         if 'substance_factory' not in kwargs:
             kwargs['substance_factory'] = cls._BaseSubstance.from_formula
         return cls(rxns, substance_keys, **kwargs)

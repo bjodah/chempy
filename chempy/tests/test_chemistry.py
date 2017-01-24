@@ -100,7 +100,7 @@ def test_Reaction():
     assert r5 != r1
 
 
-@requires(parsing_library)
+@requires(parsing_library, units_library)
 def test_Reaction_parsing():
     r4 = Reaction({'H+': 2, 'OH-': 1}, {'H2O': 2}, 42.0)
     assert Reaction.from_string(str(r4), 'H+ OH- H2O') == r4
@@ -178,7 +178,7 @@ def test_ReactionSystem__html_tables():
     assert bt == u'<table><th></th><th>A</th>\n<tr><td>A</td><td ><a title="2 A → A">R1</a></td></tr></table>'
 
 
-@requires(parsing_library)
+@requires(parsing_library, 'numpy')
 def test_ReactionSystem__substance_factory():
     r1 = Reaction.from_string('H2O -> H+ + OH-', 'H2O H+ OH-')
     rs = ReactionSystem([r1], 'H2O H+ OH-',
@@ -383,7 +383,10 @@ def test_ReactionSystem__upper_conc_bounds():
 
 @requires('numpy')
 def test_ReactionSystem__upper_conc_bounds__a_substance_no_composition():
-    rs = ReactionSystem.from_string('\n'.join(['H2O -> e-(aq) + H2O+', 'H2O+ + e-(aq) -> H2O']))
+    rs = ReactionSystem.from_string("""
+    H2O -> e-(aq) + H2O+
+    H2O+ + e-(aq) -> H2O
+    """)
     c0 = {'H2O': 55.0, 'e-(aq)': 2e-3, 'H2O+': 3e-3}
     _O = 55 + 3e-3
     _H = 2*55 + 2*3e-3
