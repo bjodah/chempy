@@ -4,7 +4,10 @@
 import io
 from itertools import chain
 import os
+import re
 import shutil
+import subprocess
+import sys
 import warnings
 
 from setuptools import setup
@@ -39,7 +42,17 @@ if len(RELEASE_VERSION) > 0:
 else:
     TAGGED_RELEASE = False
     # read __version__ attribute from _release.py:
-    exec(io.open(release_py_path, encoding='utf-8').read())
+    exec(open(release_py_path).read())
+    if __version__.endswith('git'):
+        try:
+            _git_version = subprocess.check_output(
+                ['git', 'describe', '--dirty']).rstrip().decode('utf-8').replace('-dirty', '.dirty')
+        except subprocess.CalledProcessError:
+            warnings.warn("A git-archive is being installed - version information incomplete.")
+        else:
+            if 'develop' not in sys.argv:
+                warnings.warn("Using git to derive version: dev-branches may compete.")
+                __version__ = re.sub('v([0-9.]+)-(\d+)-(\w+)', r'\1.post\2+\3', _git_version)  # .dev < '' < .post
 
 submodules = [
     'chempy.electrochemistry',

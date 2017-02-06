@@ -30,7 +30,7 @@ def test_Substance():
 
 def test_Substance__2():
     H2O = Substance(name='H2O',  charge=0, latex_name=r'$\mathrm{H_{2}O}$',
-                    other_properties={'pKa': 14})  # will_be_missing_in='0.5.0', use data=...
+                    data={'pKa': 14})  # will_be_missing_in='0.5.0', use data=...
     OH_m = Substance(name='OH-',  charge=-1, latex_name=r'$\mathrm{OH^{-}}$')
     assert sorted([OH_m, H2O], key=attrgetter('name')) == [H2O, OH_m]
 
@@ -100,7 +100,7 @@ def test_Reaction():
     assert r5 != r1
 
 
-@requires(parsing_library)
+@requires(parsing_library, units_library)
 def test_Reaction_parsing():
     r4 = Reaction({'H+': 2, 'OH-': 1}, {'H2O': 2}, 42.0)
     assert Reaction.from_string(str(r4), 'H+ OH- H2O') == r4
@@ -150,6 +150,16 @@ def test_ReactionSystem():
         rs['r2']
 
 
+@requires(parsing_library)
+def test_ReactionSystem__check_balance():
+    rs1 = ReactionSystem.from_string('\n'.join(['2 NH3 -> N2 + 3 H2', 'N2H4 -> N2 + 2 H2']))
+    assert rs1.check_balance(strict=True)
+    rs2 = ReactionSystem.from_string('\n'.join(['2 A -> B', 'B -> 2A']),
+                                     substance_factory=Substance)
+    assert not rs2.check_balance(strict=True)
+    assert rs2.composition_balance_vectors() == ([], [])
+
+
 def test_ReactionSystem__rates():
     rs = ReactionSystem([Reaction({'H2O'}, {'H+', 'OH-'}, 11)])
     assert rs.rates({'H2O': 3, 'H+': 5, 'OH-': 7}) == {'H2O': -11*3, 'H+': 11*3, 'OH-': 11*3}
@@ -168,7 +178,7 @@ def test_ReactionSystem__html_tables():
     assert bt == u'<table><th></th><th>A</th>\n<tr><td>A</td><td ><a title="2 A → A">R1</a></td></tr></table>'
 
 
-@requires(parsing_library)
+@requires(parsing_library, 'numpy')
 def test_ReactionSystem__substance_factory():
     r1 = Reaction.from_string('H2O -> H+ + OH-', 'H2O H+ OH-')
     rs = ReactionSystem([r1], 'H2O H+ OH-',
@@ -262,13 +272,24 @@ def test_ReactioN__latex():
 
 
 @requires(parsing_library)
-def test_ReactioN__unicode():
+def test_Reaction__unicode():
     keys = u'H2O H2 O2'.split()
     subst = {k: Substance.from_formula(k) for k in keys}
     r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
     assert r2.unicode(subst) == u'2 H₂O → 2 H₂ + O₂'
+
+
+@requires(parsing_library)
+def test_Reaction__html():
+    keys = 'H2O H2 O2'.split()
+    subst = {k: Substance.from_formula(k) for k in keys}
+    r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
     assert r2.html(subst) == \
-        u'2 H<sub>2</sub>O &rarr; 2 H<sub>2</sub> + O<sub>2</sub>'
+        '2 H<sub>2</sub>O &rarr; 2 H<sub>2</sub> + O<sub>2</sub>'
+    assert r2.html(subst, str_num=lambda s: '<b>{0}</b>'.format(s)) == \
+        '<b>2</b> H<sub>2</sub>O &rarr; <b>2</b> H<sub>2</sub> + O<sub>2</sub>'
+    assert r2.html(subst, str_formula=lambda s: '<b>{0}</b>'.format(s)) == \
+        '2 <b>H<sub>2</sub>O</b> &rarr; 2 <b>H<sub>2</sub></b> + <b>O<sub>2</sub></b>'
 
 
 def test_Reaction__idempotency():
@@ -329,6 +350,10 @@ def test_balance_stoichiometry():
     with pytest.raises(ValueError):
         reac, prod = balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'})
 
+    r4, p4 = balance_stoichiometry({'C7H5(NO2)3', 'NH4NO3'}, {'CO', 'H2O', 'N2'})
+    assert r4 == {'C7H5(NO2)3': 2, 'NH4NO3': 7}
+    assert p4 == {'CO': 14, 'H2O': 19, 'N2': 10}
+
 
 @requires(parsing_library)
 def test_ReactionSystem__from_string():
@@ -338,3 +363,37 @@ def test_ReactionSystem__from_string():
     assert rs.rxns[0].param.args == [2.1e-7]
     ref = 2.1e-7 * 0.15 * 998
     assert rs.rates({'doserate': .15, 'density': 998}) == {'H': ref, 'OH': ref}
+
+
+@requires('numpy')
+def test_ReactionSystem__upper_conc_bounds():
+    rs = ReactionSystem.from_string('\n'.join(['2 NH3 -> N2 + 3 H2', 'N2H4 -> N2 + 2 H2']))
+    c0 = {'NH3': 5, 'N2': 7, 'H2': 11, 'N2H4': 2}
+    _N = 5 + 14 + 4
+    _H = 15 + 22 + 8
+    ref = {
+        'NH3': min(_N, _H/3),
+        'N2': _N/2,
+        'H2': _H/2,
+        'N2H4': min(_N/2, _H/4),
+    }
+    res = rs.as_per_substance_dict(rs.upper_conc_bounds(c0))
+    assert res == ref
+
+
+@requires('numpy')
+def test_ReactionSystem__upper_conc_bounds__a_substance_no_composition():
+    rs = ReactionSystem.from_string("""
+    H2O -> e-(aq) + H2O+
+    H2O+ + e-(aq) -> H2O
+    """)
+    c0 = {'H2O': 55.0, 'e-(aq)': 2e-3, 'H2O+': 3e-3}
+    _O = 55 + 3e-3
+    _H = 2*55 + 2*3e-3
+    ref = {
+        'H2O': min(_O, _H/2),
+        'e-(aq)': float('inf'),
+        'H2O+': min(_O, _H/2),
+    }
+    res = rs.as_per_substance_dict(rs.upper_conc_bounds(c0))
+    assert res == ref

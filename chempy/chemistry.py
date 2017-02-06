@@ -7,9 +7,9 @@ from itertools import chain
 from operator import itemgetter, mul
 import math
 import sys
-import warnings
 
 from .util.arithmeticdict import ArithmeticDict
+from .util._expr import Expr
 from .util.periodic import mass_from_composition
 from .util.parsing import (
     formula_to_composition, to_reaction,
@@ -18,7 +18,7 @@ from .util.parsing import (
 
 from .units import to_unitless, default_units
 from ._util import intdiv
-from .util.pyutil import deprecated, ChemPyDeprecationWarning
+from .util.pyutil import deprecated
 
 
 class Substance(object):
@@ -28,28 +28,31 @@ class Substance(object):
     ----------
     name : str
     charge : int (optional, default: None)
-        will be stored in composition[0], prefer composition when possible
+        Will be stored in composition[0], prefer composition when possible.
     latex_name : str
     unicode_name : str
     html_name : str
     composition : dict or None (default)
-        dict (int -> number) e.g. {atomic number: count}, zero has special
-        meaning (net charge)
+        Dictionary (int -> number) e.g. {atomic number: count}, zero has special
+        meaning (net charge). Avoid using the key 0 unless you specifically mean
+        net charge. The motivation behind this is that it is easier to track a
+        net-charge of e.g. 6 for U(VI) than it is to remember that uranium has 92
+        electrons and use 86 as the value).
     data : dict
-        free form dictionary. Could be simple such as ``{'mp': 0, 'bp': 100}``
+        Free form dictionary. Could be simple such as ``{'mp': 0, 'bp': 100}``
         or considerably more involved, e.g.: ``{'diffusion_coefficient': {\
- 'water': lambda T: 2.1*m**2/s/K*(T - 273.15*K)}}``
+ 'water': lambda T: 2.1*m**2/s/K*(T - 273.15*K)}}``.
 
     Attributes
     ----------
     mass
-        maps to data['mass'], and when unavailable looks for formula.mass
+        Maps to data['mass'], and when unavailable looks for ``formula.mass``.
     attrs
-        a tuple of attribute names for serialization
+        A tuple of attribute names for serialization.
+    composition : dict or None
+        Dictionary mapping fragment key (str) to amount (int).
     data
-        free form dict
-    other_properties
-        deprecated alias to :attr:`data`
+        Free form dictionary.
 
     Examples
     --------
@@ -105,16 +108,6 @@ class Substance(object):
     def mass(self, value):
         self.data['mass'] = value
 
-    @property
-    @deprecated(will_be_missing_in='0.5.0')
-    def other_properties(self):
-        return self.data
-
-    @other_properties.setter
-    @deprecated(will_be_missing_in='0.5.0')
-    def other_properties(self, value):
-        self.data = value
-
     def molar_mass(self, units=None):
         """ Returns the molar mass (with units) of the substance
 
@@ -131,24 +124,18 @@ class Substance(object):
         return self.mass*units.g/units.mol
 
     def __init__(self, name=None, charge=None, latex_name=None, unicode_name=None,
-                 html_name=None, composition=None, data=None, other_properties=None):
-        if other_properties is not None:  # will_be_missing_in='0.5.0'
-            if data is not None:
-                raise ValueError("Cannot take both data and other_properties")
-            else:
-                data = other_properties
-                warnings.warn("use data kwarg instead of other_properties", ChemPyDeprecationWarning)
+                 html_name=None, composition=None, data=None):
         self.name = name
         self.latex_name = latex_name
         self.unicode_name = unicode_name
         self.html_name = html_name
-        self.composition = composition or {}
+        self.composition = composition
 
-        if 0 in self.composition:
+        if self.composition is not None and 0 in self.composition:
             if charge is not None:
                 raise KeyError("Cannot give both charge and composition[0]")
         else:
-            if charge is not None:
+            if charge is not None and composition is not None:
                 self.composition[0] = charge
         self.data = data or {}
 
@@ -194,11 +181,15 @@ class Substance(object):
         return self.html_name
 
     @staticmethod
-    def composition_keys(substance_iter):
+    def composition_keys(substance_iter, skip_keys=()):
         """ Occuring :attr:`composition` keys among a series of substances """
         keys = set()
         for s in substance_iter:
+            if s.composition is None:
+                continue
             for k in s.composition.keys():
+                if k in skip_keys:
+                    continue
                 keys.add(k)
         return sorted(keys)
 
@@ -311,7 +302,7 @@ class Species(Substance):
 
 
 @deprecated(last_supported_version='0.3.0',
-            will_be_missing_in='0.5.0', use_instead=Species)
+            will_be_missing_in='0.6.0', use_instead=Species)
 class Solute(Substance):
     """ [DEPRECATED] Use `.Species` instead
 
@@ -364,9 +355,9 @@ class Reaction(object):
     Parameters
     ----------
     reac : dict (str -> int)
-        if reac is a set multiplicities are assumed to be 1
+        If ``reac`` is a ``set``, then multiplicities are assumed to be 1.
     prod : dict (str -> int)
-        if reac is a set multiplicities are assumed to be 1
+        If ``prod`` is a ``set``, then multiplicities are assumed to be 1.
     param : float or callable
         Special case (side-effect): if param is a subclass of
         :class:`.kinetics.rates.RateExpr` and its :attr:`rxn`
@@ -376,22 +367,22 @@ class Reaction(object):
     name : str (optional)
     k : deprecated (alias for param)
     ref : object
-        reference
+        Reference (e.g. a string containing doi number).
     data : dict (optional)
     checks : iterable of str
-        raises value error if any method check_%s returns False
-        for all %s in checks.
+        Raises ``ValueError`` if any method ``check_%s`` returns False
+        for all ``%s`` in ``checks``.
 
     Attributes
     ----------
-    reac: dict
-    prod: dict
-    param: object
-    inact_reac: dict
-    inact_prod: dict
-    name: str
-    ref: str
-    data: dict
+    reac : dict
+    prod : dict
+    param : object
+    inact_reac : dict
+    inact_prod : dict
+    name : str
+    ref : str
+    data : dict
 
     Examples
     --------
@@ -436,11 +427,6 @@ class Reaction(object):
         self.name = name
         self.ref = ref
         self.data = data or {}
-
-        from .kinetics.rates import RateExpr
-        if isinstance(self.param, RateExpr) and self.param.rxn is None:
-            self.param.rxn = self  # register instance in rate expression
-
         for check in checks:
             if not getattr(self, 'check_'+check)():
                 raise ValueError("Check failed %s" % check)
@@ -544,13 +530,21 @@ class Reaction(object):
         """ Per substance reactant stoichiometry tuple (active & inactive) """
         return tuple(self.reac.get(k, 0) + self.inact_reac.get(k, 0) for k in substances)
 
+    def active_reac_stoich(self, substances):
+        """ Per substance reactant stoichiometry tuple (active) """
+        return tuple(self.reac.get(k, 0) for k in substances)
+
     def all_prod_stoich(self, substances):
         """ Per substance product stoichiometry tuple (active & inactive) """
         return tuple(self.prod.get(k, 0) + self.inact_prod.get(k, 0) for k in substances)
 
+    def active_prod_stoich(self, substances):
+        """ Per substance product stoichiometry tuple (active) """
+        return tuple(self.prod.get(k, 0) for k in substances)
+
     def _xprecipitate_stoich(self, substances, xor):
         return tuple((
-            0 if xor ^ v.precipitate else
+            0 if xor ^ v.phase_idx > 0 else
             self.prod.get(k, 0) + self.inact_prod.get(k, 0) -
             self.reac.get(k, 0) - self.inact_reac.get(k, 0)
         ) for k, v in substances.items())
@@ -573,34 +567,38 @@ class Reaction(object):
 
     def has_precipitates(self, substances):
         for s_name in chain(self.reac.keys(), self.prod.keys(), self.inact_reac.keys(), self.inact_prod.keys()):
-            if substances[s_name].precipitate:
+            if substances[s_name].phase_idx > 0:
                 return True
         return False
 
-    def _get_str_parts(self, name_attr, arrow_attr, substances, _str=str):
+    def _get_str_parts(self, name_attr, arrow_attr, substances, str_=str, str_num=None, str_formula=None):
         def not_None(arg, default):
             if arg is None:
                 return default
             return arg
-        nullstr, space = _str(''), _str(' ')
+        if str_num is None:
+            str_num = str_
+        if str_formula is None:
+            str_formula = str_
+        nullstr, space = str_(''), str_(' ')
         reac, prod, i_reac, i_prod = [[
-            ((_str(v)+space) if v > 1 else nullstr) + _str(not_None(getattr(substances[k], name_attr, k), k))
+            ((str_num(v)+space) if v > 1 else nullstr) + str_formula(not_None(getattr(substances[k], name_attr, k), k))
             for k, v in filter(itemgetter(1), d.items())
         ] for d in (self.reac, self.prod, self.inact_reac, self.inact_prod)]
-        r_str = _str(" + ").join(sorted(reac))
-        ir_str = (_str(' (+ ') + _str(" + ").join(sorted(i_reac)) + _str(')')
+        r_str = str_(" + ").join(sorted(reac))
+        ir_str = (str_(' (+ ') + str_(" + ").join(sorted(i_reac)) + str_(')')
                   if len(i_reac) > 0 else nullstr)
         arrow_str = getattr(self, arrow_attr)
-        p_str = _str(" + ").join(sorted(prod))
-        ip_str = (_str(' (+ ') + _str(" + ").join(sorted(i_prod)) + _str(')')
+        p_str = str_(" + ").join(sorted(prod))
+        ip_str = (str_(' (+ ') + str_(" + ").join(sorted(i_prod)) + str_(')')
                   if len(i_prod) > 0 else nullstr)
         return r_str, ir_str, arrow_str, p_str, ip_str
 
     def _get_str(self, *args, **kwargs):
-        _str = kwargs.get('_str', str)
-        return _str("{}{} {} {}{}").format(*self._get_str_parts(*args, **kwargs))
+        str_ = kwargs.get('str_', str)
+        return str_("{}{} {} {}{}").format(*self._get_str_parts(*args, **kwargs))
 
-    def _str_param(self, magnitude_fmt=lambda x: '%.3g' % x, unit_fmt=str, _str=str):
+    def _str_param(self, magnitude_fmt=lambda x: '%.3g' % x, unit_fmt=str, str_=str):
         try:
             magnitude_str = magnitude_fmt(self.param.magnitude)
             unit_str = unit_fmt(self.param.dimensionality)
@@ -610,9 +608,9 @@ class Reaction(object):
             except TypeError:
                 return str(self.param)
         else:
-            return magnitude_str + _str(' ') + unit_str
+            return magnitude_str + str_(' ') + unit_str
 
-    def string(self, substances=None, with_param=False, magnitude_fmt=lambda m: r'\num{%s}' % m):
+    def string(self, substances=None, with_param=False):
         """ Returns a string representation of the reaction
 
         Parameters
@@ -643,7 +641,7 @@ class Reaction(object):
     def __str__(self):
         return self.string(with_param=True)
 
-    def latex(self, substances, with_param=False, magnitude_fmt=lambda m: r'\num{%s}' % m):
+    def latex(self, substances, with_param=False, **kwargs):
         r""" Returns a LaTeX representation of the reaction
 
         Parameters
@@ -652,8 +650,6 @@ class Reaction(object):
             mapping substance keys to Substance instances
         with_param: bool
             whether to print the parameter (default: False)
-        magnitude_fmt: callback
-            how to format the number (default requires siunitx's num)
 
         Examples
         --------
@@ -668,13 +664,13 @@ class Reaction(object):
         True
 
         """
-        res = self._get_str('latex_name', 'latex_arrow', substances)
+        res = self._get_str('latex_name', 'latex_arrow', substances, **kwargs)
         if with_param and self.param is not None:
             from .printing import number_to_scientific_latex as _fmt
             res += '; %s' % self._str_param(magnitude_fmt=_fmt, unit_fmt=lambda dim: dim.latex)
         return res
 
-    def unicode(self, substances, with_param=False):
+    def unicode(self, substances, with_param=False, **kwargs):
         u""" Returns a unicode string representation of the reaction
 
         Examples
@@ -690,7 +686,7 @@ class Reaction(object):
 
         """
         res = self._get_str('unicode_name', 'unicode_arrow', substances,
-                            _str=str if sys.version_info[0] > 2 else unicode)
+                            str_=str if sys.version_info[0] > 2 else unicode, **kwargs)
         if with_param and self.param is not None:
             from .printing import number_to_scientific_unicode
             res += u'; ' + self._str_param(
@@ -698,10 +694,10 @@ class Reaction(object):
                 unit_fmt=lambda dim: (
                     dim.unicode if sys.version_info[0] > 2
                     else dim.unicode.decode(encoding='utf-8')
-                ), _str=str if sys.version_info[0] > 2 else unicode)
+                ), str_=str if sys.version_info[0] > 2 else unicode)
         return res
 
-    def html(self, substances, with_param=False):
+    def html(self, substances, with_param=False, **kwargs):
         """ Returns a HTML representation of the reaction
 
         Examples
@@ -716,7 +712,7 @@ class Reaction(object):
         'H<sub>2</sub>O &rarr; H<sup>+</sup> + OH<sup>-</sup>&#59; 10<sup>-8</sup> 1/(s*M)'
 
         """
-        res = self._get_str('html_name', 'html_arrow', substances)
+        res = self._get_str('html_name', 'html_arrow', substances, **kwargs)
         if with_param and self.param is not None:
             from .printing import number_to_scientific_html as _fmt
             res += '&#59; '
@@ -790,27 +786,31 @@ class Reaction(object):
         True
 
         """
-        from chempy.kinetics.rates import RateExpr, MassAction
-        if isinstance(self.param, RateExpr):
-            if self.param.rxn is None:
-                self.param.rxn = self
+        from .util._expr import Expr
+        from .kinetics import MassAction
+        if isinstance(self.param, Expr):
             return self.param
         else:
             try:
                 convertible = self.param.as_RateExpr
             except AttributeError:
-                return MassAction([self.param], rxn=self)
+                return MassAction([self.param])
             else:
-                return convertible(self)
+                return convertible()
 
-    def rate(self, variables=None, backend=math, substance_keys=None):
+    def rate(self, variables=None, backend=math, substance_keys=None, ratex=None):
         """ Evaluate the rate of a reaction
 
         Parameters
         ----------
-        variables: dict
-        backend: module, optional
-        substance_keys: iterable of str, optional
+        variables : dict
+        backend : module, optional
+        substance_keys : iterable of str, optional
+        ratex : RateExpr
+
+        Returns
+        -------
+        Dictionary mapping substance keys to the reactions contribution to overall rates.
 
         Examples
         --------
@@ -824,8 +824,14 @@ class Reaction(object):
             variables = {}
         if substance_keys is None:
             substance_keys = self.keys()
-        r = self.rate_expr()(variables, backend)
-        return {k: r*v for k, v in zip(substance_keys, self.net_stoich(substance_keys))}
+        if ratex is None:
+            ratex = self.rate_expr()
+
+        if isinstance(ratex, Expr):
+            srat = ratex(variables, backend=backend, reaction=self)
+        else:
+            srat = ratex
+        return {k: srat*v for k, v in zip(substance_keys, self.net_stoich(substance_keys))}
 
 
 def equilibrium_quotient(concs, stoich):
@@ -869,7 +875,7 @@ class Equilibrium(Reaction):
     html_arrow = '&harr;'
     param_char = 'K'  # convention
 
-    def as_reactions(self, kf=None, kb=None, units=None, variables=None, backend=math):
+    def as_reactions(self, kf=None, kb=None, units=None, variables=None, backend=math, new_name=None):
         """ Creates a forward and backward :class:`Reaction` pair
 
         Parameters
@@ -893,17 +899,44 @@ class Equilibrium(Reaction):
         if kf is None:
             if kb is None:
                 raise ValueError("Exactly one rate needs to be provided")
-            kf = kb * self.equilibrium_constant(variables, backend=backend) * c0**(nb - nf)
+            kf = kb * self.param * c0**(nb - nf)
+            fw_name = self.name
+            bw_name = new_name
         elif kb is None:
-            kb = kf / (self.equilibrium_constant(variables, backend=backend) * c0**(nb - nf))
+            kb = kf / (self.param * c0**(nb - nf))
+            fw_name = new_name
+            bw_name = self.name
         else:
             raise ValueError("Exactly one rate needs to be provided")
         return (
             Reaction(self.reac, self.prod, kf, self.inact_reac,
-                     self.inact_prod, ref=self.ref),
+                     self.inact_prod, ref=self.ref, name=fw_name),
             Reaction(self.prod, self.reac, kb, self.inact_prod,
-                     self.inact_reac, ref=self.ref)
+                     self.inact_reac, ref=self.ref, name=bw_name)
         )
+
+    def equilibrium_expr(self):
+        """ Turns self.param into a :class:`EqExpr` instance (if not already)
+
+        Examples
+        --------
+        >>> r = Equilibrium.from_string('2 A + B = 3 C; 7')
+        >>> eqex = r.equilibrium_expr()
+        >>> eqex.args[0] == 7
+        True
+
+        """
+        from .util._expr import Expr
+        from .thermodynamics import MassActionEq
+        if isinstance(self.param, Expr):
+            return self.param
+        else:
+            try:
+                convertible = self.param.as_EqExpr
+            except AttributeError:
+                return MassActionEq([self.param])
+            else:
+                return convertible()
 
     def equilibrium_constant(self, variables=None, backend=math):
         """ Return equilibrium constant
@@ -914,12 +947,11 @@ class Equilibrium(Reaction):
         backend : module, optional
 
         """
-        try:
-            return self.param(variables, backend=backend)
-        except TypeError:
-            return self.param
+        return self.equilibrium_expr().eq_const(variables, backend=backend)
 
-    K = equilibrium_constant
+    @deprecated(use_instead=equilibrium_constant)
+    def K(self, *args, **kwargs):
+        return self.equilibrium_constant(*args, **kwargs)
 
     def Q(self, substances, concs):
         """ Calculates the equilibrium qoutient """
@@ -1031,7 +1063,7 @@ class Equilibrium(Reaction):
         return [rcd//v for v in viol]
 
     def cancel(self, rxn):
-        """ multiplier of how many times rxn can be added/subtracted
+        """ Multiplier of how many times rxn can be added/subtracted.
 
         Parameters
         ----------
@@ -1059,33 +1091,32 @@ class Equilibrium(Reaction):
 
 
 class ReactionSystem(object):
-    """
-    Collection of reactions forming a system (model).
+    """ Collection of reactions forming a system (model).
 
     Parameters
     ----------
     rxns : sequence
-         sequence of :py:class:`Reaction` instances
+         Sequence of :py:class:`Reaction` instances.
     substances : OrderedDict or string or None
-         mapping str -> Substance instances, None => deduced from reactions.
+         Mapping str -> Substance instances, None => deduced from reactions.
     name : string (optional)
-         Name of ReactionSystem (e.g. model name / citation key)
+         Name of ReactionSystem (e.g. model name / citation key).
     checks : iterable of str, optional
-        raises value error if any method check_%s returns False
-        for all %s in checks.
+        Raises ``ValueError`` if any method ``check_%s`` returns False
+        for all ``%s`` in ``checks``.
     substance_factory : callback
-        e.g. :meth:`Substance.from_formula`
+        Could also be e.g. :meth:`Substance.from_formula`.
 
     Attributes
     ----------
     rxns : list of objects
-        sequence of :class:`Reaction` instances
+        Sequence of :class:`Reaction` instances.
     substances : OrderedDict or string or iterable of strings/Substance
-        mapping substance name to substance index
+        Mapping substance name to substance index.
     ns : int
-        number of substances
+        Number of substances.
     nr : int
-        number of reactions
+        Number of reactions.
 
     Examples
     --------
@@ -1132,10 +1163,13 @@ class ReactionSystem(object):
         for check in checks:
             getattr(self, 'check_'+check)(throw=True)
 
-    def _repr_html_(self):
+    def html(self, with_param=True):
         def _format(r):
-            return r.html(self.substances, with_param=True)
+            return r.html(self.substances, with_param=with_param)
         return '<br>'.join(map(_format, self.rxns))
+
+    def _repr_html_(self):
+        return self.html()
 
     def check_duplicate(self, throw=False):
         """ Raies ValueError if there are duplicates in self.rxns """
@@ -1162,8 +1196,28 @@ class ReactionSystem(object):
                 names_seen[rxn.name] = idx
         return True
 
+    def check_substance_keys(self, throw=False):
+        for rxn in self.rxns:
+            for key in chain(rxn.reac, rxn.prod, rxn.inact_reac,
+                             rxn.inact_prod):
+                if key not in self.substances:
+                    if throw:
+                        raise ValueError("Unknown key: %s" % key)
+                    else:
+                        return False
+        return True
+
     def check_balance(self, strict=False, throw=False):
-        """ Raies ValueError there are unbalanecd reactions in self.rxns """
+        """ Checks if all reactions are balanced.
+
+        Parameters
+        ----------
+        strict : bool
+            Puts a requirement on all substances to have their ``composition`` attribute set.
+        throw : bool
+            Raies ValueError if there are unbalanecd reactions in self.rxns
+
+        """
         for subst in self.substances.values():
             if subst.composition is None:
                 if strict:
@@ -1182,25 +1236,28 @@ class ReactionSystem(object):
                         return False
         return True
 
-    def check_substance_keys(self, throw=False):
+    def obeys_mass_balance(self):
+        """ Returns True if all reactions obeys mass balance, else False. """
         for rxn in self.rxns:
-            for key in chain(rxn.reac, rxn.prod, rxn.inact_reac,
-                             rxn.inact_prod):
-                if key not in self.substances:
-                    if throw:
-                        raise ValueError("Unknown key: %s" % key)
-                    else:
-                        return False
+            if rxn.mass_balance_violation(self.substances) != 0:
+                return False
+        return True
+
+    def obeys_charge_neutrality(self):
+        """ Returns False if any reaction violate charge neutrality. """
+        for rxn in self.rxns:
+            if rxn.charge_neutrality_violation(self.substances) != 0:
+                return False
         return True
 
     @classmethod
-    def from_string(cls, s, **kwargs):
+    def from_string(cls, s, substance_keys=None, rxn_parse_kwargs=None, **kwargs):
         """ Create a reaction system from a string
 
         Parameters
         ----------
         s : str
-            multiline string
+            Multiline string.
 
         Examples
         --------
@@ -1210,8 +1267,11 @@ class ReactionSystem(object):
         True
 
         """
-        rxns = [cls._BaseReaction.from_string(r) for r in s.split('\n')]
-        return cls(rxns, substance_factory=cls._BaseSubstance.from_formula, **kwargs)
+        rxns = [cls._BaseReaction.from_string(r, substance_keys, **(rxn_parse_kwargs or {}))
+                for r in s.split('\n') if r.strip() != '']
+        if 'substance_factory' not in kwargs:
+            kwargs['substance_factory'] = cls._BaseSubstance.from_formula
+        return cls(rxns, substance_keys, **kwargs)
 
     def __getitem__(self, key):
         candidate = None
@@ -1290,8 +1350,6 @@ class ReactionSystem(object):
 
         """
         import numpy as np
-        if unit is not None:
-            cont = to_unitless(cont, unit)
         if isinstance(cont, np.ndarray):
             pass
         elif isinstance(cont, dict):
@@ -1301,6 +1359,8 @@ class ReactionSystem(object):
                     if k not in substance_keys:
                         raise KeyError("Unkown substance key: %s" % k)
             cont = [cont[k] for k in substance_keys]
+        if unit is not None:
+            cont = to_unitless(cont, unit)
 
         cont = np.atleast_1d(np.asarray(cont, dtype=dtype).squeeze())
         if cont.shape[-1] != self.ns:
@@ -1354,7 +1414,7 @@ class ReactionSystem(object):
                     result[index + (self.as_substance_index(k),)] = val
         return result, varied_keys
 
-    def rates(self, variables=None, backend=math, substance_keys=None):
+    def rates(self, variables=None, backend=math, substance_keys=None, ratexs=None):
         """ Per substance sums of reaction rates rates.
 
         Parameters
@@ -1362,6 +1422,7 @@ class ReactionSystem(object):
         variables : dict
         backend : module, optional
         substance_keys : iterable of str, optional
+        ratexs : iterable of RateExpr instances
 
         Returns
         -------
@@ -1378,8 +1439,10 @@ class ReactionSystem(object):
 
         """
         result = {}
-        for rxn in self.rxns:
-            for k, v in rxn.rate(variables, backend, substance_keys).items():
+        if ratexs is None:
+            ratexs = [None]*self.nr
+        for rxn, ratex in zip(self.rxns, ratexs):
+            for k, v in rxn.rate(variables, backend, substance_keys, ratex=ratex).items():
                 if k not in result:
                     result[k] = v
                 else:
@@ -1400,8 +1463,14 @@ class ReactionSystem(object):
     def all_reac_stoichs(self, keys=None):
         return self._stoichs('all_reac_stoich', keys)
 
+    def active_reac_stoichs(self, keys=None):
+        return self._stoichs('active_reac_stoich', keys)
+
     def all_prod_stoichs(self, keys=None):
         return self._stoichs('all_prod_stoich', keys)
+
+    def active_prod_stoichs(self, keys=None):
+        return self._stoichs('active_prod_stoich', keys)
 
     def stoichs(self, non_precip_rids=()):  # TODO: rename to cond_stoichs
         """ Conditional stoichiometries depending on precipitation status """
@@ -1413,24 +1482,92 @@ class ReactionSystem(object):
             eq.non_precipitate_stoich(self.substances)
         ) for idx, eq in enumerate(self.rxns)], dtype=object)
 
-    def obeys_mass_balance(self):
-        """ Returns True if all reactions obeys mass balance, else False. """
-        for rxn in self.rxns:
-            if rxn.mass_balance_violation(self.substances) != 0:
-                return False
-        return True
-
-    def obeys_charge_neutrality(self):
-        """ Returns False if any reaction violate charge neutrality. """
-        for rxn in self.rxns:
-            if rxn.charge_neutrality_violation(self.substances) != 0:
-                return False
-        return True
-
     def composition_balance_vectors(self):
+        """ Returns a list of lists with compositions and a list of composition keys.
+
+        The list of lists can be viewed as a matrix with rows corresponding to composition keys
+        (which are given as the second item in the returned tuple) and columns corresponding to
+        substances. Multiplying the matrix with a vector of concentrations give an equation which
+        is an invariant (corresponds to mass & charge conservation).
+
+        Examples
+        --------
+        >>> s = 'Cu+2 + NH3 -> CuNH3+2'
+        >>> import re
+        >>> substances = re.split(' \+ | -> ', s)
+        >>> rsys = ReactionSystem.from_string(s, substances)
+        >>> rsys.composition_balance_vectors()
+        ([[2, 0, 2], [0, 3, 3], [0, 1, 1], [1, 0, 1]], [0, 1, 7, 29])
+
+        Returns
+        -------
+        A: list of lists
+        ck: (sorted) tuple of composition keys
+
+        """
         subs = self.substances.values()
         ck = Substance.composition_keys(subs)
         return [[s.composition.get(k, 0) for s in subs] for k in ck], ck
+
+    def upper_conc_bounds(self, init_concs, min_=min, dtype=None, skip_keys=(0,)):
+        r""" Calculates upper concentration bounds per substance based on substance composition.
+
+        Parameters
+        ----------
+        init_concs : dict or array_like
+            Per substance initial conidtions.
+        min_ : callbable
+        dtype : dtype or None
+        skip_keys : tuple
+            What composition keys to skip.
+
+        Returns
+        -------
+        numpy.ndarray :
+            Per substance upper limit (ordered as :attr:`substances`).
+
+        Notes
+        -----
+        The function does not take into account wheter there actually exists a
+        reaction path leading to a substance. Note also that the upper limit is
+        per substance, i.e. the sum of all upper bounds amount to more substance than
+        available in ``init_conc``.
+
+        Examples
+        --------
+        >>> rs = ReactionSystem.from_string('2 HNO2 -> H2O + NO + NO2 \n 2 NO2 -> N2O4')
+        >>> from collections import defaultdict
+        >>> c0 = defaultdict(float, HNO2=20)
+        >>> ref = {'HNO2': 20, 'H2O': 10, 'NO': 20, 'NO2': 20, 'N2O4': 10}
+        >>> rs.as_per_substance_dict(rs.upper_conc_bounds(c0)) == ref
+        True
+
+        """
+        import numpy as np
+        # A, composition_keys = self.composition_balance_vectors()
+        # composition_amounts = np.dot(A, self.as_per_substance_array(init_conc))
+        # return np.min(composition_amounts.reshape((composition_amounts.size, 1))/A, axis=0)
+        if dtype is None:
+            dtype = np.float64
+        init_concs_arr = self.as_per_substance_array(init_concs, dtype=dtype)
+        composition_conc = defaultdict(float)
+        for conc, s_obj in zip(init_concs_arr, self.substances.values()):
+            for comp_nr, coeff in s_obj.composition.items():
+                if comp_nr in skip_keys:  # charge may be created (if compensated)
+                    continue
+                composition_conc[comp_nr] += coeff*conc
+        bounds = []
+        for s_obj in self.substances.values():
+            choose_from = []
+            for comp_nr, coeff in s_obj.composition.items():
+                if comp_nr == 0:
+                    continue
+                choose_from.append(composition_conc[comp_nr]/coeff)
+            if len(choose_from) == 0:
+                bounds.append(float('inf'))
+            else:
+                bounds.append(min_(choose_from))
+        return bounds
 
     def _html_table_cell_factory(self, title=True):
         if title:
@@ -1522,7 +1659,7 @@ class ReactionSystem(object):
 
         Parameters
         ----------
-        title: bool
+        title : bool
 
         Returns
         -------
@@ -1545,11 +1682,11 @@ def balance_stoichiometry(reactants, products, substances=None,
 
     Parameters
     ----------
-    reactants: iterable of reactant keys
-    products: iterable of product keys
-    substances: OrderedDict or string or None
-        mapping reactant/product keys to instances of :class:`Substance`
-    substance_factory: callback
+    reactants : iterable of reactant keys
+    products : iterable of product keys
+    substances : OrderedDict or string or None
+        Mapping reactant/product keys to instances of :class:`Substance`.
+    substance_factory : callback
 
     Examples
     --------
@@ -1666,8 +1803,8 @@ def mass_fractions(stoichiometries, substances=None, substance_factory=Substance
 
     Parameters
     ----------
-    stoichiometries: dict or set
-        if a set: all entries are assumed to correspond to unit multiplicity
+    stoichiometries : dict or set
+        If a ``set``: all entries are assumed to correspond to unit multiplicity.
     substances: dict or None
 
     Examples

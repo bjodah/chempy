@@ -9,6 +9,7 @@ MANIFEST
 *.egg-info
 dist/
 examples/*.png
+!examples/kinetics.png
 examples/*.html
 examples/pyneqsys
 examples/pyodesys
@@ -19,3 +20,4 @@ benchmarks/symengine/
 doc/
 examples/equilibria.pdf
 venv/
+build/

@@ -12,7 +12,6 @@ equilibria.
 from __future__ import division, absolute_import
 
 import warnings
-from collections import defaultdict
 
 import numpy as np
 
@@ -35,24 +34,6 @@ class EqSystem(ReactionSystem):
             eq_params = [eq.param for eq in self.rxns]
         return np.array([small if idx in non_precip_rids else
                          eq_params[idx] for idx, eq in enumerate(eq_params)])
-
-    def upper_conc_bounds(self, init_concs, min_=min, dtype=np.float64):
-        init_concs_arr = self.as_per_substance_array(init_concs, dtype=dtype)
-        composition_conc = defaultdict(float)
-        for conc, s_obj in zip(init_concs_arr, self.substances.values()):
-            for comp_nr, coeff in s_obj.composition.items():
-                if comp_nr == 0:  # charge may be created (if compensated)
-                    continue
-                composition_conc[comp_nr] += coeff*conc
-        bounds = []
-        for s_obj in self.substances.values():
-            choose_from = []
-            for comp_nr, coeff in s_obj.composition.items():
-                if comp_nr == 0:
-                    continue
-                choose_from.append(composition_conc[comp_nr]/coeff)
-            bounds.append(min_(choose_from))
-        return bounds
 
     def equilibrium_quotients(self, concs):
         stoichs = self.stoichs()
@@ -117,7 +98,7 @@ class EqSystem(ReactionSystem):
         def fw_cond(x, p):
             precip_stoich_coeff, precip_idx = rxn.precipitate_stoich(self.substances)[1:3]
             q = rxn.Q(self.substances, self.dissolved(x))
-            k = rxn.K()
+            k = rxn.equilibrium_constant()
             if precip_stoich_coeff > 0:
                 return q*(1+rtol) < k
             elif precip_stoich_coeff < 0:

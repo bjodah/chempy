@@ -12,15 +12,14 @@ from chempy.units import (
     allclose, units_library, default_constants, Backend, to_unitless,
     SI_base_registry, default_units as u
 )
-from chempy.util.testing import requires
-
-from .._expr import Expr, mk_Poly, mk_PiecewisePoly
+from ..testing import requires
+from ..pyutil import defaultkeydict
+from .._expr import Expr, mk_Poly, mk_PiecewisePoly, create_Piecewise, create_Poly, Log10
 from ..parsing import parsing_library
 
 
 class HeatCapacity(Expr):
     parameter_keys = ('temperature',)
-    kw = {'substance': None}
 
 
 class EinsteinSolid(HeatCapacity):
@@ -42,7 +41,7 @@ def _get_cv(kelvin=1, gram=1, mol=1):
 
     def einT(s):
         return 0.806*s.data['DebyeT']
-    return {s.name: EinsteinSolid([einT(s), s.mass * gram/mol], substance=s) for s in (Al, Be)}
+    return {s.name: EinsteinSolid([einT(s), s.mass * gram/mol]) for s in (Al, Be)}
 
 
 @requires(parsing_library)
@@ -50,7 +49,6 @@ def test_Expr():
     cv = _get_cv()
     _ref = 0.8108020083055849
     assert abs(cv['Al']({'temperature': 273.15, 'molar_gas_constant': 8.3145}) - _ref) < 1e-14
-    assert cv['Al'].kwargs['substance'].name == 'Al'
 
 
 def _poly(args, x, backend=None):
@@ -65,7 +63,10 @@ def test_Expr__nested_Expr():
 
     cv = _get_cv()
     _ref = 0.8108020083055849
-    assert abs(cv['Al']({'temperature': T, 'x': (273.15-7)/5 + 3, 'molar_gas_constant': 8.3145}) - _ref) < 1e-14
+    args = {'temperature': T, 'x': (273.15-7)/5 + 3, 'molar_gas_constant': 8.3145}
+    assert abs(cv['Al'](args) - _ref) < 1e-14
+    Al2 = cv['Al']/2
+    assert abs(Al2(args) - _ref/2) < 1e-14
 
 
 def test_nargs():
@@ -214,6 +215,25 @@ def test_PiecewisePoly():
         tpwp.eval_poly({'temperature': 21})
 
 
+def test_create_Piecewise_Poly():
+    PolyT = create_Poly('Tmpr')
+
+    p1 = PolyT([1, 0.1])
+    assert p1({'Tmpr': 10}) == 2
+
+    p2 = PolyT([3, -.1])
+    assert p2({'Tmpr': 10}) == 2
+
+    PiecewiseT = create_Piecewise('Tmpr')
+    pw = PiecewiseT([0, p1, 10, p2, 20])
+    assert pw({'Tmpr': 5}) == 1.5
+    assert pw({'Tmpr': 15}) == 1.5
+    assert pw.parameter_keys == ('Tmpr',)
+
+    with pytest.raises(ValueError):
+        pw({'Tmpr': 21})
+
+
 @requires('sympy')
 def test_PiecewisePoly__sympy():
     import sympy as sp
@@ -226,13 +246,48 @@ def test_PiecewisePoly__sympy():
     x = sp.Symbol('x')
     res = tpwp.eval_poly({'temperature': x}, backend=sp)
     assert isinstance(res, sp.Piecewise)
-    assert res.args[0][0] == 1+0.1*x
+    assert res.args[0][0] == 1 + 0.1*x
     assert res.args[0][1] == sp.And(0 <= x, x <= 10)
-    assert res.args[1][0] == 3-0.1*x
+    assert res.args[1][0] == 3 - 0.1*x
     assert res.args[1][1] == sp.And(10 <= x, x <= 20)
 
     with pytest.raises(ValueError):
         tpwp.from_polynomials([(0, 10), (10, 20)], [p1, p2])
+
+
+@requires('sympy')
+def test_create_Piecewise_Poly__sympy():
+    import sympy as sp
+    Poly = create_Poly('Tmpr')
+    p1 = Poly([1, 0.1])
+    p2 = Poly([3, -.1])
+
+    TPw = create_Piecewise('Tmpr')
+    pw = TPw([0, p1, 10, p2, 20])
+    x = sp.Symbol('x')
+    res = pw({'Tmpr': x}, backend=sp)
+    assert isinstance(res, sp.Piecewise)
+    assert res.args[0][0] == 1 + 0.1*x
+    assert res.args[0][1] == sp.And(0 <= x, x <= 10)
+    assert res.args[1][0] == 3 - 0.1*x
+    assert res.args[1][1] == sp.And(10 <= x, x <= 20)
+
+
+@requires('sympy')
+def test_create_Piecewise__nan_fallback__sympy():
+    import sympy as sp
+
+    TPw = create_Piecewise('Tmpr', nan_fallback=True)
+    pw = TPw([0, 42, 10, 43, 20])
+    x = sp.Symbol('x')
+    res = pw({'Tmpr': x}, backend=sp)
+    assert isinstance(res, sp.Piecewise)
+    assert res.args[0][0] == 42
+    assert res.args[0][1] == sp.And(0 <= x, x <= 10)
+    assert res.args[1][0] == 43
+    assert res.args[1][1] == sp.And(10 <= x, x <= 20)
+    assert res.args[2][0].name.lower() == 'nan'
+    assert res.args[2][1] == True  # noqa
 
 
 def test_BinaryExpr():
@@ -334,3 +389,131 @@ def test_Expr__argument_defaults():
     assert MyExpr([15, 19])() == 15*19*23
     assert MyExpr([15, 19, 29])() == 15*19*29
     assert MyExpr(dict(zip('abc', [15, 19, 29])))() == 15*19*29
+
+
+class MyK(Expr):
+    argument_names = ('H', 'S')
+    parameter_keys = ('T',)
+    R = 8.3145
+
+    def __call__(self, variables, backend=math):
+        H, S = self.all_args(variables, backend=backend)
+        T, = self.all_params(variables, backend=backend)
+        return backend.exp(-(H - T*S)/(self.R*T))
+
+
+def test_Expr__no_args():
+    K1 = MyK(unique_keys=('H1', 'S1'))
+    K2 = MyK(unique_keys=('H2', 'S2'))
+    add = K1 + K2
+    T = 298.15
+    res = add({'H1': 2, 'H2': 3, 'S1': 5, 'S2': 7, 'T': T})
+    RT = 8.3145 * 298.15
+    ref = math.exp(-(2 - T*5)/RT) + math.exp(-(3 - T*7)/RT)
+    assert abs(res - ref) < 1e-14
+
+
+@requires('sympy')
+def test_Expr__no_args__symbolic():
+    K1 = MyK(unique_keys=('H1', 'S1'))
+    K2 = MyK(unique_keys=('H2', 'S2'))
+    add = K1 + K2
+    import sympy
+    v = defaultkeydict(sympy.Symbol)
+    res = add(v, backend=sympy)
+    R = 8.3145
+    expr1 = sympy.exp(-(v['H1'] - v['T']*v['S1'])/R/v['T'])
+    expr2 = sympy.exp(-(v['H2'] - v['T']*v['S2'])/R/v['T'])
+    ref = expr1 + expr2
+    assert (res - ref).simplify() == 0
+
+
+class MyK2(Expr):
+    argument_names = ('H', 'S', 'Cp', 'Tref')
+    argument_defaults = (0, 298.15)
+    parameter_keys = ('T')
+    R = 8.3145
+
+    def __call__(self, variables, backend=math):
+        H, S, Cp, Tref = self.all_args(variables, backend=backend)
+        T, = self.all_params(variables, backend=backend)
+        _H = H + Cp*(T-Tref)
+        _S = S + Cp*backend.log(T/Tref)
+        return backend.exp(-(_H - T*_S)/(self.R*T))
+
+
+def test_Expr__no_args__arg_defaults():
+    K1 = MyK2(unique_keys=('H1', 'S1', 'Cp1'))
+    K2 = MyK2(unique_keys=('H2', 'S2'))
+    add = K1 + K2
+    assert add.all_unique_keys() == set(['H1', 'H2', 'S1', 'S2', 'Cp1'])
+
+    T = 293.15
+    res = add({'H1': 2, 'H2': 3, 'S1': 5, 'S2': 7, 'T': T, 'Cp1': 13})
+    RT = 8.3145 * T
+    H1p = 2 + 13*(T - 298.15)
+    S1p = 5 + 13*math.log(T/298.15)
+    ref = math.exp(-(H1p - T*S1p)/RT) + math.exp(-(3 - T*7)/RT)
+    assert abs(res - ref) < 1e-14
+
+
+def test_create_Piecewise():
+    PW = create_Piecewise('T')
+    Ha, Sa, Hb, Sb, Ta, Tb = 40e3, -60, 37e3, -42, 293.15, 303.15
+    a = MyK([Ha, Sa])
+    b = MyK([Hb, Sb])
+    pw = PW([273.15, a, 298.15, b, 323.15])  # 0, 25, 50 *C
+    res_a = pw({'T': Ta})  # 20 *C
+    res_b = pw({'T': Tb})  # 30 *C
+    ref_a = math.exp(-(Ha - Ta*Sa)/(MyK.R*Ta))
+    ref_b = math.exp(-(Hb - Tb*Sb)/(MyK.R*Tb))
+    assert abs(res_a - ref_a) < 1e-14
+    assert abs(res_b - ref_b) < 1e-14
+
+
+def test_create_Poly():
+    PolyT = create_Poly('T')
+    p = PolyT([1, 2, 3, 4, 5])
+    assert p({'T': 11}) == 1 + 2*11 + 3*11**2 + 4*11**3 + 5*11**4
+
+
+def test_pow():
+    PolyT = create_Poly('T')
+    p = PolyT([1, 2, 3])
+    p_to_two = p**2
+    res = p_to_two({'T': 3})
+    ref = (1 + 2*3 + 3*9)**2
+    assert abs(res - ref) < 1e-12
+    two_to_p = 2**p
+    res = two_to_p({'T': 3})
+    ref = 2**(1 + 2*3 + 3*9)
+    assert abs(res - ref) < 1e-12
+
+
+def test_functions():
+    PolyT = create_Poly('T')
+    p = PolyT([1, 2, 3])
+    lgp = Log10(p)
+    res = lgp({'T': 3})
+    ref = math.log10(1 + 2*3 + 3*9)
+    assert abs(res - ref) < 1e-12
+
+
+def test_str_arg():
+    PolyT = create_Poly('x')
+    p = PolyT([1, 2, 3])
+    x = Log10('T')
+    res = p({'x': x, 'T': 1000})
+    ref = 1 + 2*3 + 3*9
+    assert abs(res - ref) < 1e-12
+
+
+def test_implicit_str():
+    PolyT = create_Poly('x')
+    p = PolyT([1, 2, 3])
+    expr1 = p / 'u'
+    assert abs(expr1({'x': 3, 'u': 5}) - (1 + 2*3 + 3*9)/5) < 1e-12
+    expr2 = 'u' / p
+    assert abs(expr2({'x': 3, 'u': 5}) - 5/(1 + 2*3 + 3*9)) < 1e-12
+    assert expr1.all_parameter_keys() == set(['x'])
+    assert expr2.all_parameter_keys() == set(['x'])

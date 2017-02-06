@@ -6,8 +6,12 @@ from __future__ import (absolute_import, division, print_function)
 
 from .._util import get_backend
 
-# Add documentation
-# Rename esoteric parameter names
+# TODO
+# ----
+#
+# - Add documentation
+# - Rename esoteric parameter names
+# - Derive more general expressions (e.g. which allows finite initial dimer concentration)
 
 
 def dimerization_irrev(t, kf, initial_C, P0=1, t0=0):
@@ -35,15 +39,41 @@ def binary_irrev(t, kf, P0, t0, excess_C, limiting_C, eps_l, backend=None):
 binary_irrev.name = 'Second order irreversible'
 
 
-def binary_rev(t, kf, P0, t0, excess_C, limiting_C, eps_l, beta, backend=None):
+def binary_rev(t, kf, kb, prod, major, minor, backend=None):
+    """ Calculates the analytic transient concentration of a complex.
+
+    From second order reversible kinetics.
+
+    Parameters
+    ----------
+    t : float, Symbol or array_like
+        Time.
+    kf : number or Symbol
+        Forward (bimolecular) rate constant.
+    kb : number or Symbol
+        Backward (unimolecular) rate constant.
+    prod : number or Symbol
+        Initial concentration of the complex.
+    major : number or Symbol
+        Initial concentration of the more abundant reactant.
+    minor : number or Symbol
+        Initial concentration of the less abundant reactant.
+    backend : module or str
+        Default is 'numpy', can also be e.g. ``sympy``.
+
+    """
+    # see _integrated.ipynb for derivation
     be = get_backend(backend)
-    one = backend.pi**0
-    kb = kf/beta
-    a = kf
-    b = -excess_C*kf - limiting_C*kf - kb
-    c = excess_C*limiting_C*kf
-    P = (b**2 - 4*a*c)**(one/2)
-    Q = P + b
-    R = P - b
-    return P0*eps_l*Q*(1 - be.exp(P*(t-t0)))/(2*a*(Q/R + be.exp(P*(t-t0))))
+    X, Y, Z = prod, major, minor
+    x0 = Y*kf
+    x1 = Z*kf
+    x2 = 2*X*kf
+    x3 = -kb - x0 - x1
+    x4 = -x2 + x3
+    x5 = be.sqrt(-4*kf*(X**2*kf + X*x0 + X*x1 + Z*x0) + x4**2)
+    x6 = kb + x0 + x1 + x5
+    x7 = (x3 + x5)*be.exp(-t*x5)
+    x8 = x3 - x5
+    return (x4*x8 + x5*x8 + x7*(x2 + x6))/(2*kf*(x6 + x7))
+
 binary_rev.name = 'Second order reversible'

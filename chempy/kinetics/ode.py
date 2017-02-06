@@ -10,7 +10,12 @@ from collections import OrderedDict
 from itertools import chain
 import math
 
-from ..units import to_unitless, get_derived_unit
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
+from ..units import to_unitless, get_derived_unit, default_unit_in_registry
 from ..util._expr import Expr
 from .rates import RateExpr, MassAction
 
@@ -38,8 +43,8 @@ def law_of_mass_action_rates(conc, rsys, variables=None):
     >>> rsys = ReactionSystem([rxn], keys)
     >>> next(law_of_mass_action_rates([55.4, 1e-7, 1e-7], rsys))
     0.00554
-    >>> from chempy.kinetics.rates import ArrheniusMassAction
-    >>> rxn.param = ArrheniusMassAction({'A': 1e10, 'Ea_over_R': 9314}, rxn=rxn)
+    >>> from chempy.kinetics.rates import Arrhenius, MassAction
+    >>> rxn.param = MassAction(Arrhenius({'A': 1e10, 'Ea_over_R': 9314}))
     >>> print('%.5g' % next(law_of_mass_action_rates([55.4, 1e-7, 1e-7], rsys, {'temperature': 293})))
     0.0086693
 
@@ -47,7 +52,7 @@ def law_of_mass_action_rates(conc, rsys, variables=None):
     for idx_r, rxn in enumerate(rsys.rxns):
         if isinstance(rxn.param, RateExpr):
             if isinstance(rxn.param, MassAction):
-                yield rxn.param(dict(chain(variables.items(), zip(rsys.substances.keys(), conc))))
+                yield rxn.param(dict(chain(variables.items(), zip(rsys.substances.keys(), conc))), reaction=rxn)
             else:
                 raise ValueError("Not mass-action rate in reaction %d" % idx_r)
         else:
@@ -58,7 +63,7 @@ def law_of_mass_action_rates(conc, rsys, variables=None):
             yield rate*rxn.param
 
 
-def dCdt(rsys, rates):
+def dCdt_list(rsys, rates):
     """ Returns a list of the time derivatives of the concentrations
 
     Parameters
@@ -73,7 +78,7 @@ def dCdt(rsys, rates):
     >>> from chempy import ReactionSystem, Reaction
     >>> line, keys = 'H2O -> H+ + OH- ; 1e-4', 'H2O H+ OH-'
     >>> rsys = ReactionSystem([Reaction.from_string(line, keys)], keys)
-    >>> dCdt(rsys, [0.0054])
+    >>> dCdt_list(rsys, [0.0054])
     [-0.0054, 0.0054, 0.0054]
 
     """
@@ -85,10 +90,8 @@ def dCdt(rsys, rates):
     return f
 
 
-def get_odesys(rsys, include_params=True, substitutions=None,
-               SymbolicSys=None,
-               unit_registry=None, output_conc_unit=None,
-               output_time_unit=None, **kwargs):
+def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, unit_registry=None,
+               output_conc_unit=None, output_time_unit=None, **kwargs):
     """ Creates a :class:`pyneqsys.SymbolicSys` from a :class:`ReactionSystem`
 
     The parameters passed to RateExpr will contain the key ``'time'`` corresponding to the
@@ -106,7 +109,7 @@ def get_odesys(rsys, include_params=True, substitutions=None,
         left as free parameters in the :class:`pyneqsys.SymbolicSys` instance.
     substitutions : dict, optional
         Variable substitutions used by rate expressions (in respective Reaction.param).
-        values are allowed to be tuple like: (new_vars, callback)
+        values are allowed to be values of instances of :class:`Expr`.
     SymbolicSys : class (optional)
         Default : :class:`pyneqsys.SymbolicSys`.
     unit_registry: dict (optional)
@@ -114,14 +117,16 @@ def get_odesys(rsys, include_params=True, substitutions=None,
     output_conc_unit : unit (Optional)
     output_time_unit : unit (Optional)
     \*\*kwargs :
-        Keyword arguemnts pass on to `SymbolicSys`.
+        Keyword arguemnts passed on to `SymbolicSys`.
 
     Returns
     -------
     pyodesys.symbolic.SymbolicSys
-    param_keys
-    unique_keys
-    p_units
+    extra : dict, with keys:
+        - param_keys : list of str instances
+        - unique : OrderedDict mapping str to value (possibly None)
+        - p_units : list of units
+        - max_euler_step_cb : callable or None
 
     Examples
     --------
@@ -129,7 +134,7 @@ def get_odesys(rsys, include_params=True, substitutions=None,
     >>> eq = Equilibrium({'Fe+3', 'SCN-'}, {'FeSCN+2'}, 10**2)
     >>> substances = 'Fe+3 SCN- FeSCN+2'.split()
     >>> rsys = ReactionSystem(eq.as_reactions(kf=3.0), substances)
-    >>> odesys = get_odesys(rsys)[0]
+    >>> odesys, extra = get_odesys(rsys)
     >>> init_conc = {'Fe+3': 1.0, 'SCN-': .3, 'FeSCN+2': 0}
     >>> tout, Cout, info = odesys.integrate(5, init_conc)
     >>> Cout[-1, :].round(4)
@@ -139,15 +144,11 @@ def get_odesys(rsys, include_params=True, substitutions=None,
     if SymbolicSys is None:
         from pyodesys.symbolic import SymbolicSys
 
-    substance_keys = list(rsys.substances.keys())
-
-    if 'names' not in kwargs:
-        kwargs['names'] = list(rsys.substances.values())  # pyodesys>=0.5.3
-
     r_exprs = [rxn.rate_expr() for rxn in rsys.rxns]
 
-    _original_param_keys = set.union(*(set(ratex.parameter_keys) for ratex in r_exprs))
-    _from_subst = set()
+    _ori_pk = set.union(*(ratex.all_parameter_keys() for ratex in r_exprs))
+    _ori_uk = set.union(*(ratex.all_unique_keys() for ratex in r_exprs))
+    _subst_pk = set()
     _active_subst = {}
     _passive_subst = {}
     substitutions = substitutions or {}
@@ -155,51 +156,54 @@ def get_odesys(rsys, include_params=True, substitutions=None,
     unique = OrderedDict()
 
     def _reg_unique(expr):
-        if not include_params:
-            if expr.unique_keys is not None:
-                for k, v in zip(expr.unique_keys, expr.args):
-                    unique[k] = v
-
-    for key, v in substitutions.items():
-        if key not in _original_param_keys:
-            raise ValueError("Substitution: '%s' does not appear in any rate expressions." % key)
-        if isinstance(v, Expr):
-            _from_subst.update(v.parameter_keys)
-            _active_subst[key] = v
-            _reg_unique(v)
+        if not isinstance(expr, Expr):
+            raise NotImplementedError("Currently only Expr sub classes are supported.")
+        if expr.args is None:
+            for k in expr.unique_keys:
+                if k not in substitutions:
+                    unique[k] = None
         else:
-            _passive_subst[key] = v
-    param_keys = list(filter(lambda x: x not in substitutions, _original_param_keys.union(_from_subst)))
+            for idx, arg in enumerate(expr.args):
+                if isinstance(arg, Expr):
+                    _reg_unique(arg)
+                elif expr.unique_keys is not None and idx < len(expr.unique_keys):
+                    uk = expr.unique_keys[idx]
+                    if uk not in substitutions:
+                        unique[uk] = arg
 
-    for ratex in r_exprs:
-        _reg_unique(ratex)
+    for sk, sv in substitutions.items():
+        if sk not in _ori_pk and sk not in _ori_uk:
+            raise ValueError("Substitution: '%s' does not appear in any rate expressions." % sk)
+        if isinstance(sv, Expr):
+            _subst_pk.update(sv.parameter_keys)
+            _active_subst[sk] = sv
+            if not include_params:
+                _reg_unique(sv)
+        else:
+            _passive_subst[sk] = sv
+    all_pk = list(filter(lambda x: x not in substitutions and x != 'time', _ori_pk.union(_subst_pk)))
+
+    if not include_params:
+        for ratex in r_exprs:
+            _reg_unique(ratex)
+
+    all_pk_with_unique = list(set(chain(all_pk, unique.keys())))
+    if include_params:
+        param_names_for_odesys = all_pk
+    else:
+        param_names_for_odesys = all_pk_with_unique
 
     if unit_registry is None:
-        def pre_processor(x, y, p):
-            if p == ():
-                p = {}
-            p['time'] = x[0]
-            return (
-                x,
-                rsys.as_per_substance_array(y),
-                [p[k] for k in param_keys] + [p.get(k, v) for k, v in unique.items()]
-            )
-
-        def post_processor(x, y, p):
-            return (
-                x,
-                y,  # dict(zip(substance_keys, y)),
-                dict(zip(chain(param_keys, unique.keys()), p))
-            )
-        p_units = [None]*(len(param_keys) + len(unique))
+        p_units = None
     else:
         # We need to make rsys_params unitless and create
         # a pre- & post-processor for SymbolicSys
-        p_units = [get_derived_unit(unit_registry, k) for k in param_keys]
+        pk_units = [get_derived_unit(unit_registry, k) for k in all_pk]
+        unique_units = [default_unit_in_registry(unit_registry, uv) for uv in unique.values()]
+        p_units = pk_units if include_params else (pk_units + unique_units)
         new_r_exprs = []
         for ratex in r_exprs:
-            _pu, _new_rate = ratex._recursive_as_RateExpr().dedimensionalisation(unit_registry)
-            p_units.extend(_pu)
+            _pu, _new_rate = ratex.dedimensionalisation(unit_registry)
             new_r_exprs.append(_new_rate)
         r_exprs = new_r_exprs
 
@@ -207,13 +211,10 @@ def get_odesys(rsys, include_params=True, substitutions=None,
         conc_unit = get_derived_unit(unit_registry, 'concentration')
 
         def pre_processor(x, y, p):
-            if p == ():
-                p = {}
-            p['time'] = to_unitless(x, time_unit)
             return (
                 to_unitless(x, time_unit),
-                rsys.as_per_substance_array(to_unitless(y, conc_unit)),
-                [to_unitless(p[k], p_unit) for k, p_unit in zip(chain(param_keys, unique.keys()), p_units)]
+                to_unitless(y, conc_unit),
+                [to_unitless(px, p_unit) for px, p_unit in zip(p, p_units)]
             )
 
         def post_processor(x, y, p):
@@ -225,24 +226,143 @@ def get_odesys(rsys, include_params=True, substitutions=None,
                 conc = conc.rescale(output_conc_unit)
             return time, conc, [elem*p_unit for elem, p_unit in zip(p, p_units)]
 
-    kwargs['pre_processors'] = [pre_processor] + kwargs.get('pre_processors', [])
-    kwargs['post_processors'] = kwargs.get('post_processors', []) + [post_processor]
+        kwargs['pre_processors'] = [pre_processor] + kwargs.get('pre_processors', [])
+        kwargs['post_processors'] = kwargs.get('post_processors', []) + [post_processor]
 
     def dydt(t, y, p, backend=math):
-        variables = dict(chain(
-            zip(substance_keys, y),
-            zip(param_keys, p[:len(param_keys)]),
-            zip(unique.keys(), p[len(param_keys):])
-        ))
+        variables = dict(chain(y.items(), p.items()))
+        if 'time' in variables:
+            raise ValueError("Key 'time' is reserved.")
         variables['time'] = t
         for k, act in _active_subst.items():
             if unit_registry is not None:
                 _, act = act.dedimensionalisation(unit_registry)
             variables[k] = act(variables, backend=backend)
         variables.update(_passive_subst)
-        return dCdt(rsys, [rat(variables, backend=backend) for rat in r_exprs])
+        return rsys.rates(variables, backend=backend, ratexs=r_exprs)
 
-    return SymbolicSys.from_callback(
-        dydt, len(substance_keys),
-        len(param_keys) + (0 if include_params else len(unique)),
-        **kwargs), param_keys, unique, p_units
+    names = [s.name for s in rsys.substances.values()]
+    latex_names = [None if s.latex_name is None else ('$\\mathrm{' + s.latex_name + '}$')
+                   for s in rsys.substances.values()]
+
+    compo_vecs, compo_names = rsys.composition_balance_vectors()
+
+    odesys = SymbolicSys.from_callback(
+        dydt, dep_by_name=True, par_by_name=True, names=names,
+        latex_names=latex_names, param_names=param_names_for_odesys,
+        linear_invariants=None if len(compo_vecs) == 0 else compo_vecs,
+        linear_invariant_names=None if len(compo_names) == 0 else compo_names,
+        **kwargs)
+
+    if rsys.check_balance(strict=True):
+        # Composition available, we can provide callback for calculating
+        # maximum allowed Euler forward step at start of integration.
+        def max_euler_step_cb(x, y, p=()):
+            _x, _y, _p = odesys.pre_process(x, y, p)
+            upper_bounds = rsys.upper_conc_bounds(_y)
+            fvec = odesys.f_cb(_x[0], _y, _p)
+            h = []
+            for idx, fcomp in enumerate(fvec):
+                if fcomp == 0:
+                    h.append(float('inf'))
+                elif fcomp > 0:
+                    h.append((upper_bounds[idx] - _y[idx])/fcomp)
+                else:  # fcomp < 0
+                    h.append(-_y[idx]/fcomp)
+            min_h = min(h)
+            return min(min_h, 1)
+
+        def linear_dependencies(preferred=None):
+            if preferred is not None:
+                if len(preferred) == 0:
+                    raise ValueError("No preferred substance keys provided")
+                if len(preferred) >= len(rsys.substances):
+                    raise ValueError("Cannot remove all concentrations from linear dependencies")
+                for k in preferred:
+                    if k not in rsys.substances:
+                        raise ValueError("Unknown substance key: %s" % k)
+
+            def analytic_factory(x0, y0, p0, be):
+                if preferred is None:
+                    _preferred = None
+                else:
+                    _preferred = list(preferred)
+                A = be.Matrix(compo_vecs)
+                rA, pivots = A.rref()
+
+                analytic_exprs = OrderedDict()
+                for ri, ci1st in enumerate(pivots):
+                    for idx in range(ci1st, odesys.ny):
+                        key = odesys.names[idx]
+                        if rA[ri, idx] == 0:
+                            continue
+                        if _preferred is None or key in _preferred:
+                            terms = [rA[ri, di]*(odesys.dep[di] - y0[odesys.dep[di]])
+                                     for di in range(ci1st, odesys.ny) if di != idx]
+                            analytic_exprs[odesys[key]] = y0[odesys.dep[idx]] - sum(terms)/rA[ri, idx]
+                            if _preferred is not None:
+                                _preferred.remove(key)
+                            break
+                for k in reversed(list(analytic_exprs.keys())):
+                    analytic_exprs[k] = analytic_exprs[k].subs(analytic_exprs)
+                if _preferred is not None and len(_preferred) > 0:
+                    raise ValueError("Failed to obtain analytic expression for: %s" % ', '.join(_preferred))
+                return analytic_exprs
+
+            return analytic_factory
+
+    else:
+        max_euler_step_cb = None
+        linear_dependencies = None
+
+    return odesys, {
+        'param_keys': all_pk,
+        'unique': unique,
+        'p_units': p_units,
+        'max_euler_step_cb': max_euler_step_cb,
+        'linear_dependencies': linear_dependencies
+    }
+
+
+def chained_parameter_variation(odesys, durations, init_conc, varied_params, default_params, integrate_kwargs=None):
+    """ Integrate an ODE-system for a serie of durations with some parameters changed in-between
+
+    Parameters
+    ----------
+    odesys : :class:`pyodesys.ODESys` instance
+    durations : iterable of floats
+    init_conc : dict or array_like
+    varied_params : dict mapping parameter name to array_like
+        Each array_like need to be of same length as durations.
+    default_params : dict or array_like
+        Default values for the parameters of the ODE system.
+    integrate_kwargs : dict
+        Keyword arguments passed on to :meth:`pyodesys.ODESys.integrate`.
+
+    """
+    for k, v in varied_params.items():
+        if len(v) != len(durations):
+            raise ValueError("Mismathced lengths of durations and varied_params")
+    integrate_kwargs = integrate_kwargs or {}
+    touts = []
+    couts = []
+    infos = {}
+    c0 = init_conc.copy()
+    for idx, duration in enumerate(durations):
+        params = default_params.copy()
+        for k, v in varied_params.items():
+            params[k] = v[idx]
+        tout, cout, info = odesys.integrate(duration, c0, params, **integrate_kwargs)
+        c0 = cout[-1, :]
+        idx0 = 0 if idx == 0 else 1
+        t_global = 0 if idx == 0 else touts[-1][-1]
+        touts.append(tout[idx0:] + t_global)
+        couts.append(cout[idx0:, ...])
+        for k, v in info.items():
+            if k.startswith('internal'):
+                continue
+            if k in infos:
+                infos[k] += (v,)
+            else:
+                infos[k] = (v,)
+    return np.concatenate(touts), np.concatenate(couts), infos

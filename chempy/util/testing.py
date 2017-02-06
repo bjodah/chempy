@@ -14,10 +14,12 @@ class requires(object):
 
     Examples
     --------
-    >>> @requires('numpy')
+    >>> @requires('numpy', 'scipy')
     ... def test_sqrt():
     ...     import numpy as np
     ...     assert np.sqrt(4) == 2
+    ...     from scipy.special import zeta
+    ...     assert zeta(2) < 2
     ...
     >>> @requires('numpy>=1.9.0')
     ... def test_nanmedian():

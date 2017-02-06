@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function)
 
+from collections import defaultdict, OrderedDict
+from itertools import permutations
 import math
 
+import pytest
 try:
     import numpy as np
 except ImportError:
     np = None
 
-from chempy.chemistry import Substance, Reaction, ReactionSystem
+
+from chempy.chemistry import Equilibrium, Reaction, ReactionSystem, Substance
+from chempy.thermodynamics.expressions import MassActionEq
 from chempy.units import (
     SI_base_registry, get_derived_unit, allclose, units_library,
     to_unitless, default_units as u
@@ -17,10 +22,10 @@ from chempy.util._expr import Expr
 from chempy.util.testing import requires
 from .test_rates import _get_SpecialFraction_rsys
 from ..arrhenius import ArrheniusParam
-from ..rates import ArrheniusMassAction, MassAction, Radiolytic, RampedTemp
-from .._rates import TPolyMassAction
-from ..ode import get_odesys
-from ..integrated import dimerization_irrev
+from ..rates import Arrhenius, MassAction, Radiolytic, RampedTemp
+from .._rates import ShiftedTPoly
+from ..ode import get_odesys, chained_parameter_variation
+from ..integrated import dimerization_irrev, binary_rev
 
 
 @requires('numpy', 'pyodesys')
@@ -30,13 +35,14 @@ def test_get_odesys_1():
     b = Substance('B')
     r = Reaction({'A': 1}, {'B': 1}, param=k)
     rsys = ReactionSystem([r], [a, b])
+    assert sorted(rsys.substances.keys()) == ['A', 'B']
     odesys = get_odesys(rsys, include_params=True)[0]
     c0 = {
         'A': 1.0,
         'B': 3.0,
     }
     t = np.linspace(0.0, 10.0)
-    xout, yout, info = odesys.integrate(t, rsys.as_per_substance_array(c0))
+    xout, yout, info = odesys.integrate(t, c0)
     yref = np.zeros((t.size, 2))
     yref[:, 0] = np.exp(-k*t)
     yref[:, 1] = 4 - np.exp(-k*t)
@@ -119,7 +125,6 @@ def test_get_odesys__with_units():
     yref = np.zeros((xout.size, 2))
     yref[:, 0] = Aref
     yref[:, 1] = 200 + (13-Aref)/2
-    print((yout - yref*conc_unit)/yout)
     assert allclose(yout, yref*conc_unit)
 
 
@@ -153,10 +158,11 @@ def test_SpecialFraction_with_units():
 
 @requires('pyodesys')
 def test_ode_with_global_parameters():
-    ratex = ArrheniusMassAction([1e10, 40e3/8.3145])
+    ratex = MassAction(Arrhenius([1e10, 40e3/8.3145]))
     rxn = Reaction({'A': 1}, {'B': 1}, ratex)
     rsys = ReactionSystem([rxn], 'A B')
-    odesys = get_odesys(rsys, include_params=True)[0]
+    odesys, extra = get_odesys(rsys, include_params=False)
+    param_keys, unique_keys, p_units = map(extra.get, 'param_keys unique p_units'.split())
     conc = {'A': 3, 'B': 5}
     x, y, p = odesys.pre_process(-37, conc, {'temperature': 298.15})
     fout = odesys.f_cb(x, y, p)
@@ -258,7 +264,7 @@ def test_get_ode__Radiolytic__substitutions__units():
 
 @requires('pyodesys', units_library)
 def test_get_ode__TPoly():
-    rate = TPolyMassAction([273.15*u.K, 10/u.molar/u.s, 2/u.molar/u.s/u.K])
+    rate = MassAction(ShiftedTPoly([273.15*u.K, 10/u.molar/u.s, 2/u.molar/u.s/u.K]))
     rxn = Reaction({'A': 1, 'B': 1}, {'C': 3, 'D': 2}, rate, {'A': 3})
     rsys = ReactionSystem([rxn], 'A B C D')
     odesys = get_odesys(rsys, unit_registry=SI_base_registry)[0]
@@ -273,14 +279,14 @@ def test_get_ode__TPoly():
 @requires('pyodesys', units_library)
 def test_get_odesys__time_dep_rate():
 
-    class RampedRate(MassAction):
+    class RampedRate(Expr):
         argument_names = ('rate_constant', 'ramping_rate')
 
-        def rate_coeff(self, variables, backend=math):
+        def __call__(self, variables, backend=math):
             rate_constant, ramping_rate = self.all_args(variables, backend=backend)
             return rate_constant * ramping_rate * variables['time']
 
-    rate = RampedRate([7, 2])
+    rate = MassAction(RampedRate([7, 2]))
     rxn = Reaction({'A': 1}, {'B': 3}, rate)
     rsys = ReactionSystem([rxn], 'A B')
     odesys = get_odesys(rsys)[0]
@@ -307,13 +313,28 @@ def test_get_odesys__time_dep_temperature():
 
     params = A0, A, Ea_over_R, T0, dTdt = [13, 1e10, 56e3/8, 273, 2]
     B0 = 11
-    rate = ArrheniusMassAction([A, Ea_over_R])
+    rate = MassAction(Arrhenius([A, Ea_over_R]))
     rxn = Reaction({'A': 1}, {'B': 3}, rate)
     rsys = ReactionSystem([rxn], 'A B')
     rt = RampedTemp([T0, dTdt], ('init_temp', 'ramp_rate'))
-    odesys = get_odesys(rsys, False, substitutions={'temperature': rt})[0]
+    odesys, extra = get_odesys(rsys, False, substitutions={'temperature': rt})
+    all_pk, unique, p_units = map(extra.get, 'param_keys unique p_units'.split())
     conc = {'A': A0, 'B': B0}
-    x, y, p = odesys.pre_process([2, 5, 10], conc)
+    tout = [2, 5, 10]
+
+    for ramp_rate in [2, 3, 4]:
+        unique['ramp_rate'] = ramp_rate
+        xout, yout, info = odesys.integrate(10, conc, unique, atol=1e-10, rtol=1e-12)
+        params[-1] = ramp_rate
+        Aref = np.array([float(refA(t, *params)) for t in xout])
+        # Aref = 1/(1/13 + 2*1e-6*t_unitless)
+        yref = np.zeros((xout.size, 2))
+        yref[:, 0] = Aref
+        yref[:, 1] = B0 + 3*(A0-Aref)
+        assert allclose(yout, yref)
+
+    unique['ramp_rate'] = 2
+    x, y, p = odesys.pre_process(tout, conc, unique)
     fout = odesys.f_cb(x, y, p)
 
     def r(t):
@@ -325,14 +346,221 @@ def test_get_odesys__time_dep_temperature():
     ]).T
     assert np.allclose(fout, ref)
 
-    for ramp_rate in [2, 3, 4]:
-        xout, yout, info = odesys.integrate(
-            10, rsys.as_per_substance_array(conc), {'ramp_rate': ramp_rate},
-            atol=1e-10, rtol=1e-12)
-        params[-1] = ramp_rate
-        Aref = np.array([float(refA(t, *params)) for t in xout])
-        # Aref = 1/(1/13 + 2*1e-6*t_unitless)
-        yref = np.zeros((xout.size, 2))
-        yref[:, 0] = Aref
-        yref[:, 1] = B0 + 3*(A0-Aref)
-        assert allclose(yout, yref)
+
+@requires('numpy', 'pyodesys')
+def test_get_odesys__late_binding():
+    def _gibbs(args, T, R, backend, **kwargs):
+        H, S = args
+        return backend.exp(-(H - T*S)/(R*T))
+
+    def _eyring(args, T, R, k_B, h, backend, **kwargs):
+        H, S = args
+        return k_B/h*T*backend.exp(-(H - T*S)/(R*T))
+
+    gibbs_pk = ('temperature', 'molar_gas_constant')
+    eyring_pk = gibbs_pk + ('Boltzmann_constant', 'Planck_constant')
+
+    GibbsEC = MassActionEq.from_callback(_gibbs, argument_names=('H', 'S'), parameter_keys=gibbs_pk)
+    EyringMA = MassAction.from_callback(_eyring, argument_names=('H', 'S'), parameter_keys=eyring_pk)
+
+    uk_equil = ('He_assoc', 'Se_assoc')
+    beta = GibbsEC(unique_keys=uk_equil)  # equilibrium parameters
+
+    uk_kinet = ('Ha_assoc', 'Sa_assoc')
+    bimol_barrier = EyringMA(unique_keys=uk_kinet)  # activation parameters
+
+    eq = Equilibrium({'Fe+3', 'SCN-'}, {'FeSCN+2'}, beta)
+    rsys = ReactionSystem(eq.as_reactions(kf=bimol_barrier))
+    odesys, extra = get_odesys(rsys, include_params=False)
+    pk, unique, p_units = map(extra.get, 'param_keys unique p_units'.split())
+    assert sorted(unique) == sorted(uk_equil + uk_kinet)
+    assert sorted(pk) == sorted(eyring_pk)
+
+
+@requires('numpy', 'pyodesys')
+def test_get_odesys__ScaledSys():
+    from pyodesys.symbolic import ScaledSys
+    k = .2
+    a = Substance('A')
+    b = Substance('B')
+    r = Reaction({'A': 1}, {'B': 1}, param=k)
+    rsys = ReactionSystem([r], [a, b])
+    assert sorted(rsys.substances.keys()) == ['A', 'B']
+    odesys = get_odesys(rsys, include_params=True, SymbolicSys=ScaledSys)[0]
+    c0 = {
+        'A': 1.0,
+        'B': 3.0,
+    }
+    t = np.linspace(0.0, 10.0)
+    xout, yout, info = odesys.integrate(t, c0)
+    yref = np.zeros((t.size, 2))
+    yref[:, 0] = np.exp(-k*t)
+    yref[:, 1] = 4 - np.exp(-k*t)
+    assert np.allclose(yout, yref)
+
+
+@requires('numpy', 'pyodesys', 'sympy')
+def test_get_odesys__max_euler_step_cb():
+    rsys = ReactionSystem.from_string('\n'.join(['H2O -> H+ + OH-; 1e-4', 'OH- + H+ -> H2O; 1e10']))
+    odesys, extra = get_odesys(rsys)
+    r1 = 1.01e-4
+    r2 = 6e-4
+    dH2Odt = r2 - r1
+    euler_ref = 2e-7/dH2Odt
+    assert abs(extra['max_euler_step_cb'](0, {'H2O': 1.01, 'H+': 2e-7, 'OH-': 3e-7}) - euler_ref)/euler_ref < 1e-8
+
+
+@requires('numpy', 'pyodesys', 'sympy')
+@pytest.mark.parametrize('substances', permutations(['H2O', 'H+', 'OH-']))
+def test_get_odesys__linear_dependencies__preferred(substances):
+    rsys = ReactionSystem.from_string('\n'.join(['H2O -> H+ + OH-; 1e-4', 'OH- + H+ -> H2O; 1e10']), substances)
+    assert isinstance(rsys.substances, OrderedDict)
+    odesys, extra = get_odesys(rsys)
+
+    af_H2O_H = extra['linear_dependencies'](['H+', 'H2O'])
+    import sympy
+    y0 = {k: sympy.Symbol(k+'0') for k in rsys.substances}
+    af_H2O_H(None, {odesys[k]: v for k, v in y0.items()}, None, sympy)  # ensure idempotent
+    exprs_H2O_H = af_H2O_H(None, {odesys[k]: v for k, v in y0.items()}, None, sympy)
+    ref_H2O_H = {
+        'H2O': y0['H2O'] + y0['OH-'] - odesys['OH-'],  # oxygen
+        'H+': 2*y0['H2O'] + y0['H+'] + y0['OH-'] - odesys['OH-'] - 2*(
+            y0['H2O'] + y0['OH-'] - odesys['OH-'])  # hydrogen
+    }
+    for k, v in ref_H2O_H.items():
+        assert (exprs_H2O_H[odesys[k]] - v) == 0
+
+
+@requires('numpy', 'pyodesys', 'sympy', 'pycvodes')
+@pytest.mark.parametrize('preferred', [None, ['H+', 'OH-'], ['H2O', 'H+'], ['H2O', 'OH-']])
+def test_get_odesys__linear_dependencies__PartiallySolvedSystem(preferred):
+    import sympy
+    from pyodesys.symbolic import PartiallySolvedSystem
+    rsys = ReactionSystem.from_string('\n'.join(['H2O -> H+ + OH-; 1e-4', 'OH- + H+ -> H2O; 1e10']))
+    odesys, extra = get_odesys(rsys)
+    c0 = {'H2O': 0, 'H+': 2e-7, 'OH-': 3e-7}
+    h0max = extra['max_euler_step_cb'](0, c0)
+    analytic_factory = extra['linear_dependencies']()
+    y0 = {k: sympy.Symbol(k+'0') for k in rsys.substances}
+    analytic_factory(None, {odesys[k]: v for k, v in y0.items()}, None, sympy)
+    psys = PartiallySolvedSystem(odesys, analytic_factory)
+    xout, yout, info = psys.integrate(1, c0, atol=1e-12, rtol=1e-10, first_step=h0max*1e-12,
+                                      integrator='cvode')
+    c_reac = c0['H+'], c0['OH-']
+    H2O_ref = binary_rev(xout, 1e10, 1e-4, c0['H2O'], max(c_reac), min(c_reac))
+    assert np.allclose(yout[:, psys.names.index('H2O')], H2O_ref)
+    assert np.allclose(yout[:, psys.names.index('H+')], c0['H+'] + c0['H2O'] - H2O_ref)
+    assert np.allclose(yout[:, psys.names.index('OH-')], c0['OH-'] + c0['H2O'] - H2O_ref)
+
+
+@requires('numpy', 'pyodesys', 'sympy', 'pycvodes')
+def test_get_odesys__Equilibrium_as_reactions():
+    from chempy import Equilibrium, ReactionSystem
+    eq = Equilibrium({'Fe+3', 'SCN-'}, {'FeSCN+2'}, 10**2)
+    substances = 'Fe+3 SCN- FeSCN+2'.split()
+    rsys = ReactionSystem(eq.as_reactions(kf=3.0), substances)
+    odesys, extra = get_odesys(rsys)
+    init_conc = {'Fe+3': 1.0, 'SCN-': .3, 'FeSCN+2': 0}
+    tout, Cout, info = odesys.integrate(5, init_conc, integrator='cvode', atol=1e-11, rtol=1e-12)
+    cmplx_ref = binary_rev(tout, 3, 3.0/100, init_conc['FeSCN+2'], init_conc['Fe+3'], init_conc['SCN-'])
+    assert np.allclose(Cout[:, 2], cmplx_ref)
+
+
+@requires('numpy', 'pyodesys', 'sympy', 'pycvodes')
+def test_get_odesys__Expr_as_param():
+    def _eyring_pe(args, T, backend=math, **kwargs):
+        freq, = args
+        return freq*T
+
+    EyringPreExp = Expr.from_callback(_eyring_pe, argument_names=('freq',),
+                                      parameter_keys=('temperature',))
+
+    def _k(args, T, backend=math, **kwargs):
+        A, H, S = args
+        return A*backend.exp(-(H - T*S)/(8.314511*T))
+
+    EyringMA = MassAction.from_callback(_k, parameter_keys=('temperature',),
+                                        argument_names=('Aa', 'Ha', 'Sa'))
+    kb_h = 2.08e10
+    rxn = Reaction({'A'}, {'B'}, EyringMA(unique_keys=('A_u', 'H_u', 'S_u')))
+    rsys = ReactionSystem([rxn], ['A', 'B'])
+    odesys, extra = get_odesys(rsys, include_params=False, substitutions={'A_u': EyringPreExp(kb_h)})
+    y0 = defaultdict(float, {'A': 7.0})
+    rt = 293.15
+    xout, yout, info = odesys.integrate(5, y0, {'H_u': 117e3, 'S_u': 150, 'temperature': rt},
+                                        integrator='cvode', atol=1e-12, rtol=1e-10, nsteps=1000)
+    kref = kb_h*rt*np.exp(-(117e3 - rt*150)/(8.314511*rt))
+    ref = y0['A']*np.exp(-kref*xout)
+    assert np.allclose(yout[:, 0], ref)
+    assert np.allclose(yout[:, 1], y0['A'] - ref)
+
+
+@requires('numpy', 'pyodesys', 'sympy', 'pycvodes')
+def test_get_odesys__Expr_as_param__unique_as_param():
+    def _eyring_pe_coupled(args, T, S, backend=math, **kwargs):
+        freq, = args
+        return freq*T/S
+
+    EyringPreExpCoupled = Expr.from_callback(_eyring_pe_coupled, argument_names=('freq',),
+                                             parameter_keys=('temperature', 'S_u'))
+
+    def _k(args, T, backend=math, **kwargs):
+        A, H, S = args
+        return A*backend.exp(-(H - T*S)/(8.314511*T))
+
+    EyringMA = MassAction.from_callback(_k, parameter_keys=('temperature',),
+                                        argument_names=('Aa', 'Ha', 'Sa'))
+    kb_h = 2.08e10
+    rxn = Reaction({'A'}, {'B'}, EyringMA(unique_keys=('A_u', 'H_u', 'S_u')))
+    rsys = ReactionSystem([rxn], ['A', 'B'])
+    odesys2, extra2 = get_odesys(rsys, include_params=False,
+                                 substitutions={'A_u': EyringPreExpCoupled(kb_h)})
+    y0 = defaultdict(float, {'A': 7.0})
+    rt = 293.15
+    xout2, yout2, info2 = odesys2.integrate(5, y0, {'H_u': 107e3, 'S_u': 150, 'temperature': rt},
+                                            integrator='cvode', atol=1e-12, rtol=1e-10, nsteps=1000)
+    kref2 = kb_h*rt*np.exp(-(107e3 - rt*150)/(8.314511*rt))/150
+    ref2 = y0['A']*np.exp(-kref2*xout2)
+    assert np.allclose(yout2[:, 0], ref2)
+    assert np.allclose(yout2[:, 1], y0['A'] - ref2)
+
+
+@requires('pyodesys', 'pycvodes')
+def test_chained_parameter_variation():
+    ratex = MassAction(Arrhenius([1e10, 63e3/8.3145]))
+    rxn = Reaction({'A': 1}, {'B': 1}, ratex)
+    rsys = ReactionSystem([rxn], 'A B')
+    odesys, extra = get_odesys(rsys, include_params=False)
+    param_keys, unique_keys, p_units = map(extra.get, 'param_keys unique p_units'.split())
+    conc = {'A': 3.17, 'B': 5.03}
+    Ts = (294, 304, 317)
+    times = [3.1, 2.1, 5.3]
+    kw = dict(integrator='cvode', atol=1e-12, rtol=1e-13, first_step=1e-14)
+    tout, cout, info = chained_parameter_variation(
+        odesys, times, conc, {'temperature': Ts}, {}, integrate_kwargs=kw)
+    assert len(info['nfev']) == 3
+    assert info['nfev'][0] > 2
+    assert info['nfev'][1] > 2
+    assert info['nfev'][2] > 2
+    assert np.all(np.diff(tout) > 0)
+    tout1 = tout[tout <= times[0]]
+    tout23 = tout[tout > times[0]]
+    tout2 = tout23[tout23 <= times[0] + times[1]]
+    tout3 = tout23[tout23 > times[0] + times[1]]
+
+    def _ref(y0, x, T):
+        k = 1e10*np.exp(-63e3/8.3145/T)
+        return y0*np.exp(-k*(x-x[0]))
+
+    Aref1 = _ref(conc['A'], tout1, Ts[0])
+    Bref1 = conc['B'] + conc['A'] - Aref1
+
+    Aref2 = _ref(Aref1[-1], tout2, Ts[1])
+    Bref2 = Bref1[-1] + Aref1[-1] - Aref2
+
+    Aref3 = _ref(Aref2[-1], tout3, Ts[2])
+    Bref3 = Bref2[-1] + Aref2[-1] - Aref3
+
+    cref = np.concatenate([np.vstack((a, b)).T for a, b in [(Aref1, Bref1), (Aref2, Bref2), (Aref3, Bref3)]])
+    forgive = 27*1.1
+    assert np.allclose(cref, cout, atol=kw['atol']*forgive, rtol=kw['rtol']*forgive)

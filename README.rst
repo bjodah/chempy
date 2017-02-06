@@ -34,7 +34,7 @@ chemistry (mainly physical/inorganic/analytical chemistry). Currently it include
 - Solver for equilibria (including multiphase systems)
 - Numerical integration routines for chemical kinetics (ODE solver front-end)
 - Integrated rate expressions (and convenience fitting routines)
-- Relations in Physical chemistry
+- Relations in physical chemistry:
 
   - Debye-Hückel expressions
   - Arrhenius equation
@@ -102,19 +102,19 @@ Balancing stoichiometry of a chemical reaction
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. code:: python
 
-   >>> from chempy import balance_stoichiometry
-   >>> reac, prod = balance_stoichiometry({'C7H5(NO2)3', 'NH4NO3'}, {'CO', 'H2O', 'N2'})
+   >>> from chempy import balance_stoichiometry  # Main reaction in NASA's booster rockets:
+   >>> reac, prod = balance_stoichiometry({'NH4ClO4', 'Al'}, {'Al2O3', 'HCl', 'H2O', 'N2'})
    >>> from pprint import pprint
    >>> pprint(reac)
-   {'C7H5(NO2)3': 2, 'NH4NO3': 7}
+   {'Al': 10, 'NH4ClO4': 6}
    >>> pprint(prod)
-   {'CO': 14, 'H2O': 19, 'N2': 10}
+   {'Al2O3': 5, 'H2O': 9, 'HCl': 6, 'N2': 3}
    >>> from chempy import mass_fractions
    >>> for fractions in map(mass_fractions, [reac, prod]):
    ...     pprint({k: '{0:.3g} wt%'.format(v*100) for k, v in fractions.items()})
    ...
-   {'C7H5(NO2)3': '44.8 wt%', 'NH4NO3': '55.2 wt%'}
-   {'CO': '38.7 wt%', 'H2O': '33.7 wt%', 'N2': '27.6 wt%'}
+   {'Al': '27.7 wt%', 'NH4ClO4': '72.3 wt%'}
+   {'Al2O3': '52.3 wt%', 'H2O': '16.6 wt%', 'HCl': '22.4 wt%', 'N2': '8.62 wt%'}
 
 
 Balancing reactions
@@ -174,6 +174,36 @@ Ionic strength
    >>> from chempy.electrolytes import ionic_strength
    >>> ionic_strength({'Fe+3': 0.050, 'ClO4-': 0.150}) == .3
    True
+
+Chemical kinetics (system of ordinary differential equations)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. code:: python
+
+   >>> from chempy import ReactionSystem  # The rate constants below are arbitrary
+   >>> rsys = ReactionSystem.from_string("""2 Fe+2 + H2O2 -> 2 Fe+3 + 2 OH-; 42
+   ...     2 Fe+3 + H2O2 -> 2 Fe+2 + O2 + 2 H+; 17
+   ...     H+ + OH- -> H2O; 1e10
+   ...     H2O -> H+ + OH-; 1e-4
+   ...     Fe+3 + 2 H2O -> FeOOH(s) + 3 H+; 1
+   ...     FeOOH(s) + 3 H+ -> Fe+3 + 2 H2O; 2.5""")  # "[H2O]" = 1.0 (actually 55.4 at RT)
+   >>> from chempy.kinetics.ode import get_odesys
+   >>> odesys, extra = get_odesys(rsys)
+   >>> from collections import defaultdict
+   >>> import numpy as np
+   >>> tout = sorted(np.concatenate((np.linspace(0, 23), np.logspace(-8, 1))))
+   >>> c0 = defaultdict(float, {'Fe+2': 0.05, 'H2O2': 0.1, 'H2O': 1.0, 'H+': 1e-7, 'OH-': 1e-7})
+   >>> result = odesys.integrate(tout, c0, atol=1e-12, rtol=1e-14)
+   >>> import matplotlib.pyplot as plt
+   >>> _ = plt.subplot(1, 2, 1)
+   >>> _ = result.plot(names=[k for k in rsys.substances if k != 'H2O'])
+   >>> _ = plt.legend(loc='best', prop={'size': 9}); _ = plt.xlabel('Time'); _ = plt.ylabel('Concentration')
+   >>> _ = plt.subplot(1, 2, 2)
+   >>> _ = result.plot(names=[k for k in rsys.substances if k != 'H2O'], xscale='log', yscale='log')
+   >>> _ = plt.legend(loc='best', prop={'size': 9}); _ = plt.xlabel('Time'); _ = plt.ylabel('Concentration')
+   >>> _ = plt.tight_layout()
+   >>> plt.show()  # doctest: +SKIP
+
+.. image:: https://raw.githubusercontent.com/bjodah/chempy/master/examples/kinetics.png
 
 
 License

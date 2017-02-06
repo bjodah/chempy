@@ -1,13 +1,14 @@
 build:
   image: bjodah/bjodahimg16dev:latest
   commands:
-    - python2 -m pip install --upgrade pip
-    - python3 -m pip install --upgrade pip
+    - bash -c '[[ $(python setup.py --version) =~ ^[0-9]+.* ]]'
+    - export CPLUS_INCLUDE_PATH=/opt/boost_1_63_0
     - ./scripts/ci.sh chempy
     - (cd examples/; python -m pip install --force bokeh==0.11.1; for f in bokeh_*.py; do python -m bokeh html $f; done)
     - ./scripts/prepare_deploy.sh
     - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
     - PATH=/opt/miniconda3/bin:$PATH conda build conda-recipe
+    - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
 
 deploy:
 
