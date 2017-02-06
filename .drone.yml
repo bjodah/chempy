@@ -3,8 +3,6 @@ build:
   commands:
     - bash -c '[[ $(python setup.py --version) =~ ^[0-9]+.* ]]'
     - export CPLUS_INCLUDE_PATH=/opt/boost_1_63_0
-    - python2 -m pip install git+https://github.com/bjodah/pyodesys.git@improve-native  # DO-NOT-MERGE!
-    - python3 -m pip install git+https://github.com/bjodah/pyodesys.git@improve-native  # DO-NOT-MERGE!
     - ./scripts/ci.sh chempy
     - (cd examples/; python -m pip install --force bokeh==0.11.1; for f in bokeh_*.py; do python -m bokeh html $f; done)
     - ./scripts/prepare_deploy.sh
