@@ -1,5 +1,5 @@
-unreleased
-==========
+v0.5.0
+======
 - ``.electrochemistry.nernst_formula`` - thanks to Adel Qalieh (@adelq)
 - moved ``.util.parsing.number_to_scientific_*`` to ``.printing(.numbers)``
 - Number formating now handles uncertainties.

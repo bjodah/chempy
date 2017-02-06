@@ -193,7 +193,7 @@ def least_squares(x, y, w=1):  # w == 1 => OLS, w != 1 => WLS
 
     """
     sqrtw = np.sqrt(w)
-    Y = y * sqrtw
+    Y = np.asarray(y, dtype=np.float64) * sqrtw
     _x = np.asarray(x)
     X = np.ones((_x.size, 2))
     X[:, 1] = x
