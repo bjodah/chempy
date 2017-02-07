@@ -1,0 +1,564 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.kinetics.ode &mdash; chempy 0.5.0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="chempy 0.5.0 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.5.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../index.html">chempy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      
+    <li>chempy.kinetics.ode</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="https://github.com/bjodah/chempy/blob/v0.5.0/doc/_modules/chempy/kinetics/ode.rst" class="fa fa-github"> Edit on GitHub</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.kinetics.ode</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains functions for formulating systems of Ordinary Differential</span>
+<span class="sd">Equations (ODE-systems) which may be integrated numerically to model temporal</span>
+<span class="sd">evolution of concentrations in reaction systems.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">chain</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">np</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="kn">from</span> <span class="nn">..units</span> <span class="k">import</span> <span class="n">to_unitless</span><span class="p">,</span> <span class="n">get_derived_unit</span><span class="p">,</span> <span class="n">default_unit_in_registry</span>
+<span class="kn">from</span> <span class="nn">..util._expr</span> <span class="k">import</span> <span class="n">Expr</span>
+<span class="kn">from</span> <span class="nn">.rates</span> <span class="k">import</span> <span class="n">RateExpr</span><span class="p">,</span> <span class="n">MassAction</span>
+
+
+<div class="viewcode-block" id="law_of_mass_action_rates"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.ode.law_of_mass_action_rates">[docs]</a><span class="k">def</span> <span class="nf">law_of_mass_action_rates</span><span class="p">(</span><span class="n">conc</span><span class="p">,</span> <span class="n">rsys</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns a generator of reaction rate expressions</span>
+
+<span class="sd">    Rates from the law of mass action (:attr:`Reaction.inact_reac` ignored)</span>
+<span class="sd">    from a :class:`ReactionSystem`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    conc : array_like</span>
+<span class="sd">        concentrations (floats or symbolic objects)</span>
+<span class="sd">    rsys : ReactionSystem instance</span>
+<span class="sd">        See :class:`ReactionSystem`</span>
+<span class="sd">    variables : dict (optional)</span>
+<span class="sd">        to override parameters in the rate expressions of the reactions</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from chempy import ReactionSystem, Reaction</span>
+<span class="sd">    &gt;&gt;&gt; line, keys = &#39;H2O -&gt; H+ + OH- ; 1e-4&#39;, &#39;H2O H+ OH-&#39;</span>
+<span class="sd">    &gt;&gt;&gt; rxn = Reaction.from_string(line, keys)</span>
+<span class="sd">    &gt;&gt;&gt; rsys = ReactionSystem([rxn], keys)</span>
+<span class="sd">    &gt;&gt;&gt; next(law_of_mass_action_rates([55.4, 1e-7, 1e-7], rsys))</span>
+<span class="sd">    0.00554</span>
+<span class="sd">    &gt;&gt;&gt; from chempy.kinetics.rates import Arrhenius, MassAction</span>
+<span class="sd">    &gt;&gt;&gt; rxn.param = MassAction(Arrhenius({&#39;A&#39;: 1e10, &#39;Ea_over_R&#39;: 9314}))</span>
+<span class="sd">    &gt;&gt;&gt; print(&#39;%.5g&#39; % next(law_of_mass_action_rates([55.4, 1e-7, 1e-7], rsys, {&#39;temperature&#39;: 293})))</span>
+<span class="sd">    0.0086693</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">idx_r</span><span class="p">,</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rsys</span><span class="o">.</span><span class="n">rxns</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rxn</span><span class="o">.</span><span class="n">param</span><span class="p">,</span> <span class="n">RateExpr</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rxn</span><span class="o">.</span><span class="n">param</span><span class="p">,</span> <span class="n">MassAction</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">rxn</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="n">variables</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="nb">zip</span><span class="p">(</span><span class="n">rsys</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">conc</span><span class="p">))),</span> <span class="n">reaction</span><span class="o">=</span><span class="n">rxn</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Not mass-action rate in reaction </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">idx_r</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">substance_key</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="n">rxn</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">s_idx</span> <span class="o">=</span> <span class="n">rsys</span><span class="o">.</span><span class="n">as_substance_index</span><span class="p">(</span><span class="n">substance_key</span><span class="p">)</span>
+                <span class="n">rate</span> <span class="o">*=</span> <span class="n">conc</span><span class="p">[</span><span class="n">s_idx</span><span class="p">]</span><span class="o">**</span><span class="n">coeff</span>
+            <span class="k">yield</span> <span class="n">rate</span><span class="o">*</span><span class="n">rxn</span><span class="o">.</span><span class="n">param</span></div>
+
+
+<div class="viewcode-block" id="dCdt_list"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.ode.dCdt_list">[docs]</a><span class="k">def</span> <span class="nf">dCdt_list</span><span class="p">(</span><span class="n">rsys</span><span class="p">,</span> <span class="n">rates</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns a list of the time derivatives of the concentrations</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rsys: ReactionSystem instance</span>
+<span class="sd">    rates: array_like</span>
+<span class="sd">        rates (to be weighted by stoichiometries) of the reactions</span>
+<span class="sd">        in ``rsys``</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from chempy import ReactionSystem, Reaction</span>
+<span class="sd">    &gt;&gt;&gt; line, keys = &#39;H2O -&gt; H+ + OH- ; 1e-4&#39;, &#39;H2O H+ OH-&#39;</span>
+<span class="sd">    &gt;&gt;&gt; rsys = ReactionSystem([Reaction.from_string(line, keys)], keys)</span>
+<span class="sd">    &gt;&gt;&gt; dCdt_list(rsys, [0.0054])</span>
+<span class="sd">    [-0.0054, 0.0054, 0.0054]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">rsys</span><span class="o">.</span><span class="n">ns</span>
+    <span class="n">net_stoichs</span> <span class="o">=</span> <span class="n">rsys</span><span class="o">.</span><span class="n">net_stoichs</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">idx_s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rsys</span><span class="o">.</span><span class="n">ns</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">idx_r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rsys</span><span class="o">.</span><span class="n">nr</span><span class="p">):</span>
+            <span class="n">f</span><span class="p">[</span><span class="n">idx_s</span><span class="p">]</span> <span class="o">+=</span> <span class="n">net_stoichs</span><span class="p">[</span><span class="n">idx_r</span><span class="p">,</span> <span class="n">idx_s</span><span class="p">]</span><span class="o">*</span><span class="n">rates</span><span class="p">[</span><span class="n">idx_r</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">f</span></div>
+
+
+<div class="viewcode-block" id="get_odesys"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.ode.get_odesys">[docs]</a><span class="k">def</span> <span class="nf">get_odesys</span><span class="p">(</span><span class="n">rsys</span><span class="p">,</span> <span class="n">include_params</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">substitutions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">SymbolicSys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unit_registry</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">output_conc_unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_time_unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Creates a :class:`pyneqsys.SymbolicSys` from a :class:`ReactionSystem`</span>
+
+<span class="sd">    The parameters passed to RateExpr will contain the key ``&#39;time&#39;`` corresponding to the</span>
+<span class="sd">    independent variable of the IVP.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rsys : ReactionSystem</span>
+<span class="sd">        Each reaction of ``rsys`` will have their :meth:`Reaction.rate_expr()` invoked.</span>
+<span class="sd">        Note that if :attr:`Reaction.param` is not a :class:`RateExpr` (or convertible to</span>
+<span class="sd">        one through :meth:`as_RateExpr`) it will be used to construct a :class:`MassAction`</span>
+<span class="sd">        instance.</span>
+<span class="sd">    include_params : bool (default: True)</span>
+<span class="sd">        Whether rate constants should be included into the rate expressions or</span>
+<span class="sd">        left as free parameters in the :class:`pyneqsys.SymbolicSys` instance.</span>
+<span class="sd">    substitutions : dict, optional</span>
+<span class="sd">        Variable substitutions used by rate expressions (in respective Reaction.param).</span>
+<span class="sd">        values are allowed to be values of instances of :class:`Expr`.</span>
+<span class="sd">    SymbolicSys : class (optional)</span>
+<span class="sd">        Default : :class:`pyneqsys.SymbolicSys`.</span>
+<span class="sd">    unit_registry: dict (optional)</span>
+<span class="sd">        See :func:`chempy.units.get_derived_units`.</span>
+<span class="sd">    output_conc_unit : unit (Optional)</span>
+<span class="sd">    output_time_unit : unit (Optional)</span>
+<span class="sd">    \*\*kwargs :</span>
+<span class="sd">        Keyword arguemnts passed on to `SymbolicSys`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pyodesys.symbolic.SymbolicSys</span>
+<span class="sd">    extra : dict, with keys:</span>
+<span class="sd">        - param_keys : list of str instances</span>
+<span class="sd">        - unique : OrderedDict mapping str to value (possibly None)</span>
+<span class="sd">        - p_units : list of units</span>
+<span class="sd">        - max_euler_step_cb : callable or None</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from chempy import Equilibrium, ReactionSystem</span>
+<span class="sd">    &gt;&gt;&gt; eq = Equilibrium({&#39;Fe+3&#39;, &#39;SCN-&#39;}, {&#39;FeSCN+2&#39;}, 10**2)</span>
+<span class="sd">    &gt;&gt;&gt; substances = &#39;Fe+3 SCN- FeSCN+2&#39;.split()</span>
+<span class="sd">    &gt;&gt;&gt; rsys = ReactionSystem(eq.as_reactions(kf=3.0), substances)</span>
+<span class="sd">    &gt;&gt;&gt; odesys, extra = get_odesys(rsys)</span>
+<span class="sd">    &gt;&gt;&gt; init_conc = {&#39;Fe+3&#39;: 1.0, &#39;SCN-&#39;: .3, &#39;FeSCN+2&#39;: 0}</span>
+<span class="sd">    &gt;&gt;&gt; tout, Cout, info = odesys.integrate(5, init_conc)</span>
+<span class="sd">    &gt;&gt;&gt; Cout[-1, :].round(4)</span>
+<span class="sd">    array([ 0.7042,  0.0042,  0.2958])</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">SymbolicSys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">pyodesys.symbolic</span> <span class="k">import</span> <span class="n">SymbolicSys</span>
+
+    <span class="n">r_exprs</span> <span class="o">=</span> <span class="p">[</span><span class="n">rxn</span><span class="o">.</span><span class="n">rate_expr</span><span class="p">()</span> <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="n">rsys</span><span class="o">.</span><span class="n">rxns</span><span class="p">]</span>
+
+    <span class="n">_ori_pk</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">ratex</span><span class="o">.</span><span class="n">all_parameter_keys</span><span class="p">()</span> <span class="k">for</span> <span class="n">ratex</span> <span class="ow">in</span> <span class="n">r_exprs</span><span class="p">))</span>
+    <span class="n">_ori_uk</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">ratex</span><span class="o">.</span><span class="n">all_unique_keys</span><span class="p">()</span> <span class="k">for</span> <span class="n">ratex</span> <span class="ow">in</span> <span class="n">r_exprs</span><span class="p">))</span>
+    <span class="n">_subst_pk</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">_active_subst</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">_passive_subst</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">substitutions</span> <span class="o">=</span> <span class="n">substitutions</span> <span class="ow">or</span> <span class="p">{}</span>
+
+    <span class="n">unique</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_reg_unique</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Expr</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Currently only Expr sub classes are supported.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">expr</span><span class="o">.</span><span class="n">unique_keys</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">substitutions</span><span class="p">:</span>
+                    <span class="n">unique</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">arg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">Expr</span><span class="p">):</span>
+                    <span class="n">_reg_unique</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">expr</span><span class="o">.</span><span class="n">unique_keys</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">unique_keys</span><span class="p">):</span>
+                    <span class="n">uk</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">unique_keys</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">uk</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">substitutions</span><span class="p">:</span>
+                        <span class="n">unique</span><span class="p">[</span><span class="n">uk</span><span class="p">]</span> <span class="o">=</span> <span class="n">arg</span>
+
+    <span class="k">for</span> <span class="n">sk</span><span class="p">,</span> <span class="n">sv</span> <span class="ow">in</span> <span class="n">substitutions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">sk</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_ori_pk</span> <span class="ow">and</span> <span class="n">sk</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_ori_uk</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Substitution: &#39;</span><span class="si">%s</span><span class="s2">&#39; does not appear in any rate expressions.&quot;</span> <span class="o">%</span> <span class="n">sk</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sv</span><span class="p">,</span> <span class="n">Expr</span><span class="p">):</span>
+            <span class="n">_subst_pk</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sv</span><span class="o">.</span><span class="n">parameter_keys</span><span class="p">)</span>
+            <span class="n">_active_subst</span><span class="p">[</span><span class="n">sk</span><span class="p">]</span> <span class="o">=</span> <span class="n">sv</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">include_params</span><span class="p">:</span>
+                <span class="n">_reg_unique</span><span class="p">(</span><span class="n">sv</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_passive_subst</span><span class="p">[</span><span class="n">sk</span><span class="p">]</span> <span class="o">=</span> <span class="n">sv</span>
+    <span class="n">all_pk</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">substitutions</span> <span class="ow">and</span> <span class="n">x</span> <span class="o">!=</span> <span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="n">_ori_pk</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">_subst_pk</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">include_params</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">ratex</span> <span class="ow">in</span> <span class="n">r_exprs</span><span class="p">:</span>
+            <span class="n">_reg_unique</span><span class="p">(</span><span class="n">ratex</span><span class="p">)</span>
+
+    <span class="n">all_pk_with_unique</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="n">all_pk</span><span class="p">,</span> <span class="n">unique</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+    <span class="k">if</span> <span class="n">include_params</span><span class="p">:</span>
+        <span class="n">param_names_for_odesys</span> <span class="o">=</span> <span class="n">all_pk</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">param_names_for_odesys</span> <span class="o">=</span> <span class="n">all_pk_with_unique</span>
+
+    <span class="k">if</span> <span class="n">unit_registry</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">p_units</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># We need to make rsys_params unitless and create</span>
+        <span class="c1"># a pre- &amp; post-processor for SymbolicSys</span>
+        <span class="n">pk_units</span> <span class="o">=</span> <span class="p">[</span><span class="n">get_derived_unit</span><span class="p">(</span><span class="n">unit_registry</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">all_pk</span><span class="p">]</span>
+        <span class="n">unique_units</span> <span class="o">=</span> <span class="p">[</span><span class="n">default_unit_in_registry</span><span class="p">(</span><span class="n">unit_registry</span><span class="p">,</span> <span class="n">uv</span><span class="p">)</span> <span class="k">for</span> <span class="n">uv</span> <span class="ow">in</span> <span class="n">unique</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        <span class="n">p_units</span> <span class="o">=</span> <span class="n">pk_units</span> <span class="k">if</span> <span class="n">include_params</span> <span class="k">else</span> <span class="p">(</span><span class="n">pk_units</span> <span class="o">+</span> <span class="n">unique_units</span><span class="p">)</span>
+        <span class="n">new_r_exprs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ratex</span> <span class="ow">in</span> <span class="n">r_exprs</span><span class="p">:</span>
+            <span class="n">_pu</span><span class="p">,</span> <span class="n">_new_rate</span> <span class="o">=</span> <span class="n">ratex</span><span class="o">.</span><span class="n">dedimensionalisation</span><span class="p">(</span><span class="n">unit_registry</span><span class="p">)</span>
+            <span class="n">new_r_exprs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_new_rate</span><span class="p">)</span>
+        <span class="n">r_exprs</span> <span class="o">=</span> <span class="n">new_r_exprs</span>
+
+        <span class="n">time_unit</span> <span class="o">=</span> <span class="n">get_derived_unit</span><span class="p">(</span><span class="n">unit_registry</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">)</span>
+        <span class="n">conc_unit</span> <span class="o">=</span> <span class="n">get_derived_unit</span><span class="p">(</span><span class="n">unit_registry</span><span class="p">,</span> <span class="s1">&#39;concentration&#39;</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">pre_processor</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">to_unitless</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">time_unit</span><span class="p">),</span>
+                <span class="n">to_unitless</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">conc_unit</span><span class="p">),</span>
+                <span class="p">[</span><span class="n">to_unitless</span><span class="p">(</span><span class="n">px</span><span class="p">,</span> <span class="n">p_unit</span><span class="p">)</span> <span class="k">for</span> <span class="n">px</span><span class="p">,</span> <span class="n">p_unit</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">p_units</span><span class="p">)]</span>
+            <span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">post_processor</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+            <span class="n">time</span> <span class="o">=</span> <span class="n">x</span><span class="o">*</span><span class="n">time_unit</span>
+            <span class="k">if</span> <span class="n">output_time_unit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="n">output_time_unit</span><span class="p">)</span>
+            <span class="n">conc</span> <span class="o">=</span> <span class="n">y</span><span class="o">*</span><span class="n">conc_unit</span>
+            <span class="k">if</span> <span class="n">output_conc_unit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">conc</span> <span class="o">=</span> <span class="n">conc</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="n">output_conc_unit</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">time</span><span class="p">,</span> <span class="n">conc</span><span class="p">,</span> <span class="p">[</span><span class="n">elem</span><span class="o">*</span><span class="n">p_unit</span> <span class="k">for</span> <span class="n">elem</span><span class="p">,</span> <span class="n">p_unit</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">p_units</span><span class="p">)]</span>
+
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;pre_processors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">pre_processor</span><span class="p">]</span> <span class="o">+</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pre_processors&#39;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;post_processors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;post_processors&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="o">+</span> <span class="p">[</span><span class="n">post_processor</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">dydt</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">math</span><span class="p">):</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">p</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+        <span class="k">if</span> <span class="s1">&#39;time&#39;</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Key &#39;time&#39; is reserved.&quot;</span><span class="p">)</span>
+        <span class="n">variables</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">act</span> <span class="ow">in</span> <span class="n">_active_subst</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">unit_registry</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">act</span> <span class="o">=</span> <span class="n">act</span><span class="o">.</span><span class="n">dedimensionalisation</span><span class="p">(</span><span class="n">unit_registry</span><span class="p">)</span>
+            <span class="n">variables</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">act</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">)</span>
+        <span class="n">variables</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">_passive_subst</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rsys</span><span class="o">.</span><span class="n">rates</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="n">ratexs</span><span class="o">=</span><span class="n">r_exprs</span><span class="p">)</span>
+
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">rsys</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    <span class="n">latex_names</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">latex_name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">mathrm{&#39;</span> <span class="o">+</span> <span class="n">s</span><span class="o">.</span><span class="n">latex_name</span> <span class="o">+</span> <span class="s1">&#39;}$&#39;</span><span class="p">)</span>
+                   <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">rsys</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+
+    <span class="n">compo_vecs</span><span class="p">,</span> <span class="n">compo_names</span> <span class="o">=</span> <span class="n">rsys</span><span class="o">.</span><span class="n">composition_balance_vectors</span><span class="p">()</span>
+
+    <span class="n">odesys</span> <span class="o">=</span> <span class="n">SymbolicSys</span><span class="o">.</span><span class="n">from_callback</span><span class="p">(</span>
+        <span class="n">dydt</span><span class="p">,</span> <span class="n">dep_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">par_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">names</span><span class="p">,</span>
+        <span class="n">latex_names</span><span class="o">=</span><span class="n">latex_names</span><span class="p">,</span> <span class="n">param_names</span><span class="o">=</span><span class="n">param_names_for_odesys</span><span class="p">,</span>
+        <span class="n">linear_invariants</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">compo_vecs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">compo_vecs</span><span class="p">,</span>
+        <span class="n">linear_invariant_names</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">compo_names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">compo_names</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">rsys</span><span class="o">.</span><span class="n">check_balance</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="c1"># Composition available, we can provide callback for calculating</span>
+        <span class="c1"># maximum allowed Euler forward step at start of integration.</span>
+        <span class="k">def</span> <span class="nf">max_euler_step_cb</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="p">()):</span>
+            <span class="n">_x</span><span class="p">,</span> <span class="n">_y</span><span class="p">,</span> <span class="n">_p</span> <span class="o">=</span> <span class="n">odesys</span><span class="o">.</span><span class="n">pre_process</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+            <span class="n">upper_bounds</span> <span class="o">=</span> <span class="n">rsys</span><span class="o">.</span><span class="n">upper_conc_bounds</span><span class="p">(</span><span class="n">_y</span><span class="p">)</span>
+            <span class="n">fvec</span> <span class="o">=</span> <span class="n">odesys</span><span class="o">.</span><span class="n">f_cb</span><span class="p">(</span><span class="n">_x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">_y</span><span class="p">,</span> <span class="n">_p</span><span class="p">)</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">fcomp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fvec</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">fcomp</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">h</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">fcomp</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">h</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">upper_bounds</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">_y</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span><span class="o">/</span><span class="n">fcomp</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>  <span class="c1"># fcomp &lt; 0</span>
+                    <span class="n">h</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="n">_y</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">/</span><span class="n">fcomp</span><span class="p">)</span>
+            <span class="n">min_h</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">min_h</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">linear_dependencies</span><span class="p">(</span><span class="n">preferred</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">preferred</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">preferred</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No preferred substance keys provided&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">preferred</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">rsys</span><span class="o">.</span><span class="n">substances</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot remove all concentrations from linear dependencies&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">preferred</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">rsys</span><span class="o">.</span><span class="n">substances</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown substance key: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">k</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">analytic_factory</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">p0</span><span class="p">,</span> <span class="n">be</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">preferred</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">_preferred</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_preferred</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">preferred</span><span class="p">)</span>
+                <span class="n">A</span> <span class="o">=</span> <span class="n">be</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="n">compo_vecs</span><span class="p">)</span>
+                <span class="n">rA</span><span class="p">,</span> <span class="n">pivots</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">rref</span><span class="p">()</span>
+
+                <span class="n">analytic_exprs</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">ri</span><span class="p">,</span> <span class="n">ci1st</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pivots</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ci1st</span><span class="p">,</span> <span class="n">odesys</span><span class="o">.</span><span class="n">ny</span><span class="p">):</span>
+                        <span class="n">key</span> <span class="o">=</span> <span class="n">odesys</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">rA</span><span class="p">[</span><span class="n">ri</span><span class="p">,</span> <span class="n">idx</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="k">continue</span>
+                        <span class="k">if</span> <span class="n">_preferred</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_preferred</span><span class="p">:</span>
+                            <span class="n">terms</span> <span class="o">=</span> <span class="p">[</span><span class="n">rA</span><span class="p">[</span><span class="n">ri</span><span class="p">,</span> <span class="n">di</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">odesys</span><span class="o">.</span><span class="n">dep</span><span class="p">[</span><span class="n">di</span><span class="p">]</span> <span class="o">-</span> <span class="n">y0</span><span class="p">[</span><span class="n">odesys</span><span class="o">.</span><span class="n">dep</span><span class="p">[</span><span class="n">di</span><span class="p">]])</span>
+                                     <span class="k">for</span> <span class="n">di</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ci1st</span><span class="p">,</span> <span class="n">odesys</span><span class="o">.</span><span class="n">ny</span><span class="p">)</span> <span class="k">if</span> <span class="n">di</span> <span class="o">!=</span> <span class="n">idx</span><span class="p">]</span>
+                            <span class="n">analytic_exprs</span><span class="p">[</span><span class="n">odesys</span><span class="p">[</span><span class="n">key</span><span class="p">]]</span> <span class="o">=</span> <span class="n">y0</span><span class="p">[</span><span class="n">odesys</span><span class="o">.</span><span class="n">dep</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span> <span class="o">-</span> <span class="nb">sum</span><span class="p">(</span><span class="n">terms</span><span class="p">)</span><span class="o">/</span><span class="n">rA</span><span class="p">[</span><span class="n">ri</span><span class="p">,</span> <span class="n">idx</span><span class="p">]</span>
+                            <span class="k">if</span> <span class="n">_preferred</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                                <span class="n">_preferred</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                            <span class="k">break</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">analytic_exprs</span><span class="o">.</span><span class="n">keys</span><span class="p">())):</span>
+                    <span class="n">analytic_exprs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">analytic_exprs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">analytic_exprs</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">_preferred</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">_preferred</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Failed to obtain analytic expression for: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_preferred</span><span class="p">))</span>
+                <span class="k">return</span> <span class="n">analytic_exprs</span>
+
+            <span class="k">return</span> <span class="n">analytic_factory</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">max_euler_step_cb</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">linear_dependencies</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="n">odesys</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;param_keys&#39;</span><span class="p">:</span> <span class="n">all_pk</span><span class="p">,</span>
+        <span class="s1">&#39;unique&#39;</span><span class="p">:</span> <span class="n">unique</span><span class="p">,</span>
+        <span class="s1">&#39;p_units&#39;</span><span class="p">:</span> <span class="n">p_units</span><span class="p">,</span>
+        <span class="s1">&#39;max_euler_step_cb&#39;</span><span class="p">:</span> <span class="n">max_euler_step_cb</span><span class="p">,</span>
+        <span class="s1">&#39;linear_dependencies&#39;</span><span class="p">:</span> <span class="n">linear_dependencies</span>
+    <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="chained_parameter_variation"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.ode.chained_parameter_variation">[docs]</a><span class="k">def</span> <span class="nf">chained_parameter_variation</span><span class="p">(</span><span class="n">odesys</span><span class="p">,</span> <span class="n">durations</span><span class="p">,</span> <span class="n">init_conc</span><span class="p">,</span> <span class="n">varied_params</span><span class="p">,</span> <span class="n">default_params</span><span class="p">,</span> <span class="n">integrate_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Integrate an ODE-system for a serie of durations with some parameters changed in-between</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    odesys : :class:`pyodesys.ODESys` instance</span>
+<span class="sd">    durations : iterable of floats</span>
+<span class="sd">    init_conc : dict or array_like</span>
+<span class="sd">    varied_params : dict mapping parameter name to array_like</span>
+<span class="sd">        Each array_like need to be of same length as durations.</span>
+<span class="sd">    default_params : dict or array_like</span>
+<span class="sd">        Default values for the parameters of the ODE system.</span>
+<span class="sd">    integrate_kwargs : dict</span>
+<span class="sd">        Keyword arguments passed on to :meth:`pyodesys.ODESys.integrate`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">varied_params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">durations</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Mismathced lengths of durations and varied_params&quot;</span><span class="p">)</span>
+    <span class="n">integrate_kwargs</span> <span class="o">=</span> <span class="n">integrate_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">touts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">couts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">infos</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">c0</span> <span class="o">=</span> <span class="n">init_conc</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">duration</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">durations</span><span class="p">):</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">default_params</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">varied_params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">tout</span><span class="p">,</span> <span class="n">cout</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">odesys</span><span class="o">.</span><span class="n">integrate</span><span class="p">(</span><span class="n">duration</span><span class="p">,</span> <span class="n">c0</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="o">**</span><span class="n">integrate_kwargs</span><span class="p">)</span>
+        <span class="n">c0</span> <span class="o">=</span> <span class="n">cout</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">idx0</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span>
+        <span class="n">t_global</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">touts</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">touts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tout</span><span class="p">[</span><span class="n">idx0</span><span class="p">:]</span> <span class="o">+</span> <span class="n">t_global</span><span class="p">)</span>
+        <span class="n">couts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cout</span><span class="p">[</span><span class="n">idx0</span><span class="p">:,</span> <span class="o">...</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">info</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;internal&#39;</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">infos</span><span class="p">:</span>
+                <span class="n">infos</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">v</span><span class="p">,)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">infos</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span><span class="p">,)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">touts</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">couts</span><span class="p">),</span> <span class="n">infos</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.5.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
