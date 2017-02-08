@@ -10,13 +10,16 @@ remote=${2:-origin}
 
 ori_branch=$(git rev-parse --symbolic-full-name --abbrev-ref HEAD)
 tmpdir=$(mktemp -d)
-cleanup() {
-    rm -r $tmpdir
-}
-trap cleanup INT TERM
 
 cp -r doc/_build/html/ $tmpdir
 git ls-files --others | tar cf $tmpdir/untracked.tar -T -
+cleanup() {
+    git checkout $ori_branch
+    tar xf $tmpdir/untracked.tar
+    rm -r $tmpdir
+}
+trap cleanup INT TERM EXIT
+
 if [[ -d .gh-pages-skeleton ]]; then
     cp -r .gh-pages-skeleton $tmpdir
 fi
@@ -74,6 +77,3 @@ if [[ $preexisting == 1 ]]; then
 else
     git push --set-upstream $remote gh-pages
 fi
-git checkout $ori_branch
-tar xf $tmpdir/untracked.tar
-cleanup
