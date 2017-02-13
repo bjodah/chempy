@@ -217,6 +217,26 @@ def test_get_ode__Radiolytic__units():
     assert np.all(abs((fout - ref)/ref) < 1e-14)
 
 
+@requires('pyodesys', units_library)
+def test_get_ode__Radiolytic__units__multi():
+    rad = Radiolytic([2.4e-7*u.mol/u.joule])
+    rxn = Reaction({'A': 4, 'B': 1}, {'C': 3, 'D': 2}, rad)
+    rsys = ReactionSystem([rxn], 'A B C D')
+    odesys = get_odesys(rsys, include_params=True,
+                        unit_registry=SI_base_registry)[0]
+    conc = {'A': 3*u.molar, 'B': 5*u.molar, 'C': 11*u.molar, 'D': 13*u.molar}
+    doserates = [dr*u.gray/u.second for dr in [.1, .2, .3, .4]]
+    results = odesys.integrate(37*u.second, conc, {
+        'doserate': doserates,
+        'density': 0.998*u.kg/u.decimetre**3
+    })
+    assert len(results) == 4
+    for i, r in enumerate(results):
+        dr = r.params[odesys.param_names.index('doserate')]
+        assert dr.ndim == 0 or len(dr) == 1
+        assert dr == doserates[i]
+
+
 class Density(Expr):
     """ Arguments: rho0 drhodT T0 """
     parameter_keys = ('temperature',)

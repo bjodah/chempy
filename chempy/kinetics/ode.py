@@ -211,10 +211,15 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         conc_unit = get_derived_unit(unit_registry, 'concentration')
 
         def pre_processor(x, y, p):
+            try:
+                _p = p.T
+            except AttributeError:
+                _p = p
+
             return (
                 to_unitless(x, time_unit),
                 to_unitless(y, conc_unit),
-                [to_unitless(px, p_unit) for px, p_unit in zip(p, p_units)]
+                np.array([to_unitless(px, p_unit) for px, p_unit in zip(_p, p_units)]).T
             )
 
         def post_processor(x, y, p):
@@ -224,7 +229,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
             conc = y*conc_unit
             if output_conc_unit is not None:
                 conc = conc.rescale(output_conc_unit)
-            return time, conc, [elem*p_unit for elem, p_unit in zip(p, p_units)]
+            return time, conc, np.array([elem*p_unit for elem, p_unit in zip(p.T, p_units)]).T
 
         kwargs['pre_processors'] = [pre_processor] + kwargs.get('pre_processors', [])
         kwargs['post_processors'] = kwargs.get('post_processors', []) + [post_processor]

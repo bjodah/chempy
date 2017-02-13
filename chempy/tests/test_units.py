@@ -113,6 +113,11 @@ def test_to_unitless():
     g2 = UncertainQuantity(-4.46, u.per100eV, 0)
     assert abs(to_unitless(-g2, g_unit) - 4.46 * 1.036e-7) < 1e-9
 
+    vals = np.array([1.*dm, 2.*dm], dtype=object)
+    result = to_unitless(vals, u.metre)
+    assert result[0] == 0.1
+    assert result[1] == 0.2
+
 
 @requires(units_library)
 def test_UncertainQuantity():
