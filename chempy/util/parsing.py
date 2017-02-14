@@ -278,6 +278,7 @@ def _parse_multiplicity(strings, substance_keys=None):
     """
     result = {}
     for items in [re.split(' \* | ', s) for s in strings]:
+        items = [x for x in items if x != '']
         if len(items) == 1:
             if items[0] == '':
                 continue

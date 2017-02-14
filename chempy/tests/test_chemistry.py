@@ -160,6 +160,13 @@ def test_ReactionSystem__check_balance():
     assert rs2.composition_balance_vectors() == ([], [])
 
 
+def test_ReactionSystem__per_reaction_effect_on_substance():
+    rs = ReactionSystem([Reaction({'H2': 2, 'O2': 1}, {'H2O': 2})])
+    assert rs.per_reaction_effect_on_substance('H2') == {0: -2}
+    assert rs.per_reaction_effect_on_substance('O2') == {0: -1}
+    assert rs.per_reaction_effect_on_substance('H2O') == {0: 2}
+
+
 def test_ReactionSystem__rates():
     rs = ReactionSystem([Reaction({'H2O'}, {'H+', 'OH-'}, 11)])
     assert rs.rates({'H2O': 3, 'H+': 5, 'OH-': 7}) == {'H2O': -11*3, 'H+': 11*3, 'OH-': 11*3}
@@ -367,7 +374,7 @@ def test_ReactionSystem__from_string():
 
 @requires('numpy')
 def test_ReactionSystem__upper_conc_bounds():
-    rs = ReactionSystem.from_string('\n'.join(['2 NH3 -> N2 + 3 H2', 'N2H4 -> N2 + 2 H2']))
+    rs = ReactionSystem.from_string('\n'.join(['2 NH3 -> N2 + 3 H2', 'N2H4 -> N2 +   2  H2']))
     c0 = {'NH3': 5, 'N2': 7, 'H2': 11, 'N2H4': 2}
     _N = 5 + 14 + 4
     _H = 15 + 22 + 8
@@ -397,3 +404,13 @@ def test_ReactionSystem__upper_conc_bounds__a_substance_no_composition():
     }
     res = rs.as_per_substance_dict(rs.upper_conc_bounds(c0))
     assert res == ref
+
+
+def test_ReactionSystem__identify_equilibria():
+    rsys = ReactionSystem.from_string("""
+    2 H2 +  O2 -> 2 H2O     ; 1e-3
+           H2O -> H+ + OH-  ; 1e-4/55.35
+      H+ + OH- -> H2O       ; 1e10
+         2 H2O -> 2 H2 + O2
+    """)
+    assert rsys.identify_equilibria() == [(0, 3), (1, 2)]

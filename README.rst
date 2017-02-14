@@ -205,6 +205,18 @@ Chemical kinetics (system of ordinary differential equations)
 
 .. image:: https://raw.githubusercontent.com/bjodah/chempy/master/examples/kinetics.png
 
+Properties
+~~~~~~~~~~
+.. code:: python
+
+   >>> from chempy import Substance
+   >>> from chempy.properties.water_density_tanaka_2001 import water_density as rho
+   >>> from chempy.units import default_units as u
+   >>> water = Substance.from_formula('H2O')
+   >>> concentration_H2O = rho(T=298.15*u.kelvin, units=u)/water.molar_mass(units=u)
+   >>> print('[H2O] = %.2f M (at 25 °C)' % concentration_H2O.rescale(u.molar).magnitude)
+   [H2O] = 55.35 M (at 25 °C)
+
 
 License
 -------

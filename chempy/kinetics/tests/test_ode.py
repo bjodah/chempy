@@ -49,6 +49,26 @@ def test_get_odesys_1():
     assert np.allclose(yout, yref)
 
 
+@requires('numpy', 'pyodesys', 'sympy')
+def test_get_odesys__rate_exprs_cb():
+    k = .2
+    a = Substance('A')
+    b = Substance('B')
+    r = Reaction({'A': 1}, {'B': 1}, param=k)
+    rsys = ReactionSystem([r], [a, b])
+    assert sorted(rsys.substances.keys()) == ['A', 'B']
+    odesys, extra = get_odesys(rsys)
+    c0 = {'A': 1.0, 'B': 3.0}
+    t = np.linspace(0.0, 10.0)
+    res = odesys.integrate(t, c0)
+    yref = np.zeros((t.size, 2))
+    yref[:, 0] = np.exp(-k*t)
+    yref[:, 1] = 4 - np.exp(-k*t)
+    assert np.allclose(res.yout, yref)
+    rate = extra['rate_exprs_cb'](res.xout, res.yout, res.params)
+    assert np.allclose(rate[:, 0], k*yref[:, 0])
+
+
 @requires('numpy', 'pyodesys')
 def test_get_odesys_2():
     g = Radiolytic([3.14])

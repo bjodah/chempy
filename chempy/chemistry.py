@@ -1414,6 +1414,14 @@ class ReactionSystem(object):
                     result[index + (self.as_substance_index(k),)] = val
         return result, varied_keys
 
+    def per_reaction_effect_on_substance(self, substance_key):
+        result = {}
+        for ri, rxn in enumerate(self.rxns):
+            n, = rxn.net_stoich((substance_key,))
+            if n != 0:
+                result[ri] = n
+        return result
+
     def rates(self, variables=None, backend=math, substance_keys=None, ratexs=None):
         """ Per substance sums of reaction rates rates.
 
@@ -1674,6 +1682,17 @@ class ReactionSystem(object):
         ) for ri, s in enumerate(self.substances.values()))
         html = '<table>%s</table>' % '\n'.join([header, rows])
         return html, unconsidered
+
+    def identify_equilibria(self):
+        eq = []
+        for ri1, rxn1 in enumerate(self.rxns):
+            for ri2, rxn2 in enumerate(self.rxns[ri1+1:], ri1+1):
+                if (rxn1.reac == rxn2.prod and rxn1.prod == rxn2.reac and
+                    rxn1.inact_reac == rxn2.inact_prod and rxn1.inact_prod == rxn2.inact_reac
+                ):
+                    eq.append((ri1, ri2))
+                    break
+        return eq
 
 
 def balance_stoichiometry(reactants, products, substances=None,

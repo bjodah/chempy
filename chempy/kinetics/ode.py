@@ -229,7 +229,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
             conc = y*conc_unit
             if output_conc_unit is not None:
                 conc = conc.rescale(output_conc_unit)
-            return time, conc, np.array([elem*p_unit for elem, p_unit in zip(p.T, p_units)]).T
+            return time, conc, np.array([elem*p_unit for elem, p_unit in zip(p.T, p_units)], dtype=object).T
 
         kwargs['pre_processors'] = [pre_processor] + kwargs.get('pre_processors', [])
         kwargs['post_processors'] = kwargs.get('post_processors', []) + [post_processor]
@@ -246,6 +246,19 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         variables.update(_passive_subst)
         return rsys.rates(variables, backend=backend, ratexs=r_exprs)
 
+    def reaction_rates(t, y, p, backend=math):
+        variables = dict(chain(y.items(), p.items()))
+        if 'time' in variables:
+            raise ValueError("Key 'time' is reserved.")
+        variables['time'] = t
+        for k, act in _active_subst.items():
+            if unit_registry is not None:
+                _, act = act.dedimensionalisation(unit_registry)
+            variables[k] = act(variables, backend=backend)
+        variables.update(_passive_subst)
+        return [ratex(variables, backend=backend, reaction=rxn) for
+                rxn, ratex in zip(rsys.rxns, r_exprs)]
+
     names = [s.name for s in rsys.substances.values()]
     latex_names = [None if s.latex_name is None else ('$\\mathrm{' + s.latex_name + '}$')
                    for s in rsys.substances.values()]
@@ -258,6 +271,11 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         linear_invariants=None if len(compo_vecs) == 0 else compo_vecs,
         linear_invariant_names=None if len(compo_names) == 0 else compo_names,
         **kwargs)
+
+    symbolic_ratexs = reaction_rates(
+        odesys.indep, dict(zip(odesys.names, odesys.dep)),
+        dict(zip(odesys.param_names, odesys.params)), backend=odesys.be)
+    rate_exprs_cb = odesys._callback_factory(symbolic_ratexs)
 
     if rsys.check_balance(strict=True):
         # Composition available, we can provide callback for calculating
@@ -325,7 +343,8 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         'unique': unique,
         'p_units': p_units,
         'max_euler_step_cb': max_euler_step_cb,
-        'linear_dependencies': linear_dependencies
+        'linear_dependencies': linear_dependencies,
+        'rate_exprs_cb': rate_exprs_cb,
     }
 
 
