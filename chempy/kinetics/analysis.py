@@ -18,7 +18,7 @@ from .. import Equilibrium
 
 def plot_reaction_contributions(varied, concs, rate_exprs_cb, rsys, substance_keys=None, axes=None,
                                 linthreshy=1e-9, relative=False, xscale='log', yscale='symlog',
-                                xlabel='Time', ylabel=r'$\dot{C}$', combine_equilibria=False):
+                                xlabel='Time', ylabel=None, combine_equilibria=False):
     """ Plots per reaction contributions to concentration evolution of a substance.
 
     Parameters
@@ -64,9 +64,11 @@ def plot_reaction_contributions(varied, concs, rate_exprs_cb, rsys, substance_ke
                 continue
             ax.plot(varied, y, label=lbl)
         if rsys.substances[sk].latex_name is None:
-            ax.set_title(rsys.substances[sk].name)
+            ttl = rsys.substances[sk].name
+            ttl_template = '%s'
         else:
-            ax.set_title(r'$\mathrm{%s}$' % rsys.substances[sk].latex_name)
+            ttl = rsys.substances[sk].latex_name
+            ttl_template = r'\mathrm{$%s$}'
 
         if yscale == 'symlog':
             #ax.hlines([linthreshy, -linthreshy], 0, 1, transform=ax.get_yaxis_transform(), linestyle='--', color='k')
@@ -75,7 +77,13 @@ def plot_reaction_contributions(varied, concs, rate_exprs_cb, rsys, substance_ke
             ax.set_yscale(yscale, linthreshy=linthreshy)
         else:
             ax.set_yscale(yscale)
-        ax.set_ylabel(ylabel)
+
+        if ylabel is None:
+            ax.set_ylabel(r'$\frac{d}{dt}\left[%s\right]\ /\ M\cdot s^{-1}$' % ttl)
+        else:
+            ax.set_ylabel(ylabel)
+            ax.set_title(ttl_template % ttl)
+
         ax.set_xlabel(xlabel)
         ax.set_xscale(xscale)
         ax.legend(loc='best')

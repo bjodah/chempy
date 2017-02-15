@@ -57,6 +57,17 @@ _first_step = """
     return m_rtol*std::min(get_dx_max(x, y), 1.0);
 """  # if (m_upper_bounds.size() == 0)
 
+_roots = """
+    std::vector<double> f(${odesys.ny});
+    double tot=0.0;
+    rhs(x, y, &f[0]);
+    for (int i=0; i<${odesys.ny}; ++i){
+        tot += std::min(std::abs(f[i]/m_atol[i]), std::abs(f[i]/y[i]/m_rtol));
+    }
+    out[0] = tot/${odesys.ny} - ${ss_factor};
+    this->nrev++;
+    return AnyODE::Status::success;
+"""
 
 def _get_comp_conc(rsys, odesys, comp_keys, skip_keys):
     comp_conc = []
@@ -94,19 +105,22 @@ def _render(tmpl, **kwargs):
         raise
 
 
-def get_native(rsys, odesys, integrator, skip_keys=(0,)):
+def get_native(rsys, odesys, integrator, skip_keys=(0,), ss_factor=1000000):
     comp_keys = Substance.composition_keys(rsys.substances.values(), skip_keys=skip_keys)
     if isinstance(odesys, PartiallySolvedSystem):
         init_conc = '&m_p[%d]' % (len(odesys.params) - len(odesys.original_dep))
     else:
         init_conc = 'y'
 
-    return native_sys[integrator].from_other(odesys, namespace_override={
+    kw = dict(namespace_override={
         'p_anon': _render(_anon, odesys=odesys, ncomp=len(comp_keys),
                           comp_conc=_get_comp_conc(rsys, odesys, comp_keys, skip_keys),
                           subst_comp=_get_subst_comp(rsys, odesys, comp_keys, skip_keys)),
         'p_first_step': _render(_first_step, init_conc=init_conc, odesys=odesys),
-        'p_get_dx_max': True
-    }, namespace_extend={
-        'p_includes': ["<type_traits>",  "<vector>"]
+        'p_get_dx_max': True,
     })
+    if odesys.roots is None and native_sys[integrator]._NativeCode._support_roots:
+        kw['namespace_override']['p_nroots'] = ' return 1; '
+        kw['namespace_override']['p_roots'] =  _render(_roots, ss_factor=ss_factor, odesys=odesys)
+    kw['namespace_extend'] = {'p_includes': ["<type_traits>",  "<vector>"]}
+    return native_sys[integrator].from_other(odesys, **kw)
