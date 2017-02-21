@@ -199,7 +199,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         # We need to make rsys_params unitless and create
         # a pre- & post-processor for SymbolicSys
         pk_units = [get_derived_unit(unit_registry, k) for k in all_pk]
-        unique_units = [default_unit_in_registry(unit_registry, uv) for uv in unique.values()]
+        unique_units = [default_unit_in_registry(uv, unit_registry) for uv in unique.values()]
         p_units = pk_units if include_params else (pk_units + unique_units)
         new_r_exprs = []
         for ratex in r_exprs:
@@ -210,18 +210,6 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         time_unit = get_derived_unit(unit_registry, 'time')
         conc_unit = get_derived_unit(unit_registry, 'concentration')
 
-        def pre_processor(x, y, p):
-            try:
-                _p = p.T
-            except AttributeError:
-                _p = p
-
-            return (
-                to_unitless(x, time_unit),
-                to_unitless(y, conc_unit),
-                np.array([to_unitless(px, p_unit) for px, p_unit in zip(_p, p_units)]).T
-            )
-
         def post_processor(x, y, p):
             time = x*time_unit
             if output_time_unit is not None:
@@ -231,7 +219,12 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                 conc = conc.rescale(output_conc_unit)
             return time, conc, np.array([elem*p_unit for elem, p_unit in zip(p.T, p_units)], dtype=object).T
 
-        kwargs['pre_processors'] = [pre_processor] + kwargs.get('pre_processors', [])
+        kwargs['to_arrays_callbacks'] = (
+            lambda x: to_unitless(x, time_unit),
+            lambda y: to_unitless(y, conc_unit),
+            lambda p: np.array([to_unitless(px, p_unit) for px, p_unit in zip(
+                p.T if hasattr(p, 'T') else p, p_units)]).T
+        )
         kwargs['post_processors'] = kwargs.get('post_processors', []) + [post_processor]
 
     def dydt(t, y, p, backend=math):
@@ -281,7 +274,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         # Composition available, we can provide callback for calculating
         # maximum allowed Euler forward step at start of integration.
         def max_euler_step_cb(x, y, p=()):
-            _x, _y, _p = odesys.pre_process(x, y, p)
+            _x, _y, _p = odesys.pre_process(*odesys.to_arrays(x, y, p))
             upper_bounds = rsys.upper_conc_bounds(_y)
             fvec = odesys.f_cb(_x[0], _y, _p)
             h = []

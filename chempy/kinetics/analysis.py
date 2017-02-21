@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function)
 
-from itertools import chain
-
 try:
     import numpy as np
 except ImportError:
@@ -71,7 +69,6 @@ def plot_reaction_contributions(varied, concs, rate_exprs_cb, rsys, substance_ke
             ttl_template = r'\mathrm{$%s$}'
 
         if yscale == 'symlog':
-            #ax.hlines([linthreshy, -linthreshy], 0, 1, transform=ax.get_yaxis_transform(), linestyle='--', color='k')
             ax.axhline(linthreshy, linestyle='--', color='k')
             ax.axhline(-linthreshy, linestyle='--', color='k')
             ax.set_yscale(yscale, linthreshy=linthreshy)

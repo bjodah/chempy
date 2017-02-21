@@ -69,6 +69,7 @@ _roots = """
     return AnyODE::Status::success;
 """
 
+
 def _get_comp_conc(rsys, odesys, comp_keys, skip_keys):
     comp_conc = []
     for comp_key in comp_keys:
@@ -95,7 +96,7 @@ def _get_subst_comp(rsys, odesys, comp_keys, skip_keys):
     return subst_comp
 
 
-def _render(tmpl, **kwargs):
+def _render(tmpl, **kwargs):  # when released: use pyodesys.native.util.render_mako
     from mako.template import Template
     from mako.exceptions import text_error_template
     try:
@@ -121,6 +122,6 @@ def get_native(rsys, odesys, integrator, skip_keys=(0,), ss_factor=1000000):
     })
     if odesys.roots is None and native_sys[integrator]._NativeCode._support_roots:
         kw['namespace_override']['p_nroots'] = ' return 1; '
-        kw['namespace_override']['p_roots'] =  _render(_roots, ss_factor=ss_factor, odesys=odesys)
+        kw['namespace_override']['p_roots'] = _render(_roots, ss_factor=ss_factor, odesys=odesys)
     kw['namespace_extend'] = {'p_includes': ["<type_traits>",  "<vector>"]}
     return native_sys[integrator].from_other(odesys, **kw)

@@ -1687,9 +1687,9 @@ class ReactionSystem(object):
         eq = []
         for ri1, rxn1 in enumerate(self.rxns):
             for ri2, rxn2 in enumerate(self.rxns[ri1+1:], ri1+1):
-                if (rxn1.reac == rxn2.prod and rxn1.prod == rxn2.reac and
-                    rxn1.inact_reac == rxn2.inact_prod and rxn1.inact_prod == rxn2.inact_reac
-                ):
+                all_eq = (rxn1.reac == rxn2.prod and rxn1.prod == rxn2.reac and
+                          rxn1.inact_reac == rxn2.inact_prod and rxn1.inact_prod == rxn2.inact_reac)
+                if all_eq:
                     eq.append((ri1, ri2))
                     break
         return eq
