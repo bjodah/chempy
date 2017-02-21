@@ -15,7 +15,7 @@ from .. import Equilibrium
 
 
 def plot_reaction_contributions(varied, concs, rate_exprs_cb, rsys, substance_keys=None, axes=None,
-                                linthreshy=1e-9, relative=False, xscale='log', yscale='symlog',
+                                total=False, linthreshy=1e-9, relative=False, xscale='log', yscale='symlog',
                                 xlabel='Time', ylabel=None, combine_equilibria=False):
     """ Plots per reaction contributions to concentration evolution of a substance.
 
@@ -45,7 +45,10 @@ def plot_reaction_contributions(varied, concs, rate_exprs_cb, rsys, substance_ke
     for sk, ax in zip(substance_keys, axes):
         si = rsys.as_substance_index(sk)
         reaction_effects = rsys.per_reaction_effect_on_substance(sk)
+        data = []
+        tot = np.zeros(len(varied))
         for ri, n in reaction_effects.items():
+            tot += n*rates[:, ri]
             if ri in eqk1:
                 otheri = eqk2[eqk1.index(ri)]
                 y = n*rates[:, ri] + reaction_effects[otheri]*rates[:, otheri]
@@ -60,6 +63,10 @@ def plot_reaction_contributions(varied, concs, rate_exprs_cb, rsys, substance_ke
                 y /= concs[:, si]
             if np.all(np.abs(y) < linthreshy):
                 continue
+            data.append((varied, y, lbl))
+        if total:
+            ax.plot(varied, tot, c='k', label='Total', linewidth=2, ls=':')
+        for varied, y, lbl in sorted(data, key=lambda args: args[1][-1], reverse=True):
             ax.plot(varied, y, label=lbl)
         if rsys.substances[sk].latex_name is None:
             ttl = rsys.substances[sk].name
@@ -69,8 +76,8 @@ def plot_reaction_contributions(varied, concs, rate_exprs_cb, rsys, substance_ke
             ttl_template = r'\mathrm{$%s$}'
 
         if yscale == 'symlog':
-            ax.axhline(linthreshy, linestyle='--', color='k')
-            ax.axhline(-linthreshy, linestyle='--', color='k')
+            ax.axhline(linthreshy, linestyle='--', color='k', linewidth=.5)
+            ax.axhline(-linthreshy, linestyle='--', color='k', linewidth=.5)
             ax.set_yscale(yscale, linthreshy=linthreshy)
         else:
             ax.set_yscale(yscale)
