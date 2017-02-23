@@ -14,8 +14,10 @@ try:
 except ImportError:
     native_sys = None
     PartiallySolvedSystem = None
+    render_mako = None
 else:
     from pyodesys.symbolic import PartiallySolvedSystem
+    from pyodesys.native.util import render_mako
 
 
 from .. import Substance
@@ -58,16 +60,26 @@ _first_step = """
 """  # if (m_upper_bounds.size() == 0)
 
 _roots = """
-    std::vector<double> f(${odesys.ny});
+    const int ny = get_ny();
+    std::vector<double> f(ny);
     double tot=0.0;
     rhs(x, y, &f[0]);
-    for (int i=0; i<${odesys.ny}; ++i){
-        tot += std::min(std::abs(f[i]/m_atol[i]), std::abs(f[i]/y[i]/m_rtol));
+    for (int i=0; i<ny; ++i){
+        tot += std::min(std::abs(f[i]/m_atol[i]), std::abs(f[i]/y[i]/m_rtol));  // m_atol needs to be of size ny!
     }
-    out[0] = tot/${odesys.ny} - ${ss_factor};
+    out[0] = tot/ny - m_special_settings[0];
     this->nrev++;
     return AnyODE::Status::success;
 """
+
+_constr_special_settings = r"""
+    if (m_special_settings.size() == 0){
+         std::cerr << __FILE__ << ":" << __LINE__ << ": no special_settings passed, using default [%(factor)s]\n";
+         m_special_settings = {%(factor)s};
+    } else {
+         // std::cerr << __FILE__ << ":" << __LINE__ << ": using special_settings:" << m_special_settings[0] << "\n";
+    }
+""" % {'factor': '1e2'}
 
 
 def _get_comp_conc(rsys, odesys, comp_keys, skip_keys):
@@ -96,17 +108,7 @@ def _get_subst_comp(rsys, odesys, comp_keys, skip_keys):
     return subst_comp
 
 
-def _render(tmpl, **kwargs):  # when released: use pyodesys.native.util.render_mako
-    from mako.template import Template
-    from mako.exceptions import text_error_template
-    try:
-        return str(Template(tmpl).render(**kwargs))
-    except:
-        sys.stderr.write(text_error_template().render())
-        raise
-
-
-def get_native(rsys, odesys, integrator, skip_keys=(0,), ss_factor=1000000):
+def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False):
     comp_keys = Substance.composition_keys(rsys.substances.values(), skip_keys=skip_keys)
     if isinstance(odesys, PartiallySolvedSystem):
         init_conc = '&m_p[%d]' % (len(odesys.params) - len(odesys.original_dep))
@@ -114,14 +116,25 @@ def get_native(rsys, odesys, integrator, skip_keys=(0,), ss_factor=1000000):
         init_conc = 'y'
 
     kw = dict(namespace_override={
-        'p_anon': _render(_anon, odesys=odesys, ncomp=len(comp_keys),
-                          comp_conc=_get_comp_conc(rsys, odesys, comp_keys, skip_keys),
-                          subst_comp=_get_subst_comp(rsys, odesys, comp_keys, skip_keys)),
-        'p_first_step': _render(_first_step, init_conc=init_conc, odesys=odesys),
+        'p_anon': render_mako(_anon, odesys=odesys, ncomp=len(comp_keys),
+                              comp_conc=_get_comp_conc(rsys, odesys, comp_keys, skip_keys),
+                              subst_comp=_get_subst_comp(rsys, odesys, comp_keys, skip_keys)),
+        'p_first_step': render_mako(_first_step, init_conc=init_conc, odesys=odesys),
         'p_get_dx_max': True,
     })
-    if odesys.roots is None and native_sys[integrator]._NativeCode._support_roots:
+    ns_extend = kw.get('namespace_extend', {})
+
+    if steady_state_root:
+        if not native_sys[integrator]._NativeCode._support_roots:
+            raise ValueError("integrator '%s' does not support roots." % integrator)
+        if odesys.roots is not None:
+            raise ValueError("roots already set")
         kw['namespace_override']['p_nroots'] = ' return 1; '
-        kw['namespace_override']['p_roots'] = _render(_roots, ss_factor=ss_factor, odesys=odesys)
-    kw['namespace_extend'] = {'p_includes': ["<type_traits>",  "<vector>"]}
-    return native_sys[integrator].from_other(odesys, **kw)
+        kw['namespace_override']['p_roots'] = _roots
+        if 'p_constructor' not in ns_extend:
+            ns_extend['p_constructor'] = []
+        ns_extend['p_constructor'] += [_constr_special_settings]
+    if 'p_includes' not in ns_extend:
+        ns_extend['p_includes'] = set()
+    ns_extend['p_includes'] |= {"<type_traits>",  "<vector>"}
+    return native_sys[integrator].from_other(odesys, namespace_extend=ns_extend, **kw)
