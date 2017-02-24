@@ -59,6 +59,7 @@ def test_Equilibria_arithmetics():
     assert sum2 == e2
 
 
+@pytest.mark.slow
 @requires('numpy')
 def test_Equilibria_root():
     eqsys, c0 = get_ammonical_cupric_eqsys()

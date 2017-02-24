@@ -319,6 +319,7 @@ def test_BinaryExpr():
     assert -(-p1) == p1
 
 
+@pytest.mark.slow
 @requires('sympy')
 def test_Expr__latex():
     Poly = Expr.from_callback(_poly, parameter_keys=('x',), argument_names=('x0', Ellipsis))

@@ -7,7 +7,6 @@ Helper functions for using native code generation together with pyodesys.
 from __future__ import print_function, absolute_import, division
 
 from collections import OrderedDict
-import sys
 
 try:
     from pyodesys.native import native_sys

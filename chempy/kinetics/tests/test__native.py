@@ -40,6 +40,7 @@ def decay_get_Cref(k, y0, tout):
             min(3, len(k)+1))])
 
 
+@pytest.mark.veryslow
 @requires('pycvodes', 'pyodesys')
 @pytest.mark.parametrize('solve', [(), ('CNO',)])
 def test_get_native__first_step(solve):
@@ -79,6 +80,7 @@ def test_get_native__first_step(solve):
     assert np.allclose(yout2[:, :3], ref2, **allclose_kw)
 
 
+@pytest.mark.veryslow
 @requires('pygslodeiv2', 'pyodesys')
 @pytest.mark.parametrize('solve', [(), ('H2O',)])
 def test_get_native__a_substance_no_composition(solve):
