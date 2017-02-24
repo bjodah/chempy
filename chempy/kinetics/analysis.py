@@ -11,7 +11,37 @@ try:
 except ImportError:
     plt = None
 
-from .. import Equilibrium
+from .. import ReactionSystem, Equilibrium
+
+
+def _dominant_reaction_effects(substance_key, rsys, rates, linthreshy, eqk1, eqk2, eqs):
+    tot = np.zeros(rates.shape[0])
+    reaction_effects = rsys.per_reaction_effect_on_substance(substance_key)
+    data = []
+    for ri, n in reaction_effects.items():
+        tot += n*rates[..., ri]
+        if ri in eqk1:
+            otheri = eqk2[eqk1.index(ri)]
+            y = n*rates[..., ri] + reaction_effects[otheri]*rates[..., otheri]
+            rxn = eqs[eqk1.index(ri)]
+        elif ri in eqk2:
+            continue
+        else:
+            y = n*rates[..., ri]
+            rxn = rsys.rxns[ri]
+        if np.all(np.abs(y) < linthreshy):
+            continue
+        data.append((y, rxn))
+    return data, tot
+
+
+def _combine_rxns_to_eq(rsys):
+    eqk1, eqk2 = zip(*rsys.identify_equilibria())
+    eqs = [Equilibrium(rsys.rxns[ri].reac,
+                       rsys.rxns[ri].prod,
+                       inact_reac=rsys.rxns[ri].inact_reac,
+                       inact_prod=rsys.rxns[ri].inact_prod) for ri in eqk1]
+    return eqk1, eqk2, eqs
 
 
 def plot_reaction_contributions(varied, concs, rate_exprs_cb, rsys, substance_keys=None, axes=None,
@@ -31,43 +61,18 @@ def plot_reaction_contributions(varied, concs, rate_exprs_cb, rsys, substance_ke
         substance_keys = rsys.substances.keys()
     if axes is None:
         _fig, axes = plt.subplots(len(substance_keys))
-    rates = rate_exprs_cb(varied, concs)
-
-    if combine_equilibria:
-        eqk1, eqk2 = zip(*rsys.identify_equilibria())
-        eqs = [Equilibrium(rsys.rxns[ri].reac,
-                           rsys.rxns[ri].prod,
-                           inact_reac=rsys.rxns[ri].inact_reac,
-                           inact_prod=rsys.rxns[ri].inact_prod) for ri in eqk1]
-    else:
-        eqk1, eqk2, eqs = [], [], []
+    rates = rate_exprs_cb(np.zeros(concs.shape[0]), concs)
+    eqk1, eqk2, eqs = _combine_rxns_to_eq(rsys) if combine_equilibria else ([], [], [])
 
     for sk, ax in zip(substance_keys, axes):
-        si = rsys.as_substance_index(sk)
-        reaction_effects = rsys.per_reaction_effect_on_substance(sk)
-        data = []
-        tot = np.zeros(len(varied))
-        for ri, n in reaction_effects.items():
-            tot += n*rates[:, ri]
-            if ri in eqk1:
-                otheri = eqk2[eqk1.index(ri)]
-                y = n*rates[:, ri] + reaction_effects[otheri]*rates[:, otheri]
-                lbl = r'$\mathrm{%s}$' % eqs[eqk1.index(ri)].latex(rsys.substances)
-            elif ri in eqk2:
-                continue
-            else:
-                y = n*rates[:, ri]
-                lbl = r'$\mathrm{%s}$' % rsys.rxns[ri].latex(rsys.substances)
-
-            if relative:
-                y /= concs[:, si]
-            if np.all(np.abs(y) < linthreshy):
-                continue
-            data.append((varied, y, lbl))
+        data, tot = _dominant_reaction_effects(sk, rsys, rates, linthreshy, eqk1, eqk2, eqs)
+        factor = 1/concs[:, rsys.as_substance_index(sk)] if relative else 1
         if total:
-            ax.plot(varied, tot, c='k', label='Total', linewidth=2, ls=':')
-        for varied, y, lbl in sorted(data, key=lambda args: args[1][-1], reverse=True):
-            ax.plot(varied, y, label=lbl)
+            ax.plot(varied, factor*tot, c='k', label='Total', linewidth=2, ls=':')
+        for y, rxn in sorted(data, key=lambda args: args[0][-1], reverse=True):
+            ax.plot(varied, factor*y,
+                    label=r'$\mathrm{%s}$' % rxn.latex(rsys.substances))
+
         if rsys.substances[sk].latex_name is None:
             ttl = rsys.substances[sk].name
             ttl_template = '%s'
@@ -91,3 +96,16 @@ def plot_reaction_contributions(varied, concs, rate_exprs_cb, rsys, substance_ke
         ax.set_xlabel(xlabel)
         ax.set_xscale(xscale)
         ax.legend(loc='best')
+
+
+def dominant_reactions_graph(concs, rate_exprs_cb, rsys, substance_key, linthreshy=1e-9,
+                             fname='dominant_reactions_graph.png', relative=False,
+                             combine_equilibria=False, **kwargs):
+    from ..util.graph import rsys2graph
+    rates = rate_exprs_cb(0, concs)
+    eqk1, eqk2, eqs = _combine_rxns_to_eq(rsys) if combine_equilibria else ([], [], [])
+    tot = 0.0
+    rrate, rxns = zip(*_dominant_reaction_effects(substance_key, rsys, rates, linthreshy, eqk1, eqk2, eqs)[0])
+    rsys = ReactionSystem(rxns, rsys.substances, rsys.name)
+    lg_rrate = np.log10(np.abs(rrate))
+    rsys2graph(rsys, fname=fname, penwidths=1 + lg_rrate - np.min(lg_rrate), **kwargs)

@@ -211,11 +211,15 @@ Properties
 
    >>> from chempy import Substance
    >>> from chempy.properties.water_density_tanaka_2001 import water_density as rho
-   >>> from chempy.units import default_units as u
+   >>> from chempy.units import to_unitless, default_units as u
    >>> water = Substance.from_formula('H2O')
-   >>> concentration_H2O = rho(T=298.15*u.kelvin, units=u)/water.molar_mass(units=u)
-   >>> print('[H2O] = %.2f M (at 25 °C)' % concentration_H2O.rescale(u.molar).magnitude)
+   >>> for T_C in (15, 25, 35):
+   ...     concentration_H2O = rho(T=(273.15 + T_C)*u.kelvin, units=u)/water.molar_mass(units=u)
+   ...     print('[H2O] = %.2f M (at %d °C)' % (to_unitless(concentration_H2O, u.molar), T_C))
+   ...
+   [H2O] = 55.46 M (at 15 °C)
    [H2O] = 55.35 M (at 25 °C)
+   [H2O] = 55.18 M (at 35 °C)
 
 
 License
