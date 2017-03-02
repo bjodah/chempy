@@ -118,6 +118,9 @@ def test_to_unitless():
     assert result[0] == 0.1
     assert result[1] == 0.2
 
+    one_billionth_molar_in_nanomolar = to_unitless(1e-9*u.molar, u.nanomolar)
+    assert one_billionth_molar_in_nanomolar == 1
+
 
 @requires(units_library)
 def test_UncertainQuantity():

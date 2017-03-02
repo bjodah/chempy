@@ -50,26 +50,44 @@ else:
     default_units.cm3 = default_units.centimetre**3
     if not hasattr(default_units, 'molar'):
         default_units.molar = pq.UnitQuantity(
-            'M',  default_units.mole / default_units.decimetre ** 3,
+            'M',  1e3 * default_units.mole/default_units.m3,
             u_symbol='M')
-    default_units.molal = pq.UnitQuantity(
-        'molal',  default_units.mole / default_units.kg,
-        u_symbol='molal')
-    default_units.per100eV = pq.UnitQuantity(
-        'per_100_eV',
-        1/(100*default_units.eV*default_constants.Avogadro_constant),
-        u_symbol='(100eV)**-1')
-    default_units.micromole = pq.UnitQuantity(
-        'micromole',  pq.mole/1e6,  u_symbol=u'μmol')
-    default_units.kilojoule = pq.UnitQuantity(
-        'kilojoule',  1e3*pq.joule,  u_symbol='kJ')
-    default_units.perMolar_perSecond = 1/default_units.molar/pq.s
-    default_units.per100eV = pq.UnitQuantity(
-        'per_100_eV', 1/(100*pq.eV*pq.constants.Avogadro_constant),
-        u_symbol='(100eV)**-1')
-    default_units.umol = pq.UnitQuantity('micromole',  pq.mole/1e6,
-                                         u_symbol=u'μmol')
-    default_units.umol_per_J = default_units.umol / pq.joule
+    if not hasattr(default_units, 'millimolar'):
+        default_units.millimolar = pq.UnitQuantity(
+            'mM', 1 * default_units.mole/default_units.m3,
+            u_symbol='mM')
+    if not hasattr(default_units, 'micromolar'):
+        default_units.micromolar = pq.UnitQuantity(
+            'uM',  1e-3 * default_units.mole/default_units.m3,
+            u_symbol='μM')
+    if not hasattr(default_units, 'nanomolar'):
+        default_units.nanomolar = pq.UnitQuantity(
+            'nM', 1e-6 * default_units.mole/default_units.m3,
+            u_symbol='nM')
+    if not hasattr(default_units, 'molal'):
+        default_units.molal = pq.UnitQuantity(
+            'molal',  default_units.mole / default_units.kg,
+            u_symbol='molal')
+    if not hasattr(default_units, 'per100eV'):
+        default_units.per100eV = pq.UnitQuantity(
+            'per_100_eV',
+            1/(100*default_units.eV*default_constants.Avogadro_constant),
+            u_symbol='(100eV)**-1')
+    if not hasattr(default_units, 'micromole'):
+        default_units.micromole = pq.UnitQuantity(
+            'micromole',  pq.mole/1e6,  u_symbol=u'μmol')
+    if not hasattr(default_units, 'nanomole'):
+        default_units.nanomole = pq.UnitQuantity(
+            'nanomole',  pq.mole/1e9,  u_symbol=u'nmol')
+    if not hasattr(default_units, 'kilojoule'):
+        default_units.kilojoule = pq.UnitQuantity(
+            'kilojoule',  1e3*pq.joule,  u_symbol='kJ')
+    if not hasattr(default_units, 'perMolar_perSecond'):
+        default_units.perMolar_perSecond = 1/default_units.molar/pq.s
+    if not hasattr(default_units, 'umol'):
+        default_units.umol = default_units.micromole
+    if not hasattr(default_units, 'umol_per_J'):
+        default_units.umol_per_J = default_units.umol / pq.joule
 
     # unit registry data and logic:
 
@@ -271,31 +289,34 @@ def to_unitless(value, new_unit=None):
     """
     if new_unit is None:
         new_unit = pq.dimensionless
+
     if isinstance(value, (list, tuple)) or (isinstance(value, np.ndarray) and not hasattr(value, 'rescale')):
         return np.array([to_unitless(elem, new_unit) for elem in value])
-    if isinstance(value, dict):
+    elif isinstance(value, dict):
         new_value = dict(value.items())  # value.copy()
         for k in value:
             new_value[k] = to_unitless(value[k], new_unit)
         return new_value
-    if isinstance(value, (int, float)) and new_unit in (1, None):
+    elif isinstance(value, (int, float)) and new_unit in (1, None):
         return value
-    if isinstance(value, str):
+    elif isinstance(value, str):
         raise ValueError("str not supported")
-    try:
+    else:
         try:
-            result = (value*pq.dimensionless/new_unit).rescale(pq.dimensionless)
-        except AttributeError:
-            if new_unit == pq.dimensionless:
-                return value
+            try:
+                result = (value*pq.dimensionless/new_unit).rescale(pq.dimensionless)
+            except AttributeError:
+                if new_unit == pq.dimensionless:
+                    return value
+                else:
+                    raise
             else:
-                raise
-        if result.ndim == 0:
-            return float(result)
-        else:
-            return np.asarray(result)
-    except TypeError:
-        return np.array([to_unitless(elem, new_unit) for elem in value])
+                if result.ndim == 0:
+                    return float(result)
+                else:
+                    return np.asarray(result)
+        except TypeError:
+            return np.array([to_unitless(elem, new_unit) for elem in value])
 
 
 def get_physical_quantity(value):
