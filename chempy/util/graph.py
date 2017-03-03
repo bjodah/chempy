@@ -40,9 +40,13 @@ def rsys2dot(rsys, tex=False, rprefix='r', rref0=1, nodeparams='[label="{}" shap
     def add_vertex(key, num, reac, penwidth):
         snum = str(num) if num > 1 else ''
         name = ('$%s$' if tex else '%s') % getattr(rsys.substances[key], 'latex_name' if tex else 'name')
-        lines.append(ind + '"{}" -> "{}" [label ="{}",color={},fontcolor={},penwidth={}];\n'.format(
-            *((name, rid, snum, colors[0], colors[0], penwidth) if reac else
-              (rid, name, snum, colors[1], colors[1], penwidth))
+        fmt = ','.join(
+            ['label="{}"'.format(snum)] +
+            (['penwidth={}'.format(penwidth)] if penwidth != 1 else [])
+        )
+        lines.append(ind + '"{}" -> "{}" [color={},fontcolor={},{}];\n'.format(
+            *((name, rid, colors[0], colors[0], fmt) if reac else
+              (rid, name, colors[1], colors[1], fmt))
         ))
 
     if include_inactive:

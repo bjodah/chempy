@@ -31,8 +31,8 @@ def test_rsys2dot():
         'node [label="r1" shape=diamond]',
         'r1',
         '}',
-        '"A" -> "r1" [label ="2",color=maroon,fontcolor=maroon];',
-        '"r1" -> "B" [label ="",color=darkgreen,fontcolor=darkgreen];',
+        '"A" -> "r1" [color=maroon,fontcolor=maroon,label="2"];',
+        '"r1" -> "B" [color=darkgreen,fontcolor=darkgreen,label=""];',
         '}'
     ]
 

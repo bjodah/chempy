@@ -104,7 +104,6 @@ def dominant_reactions_graph(concs, rate_exprs_cb, rsys, substance_key, linthres
     from ..util.graph import rsys2graph
     rates = rate_exprs_cb(0, concs)
     eqk1, eqk2, eqs = _combine_rxns_to_eq(rsys) if combine_equilibria else ([], [], [])
-    tot = 0.0
     rrate, rxns = zip(*_dominant_reaction_effects(substance_key, rsys, rates, linthreshy, eqk1, eqk2, eqs)[0])
     rsys = ReactionSystem(rxns, rsys.substances, rsys.name)
     lg_rrate = np.log10(np.abs(rrate))
