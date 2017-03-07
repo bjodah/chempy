@@ -138,6 +138,12 @@ class MassAction(RateExpr):
     def from_callback(cls, callback, attr='rate_coeff', **kwargs):
         return super(MassAction, cls).from_callback(callback, attr=attr, **kwargs)
 
+    def string(self, *args, **kwargs):
+        if self.param.args is None and len(self.unique_keys) == 1:
+            return self.unique_keys[0]
+        else:
+            return super(MassAction, self).string(*args, **kwargs)
+
     @classmethod
     @deprecated(use_instead=Expr.from_callback)
     def subclass_from_callback(cls, cb, cls_attrs=None):
@@ -148,6 +154,7 @@ class MassAction(RateExpr):
             obj = _RateExpr(*args, **kwargs)
             return cls(obj)
         return wrapper
+
 
 
 class Arrhenius(Expr):

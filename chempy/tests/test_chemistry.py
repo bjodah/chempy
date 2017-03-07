@@ -371,6 +371,19 @@ def test_ReactionSystem__from_string():
     ref = 2.1e-7 * 0.15 * 998
     assert rs.rates({'doserate': .15, 'density': 998}) == {'H': ref, 'OH': ref}
 
+    r2, = ReactionSystem.from_string("H2O + H2O + H+ -> H3O+ + H2O").rxns
+    assert r2.reac == {'H2O': 2, 'H+': 1}
+    assert r2.prod == {'H2O': 1, 'H3O+': 1}
+
+
+@requires(parsing_library)
+def test_ReactionSystem__from_string__string_rate_const():
+    rsys = ReactionSystem.from_string("H+ + OH- -> H2O; 'kf'")
+    r2, = rsys.rxns
+    assert r2.reac == {'H2O': 2, 'H+': 1}
+    assert r2.prod == {'H2O': 1, 'H3O+': 1}
+    assert r2.string(rsys.substances).endswith('; kf')
+
 
 @requires('numpy')
 def test_ReactionSystem__upper_conc_bounds():

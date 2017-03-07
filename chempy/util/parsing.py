@@ -71,9 +71,6 @@ def _get_formula_parser():
     term = Group((element | Group(LPAR + formula + RPAR)("subgroup")) +
                  Optional(integer, default=1)("mult"))
 
-    # define contents of a formula as one or more terms
-    formula << OneOrMore(term)
-
     # add parse actions for parse-time processing
 
     # parse action to multiply out subgroups
@@ -102,6 +99,8 @@ def _get_formula_parser():
             for t in tokens:
                 ctr[t[0]] += t[1]
             return ParseResults([ParseResults([k, v]) for k, v in ctr.items()])
+    # define contents of a formula as one or more terms
+    formula << OneOrMore(term)
     formula.setParseAction(sumByElement)
 
     return formula
@@ -274,6 +273,8 @@ def _parse_multiplicity(strings, substance_keys=None):
     True
     >>> _parse_multiplicity(['']) == {}
     True
+    >>> _parse_multiplicity(['H2O', 'H2O']) == {'H2O': 2}
+    True
 
     """
     result = {}
@@ -282,9 +283,13 @@ def _parse_multiplicity(strings, substance_keys=None):
         if len(items) == 0:
             continue
         elif len(items) == 1:
-            result[items[0]] = 1
+            if items[0] not in result:
+                result[items[0]] = 0
+            result[items[0]] += 1
         elif len(items) == 2:
-            result[items[1]] = int(items[0])
+            if items[1] not in result:
+                result[items[1]] = 0
+            result[items[1]] += float(items[0]) if '.' in items[0] or 'e' in items[0] else int(items[0])
         else:
             raise ValueError("To many parts in substring")
     if substance_keys is not None:
@@ -341,25 +346,21 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
         kwargs.update({} if globals_ is False else eval('dict('+kw+')', globals_))
 
     if isinstance(param, str):
-        param = None if globals_ is False else eval(param, globals_)
+        if param.startswith("'") and param.endswith("'") and "'" not in param[1:-1]:
+            from ..kinetics.rates import MassAction
+            param = MassAction(unique_keys=(param[1:-1],))
+        else:
+            param = None if globals_ is False else eval(param, globals_)
 
     if token not in stoich:
         raise ValueError("Missing token: %s" % token)
 
-    reac_prod = [[y.strip() for y in x.split(' + ')] for
-                 x in stoich.split(token)]
+    reac_prod = [[y.strip() for y in x.split(' + ')] for x in stoich.split(token)]
 
     act, inact = [], []
-    for side in reac_prod:
-        if side[-1].startswith('('):
-            if not side[-1].endswith(')'):
-                raise ValueError("Bad format (missing closing paren)")
-            inact.append(_parse_multiplicity(side[-1][1:-1].split(' + '),
-                                             substance_keys))
-            act.append(_parse_multiplicity(side[:-1], substance_keys))
-        else:
-            inact.append({})
-            act.append(_parse_multiplicity(side, substance_keys))
+    for elements in reac_prod:
+        act.append(_parse_multiplicity([x for x in elements if not x.startswith('(')], substance_keys))
+        inact.append(_parse_multiplicity([x[1:-1] for x in elements if x.startswith('(') and x.endswith(')')], substance_keys))
 
     # stoich coeff -> dict
     return Cls(act[0], act[1], param, inact_reac=inact[0],
