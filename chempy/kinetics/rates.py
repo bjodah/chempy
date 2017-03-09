@@ -139,7 +139,7 @@ class MassAction(RateExpr):
         return super(MassAction, cls).from_callback(callback, attr=attr, **kwargs)
 
     def string(self, *args, **kwargs):
-        if self.param.args is None and len(self.unique_keys) == 1:
+        if self.args is None and len(self.unique_keys) == 1:
             return self.unique_keys[0]
         else:
             return super(MassAction, self).string(*args, **kwargs)

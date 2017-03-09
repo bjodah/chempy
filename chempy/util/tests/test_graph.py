@@ -9,7 +9,7 @@ import tempfile
 
 import pytest
 
-from chempy.chemistry import Reaction, ReactionSystem, Substance
+from chempy import Reaction, ReactionSystem, Substance
 from ..graph import rsys2dot, rsys2graph
 from ..testing import requires
 

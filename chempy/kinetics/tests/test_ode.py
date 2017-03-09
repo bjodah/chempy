@@ -12,7 +12,7 @@ except ImportError:
     np = None
 
 
-from chempy.chemistry import Equilibrium, Reaction, ReactionSystem, Substance
+from chempy import Equilibrium, Reaction, ReactionSystem, Substance
 from chempy.thermodynamics.expressions import MassActionEq
 from chempy.units import (
     SI_base_registry, get_derived_unit, allclose, units_library,
