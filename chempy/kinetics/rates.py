@@ -156,7 +156,6 @@ class MassAction(RateExpr):
         return wrapper
 
 
-
 class Arrhenius(Expr):
     """ Rate expression for a Arrhenius-type of rate: c0*exp(-c1/T)
 

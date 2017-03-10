@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function)
 
-from operator import attrgetter
+from itertools import chain
 
 import pytest
 
 from ..util.testing import requires
 from ..util.parsing import parsing_library
-from ..units import default_units, units_library, to_unitless
-from ..chemistry import (
-    equilibrium_quotient, Substance, Species, Reaction,
-    Equilibrium, balance_stoichiometry
-)
+from ..units import default_units, units_library
+from ..chemistry import Substance, Reaction
 from ..reactionsystem import ReactionSystem
 
 
@@ -68,10 +65,22 @@ def test_ReactionSystem__rates():
     rs = ReactionSystem([Reaction({'H2O'}, {'H+', 'OH-'}, 11)])
     assert rs.rates({'H2O': 3, 'H+': 5, 'OH-': 7}) == {'H2O': -11*3, 'H+': 11*3, 'OH-': 11*3}
 
-def test_ReactionSystem__rates__cstr():
-    rs = ReactionSystem([Reaction({'H2O2': 2}, {'O2': 1, 'H2O': 2}, 11)])
-    assert rs.rates({'H2O': 3, 'H+': 5, 'OH-': 7}) == {'H2O': -11*3, 'H+': 11*3, 'OH-': 11*3}
 
+def test_ReactionSystem__rates__cstr():
+    k = 11
+    rs = ReactionSystem([Reaction({'H2O2': 2}, {'O2': 1, 'H2O': 2}, k)])
+    c0 = {'H2O2': 3, 'O2': 5, 'H2O': 53}
+    fr = 7
+    fc = {'H2O2': 13, 'O2': 17, 'H2O': 23}
+    r = k*c0['H2O2']**2
+    ref = {
+        'H2O2': -2*r + fr*fc['H2O2'] - fr*c0['H2O2'],
+        'O2': r + fr*fc['O2'] - fr*c0['O2'],
+        'H2O': 2*r + fr*fc['H2O'] - fr*c0['H2O']
+    }
+    variables = dict(chain(c0.items(), [('fc_'+k, v) for k, v in fc.items()], [('fr', fr)]))
+    for fck in ('fc_', ['fc_'+k for k in rs.substances]):
+        assert rs.rates(variables, cstr_fr_fc=('fr', fck)) == ref
 
 
 def test_ReactionSystem__html_tables():
@@ -162,9 +171,10 @@ def test_ReactionSystem__from_string():
 def test_ReactionSystem__from_string__string_rate_const():
     rsys = ReactionSystem.from_string("H+ + OH- -> H2O; 'kf'")
     r2, = rsys.rxns
-    assert r2.reac == {'H2O': 2, 'H+': 1}
-    assert r2.prod == {'H2O': 1, 'H3O+': 1}
-    assert r2.string(rsys.substances).endswith('; kf')
+    assert r2.reac == {'OH-': 1, 'H+': 1}
+    assert r2.prod == {'H2O': 1}
+    r2str = r2.string(rsys.substances, with_param=True)
+    assert r2str.endswith('; kf')
 
 
 @requires('numpy')

@@ -605,3 +605,25 @@ def test_chained_parameter_variation():
     cref = np.concatenate([np.vstack((a, b)).T for a, b in [(Aref1, Bref1), (Aref2, Bref2), (Aref3, Bref3)]])
     forgive = 27*1.1
     assert np.allclose(cref, cout, atol=kw['atol']*forgive, rtol=kw['rtol']*forgive)
+
+
+def test_get_odesys__cstr():
+    rsys = ReactionSystem.from_string("2 H2O2 -> O2 + 2 H2O; 5")
+    odesys, extra = get_odesys(rsys, cstr=True)
+    fr, fc = extra['cstr_fr_fc']
+    tout, c0 = np.linspace(0, .13), {'H2O2': 2, 'O2': 4, 'H2O': 3}
+    params = {fr: 13, fc['H2O2']: 11, fc['O2']: 43, fc['H2O']: 45}
+    res = odesys.integrate(tout, c0, params)
+    from chempy.kinetics.integrated import binary_irrev_cstr
+
+    def get_analytic(result, k, n):
+        ref = binary_irrev_cstr(result.xout, 5, result.get_dep('H2O2')[0],
+                                result.get_dep(k)[0], result.get_param(fc['H2O2']), result.get_param(fc[k]),
+                                result.get_param(fr), n)
+        return np.array([ref[{'H2O2': 0, k: 1}[sk]] for sk in result.odesys.names if sk in ['H2O2', k]]).T
+
+    ref_O2 = get_analytic(res, 'O2', 1)
+    ref_H2O = get_analytic(res, 'H2O', 2)
+    assert np.allclose(res.get_dep('H2O2'), ref_O2[:, 0])
+    assert np.allclose(res.get_dep('O2'), ref_O2[:, 1])
+    assert np.allclose(res.get_dep('H2O'), ref_H2O[:, 1])

@@ -91,7 +91,7 @@ def dCdt_list(rsys, rates):
 
 
 def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, unit_registry=None,
-               output_conc_unit=None, output_time_unit=None, **kwargs):
+               output_conc_unit=None, output_time_unit=None, cstr=False, **kwargs):
     """ Creates a :class:`pyneqsys.SymbolicSys` from a :class:`ReactionSystem`
 
     The parameters passed to RateExpr will contain the key ``'time'`` corresponding to the
@@ -116,6 +116,8 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         See :func:`chempy.units.get_derived_units`.
     output_conc_unit : unit (Optional)
     output_time_unit : unit (Optional)
+    cstr : bool
+        Generate expressions for continuously stirred tank reactor.
     \*\*kwargs :
         Keyword arguemnts passed on to `SymbolicSys`.
 
@@ -154,6 +156,16 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     substitutions = substitutions or {}
 
     unique = OrderedDict()
+
+    cstr_fr_fc = (
+        'feedratio',
+        OrderedDict([(sk, 'fc_'+sk) for sk in rsys.substances])
+    ) if cstr is True else cstr
+
+    if cstr_fr_fc:
+        _ori_pk.add(cstr_fr_fc[0])
+        for k in cstr_fr_fc[1].values():
+            _ori_pk.add(k)
 
     def _reg_unique(expr):
         if not isinstance(expr, Expr):
@@ -227,6 +239,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         )
         kwargs['post_processors'] = kwargs.get('post_processors', []) + [post_processor]
 
+
     def dydt(t, y, p, backend=math):
         variables = dict(chain(y.items(), p.items()))
         if 'time' in variables:
@@ -237,7 +250,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                 _, act = act.dedimensionalisation(unit_registry)
             variables[k] = act(variables, backend=backend)
         variables.update(_passive_subst)
-        return rsys.rates(variables, backend=backend, ratexs=r_exprs)
+        return rsys.rates(variables, backend=backend, ratexs=r_exprs, cstr_fr_fc=cstr_fr_fc)
 
     def reaction_rates(t, y, p, backend=math):
         variables = dict(chain(y.items(), p.items()))
@@ -338,6 +351,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         'max_euler_step_cb': max_euler_step_cb,
         'linear_dependencies': linear_dependencies,
         'rate_exprs_cb': rate_exprs_cb,
+        'cstr_fr_fc': cstr_fr_fc
     }
 
 

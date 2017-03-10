@@ -5,6 +5,7 @@ import math
 
 from collections import OrderedDict, defaultdict
 from itertools import chain
+import warnings
 
 from .chemistry import Reaction, Substance
 from .units import to_unitless
@@ -351,10 +352,10 @@ class ReactionSystem(object):
         backend : module, optional
         substance_keys : iterable of str, optional
         ratexs : iterable of RateExpr instances
-        cstr_fr_fc : tuple (float_like, dict pair)
+        cstr_fr_fc : tuple (str, tuple of str)
             Continuously stirred tank reactor conditions. Pair of
-            flow/volume ratio (feed-rate/tank-volume) and feed concentration
-            (dict).
+            flow/volume ratio key (feed-rate/tank-volume) and feed concentration
+            keys. (if second item is a string it is taken to be a prefix)
         Returns
         -------
         dict
@@ -378,10 +379,24 @@ class ReactionSystem(object):
                     result[k] = v
                 else:
                     result[k] += v
-        if cstr_fr_fc is not None:
-            fr, fc = cstr_fr_fc
-            for k in (substance_keys or self.substances):
-                result[k] += fc[k]*fr - variables[k]*fr
+        if cstr_fr_fc:
+            if substance_keys is not None and set(substance_keys) != set(self.substances.keys()):
+                warnings.warn("Only a subset of substances subject to CSTR treatment")
+            substance_keys = (substance_keys or tuple(self.substances.keys()))
+
+            fr_key, fc = cstr_fr_fc
+            if isinstance(fc, str):
+                fc_keys = OrderedDict([(k, fc + k) for k in substance_keys])
+            elif isinstance(fc, dict):
+                fc_keys = [fc[k] for k in substance_keys]
+            else:
+                fc_keys = fc
+            if len(fc) != len(substance_keys):
+                raise ValueError("Got incorrect number of feed concentration keys")
+            fr = variables[fr_key]  # feed rate / tank volume ratio
+
+            for sk, fck in zip(substance_keys, fc_keys):
+                result[sk] += variables[fck]*fr - variables[sk]*fr
         return result
 
     def _stoichs(self, attr, keys=None):
