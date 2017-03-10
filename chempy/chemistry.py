@@ -18,8 +18,11 @@ from .util.parsing import (
 
 from .units import default_units
 from ._util import intdiv
-from .util.pyutil import deprecated
-from .reactionsystem import ReactionSystem  #noqa: need proper deprecation since move.
+from .util.pyutil import deprecated, DeferredImport
+
+
+ReactionSystem = DeferredImport('chempy.reactionsystem', 'ReactionSystem',
+                                [deprecated(use_instead='chempy.ReactionSystem')])
 
 
 class Substance(object):
@@ -691,7 +694,7 @@ class Reaction(object):
 
         """
         res = self._get_str('unicode_name', 'unicode_arrow', substances,
-                            str_=str if sys.version_info[0] > 2 else unicode, **kwargs)
+                            str_=str if sys.version_info[0] > 2 else unicode, **kwargs)  # noqa
         if with_param and self.param is not None:
             from .printing import number_to_scientific_unicode
             res += u'; ' + self._str_param(

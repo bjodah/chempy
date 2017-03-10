@@ -360,7 +360,10 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
     act, inact = [], []
     for elements in reac_prod:
         act.append(_parse_multiplicity([x for x in elements if not x.startswith('(')], substance_keys))
-        inact.append(_parse_multiplicity([x[1:-1] for x in elements if x.startswith('(') and x.endswith(')')], substance_keys))
+        inact.append(_parse_multiplicity(
+            [x[1:-1] for x in elements if x.startswith('(') and x.endswith(')')],
+            substance_keys
+        ))
 
     # stoich coeff -> dict
     return Cls(act[0], act[1], param, inact_reac=inact[0],
