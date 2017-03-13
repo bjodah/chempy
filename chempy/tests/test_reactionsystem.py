@@ -78,8 +78,8 @@ def test_ReactionSystem__rates__cstr():
         'O2': r + fr*fc['O2'] - fr*c0['O2'],
         'H2O': 2*r + fr*fc['H2O'] - fr*c0['H2O']
     }
-    variables = dict(chain(c0.items(), [('fc_'+k, v) for k, v in fc.items()], [('fr', fr)]))
-    for fck in (['fc_'+k for k in rs.substances], 'fc_'):
+    variables = dict(chain(c0.items(), [('fc_'+key, val) for key, val in fc.items()], [('fr', fr)]))
+    for fck in (['fc_'+key for key in rs.substances], 'fc_'):
         assert rs.rates(variables, cstr_fr_fc=('fr', fck)) == ref
 
 

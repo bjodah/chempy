@@ -239,7 +239,6 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         )
         kwargs['post_processors'] = kwargs.get('post_processors', []) + [post_processor]
 
-
     def dydt(t, y, p, backend=math):
         variables = dict(chain(y.items(), p.items()))
         if 'time' in variables:
