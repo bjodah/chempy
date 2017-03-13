@@ -380,13 +380,13 @@ class ReactionSystem(object):
                 else:
                     result[k] += v
         if cstr_fr_fc:
-            if substance_keys is not None and set(substance_keys) != set(self.substances.keys()):
+            if substance_keys is not None and tuple(substance_keys) != tuple(self.substances.keys()):
                 warnings.warn("Only a subset of substances subject to CSTR treatment")
             substance_keys = (substance_keys or tuple(self.substances.keys()))
 
             fr_key, fc = cstr_fr_fc
             if isinstance(fc, str):
-                fc_keys = OrderedDict([(k, fc + k) for k in substance_keys])
+                fc_keys = [fc + k for k in substance_keys]
             elif isinstance(fc, dict):
                 fc_keys = [fc[k] for k in substance_keys]
             else:
@@ -395,8 +395,8 @@ class ReactionSystem(object):
                 raise ValueError("Got incorrect number of feed concentration keys")
             fr = variables[fr_key]  # feed rate / tank volume ratio
 
-            for sk, fck in zip(substance_keys, fc_keys):
-                result[sk] += variables[fck]*fr - variables[sk]*fr
+            for fck, sk in zip(fc_keys, substance_keys):
+                result[sk] += fr*(variables[fck] - variables[sk])
         return result
 
     def _stoichs(self, attr, keys=None):
@@ -404,8 +404,7 @@ class ReactionSystem(object):
         if keys is None:
             keys = self.substances.keys()
         # dtype: see https://github.com/sympy/sympy/issues/10295
-        return np.array([(getattr(eq, attr)(keys)) for eq in self.rxns],
-                        dtype=object)
+        return np.array([(getattr(eq, attr)(keys)) for eq in self.rxns], dtype=object)
 
     def net_stoichs(self, keys=None):
         return self._stoichs('net_stoich', keys)
