@@ -7,7 +7,9 @@ evolution of concentrations in reaction systems.
 from __future__ import (absolute_import, division, print_function)
 
 from collections import OrderedDict
+from functools import reduce
 from itertools import chain
+from operator import mul
 import math
 
 try:
@@ -15,7 +17,7 @@ try:
 except ImportError:
     np = None
 
-from ..units import to_unitless, get_derived_unit, default_unit_in_registry
+from ..units import to_unitless, get_derived_unit
 from ..util._expr import Expr
 from .rates import RateExpr, MassAction
 
@@ -156,6 +158,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     substitutions = substitutions or {}
 
     unique = OrderedDict()
+    unique_units = {}  # OrderedDict()
 
     cstr_fr_fc = (
         'feedratio',
@@ -167,13 +170,23 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         for k in cstr_fr_fc[1].values():
             _ori_pk.add(k)
 
-    def _reg_unique(expr):
+    def _reg_unique_unit(k, arg_dim, idx):
+        if unit_registry is None:
+            return
+        unique_units[k] = reduce(mul, [unit_registry[dim]**v for dim, v in arg_dim[idx].items()])
+
+    def _reg_unique(expr, rxn=None):
         if not isinstance(expr, Expr):
             raise NotImplementedError("Currently only Expr sub classes are supported.")
+        if unit_registry is None:
+            arg_dim = None
+        else:
+            arg_dim = expr.args_dimensionality(reaction=rxn)
         if expr.args is None:
-            for k in expr.unique_keys:
+            for idx, k in enumerate(expr.unique_keys):
                 if k not in substitutions:
                     unique[k] = None
+                    _reg_unique_unit(k, arg_dim, idx)
         else:
             for idx, arg in enumerate(expr.args):
                 if isinstance(arg, Expr):
@@ -182,6 +195,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                     uk = expr.unique_keys[idx]
                     if uk not in substitutions:
                         unique[uk] = arg
+                        _reg_unique_unit(uk, arg_dim, idx)
 
     for sk, sv in substitutions.items():
         if sk not in _ori_pk and sk not in _ori_uk:
@@ -196,10 +210,10 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     all_pk = list(filter(lambda x: x not in substitutions and x != 'time', _ori_pk.union(_subst_pk)))
 
     if not include_params:
-        for ratex in r_exprs:
-            _reg_unique(ratex)
+        for rxn, ratex in zip(rsys.rxns, r_exprs):
+            _reg_unique(ratex, rxn)
 
-    all_pk_with_unique = list(set(chain(all_pk, unique.keys())))
+    all_pk_with_unique = list(chain(all_pk, filter(lambda k: k not in all_pk, unique.keys())))
     if include_params:
         param_names_for_odesys = all_pk
     else:
@@ -210,15 +224,14 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     else:
         # We need to make rsys_params unitless and create
         # a pre- & post-processor for SymbolicSys
-        if include_params:
-            pk_units = [get_derived_unit(unit_registry, k) for k in all_pk]
-        else:
-            raise NotImplementedError("to be implemented")
-        unique_units = [default_unit_in_registry(uv, unit_registry) for uv in unique.values()]
-        p_units = pk_units if include_params else (pk_units + unique_units)
+        pk_units = [get_derived_unit(unit_registry, k) for k in all_pk]
+        p_units = pk_units if include_params else (pk_units + [unique_units[k] for k in unique])
         new_r_exprs = []
         for ratex in r_exprs:
-            _pu, _new_rate = ratex.dedimensionalisation(unit_registry)
+            if include_params:
+                _pu, _new_rate = ratex.dedimensionalisation(unit_registry)
+            else:
+                _new_rate = ratex
             new_r_exprs.append(_new_rate)
         r_exprs = new_r_exprs
 

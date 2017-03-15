@@ -130,6 +130,10 @@ class MassAction(RateExpr):
 
     argument_names = ('rate_constant',)
 
+    def args_dimensionality(self, reaction):
+        order = reaction.order()
+        return ({'time': -1, 'amount': 1-order, 'length': 3*(order - 1)},)
+
     def active_conc_prod(self, variables, backend=math, reaction=None):
         result = None
         for k, v in reaction.reac.items():

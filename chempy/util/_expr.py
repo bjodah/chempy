@@ -266,6 +266,11 @@ class Expr(object):
         return [v(variables, backend=backend) if isinstance(v, Expr) else v for v
                 in [variables[k] for k in self.parameter_keys]]
 
+    def args_dimensionality(self, **kwargs):
+        """ return tuple of dicts mapping str to int ('length', 'mass', 'time', 'current',
+        'temperature', 'luminous_intensity', 'amount') """
+        raise NotImplementedError("method not implemented in subclass.")
+
     def dedimensionalisation(self, unit_registry, variables={}, backend=math):
         """ Create an instance with consistent units from a unit_registry
 

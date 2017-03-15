@@ -346,33 +346,38 @@ def test_Expr__latex():
     assert res2 == ref2
 
 
-def test_Expr__single_arg():
-    class Pressure(Expr):
-        argument_names = ('n',)
-        parameter_keys = ('temperature', 'volume', 'R')
+class Pressure1(Expr):
+    argument_names = ('n',)
+    parameter_keys = ('temperature', 'volume', 'R')
 
-        def __call__(self, variables, backend=None):
-            n, = self.all_args(variables, backend=backend)
-            T, V, R = self.all_params(variables, backend=backend)
-            return n*R*T/V
-    p = Pressure(3)
+    def __call__(self, variables, backend=None):
+        n, = self.all_args(variables, backend=backend)
+        T, V, R = self.all_params(variables, backend=backend)
+        return n*R*T/V
+
+
+def test_Expr__single_arg():
+    p = Pressure1(3)
     assert abs(p({'temperature': 273.15, 'volume': 0.17, 'R': 8.314}) - 3*8.314*273.15/0.17) < 1e-15
 
 
 @requires(units_library)
 def test_Expr__single_arg__units():
-
-    class Pressure(Expr):
-        argument_names = ('n',)
-        parameter_keys = ('temperature', 'volume', 'R')
-
-        def __call__(self, variables, backend=None):
-            n, = self.all_args(variables, backend=backend)
-            T, V, R = self.all_params(variables, backend=backend)
-            return n*R*T/V
-    p = Pressure(3*u.mol)
+    p = Pressure1(3*u.mol)
     variables = {'temperature': 273.15*u.kelvin, 'volume': 170*u.dm3, 'R': 8.314*u.J/u.K/u.mol}
     assert allclose(p(variables), 3*8.314*273.15/0.17*u.Pa)
+
+
+class Pressure2(Pressure1):
+    def args_dimensionality(self):
+        return ({'amount': 1},)
+
+
+@requires(units_library)
+def test_Expr__single_arg__units__dimensionality():
+    p = Pressure2(unique_keys=('n1',))
+    variables = {'temperature': 273.15*u.kelvin, 'volume': 170*u.dm3, 'R': 8.314*u.J/u.K/u.mol}
+    assert allclose(p(dict(n1=3*u.mol, **variables)), 3*8.314*273.15/0.17*u.Pa)
 
 
 def test_Expr__argument_defaults():
