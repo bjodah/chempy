@@ -210,7 +210,10 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     else:
         # We need to make rsys_params unitless and create
         # a pre- & post-processor for SymbolicSys
-        pk_units = [get_derived_unit(unit_registry, k) for k in all_pk]
+        if include_params:
+            pk_units = [get_derived_unit(unit_registry, k) for k in all_pk]
+        else:
+            raise NotImplementedError("to be implemented")
         unique_units = [default_unit_in_registry(uv, unit_registry) for uv in unique.values()]
         p_units = pk_units if include_params else (pk_units + unique_units)
         new_r_exprs = []

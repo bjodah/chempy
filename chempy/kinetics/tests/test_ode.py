@@ -629,3 +629,24 @@ def test_get_odesys__cstr():
     assert np.allclose(res.named_dep('H2O2'), ref_H2O[:, 0])
     assert np.allclose(res.named_dep('O2'), ref_O2[:, 1])
     assert np.allclose(res.named_dep('H2O'), ref_H2O[:, 1])
+
+
+@requires('pygslodeiv2', 'sym', units_library)
+def test_get_odesys_rsys_with_units():
+    rsys = ReactionSystem.from_string("""
+    A -> B; 0.096/s
+    B + C -> P; 4e3/M/s
+    """, substance_factory=Substance)
+    with pytest.raises(Exception):
+        get_odesys(rsys)  # not a strict test, SI_base_registry could be made the default
+
+    odesys, extra = get_odesys(rsys, unit_registry=SI_base_registry)
+    tend = 10
+    tend_units = tend*u.s
+    c0 = {'A': 1e-6, 'B': 0, 'C': 1, 'P': 0}
+    c0_units = {k: v*u.molar for k, v in c0.items()}
+    result1 = odesys.integrate(tend_units, c0_units, integrator='gsl')
+    assert result1.info['success']
+
+    with pytest.raises(Exception):
+        odesys.integrate(tend, c0, integrator='gsl')

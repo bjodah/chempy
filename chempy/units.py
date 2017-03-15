@@ -297,7 +297,7 @@ def to_unitless(value, new_unit=None):
         for k in value:
             new_value[k] = to_unitless(value[k], new_unit)
         return new_value
-    elif isinstance(value, (int, float)) and new_unit in (1, None):
+    elif isinstance(value, (int, float)) and new_unit is 1 or new_unit is None:
         return value
     elif isinstance(value, str):
         raise ValueError("str not supported")
