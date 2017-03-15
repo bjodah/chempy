@@ -117,11 +117,11 @@ class Expr(object):
             nargs = len(args)
 
         if self.nargs not in (None, -1) and nargs is not None and nargs != self.nargs:
-            raise ValueError("Incorrect number of arguments: %d (expected %d)" % (nargs, nargs))
+            raise ValueError("Incorrect number of arguments: %d (expected %d)" % (nargs, self.nargs))
         if unique_keys is not None and self.nargs is not None and len(unique_keys) > self.nargs:
             raise ValueError("Incorrect number of unique_keys: %d (expected %d or less)" % (
                 len(unique_keys), self.nargs))
-        self.unique_keys = unique_keys
+        self.unique_keys = None if unique_keys is None else tuple(unique_keys)
 
         if isinstance(args, dict):
             args = [args[k] for k in self.argument_names or self.unique_keys]

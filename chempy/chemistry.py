@@ -464,7 +464,9 @@ class Reaction(object):
         >>> from chempy.units import to_unitless, default_units as u
         >>> to_unitless(r3.param, u.hour**-1)
         3600.0
-
+        >>> r4 = Reaction.from_string("A -> B; 'k'", 'A B')
+        >>> r4.param.unique_keys
+        ('k',)
 
         Notes
         -----

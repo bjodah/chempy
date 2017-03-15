@@ -607,6 +607,7 @@ def test_chained_parameter_variation():
     assert np.allclose(cref, cout, atol=kw['atol']*forgive, rtol=kw['rtol']*forgive)
 
 
+@requires('pyodesys', 'scipy', 'sym')
 def test_get_odesys__cstr():
     rsys = ReactionSystem.from_string("2 H2O2 -> O2 + 2 H2O; 5")
     odesys, extra = get_odesys(rsys, cstr=True)

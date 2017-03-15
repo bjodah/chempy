@@ -8,8 +8,9 @@ units library of ChemPy (``quantities``). Consider the API to be provisional.
 
 from __future__ import (absolute_import, division, print_function)
 
+from functools import reduce
 import math
-
+from operator import add
 
 from ..util.pyutil import memoize, deprecated
 from ..util._expr import Expr
@@ -58,19 +59,26 @@ class RadiolyticBase(RateExpr):
     pass  # for isinstance checks
 
 
-@memoize(1)
-def mk_Radiolytic(doserate_name='doserate'):
+@memoize(None)
+def mk_Radiolytic(*doserate_names):
     """ Create a Radiolytic rate expression
 
     Note that there is no mass-action dependence in the resulting
     class, i.e. the rates does not depend on any concentrations.
 
+    Parameters
+    ----------
+    \*doserate_names : str instances
+        Default: ('',)
+
+
     Examples
     --------
-    >>> RadiolyticAlpha = mk_Radiolytic('doserate_alpha')
-    >>> RadiolyticGamma = mk_Radiolytic('doserate_gamma')
+    >>> RadiolyticAlpha = mk_Radiolytic('alpha')
+    >>> RadiolyticGamma = mk_Radiolytic('gamma')
     >>> dihydrogen_alpha = RadiolyticAlpha([0.8e-7])
     >>> dihydrogen_gamma = RadiolyticGamma([0.45e-7])
+    >>> RadiolyticAB = mk_Radiolytic('alpha', 'beta')
 
     Notes
     -----
@@ -78,19 +86,24 @@ def mk_Radiolytic(doserate_name='doserate'):
     in variables.
 
     """
+    if len(doserate_names) == 0:
+        doserate_names = ('',)
+
     class _Radiolytic(RadiolyticBase):
-        argument_names = ('radiolytic_yield',)  # [amount/energy]
-        parameter_keys = (doserate_name, 'density')
+        argument_names = tuple('radiolytic_yield{0}'.format('' if drn == '' else '_' + drn)
+                               for drn in doserate_names)  # [amount/energy]
+        parameter_keys = ('density',) + tuple('doserate{0}'.format('' if drn == '' else '_' + drn)
+                                              for drn in doserate_names)
 
         def g_value(self, variables, backend=math, **kwargs):
             g_val, = self.all_args(variables, backend=backend, **kwargs)
             return g_val
 
         def __call__(self, variables, backend=math, reaction=None, **kwargs):
-            g_value, = self.all_args(variables, backend=backend, **kwargs)
-            return self.g_value(variables, backend=backend)*variables[doserate_name]*variables['density']
+            return variables['density']*reduce(add, [variables[k]*gval for k, gval in zip(
+                self.parameter_keys[1:], self.all_args(variables, backend=backend, **kwargs))])
 
-    _Radiolytic.__name__ = 'Radiolytic' if doserate_name == 'doserate' else ('Radiolytic{'+doserate_name+'}')
+    _Radiolytic.__name__ = 'Radiolytic' if doserate_names == ('',) else ('Radiolytic_' + '_'.join(doserate_names))
     return _Radiolytic
 
 

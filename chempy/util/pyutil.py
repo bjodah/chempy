@@ -17,7 +17,7 @@ def memoize(nargs=0):
     def decorator(func):
         @wraps(func)
         def wrapper(*args):
-            if len(args) > nargs:
+            if nargs is not None and len(args) > nargs:
                 raise ValueError("memoization error")
             if args not in wrapper.results:
                 wrapper.results[args] = func(*args)
