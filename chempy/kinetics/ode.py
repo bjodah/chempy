@@ -17,7 +17,7 @@ try:
 except ImportError:
     np = None
 
-from ..units import to_unitless, get_derived_unit
+from ..units import to_unitless, get_derived_unit, rescale
 from ..util._expr import Expr
 from .rates import RateExpr, MassAction
 
@@ -131,6 +131,9 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         - unique : OrderedDict mapping str to value (possibly None)
         - p_units : list of units
         - max_euler_step_cb : callable or None
+        - linear_dependencies : None or factory of solver callback
+        - rate_exprs_cb : callable
+        - cstr_fr_fc : None or (feed-ratio-key, subtance-key-to-feed-conc-key-map)
 
     Examples
     --------
@@ -228,11 +231,11 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         p_units = pk_units if include_params else (pk_units + [unique_units[k] for k in unique])
         new_r_exprs = []
         for ratex in r_exprs:
-            if include_params:
-                _pu, _new_rate = ratex.dedimensionalisation(unit_registry)
+            if ratex.args is None:
+                _new_ratex = ratex
             else:
-                _new_rate = ratex
-            new_r_exprs.append(_new_rate)
+                _pu, _new_ratex = ratex.dedimensionalisation(unit_registry)
+            new_r_exprs.append(_new_ratex)
         r_exprs = new_r_exprs
 
         time_unit = get_derived_unit(unit_registry, 'time')
@@ -241,10 +244,10 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         def post_processor(x, y, p):
             time = x*time_unit
             if output_time_unit is not None:
-                time = time.rescale(output_time_unit)
+                time = rescale(time, output_time_unit)
             conc = y*conc_unit
             if output_conc_unit is not None:
-                conc = conc.rescale(output_conc_unit)
+                conc = rescale(conc, output_conc_unit)
             return time, conc, np.array([elem*p_unit for elem, p_unit in zip(p.T, p_units)], dtype=object).T
 
         kwargs['to_arrays_callbacks'] = (
@@ -326,7 +329,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                     if k not in rsys.substances:
                         raise ValueError("Unknown substance key: %s" % k)
 
-            def analytic_factory(x0, y0, p0, be):
+            def analytic_solver(x0, y0, p0, be):
                 if preferred is None:
                     _preferred = None
                 else:
@@ -353,7 +356,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                     raise ValueError("Failed to obtain analytic expression for: %s" % ', '.join(_preferred))
                 return analytic_exprs
 
-            return analytic_factory
+            return analytic_solver
 
     else:
         max_euler_step_cb = None

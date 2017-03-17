@@ -115,12 +115,17 @@ def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False
         init_conc = 'y'
 
     kw = dict(namespace_override={
-        'p_anon': render_mako(_anon, odesys=odesys, ncomp=len(comp_keys),
-                              comp_conc=_get_comp_conc(rsys, odesys, comp_keys, skip_keys),
-                              subst_comp=_get_subst_comp(rsys, odesys, comp_keys, skip_keys)),
-        'p_first_step': render_mako(_first_step, init_conc=init_conc, odesys=odesys),
         'p_get_dx_max': True,
     })
+    if all(subst.composition is None for subst in rsys.substances.values()):
+        pass
+    else:
+        kw['namespace_override']['p_anon'] = render_mako(
+            _anon, odesys=odesys, ncomp=len(comp_keys),
+            comp_conc=_get_comp_conc(rsys, odesys, comp_keys, skip_keys),
+            subst_comp=_get_subst_comp(rsys, odesys, comp_keys, skip_keys))
+        kw['namespace_override']['p_first_step'] = render_mako(
+            _first_step, init_conc=init_conc, odesys=odesys)
     ns_extend = kw.get('namespace_extend', {})
 
     if steady_state_root:

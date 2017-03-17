@@ -5,8 +5,8 @@ if [[ "$CI_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then
     echo ${CI_BRANCH} | tail -c +2 > __conda_version__.txt
 fi
 
-python2 -m pip install git+https://github.com/bjodah/pyodesys@refactor-multi  #DO-NOT-MERGE!
-python3 -m pip install git+https://github.com/bjodah/pyodesys@refactor-multi  #DO-NOT-MERGE!
+python2 -m pip install git+https://github.com/bjodah/pyodesys@more-robust-ODESys.to_arrays  #DO-NOT-MERGE!
+python3 -m pip install git+https://github.com/bjodah/pyodesys@more-robust-ODESys.to_arrays  #DO-NOT-MERGE!
 python2 -m pip install git+https://github.com/bjodah/sympy@expm1-log1p  #DO-NOT-MERGE!
 python3 -m pip install git+https://github.com/bjodah/sympy@expm1-log1p  #DO-NOT-MERGE!
 

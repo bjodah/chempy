@@ -8,10 +8,13 @@ units library of ChemPy (``quantities``). Consider the API to be provisional.
 
 from __future__ import (absolute_import, division, print_function)
 
+from collections import OrderedDict
 from functools import reduce
 import math
 from operator import add
 
+from ..units import get_derived_unit
+from ..util._dimensionality import dimension_codes, base_registry
 from ..util.pyutil import memoize, deprecated
 from ..util._expr import Expr
 
@@ -95,6 +98,15 @@ def mk_Radiolytic(*doserate_names):
         parameter_keys = ('density',) + tuple('doserate{0}'.format('' if drn == '' else '_' + drn)
                                               for drn in doserate_names)
 
+        def args_dimensionality(self, reaction):
+            N = base_registry['amount']
+            E = get_derived_unit(base_registry, 'energy')
+            return (dict(zip(dimension_codes, N/E)),)*self.nargs
+
+        def g_values(self, *args, **kwargs):
+            return OrderedDict(zip(self.parameter_keys[1:], self.all_args(*args, **kwargs)))
+
+        @deprecated(use_instead='Radiolytic.all_args')
         def g_value(self, variables, backend=math, **kwargs):
             g_val, = self.all_args(variables, backend=backend, **kwargs)
             return g_val
@@ -135,12 +147,9 @@ class MassAction(RateExpr):
         return ({'time': -1, 'amount': 1-order, 'length': 3*(order - 1)},)
 
     def active_conc_prod(self, variables, backend=math, reaction=None):
-        result = None
+        result = 1
         for k, v in reaction.reac.items():
-            if result is None:
-                result = variables[k]**v
-            else:
-                result *= variables[k]**v
+            result *= variables[k]**v
         return result
 
     def rate_coeff(self, variables, backend=math, **kwargs):
