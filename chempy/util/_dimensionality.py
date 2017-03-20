@@ -10,7 +10,7 @@ dimension_codes = OrderedDict(zip(
 ))
 
 
-class DimensionalitySI(defaultnamedtuple('DimensionalitySIBase', dimension_codes.values(), (0,)*len(dimension_codes))):
+class DimensionalitySI(defaultnamedtuple('DimensionalitySIBase', dimension_codes.keys(), (0,)*len(dimension_codes))):
 
     def __mul__(self, other):
         return self.__class__(*(x+y for x, y in zip(self, other)))

@@ -7,8 +7,8 @@ fi
 
 python2 -m pip install git+https://github.com/bjodah/pyodesys@more-robust-ODESys.to_arrays  #DO-NOT-MERGE!
 python3 -m pip install git+https://github.com/bjodah/pyodesys@more-robust-ODESys.to_arrays  #DO-NOT-MERGE!
-python2 -m pip install git+https://github.com/bjodah/sympy@expm1-log1p  #DO-NOT-MERGE!
-python3 -m pip install git+https://github.com/bjodah/sympy@expm1-log1p  #DO-NOT-MERGE!
+python2 -m pip install git+https://github.com/bjodah/sympy@master  #DO-NOT-MERGE!
+python3 -m pip install git+https://github.com/bjodah/sympy@master  #DO-NOT-MERGE!
 
 git archive -o /tmp/$PKG_NAME.zip HEAD  # test pip installable zip (symlinks break)
 python3 -m pip install /tmp/$PKG_NAME.zip
