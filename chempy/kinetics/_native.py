@@ -56,7 +56,7 @@ _first_step = """
     m_upper_bounds = upper_conc_bounds(${init_conc});
     m_lower_bounds.resize(${odesys.ny});
     return m_rtol*std::min(get_dx_max(x, y), 1.0);
-"""  # if (m_upper_bounds.size() == 0)
+"""
 
 _roots = """
     const int ny = get_ny();
