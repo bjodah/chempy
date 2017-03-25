@@ -85,7 +85,7 @@ def mk_Radiolytic(*doserate_names):
 
     Notes
     -----
-    The instance __call__ will require ``'density'`` and ``doserate_name``
+    The instance __call__ will require by default ``'density'`` and ``'doserate'``
     in variables.
 
     """
