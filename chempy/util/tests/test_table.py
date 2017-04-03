@@ -36,6 +36,7 @@ Id. & Reactants &  & Products & {Rate constant} & Unit & Ref \\
 \end{table}""")
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize('longtable', (True, False))
 def test_rsys2pdf_table(longtable):
     rsys = _get_rsys()
@@ -46,6 +47,7 @@ def test_rsys2pdf_table(longtable):
         shutil.rmtree(tempdir)
 
 
+@pytest.mark.slow
 def test_rsys2pdf_table_no_output_dir():
     rsys = _get_rsys()
     rsys2pdf_table(rsys, save=False)

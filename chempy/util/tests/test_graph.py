@@ -6,7 +6,10 @@ import os
 import subprocess
 import shutil
 import tempfile
-from chempy.chemistry import Reaction, ReactionSystem, Substance
+
+import pytest
+
+from chempy import Reaction, ReactionSystem, Substance
 from ..graph import rsys2dot, rsys2graph
 from ..testing import requires
 
@@ -28,12 +31,13 @@ def test_rsys2dot():
         'node [label="r1" shape=diamond]',
         'r1',
         '}',
-        '"A" -> "r1" [label ="2",color=maroon,fontcolor=maroon];',
-        '"r1" -> "B" [label ="",color=darkgreen,fontcolor=darkgreen];',
+        '"A" -> "r1" [color=maroon,fontcolor=maroon,label="2"];',
+        '"r1" -> "B" [color=darkgreen,fontcolor=darkgreen,label=""];',
         '}'
     ]
 
 
+@pytest.mark.slow
 @requires('numpy')
 def test_rsys2graph():
     rsys = _get_rsys()

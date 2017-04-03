@@ -198,7 +198,7 @@ def test_Radiolytic__parsing():
     ref = 0.15*0.998*2.1e-7
     assert abs((res['H'] - ref)/ref) < 1e-15
     assert abs((res['OH'] - ref)/ref) < 1e-15
-    gval = rxn.rate_expr().g_value({})
+    gval, = rxn.rate_expr().g_values({}).values()
     assert abs(gval - 2.1e-7) < 1e-15
 
 
@@ -239,6 +239,17 @@ def test_mk_Radiolytic():
     R1 = mk_Radiolytic()
     R2 = mk_Radiolytic()
     assert R1 is R2
+
+    RABG = mk_Radiolytic('alpha', 'beta', 'gamma')
+    rxn = Reaction({}, {'H': 2}, RABG([3, 5, 7], 'ya yb yg'.split()))
+    rat = rxn.rate({'doserate_alpha': 11, 'doserate_beta': 13, 'doserate_gamma': 17, 'density': .7})
+    assert abs(rat['H'] - .7*2*(3*11 + 5*13 + 7*17)) < 1e-13
+    assert RABG.parameter_keys == ('density', 'doserate_alpha', 'doserate_beta', 'doserate_gamma')
+    assert RABG.argument_names == tuple('radiolytic_yield_%s' % k for k in 'alpha beta gamma'.split())
+    assert rxn.param.unique_keys == ('ya', 'yb', 'yg')
+    rat2 = rxn.rate({'doserate_alpha': 11, 'doserate_beta': 13, 'doserate_gamma': 17, 'density': .7,
+                     'ya': 23, 'yb': 29, 'yg': 31})
+    assert abs(rat2['H'] - .7*2*(23*11 + 29*13 + 31*17)) < 1e-13
 
 
 class Eyring4(Expr):

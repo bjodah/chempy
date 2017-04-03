@@ -89,6 +89,8 @@ def test_to_unitless():
     result = to_unitless(vals, u.metre)
     assert result[0] == 0.1
     assert result[1] == 0.2
+    with pytest.raises(Exception):
+        to_unitless([42, 43], u.metre)
 
     vals = [1.0, 2.0]*dm
     result = to_unitless(vals, u.metre)
@@ -112,6 +114,14 @@ def test_to_unitless():
     assert abs(to_unitless(g1, g_unit) - 4.46 * 1.036e-7) < 1e-9
     g2 = UncertainQuantity(-4.46, u.per100eV, 0)
     assert abs(to_unitless(-g2, g_unit) - 4.46 * 1.036e-7) < 1e-9
+
+    vals = np.array([1.*dm, 2.*dm], dtype=object)
+    result = to_unitless(vals, u.metre)
+    assert result[0] == 0.1
+    assert result[1] == 0.2
+
+    one_billionth_molar_in_nanomolar = to_unitless(1e-9*u.molar, u.nanomolar)
+    assert one_billionth_molar_in_nanomolar == 1
 
 
 @requires(units_library)

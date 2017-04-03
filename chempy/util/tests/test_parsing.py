@@ -101,6 +101,12 @@ def test_to_reaction():
     r3 = to_reaction("H+ + OH- -> H2O", None, '->', Reaction, param=ma)
     assert r3.param.args == [3.14]
 
+    rxn3 = to_reaction("H2O + H2O -> H3O+ + OH-", 'H3O+ OH- H2O'.split(), '->', Reaction)
+    assert rxn3.reac == {'H2O': 2} and rxn3.prod == {'H3O+': 1, 'OH-': 1}
+
+    rxn4 = to_reaction("2 e-(aq) + (2 H2O) + (2 H+) -> H2 + 2 H2O", 'e-(aq) H2 H2O H+'.split(), '->', Reaction)
+    assert rxn4.reac == {'e-(aq)': 2} and rxn4.inact_reac == {'H2O': 2, 'H+': 2} and rxn4.prod == {'H2': 1, 'H2O': 2}
+
 
 @requires(parsing_library)
 def test_formula_to_latex():

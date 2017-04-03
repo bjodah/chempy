@@ -17,7 +17,7 @@ def memoize(nargs=0):
     def decorator(func):
         @wraps(func)
         def wrapper(*args):
-            if len(args) > nargs:
+            if nargs is not None and len(args) > nargs:
                 raise ValueError("memoization error")
             if args not in wrapper.results:
                 wrapper.results[args] = func(*args)
@@ -103,3 +103,33 @@ def deprecated(*args, **kwargs):
 
 warnings.simplefilter(os.environ.get('CHEMPY_DEPRECATION_FILTER', 'once'),
                       ChemPyDeprecationWarning)
+
+
+class DeferredImport(object):
+    def __init__(self, modname, arg=None, decorators=None):
+        self._modname = modname
+        self._arg = arg
+        self._decorators = decorators
+        self._cache = None
+
+    @property
+    def cache(self):
+        if self._cache is None:
+            if self._arg is None:
+                obj = __import__(self._modname)
+            else:
+                obj = getattr(__import__(self._modname, globals(), locals(), [self._arg]), self._arg)
+            if self._decorators is not None:
+                for deco in self._decorators:
+                    obj = deco(obj)
+            self._cache = obj
+        return self._cache
+
+    def __getattribute__(self, attr):
+        if attr in ('_modname', '_arg', '_cache', 'cache', '_decorators'):
+            return object.__getattribute__(self, attr)
+        else:
+            return getattr(self.cache, attr)
+
+    def __call__(self, *args, **kwargs):
+        return self.cache(*args, **kwargs)

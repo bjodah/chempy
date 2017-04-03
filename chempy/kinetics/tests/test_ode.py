@@ -12,7 +12,7 @@ except ImportError:
     np = None
 
 
-from chempy.chemistry import Equilibrium, Reaction, ReactionSystem, Substance
+from chempy import Equilibrium, Reaction, ReactionSystem, Substance
 from chempy.thermodynamics.expressions import MassActionEq
 from chempy.units import (
     SI_base_registry, get_derived_unit, allclose, units_library,
@@ -47,6 +47,26 @@ def test_get_odesys_1():
     yref[:, 0] = np.exp(-k*t)
     yref[:, 1] = 4 - np.exp(-k*t)
     assert np.allclose(yout, yref)
+
+
+@requires('numpy', 'pyodesys', 'sympy')
+def test_get_odesys__rate_exprs_cb():
+    k = .2
+    a = Substance('A')
+    b = Substance('B')
+    r = Reaction({'A': 1}, {'B': 1}, param=k)
+    rsys = ReactionSystem([r], [a, b])
+    assert sorted(rsys.substances.keys()) == ['A', 'B']
+    odesys, extra = get_odesys(rsys)
+    c0 = {'A': 1.0, 'B': 3.0}
+    t = np.linspace(0.0, 10.0)
+    res = odesys.integrate(t, c0)
+    yref = np.zeros((t.size, 2))
+    yref[:, 0] = np.exp(-k*t)
+    yref[:, 1] = 4 - np.exp(-k*t)
+    assert np.allclose(res.yout, yref)
+    rate = extra['rate_exprs_cb'](res.xout, res.yout, res.params)
+    assert np.allclose(rate[:, 0], k*yref[:, 0])
 
 
 @requires('numpy', 'pyodesys')
@@ -85,8 +105,8 @@ def test_get_odesys_3():
         rsys, include_params=True, unit_registry=SI_base_registry,
         output_conc_unit=M)[0]
     c0 = {'H2O': 55.4*M, 'H+': 1e-7*M, 'OH-': 1e-4*mol/m**3}
-    x, y, p = odesys.pre_process(-42*u.second,
-                                 rsys.as_per_substance_array(c0, unit=M))
+    x, y, p = odesys.to_arrays(-42*u.second,
+                               rsys.as_per_substance_array(c0, unit=M), ())
     fout = odesys.f_cb(x, y, p)
 
     time_unit = get_derived_unit(SI_base_registry, 'time')
@@ -164,7 +184,7 @@ def test_ode_with_global_parameters():
     odesys, extra = get_odesys(rsys, include_params=False)
     param_keys, unique_keys, p_units = map(extra.get, 'param_keys unique p_units'.split())
     conc = {'A': 3, 'B': 5}
-    x, y, p = odesys.pre_process(-37, conc, {'temperature': 298.15})
+    x, y, p = odesys.to_arrays(-37, conc, {'temperature': 298.15})
     fout = odesys.f_cb(x, y, p)
     ref = 3*1e10*np.exp(-40e3/8.3145/298.15)
     assert np.all(abs((fout[:, 0] + ref)/ref) < 1e-14)
@@ -178,7 +198,7 @@ def test_get_ode__ArrheniusParam():
     rsys = ReactionSystem([rxn], 'A B')
     odesys = get_odesys(rsys, include_params=True)[0]
     conc = {'A': 3, 'B': 5}
-    x, y, p = odesys.pre_process(-37, conc, {'temperature': 200})
+    x, y, p = odesys.to_arrays(-37, conc, {'temperature': 200})
     fout = odesys.f_cb(x, y, p)
     ref = 3*1e10*np.exp(-40e3/8.314472/200)
     assert np.all(abs((fout[:, 0] + ref)/ref) < 1e-14)
@@ -192,7 +212,7 @@ def test_get_ode__Radiolytic():
     rsys = ReactionSystem([rxn], 'A B C D')
     odesys = get_odesys(rsys, include_params=True)[0]
     c = {'A': 3, 'B': 5, 'C': 11, 'D': 13}
-    x, y, p = odesys.pre_process(-37, c, {'doserate': 0.4, 'density': 0.998})
+    x, y, p = odesys.to_arrays(-37, c, {'doserate': 0.4, 'density': 0.998})
     fout = odesys.f_cb(x, y, p)
     r = 2.4e-7*0.4*0.998
     ref = [-4*r, -r, 3*r, 2*r]
@@ -207,7 +227,7 @@ def test_get_ode__Radiolytic__units():
     odesys = get_odesys(rsys, include_params=True,
                         unit_registry=SI_base_registry)[0]
     conc = {'A': 3*u.molar, 'B': 5*u.molar, 'C': 11*u.molar, 'D': 13*u.molar}
-    x, y, p = odesys.pre_process(-37*u.second, conc, {
+    x, y, p = odesys.to_arrays(-37*u.second, conc, {
         'doserate': 0.4*u.gray/u.second,
         'density': 0.998*u.kg/u.decimetre**3
     })
@@ -215,6 +235,26 @@ def test_get_ode__Radiolytic__units():
     r = 2.4e-7*0.4*0.998*1e3  # mol/m3
     ref = [-4*r, -r, 3*r, 2*r]
     assert np.all(abs((fout - ref)/ref) < 1e-14)
+
+
+@requires('pyodesys', units_library)
+def test_get_ode__Radiolytic__units__multi():
+    rad = Radiolytic([2.4e-7*u.mol/u.joule])
+    rxn = Reaction({'A': 4, 'B': 1}, {'C': 3, 'D': 2}, rad)
+    rsys = ReactionSystem([rxn], 'A B C D')
+    odesys = get_odesys(rsys, include_params=True,
+                        unit_registry=SI_base_registry)[0]
+    conc = {'A': 3*u.molar, 'B': 5*u.molar, 'C': 11*u.molar, 'D': 13*u.molar}
+    doserates = [dr*u.gray/u.second for dr in [.1, .2, .3, .4]]
+    results = odesys.integrate(37*u.second, conc, {
+        'doserate': doserates,
+        'density': 0.998*u.kg/u.decimetre**3
+    })
+    assert len(results) == 4
+    for i, r in enumerate(results):
+        dr = r.params[odesys.param_names.index('doserate')]
+        assert dr.ndim == 0 or len(dr) == 1
+        assert dr == doserates[i]
 
 
 class Density(Expr):
@@ -237,7 +277,7 @@ def test_get_ode__Radiolytic__substitutions():
                         substitutions={'density': substance_rho})[0]
     conc = {'A': 3, 'B': 5, 'C': 11, 'D': 13}
     state = {'doserate': 0.4, 'temperature': 298.15}
-    x, y, p = odesys.pre_process(-37, conc, state)
+    x, y, p = odesys.to_arrays(-37, conc, state)
     fout = odesys.f_cb(x, y, p)
     r = 2.4e-7*0.4*substance_rho({'temperature': 298.15})
     ref = [-4*r, -r, 3*r, 2*r]
@@ -255,7 +295,7 @@ def test_get_ode__Radiolytic__substitutions__units():
     odesys = get_odesys(rsys, include_params=True, unit_registry=SI_base_registry,
                         substitutions={'density': substance_rho})[0]
     conc = {'A': 3*u.molar, 'B': 5*u.molar, 'C': 11*u.molar, 'D': 13*u.molar}
-    x, y, p = odesys.pre_process(-37*u.second, conc, {'doserate': 0.4*u.gray/u.second, 'temperature': 298.15*u.kelvin})
+    x, y, p = odesys.to_arrays(-37*u.second, conc, {'doserate': 0.4*u.gray/u.second, 'temperature': 298.15*u.kelvin})
     fout = odesys.f_cb(x, y, p)
     r = 2.4e-7*0.4*0.975 * 1e3  # mol/m3/s
     ref = [-4*r, -r, 3*r, 2*r]
@@ -269,7 +309,7 @@ def test_get_ode__TPoly():
     rsys = ReactionSystem([rxn], 'A B C D')
     odesys = get_odesys(rsys, unit_registry=SI_base_registry)[0]
     conc = {'A': 3*u.molar, 'B': 5*u.molar, 'C': 11*u.molar, 'D': 13*u.molar}
-    x, y, p = odesys.pre_process(-37*u.second, conc, {'temperature': 298.15*u.kelvin})
+    x, y, p = odesys.to_arrays(-37*u.second, conc, {'temperature': 298.15*u.kelvin})
     fout = odesys.f_cb(x, y, p)
     r = 3*5*(10+2*25)*1000  # mol/m3/s
     ref = [-4*r, -r, 3*r, 2*r]
@@ -291,7 +331,7 @@ def test_get_odesys__time_dep_rate():
     rsys = ReactionSystem([rxn], 'A B')
     odesys = get_odesys(rsys)[0]
     conc = {'A': 3, 'B': 11}
-    x, y, p = odesys.pre_process([5, 13, 17], conc)
+    x, y, p = odesys.to_arrays([5, 13, 17], conc, ())
     fout = odesys.f_cb(x, y, p)
     r = 2*7*3
     ref = np.array([
@@ -301,6 +341,7 @@ def test_get_odesys__time_dep_rate():
     assert np.allclose(fout, ref)
 
 
+@pytest.mark.slow
 @requires('pyodesys', units_library)
 def test_get_odesys__time_dep_temperature():
     import sympy as sp
@@ -334,7 +375,7 @@ def test_get_odesys__time_dep_temperature():
         assert allclose(yout, yref)
 
     unique['ramp_rate'] = 2
-    x, y, p = odesys.pre_process(tout, conc, unique)
+    x, y, p = odesys.to_arrays(tout, conc, unique)
     fout = odesys.f_cb(x, y, p)
 
     def r(t):
@@ -564,3 +605,68 @@ def test_chained_parameter_variation():
     cref = np.concatenate([np.vstack((a, b)).T for a, b in [(Aref1, Bref1), (Aref2, Bref2), (Aref3, Bref3)]])
     forgive = 27*1.1
     assert np.allclose(cref, cout, atol=kw['atol']*forgive, rtol=kw['rtol']*forgive)
+
+
+@requires('pyodesys', 'scipy', 'sym')
+def test_get_odesys__cstr():
+    rsys = ReactionSystem.from_string("2 H2O2 -> O2 + 2 H2O; 5")
+    odesys, extra = get_odesys(rsys, cstr=True)
+    fr, fc = extra['cstr_fr_fc']
+    tout, c0 = np.linspace(0, .13, 7), {'H2O2': 2, 'O2': 4, 'H2O': 3}
+    params = {fr: 13, fc['H2O2']: 11, fc['O2']: 43, fc['H2O']: 45}
+    res = odesys.integrate(tout, c0, params)
+    from chempy.kinetics.integrated import binary_irrev_cstr
+
+    def get_analytic(result, k, n):
+        ref = binary_irrev_cstr(result.xout, 5, result.named_dep('H2O2')[0],
+                                result.named_dep(k)[0], result.named_param(fc['H2O2']), result.named_param(fc[k]),
+                                result.named_param(fr), n)
+        return np.array(ref).T
+
+    ref_O2 = get_analytic(res, 'O2', 1)
+    ref_H2O = get_analytic(res, 'H2O', 2)
+    assert np.allclose(res.named_dep('H2O2'), ref_O2[:, 0])
+    assert np.allclose(res.named_dep('H2O2'), ref_H2O[:, 0])
+    assert np.allclose(res.named_dep('O2'), ref_O2[:, 1])
+    assert np.allclose(res.named_dep('H2O'), ref_H2O[:, 1])
+
+
+@requires('pygslodeiv2', 'sym', units_library)
+def test_get_odesys_rsys_with_units():
+    rsys = ReactionSystem.from_string("""
+    A -> B; 0.096/s
+    B + C -> P; 4e3/M/s
+    """, substance_factory=Substance)
+    with pytest.raises(Exception):
+        get_odesys(rsys)  # not a strict test, SI_base_registry could be made the default
+
+    odesys, extra = get_odesys(rsys, unit_registry=SI_base_registry)
+    tend = 10
+    tend_units = tend*u.s
+    c0 = {'A': 1e-6, 'B': 0, 'C': 1, 'P': 0}
+    c0_units = {k: v*u.molar for k, v in c0.items()}
+    result1 = odesys.integrate(tend_units, c0_units, integrator='gsl')
+    assert result1.info['success']
+
+    with pytest.raises(Exception):
+        odesys.integrate(tend, c0, integrator='gsl')
+
+
+@requires('pyodeint', 'sym', units_library)
+def test_get_odesys_rsys_with_units__named_params():
+    rsys = ReactionSystem.from_string("""
+    A -> B; 'k1'
+    B + C -> P; 'k2'
+    """, substance_factory=Substance)
+    odesys, extra = get_odesys(rsys, include_params=False, unit_registry=SI_base_registry)
+    tend = 10
+    tend_units = tend*u.s
+    c0 = {'A': 1e-6, 'B': 0, 'C': 1, 'P': 0}
+    p = {'k1': 3, 'k2': 4}
+    p_units = {'k1': 3/u.s, 'k2': 4/u.M/u.s}
+    c0_units = {k: v*u.molar for k, v in c0.items()}
+    result1 = odesys.integrate(tend_units, c0_units, p_units, integrator='odeint')
+    assert result1.info['success']
+
+    with pytest.raises(Exception):
+        odesys.integrate(tend, c0, p, integrator='odeint')

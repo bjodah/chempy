@@ -9,7 +9,7 @@ import tempfile
 
 
 def rsys2dot(rsys, tex=False, rprefix='r', rref0=1, nodeparams='[label="{}" shape=diamond]',
-             colors=('maroon', 'darkgreen'), include_inactive=True):
+             colors=('maroon', 'darkgreen'), penwidths=None, include_inactive=True):
     """
     Returns list of lines of DOT (graph description language)
     formated graph.
@@ -34,13 +34,19 @@ def rsys2dot(rsys, tex=False, rprefix='r', rref0=1, nodeparams='[label="{}" shap
     """
     lines = ['digraph "' + str(rsys.name) + '" {\n']
     ind = '  '  # indentation
+    if penwidths is None:
+        penwidths = [1.0]*rsys.nr
 
-    def add_vertex(key, num, reac):
+    def add_vertex(key, num, reac, penwidth):
         snum = str(num) if num > 1 else ''
-        name = getattr(rsys.substances[key], 'latex_name' if tex else 'name')
-        lines.append(ind + '"{}" -> "{}" [label ="{}",color={},fontcolor={}];\n'.format(
-            *((name, rid, snum, colors[0], colors[0]) if reac else
-              (rid, name, snum, colors[1], colors[1]))
+        name = ('$%s$' if tex else '%s') % getattr(rsys.substances[key], 'latex_name' if tex else 'name')
+        fmt = ','.join(
+            ['label="{}"'.format(snum)] +
+            (['penwidth={}'.format(penwidth)] if penwidth != 1 else [])
+        )
+        lines.append(ind + '"{}" -> "{}" [color={},fontcolor={},{}];\n'.format(
+            *((name, rid, colors[0], colors[0], fmt) if reac else
+              (rid, name, colors[1], colors[1], fmt))
         ))
 
     if include_inactive:
@@ -60,12 +66,12 @@ def rsys2dot(rsys, tex=False, rprefix='r', rref0=1, nodeparams='[label="{}" shap
             num = reac_stoichs[ri, idx]
             if num == 0:
                 continue
-            add_vertex(key, num, True)
+            add_vertex(key, num, True, penwidths[ri])
         for idx, key in enumerate(rsys.substances):
             num = prod_stoichs[ri, idx]
             if num == 0:
                 continue
-            add_vertex(key, num, False)
+            add_vertex(key, num, False, penwidths[ri])
     lines.append('}\n')
     return lines
 

@@ -7,7 +7,9 @@ evolution of concentrations in reaction systems.
 from __future__ import (absolute_import, division, print_function)
 
 from collections import OrderedDict
+from functools import reduce
 from itertools import chain
+from operator import mul
 import math
 
 try:
@@ -15,7 +17,7 @@ try:
 except ImportError:
     np = None
 
-from ..units import to_unitless, get_derived_unit, default_unit_in_registry
+from ..units import to_unitless, get_derived_unit, rescale
 from ..util._expr import Expr
 from .rates import RateExpr, MassAction
 
@@ -91,7 +93,7 @@ def dCdt_list(rsys, rates):
 
 
 def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, unit_registry=None,
-               output_conc_unit=None, output_time_unit=None, **kwargs):
+               output_conc_unit=None, output_time_unit=None, cstr=False, **kwargs):
     """ Creates a :class:`pyneqsys.SymbolicSys` from a :class:`ReactionSystem`
 
     The parameters passed to RateExpr will contain the key ``'time'`` corresponding to the
@@ -116,6 +118,8 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         See :func:`chempy.units.get_derived_units`.
     output_conc_unit : unit (Optional)
     output_time_unit : unit (Optional)
+    cstr : bool
+        Generate expressions for continuously stirred tank reactor.
     \*\*kwargs :
         Keyword arguemnts passed on to `SymbolicSys`.
 
@@ -127,6 +131,9 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         - unique : OrderedDict mapping str to value (possibly None)
         - p_units : list of units
         - max_euler_step_cb : callable or None
+        - linear_dependencies : None or factory of solver callback
+        - rate_exprs_cb : callable
+        - cstr_fr_fc : None or (feed-ratio-key, subtance-key-to-feed-conc-key-map)
 
     Examples
     --------
@@ -154,14 +161,35 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     substitutions = substitutions or {}
 
     unique = OrderedDict()
+    unique_units = {}  # OrderedDict()
 
-    def _reg_unique(expr):
+    cstr_fr_fc = (
+        'feedratio',
+        OrderedDict([(sk, 'fc_'+sk) for sk in rsys.substances])
+    ) if cstr is True else cstr
+
+    if cstr_fr_fc:
+        _ori_pk.add(cstr_fr_fc[0])
+        for k in cstr_fr_fc[1].values():
+            _ori_pk.add(k)
+
+    def _reg_unique_unit(k, arg_dim, idx):
+        if unit_registry is None:
+            return
+        unique_units[k] = reduce(mul, [unit_registry[dim]**v for dim, v in arg_dim[idx].items()])
+
+    def _reg_unique(expr, rxn=None):
         if not isinstance(expr, Expr):
             raise NotImplementedError("Currently only Expr sub classes are supported.")
+        if unit_registry is None:
+            arg_dim = None
+        else:
+            arg_dim = expr.args_dimensionality(reaction=rxn)
         if expr.args is None:
-            for k in expr.unique_keys:
+            for idx, k in enumerate(expr.unique_keys):
                 if k not in substitutions:
                     unique[k] = None
+                    _reg_unique_unit(k, arg_dim, idx)
         else:
             for idx, arg in enumerate(expr.args):
                 if isinstance(arg, Expr):
@@ -170,6 +198,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                     uk = expr.unique_keys[idx]
                     if uk not in substitutions:
                         unique[uk] = arg
+                        _reg_unique_unit(uk, arg_dim, idx)
 
     for sk, sv in substitutions.items():
         if sk not in _ori_pk and sk not in _ori_uk:
@@ -184,10 +213,10 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     all_pk = list(filter(lambda x: x not in substitutions and x != 'time', _ori_pk.union(_subst_pk)))
 
     if not include_params:
-        for ratex in r_exprs:
-            _reg_unique(ratex)
+        for rxn, ratex in zip(rsys.rxns, r_exprs):
+            _reg_unique(ratex, rxn)
 
-    all_pk_with_unique = list(set(chain(all_pk, unique.keys())))
+    all_pk_with_unique = list(chain(all_pk, filter(lambda k: k not in all_pk, unique.keys())))
     if include_params:
         param_names_for_odesys = all_pk
     else:
@@ -199,34 +228,34 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         # We need to make rsys_params unitless and create
         # a pre- & post-processor for SymbolicSys
         pk_units = [get_derived_unit(unit_registry, k) for k in all_pk]
-        unique_units = [default_unit_in_registry(unit_registry, uv) for uv in unique.values()]
-        p_units = pk_units if include_params else (pk_units + unique_units)
+        p_units = pk_units if include_params else (pk_units + [unique_units[k] for k in unique])
         new_r_exprs = []
         for ratex in r_exprs:
-            _pu, _new_rate = ratex.dedimensionalisation(unit_registry)
-            new_r_exprs.append(_new_rate)
+            if ratex.args is None:
+                _new_ratex = ratex
+            else:
+                _pu, _new_ratex = ratex.dedimensionalisation(unit_registry)
+            new_r_exprs.append(_new_ratex)
         r_exprs = new_r_exprs
 
         time_unit = get_derived_unit(unit_registry, 'time')
         conc_unit = get_derived_unit(unit_registry, 'concentration')
 
-        def pre_processor(x, y, p):
-            return (
-                to_unitless(x, time_unit),
-                to_unitless(y, conc_unit),
-                [to_unitless(px, p_unit) for px, p_unit in zip(p, p_units)]
-            )
-
         def post_processor(x, y, p):
             time = x*time_unit
             if output_time_unit is not None:
-                time = time.rescale(output_time_unit)
+                time = rescale(time, output_time_unit)
             conc = y*conc_unit
             if output_conc_unit is not None:
-                conc = conc.rescale(output_conc_unit)
-            return time, conc, [elem*p_unit for elem, p_unit in zip(p, p_units)]
+                conc = rescale(conc, output_conc_unit)
+            return time, conc, np.array([elem*p_unit for elem, p_unit in zip(p.T, p_units)], dtype=object).T
 
-        kwargs['pre_processors'] = [pre_processor] + kwargs.get('pre_processors', [])
+        kwargs['to_arrays_callbacks'] = (
+            lambda x: to_unitless(x, time_unit),
+            lambda y: to_unitless(y, conc_unit),
+            lambda p: np.array([to_unitless(px, p_unit) for px, p_unit in zip(
+                p.T if hasattr(p, 'T') else p, p_units)]).T
+        )
         kwargs['post_processors'] = kwargs.get('post_processors', []) + [post_processor]
 
     def dydt(t, y, p, backend=math):
@@ -239,7 +268,20 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                 _, act = act.dedimensionalisation(unit_registry)
             variables[k] = act(variables, backend=backend)
         variables.update(_passive_subst)
-        return rsys.rates(variables, backend=backend, ratexs=r_exprs)
+        return rsys.rates(variables, backend=backend, ratexs=r_exprs, cstr_fr_fc=cstr_fr_fc)
+
+    def reaction_rates(t, y, p, backend=math):
+        variables = dict(chain(y.items(), p.items()))
+        if 'time' in variables:
+            raise ValueError("Key 'time' is reserved.")
+        variables['time'] = t
+        for k, act in _active_subst.items():
+            if unit_registry is not None:
+                _, act = act.dedimensionalisation(unit_registry)
+            variables[k] = act(variables, backend=backend)
+        variables.update(_passive_subst)
+        return [ratex(variables, backend=backend, reaction=rxn) for
+                rxn, ratex in zip(rsys.rxns, r_exprs)]
 
     names = [s.name for s in rsys.substances.values()]
     latex_names = [None if s.latex_name is None else ('$\\mathrm{' + s.latex_name + '}$')
@@ -254,11 +296,16 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         linear_invariant_names=None if len(compo_names) == 0 else compo_names,
         **kwargs)
 
+    symbolic_ratexs = reaction_rates(
+        odesys.indep, dict(zip(odesys.names, odesys.dep)),
+        dict(zip(odesys.param_names, odesys.params)), backend=odesys.be)
+    rate_exprs_cb = odesys._callback_factory(symbolic_ratexs)
+
     if rsys.check_balance(strict=True):
         # Composition available, we can provide callback for calculating
         # maximum allowed Euler forward step at start of integration.
         def max_euler_step_cb(x, y, p=()):
-            _x, _y, _p = odesys.pre_process(x, y, p)
+            _x, _y, _p = odesys.pre_process(*odesys.to_arrays(x, y, p))
             upper_bounds = rsys.upper_conc_bounds(_y)
             fvec = odesys.f_cb(_x[0], _y, _p)
             h = []
@@ -282,7 +329,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                     if k not in rsys.substances:
                         raise ValueError("Unknown substance key: %s" % k)
 
-            def analytic_factory(x0, y0, p0, be):
+            def analytic_solver(x0, y0, p0, be):
                 if preferred is None:
                     _preferred = None
                 else:
@@ -309,7 +356,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                     raise ValueError("Failed to obtain analytic expression for: %s" % ', '.join(_preferred))
                 return analytic_exprs
 
-            return analytic_factory
+            return analytic_solver
 
     else:
         max_euler_step_cb = None
@@ -320,7 +367,9 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         'unique': unique,
         'p_units': p_units,
         'max_euler_step_cb': max_euler_step_cb,
-        'linear_dependencies': linear_dependencies
+        'linear_dependencies': linear_dependencies,
+        'rate_exprs_cb': rate_exprs_cb,
+        'cstr_fr_fc': cstr_fr_fc
     }
 
 

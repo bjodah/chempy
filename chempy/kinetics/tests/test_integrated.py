@@ -3,6 +3,8 @@ from __future__ import division
 from chempy.util.testing import requires
 from ..integrated import pseudo_irrev, pseudo_rev, binary_irrev, binary_rev
 
+import pytest
+
 try:
     import sympy
 except ImportError:
@@ -40,6 +42,7 @@ def test_pseudo_rev():
     ).subs(subsd)).simplify() == 0
 
 
+@pytest.mark.slow
 @requires('sympy')
 def test_binary_irrev():
     f = binary_irrev(t, kf, P0, -t0, excess_C, limiting_C, eps_l,
@@ -51,6 +54,7 @@ def test_binary_irrev():
     ).subs(subsd)).simplify() == 0
 
 
+@pytest.mark.slow
 @requires('sympy')
 def test_binary_rev():
     f = binary_rev(t-t0, kf, kf/beta, 0, excess_C, limiting_C, backend=sympy).subs(excl_params)

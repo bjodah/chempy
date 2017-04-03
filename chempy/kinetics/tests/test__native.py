@@ -11,6 +11,7 @@ except ImportError:
 import pytest
 
 from chempy import ReactionSystem
+from chempy.units import to_unitless, SI_base_registry, default_units as u
 from chempy.util.testing import requires
 from ..integrated import binary_rev
 from ..ode import get_odesys
@@ -40,6 +41,7 @@ def decay_get_Cref(k, y0, tout):
             min(3, len(k)+1))])
 
 
+@pytest.mark.veryslow
 @requires('pycvodes', 'pyodesys')
 @pytest.mark.parametrize('solve', [(), ('CNO',)])
 def test_get_native__first_step(solve):
@@ -79,6 +81,7 @@ def test_get_native__first_step(solve):
     assert np.allclose(yout2[:, :3], ref2, **allclose_kw)
 
 
+@pytest.mark.veryslow
 @requires('pygslodeiv2', 'pyodesys')
 @pytest.mark.parametrize('solve', [(), ('H2O',)])
 def test_get_native__a_substance_no_composition(solve):
@@ -95,3 +98,97 @@ def test_get_native__a_substance_no_composition(solve):
     assert np.allclose(yout[:, odesys.names.index('H2O')], H2O_ref)
     assert np.allclose(yout[:, odesys.names.index('H2O+')], c0['H2O+'] + c0['H2O'] - H2O_ref)
     assert np.allclose(yout[:, odesys.names.index('e-(aq)')], c0['e-(aq)'] + c0['H2O'] - H2O_ref)
+
+
+@pytest.mark.veryslow
+@requires('pycvodes', 'pyodesys')
+@pytest.mark.parametrize('dep_scaling', [1, 763])
+def test_get_native__named_parameter__units(dep_scaling):
+    rsys = ReactionSystem.from_string("""
+    -> H; 'p'
+    H + H -> H2; 'k2'
+    """, checks=('substance_keys', 'duplicate', 'duplicate_names'))
+    from pyodesys.symbolic import ScaledSys
+    kwargs = {} if dep_scaling == 1 else dict(SymbolicSys=ScaledSys, dep_scaling=dep_scaling)
+    odesys, extra = get_odesys(rsys, include_params=False, unit_registry=SI_base_registry, **kwargs)
+    c0 = {'H': 42e-6*u.molar, 'H2': 17*u.micromolar}
+    native = get_native(rsys, odesys, 'cvode')
+    tend = 7*60*u.minute
+    g_rho_Ddot = 314*u.Gy/u.hour * 998*u.g/u.dm3 * 2*u.per100eV
+    params = {
+        'p': g_rho_Ddot,
+        'k2': 53/u.molar/u.minute
+    }
+    result = native.integrate(tend, c0, params, atol=1e-15, rtol=1e-15, integrator='cvode', nsteps=16000)
+    assert result.info['success']
+
+    def analytic_H(t, p, k, H0):
+        # dH/dt = p - k2*H**2
+        x0 = np.sqrt(2)*np.sqrt(p)
+        x1 = x0
+        x2 = np.sqrt(k)
+        x3 = t*x1*x2
+        x4 = H0*x2
+        x5 = np.sqrt(x0 + 2*x4)
+        x6 = np.sqrt(-1/(2*H0*x2 - x0))
+        x7 = x5*x6*np.exp(x3)
+        x8 = np.exp(-x3)/(x5*x6)
+        return x1*(x7 - x8)/(2*x2*(x7 + x8))
+
+    t_ul = to_unitless(result.xout, u.s)
+    p_ul = to_unitless(params['p'], u.micromolar/u.s)
+    ref_H_uM = analytic_H(
+        t_ul,
+        p_ul,
+        to_unitless(params['k2'], 1/u.micromolar/u.s),
+        to_unitless(c0['H'], u.micromolar)
+    )
+    ref_H2_uM = to_unitless(c0['H2'], u.micromolar) + to_unitless(c0['H'], u.micromolar)/2 + t_ul*p_ul/2 - ref_H_uM/2
+    assert np.allclose(to_unitless(result.named_dep('H'), u.micromolar), ref_H_uM)
+    assert np.allclose(to_unitless(result.named_dep('H2'), u.micromolar), ref_H2_uM)
+
+
+@pytest.mark.veryslow
+@requires('pycvodes', 'pyodesys')
+@pytest.mark.parametrize('dep_scaling', [1, 763])
+def test_get_native__Radiolytic__named_parameter__units(dep_scaling):
+    rsys = ReactionSystem.from_string("""
+    -> H; Radiolytic(2*per100eV)
+    H + H -> H2; 'k2'
+    """, checks=('substance_keys', 'duplicate', 'duplicate_names'))
+    gval = 2*u.per100eV
+
+    from pyodesys.symbolic import ScaledSys
+    kwargs = {} if dep_scaling == 1 else dict(SymbolicSys=ScaledSys, dep_scaling=dep_scaling)
+    odesys, extra = get_odesys(rsys, include_params=False, unit_registry=SI_base_registry, **kwargs)
+    c0 = {'H': 42e-6*u.molar, 'H2': 17e3*u.nanomolar}
+    native = get_native(rsys, odesys, 'cvode')
+    tend = 7*60*u.minute
+    params = {'doserate': 314*u.Gy/u.hour, 'k2': 53/u.molar/u.minute, 'density': 998*u.g/u.dm3}
+    result = native.integrate(tend, c0, params, atol=1e-15, rtol=1e-15, integrator='cvode', nsteps=8000)
+    assert result.info['success']
+
+    def analytic_H(t, p, k, H0):
+        # dH/dt = p - k2*H**2
+        x0 = np.sqrt(2)*np.sqrt(p)
+        x1 = x0
+        x2 = np.sqrt(k)
+        x3 = t*x1*x2
+        x4 = H0*x2
+        x5 = np.sqrt(x0 + 2*x4)
+        x6 = np.sqrt(-1/(2*H0*x2 - x0))
+        x7 = x5*x6*np.exp(x3)
+        x8 = np.exp(-x3)/(x5*x6)
+        return x1*(x7 - x8)/(2*x2*(x7 + x8))
+
+    t_ul = to_unitless(result.xout, u.s)
+    p_ul = to_unitless(params['doserate']*params['density']*gval, u.micromolar/u.s)
+    ref_H_uM = analytic_H(
+        t_ul,
+        p_ul,
+        to_unitless(params['k2'], 1/u.micromolar/u.s),
+        to_unitless(c0['H'], u.micromolar)
+    )
+    ref_H2_uM = to_unitless(c0['H2'], u.micromolar) + to_unitless(c0['H'], u.micromolar)/2 + t_ul*p_ul/2 - ref_H_uM/2
+    assert np.allclose(to_unitless(result.named_dep('H'), u.micromolar), ref_H_uM)
+    assert np.allclose(to_unitless(result.named_dep('H2'), u.micromolar), ref_H2_uM)
