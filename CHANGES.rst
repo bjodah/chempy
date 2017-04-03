@@ -1,3 +1,11 @@
+v0.5.1
+======
+- Moved ReactionSystem to .reactionsystem, (import directly from chempy).
+- Steady state analysis
+- now in default_units: molar, milli-, micro- & nano-
+- CSTR kinetics
+- Minor fixes, new notebooks
+
 v0.5.0
 ======
 - ``.electrochemistry.nernst_formula`` - thanks to Adel Qalieh (@adelq)

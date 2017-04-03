@@ -704,7 +704,7 @@ class Reaction(object):
                 unit_fmt=lambda dim: (
                     dim.unicode if sys.version_info[0] > 2
                     else dim.unicode.decode(encoding='utf-8')
-                ), str_=str if sys.version_info[0] > 2 else unicode)
+                ), str_=str if sys.version_info[0] > 2 else unicode)  # noqa
         return res
 
     def html(self, substances, with_param=False, **kwargs):
