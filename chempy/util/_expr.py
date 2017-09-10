@@ -159,13 +159,14 @@ class Expr(object):
         True
 
         """
-        def body(self, variables, backend=math, **kwargs):
+        def body(self, variables, backend=math, **kw):
             args = self.all_args(variables, backend=backend)
             params = self.all_params(variables, backend=backend)
-            return callback(args, *params, backend=backend, **kwargs)
+            return callback(args, *params, backend=backend, **kw)
 
         class Wrapper(cls):
             pass
+
         setattr(Wrapper, attr, body)
         Wrapper.__name__ = callback.__name__
         for k, v in kwargs.items():

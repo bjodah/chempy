@@ -176,7 +176,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     def _reg_unique_unit(k, arg_dim, idx):
         if unit_registry is None:
             return
-        unique_units[k] = reduce(mul, [unit_registry[dim]**v for dim, v in arg_dim[idx].items()])
+        unique_units[k] = reduce(mul, [1]+[unit_registry[dim]**v for dim, v in arg_dim[idx].items()])
 
     def _reg_unique(expr, rxn=None):
         if not isinstance(expr, Expr):
@@ -193,7 +193,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         else:
             for idx, arg in enumerate(expr.args):
                 if isinstance(arg, Expr):
-                    _reg_unique(arg)
+                    _reg_unique(arg, rxn=rxn)
                 elif expr.unique_keys is not None and idx < len(expr.unique_keys):
                     uk = expr.unique_keys[idx]
                     if uk not in substitutions:
@@ -264,7 +264,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
             raise ValueError("Key 'time' is reserved.")
         variables['time'] = t
         for k, act in _active_subst.items():
-            if unit_registry is not None:
+            if unit_registry is not None and act.args:
                 _, act = act.dedimensionalisation(unit_registry)
             variables[k] = act(variables, backend=backend)
         variables.update(_passive_subst)
@@ -276,7 +276,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
             raise ValueError("Key 'time' is reserved.")
         variables['time'] = t
         for k, act in _active_subst.items():
-            if unit_registry is not None:
+            if unit_registry is not None and act.args:
                 _, act = act.dedimensionalisation(unit_registry)
             variables[k] = act(variables, backend=backend)
         variables.update(_passive_subst)

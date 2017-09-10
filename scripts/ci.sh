@@ -5,8 +5,8 @@ if [[ "$CI_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then
     echo ${CI_BRANCH} | tail -c +2 > __conda_version__.txt
 fi
 
-python2 -m pip install git+https://github.com/bjodah/sympy@master
-python3 -m pip install git+https://github.com/bjodah/sympy@master
+python2 -m pip install git+https://github.com/bjodah/pyodesys@master  # DO-NOT-MERGE!
+python3 -m pip install git+https://github.com/bjodah/pyodesys@master  # DO-NOT-MERGE!
 
 git archive -o /tmp/$PKG_NAME.zip HEAD  # test pip installable zip (symlinks break)
 python3 -m pip install /tmp/$PKG_NAME.zip

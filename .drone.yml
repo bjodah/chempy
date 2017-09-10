@@ -5,12 +5,14 @@ build:
     - LIBRARY_PATH=/opt/boost_1_65_0/lib
     - LD_LIBRARY_PATH=/opt/boost_1_65_0/lib
   commands:
-    - bash -c '[[ $(python setup.py --version) =~ ^[0-9]+.* ]]'
+    - python2 -m pip install --ignore-installed --no-deps quantities==0.12.1  # https://github.com/python-quantities/python-quantities/issues/122
+    - python3 -m pip install --ignore-installed --no-deps quantities==0.12.1
     - PYCVODES_LAPACK=lapack,blas ./scripts/ci.sh chempy
     - (cd examples/; python -m pip install --force bokeh==0.11.1; for f in bokeh_*.py; do python -m bokeh html $f; done)
     - ./scripts/prepare_deploy.sh
     - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
     - PATH=/opt/miniconda3/bin:$PATH conda build conda-recipe
+    - bash -c '[[ $(python setup.py --version) =~ ^[0-9]+.* ]]'
     - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
 
 deploy:

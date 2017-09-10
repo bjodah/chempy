@@ -202,15 +202,36 @@ class Arrhenius(Expr):
     argument_names = ('A', 'Ea_over_R')
     parameter_keys = ('temperature',)
 
+    def args_dimensionality(self, reaction):
+        order = reaction.order()
+        return (
+            {'time': -1,
+             'amount': 1-order, 'length': 3*(order - 1)},
+            {'temperature': 1}
+        )
+
     def __call__(self, variables, backend=math, **kwargs):
         A, Ea_over_R = self.all_args(variables, backend=backend, **kwargs)
         return A*backend.exp(-Ea_over_R/variables['temperature'])
 
 
 class Eyring(Expr):
-    """ Rate expression for Eyring eq: c0*T*exp(-c1/T) """
+    """ Rate expression for Eyring eq: c0*T*exp(-c1/T)
+
+    Note that choice of standard state (c^0) will matter for order > 1.
+    """
 
     argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R')
+    parameter_keys = ('temperature',)
+
+    def args_dimensionality(self, reaction):
+        order = reaction.order()
+        return (
+            {'time': -1, 'temperature': -1,
+             'amount': 1-order, 'length': 3*(order - 1)},
+            {'temperature': 1}
+        )
+
 
     def __call__(self, variables, backend=math, **kwargs):
         c0, c1 = self.all_args(variables, backend=backend, **kwargs)
@@ -223,6 +244,21 @@ class RampedTemp(Expr):
     argument_names = ('T0', 'dTdt')
     parameter_keys = ('time',)  # consider e.g. a parameter such as 'init_time'
 
+    def args_dimensionality(self, **kwargs):
+        return ({'temperature': 1}, {'temperature': 1, 'time': -1})
+
     def __call__(self, variables, backend=None, **kwargs):
         T0, dTdt = self.all_args(variables, backend=backend, **kwargs)
         return T0 + dTdt*variables['time']
+
+
+class SinTemp(Expr):
+    argument_names = ('Tbase', 'Tamp', 'angvel', 'phase')
+    parameter_keys = ('time',)
+
+    def args_dimensionality(self, **kwargs):
+        return ({'temperature': 1}, {'temperature': 1}, {'time': -1}, {})
+
+    def __call__(self, variables, backend=math, **kwargs):
+        Tbase, Tamp, angvel, phase = self.all_args(variables, backend=backend, **kwargs)
+        return Tbase + Tamp*backend.sin(angvel*variables['time'] + phase)
