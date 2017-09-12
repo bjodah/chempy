@@ -129,6 +129,11 @@ class Expr(object):
         self.args = args
 
     @classmethod
+    def fk(cls, *args):
+        """ Alternative constructor "from keys", \\*args is used as ``unique_keys``. """
+        return cls(unique_keys=args)
+
+    @classmethod
     def from_callback(cls, callback, attr='__call__', **kwargs):
         """ Factory of subclasses
 
@@ -498,6 +503,10 @@ class BinaryFunction(Function):
 
 class Log10(UnaryFunction):
     _func_name = 'log10'
+
+
+class Exp(UnaryFunction):
+    _func_name = 'exp'
 
 
 def create_Piecewise(parameter_name, nan_fallback=False):

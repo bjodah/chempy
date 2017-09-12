@@ -13,7 +13,7 @@ from functools import reduce
 import math
 from operator import add
 
-from ..units import get_derived_unit
+from ..units import get_derived_unit, default_units
 from ..util._dimensionality import dimension_codes, base_registry
 from ..util.pyutil import memoize, deprecated
 from ..util._expr import Expr
@@ -171,7 +171,7 @@ class MassAction(RateExpr):
             return super(MassAction, self).string(*args, **kwargs)
 
     @classmethod
-    @deprecated(use_instead=Expr.from_callback)
+    @deprecated(use_instead='MassAction.from_callback')
     def subclass_from_callback(cls, cb, cls_attrs=None):
         """ Override MassAction.__call__ """
         _RateExpr = super(MassAction, cls).subclass_from_callback(cb, cls_attrs=cls_attrs)
@@ -237,6 +237,26 @@ class Eyring(Expr):
         c0, c1 = self.all_args(variables, backend=backend, **kwargs)
         T = variables['temperature']
         return c0*T*backend.exp(-c1/T)
+
+
+class EyringHS(Expr):
+    argument_names = ('dH', 'dS', 'c0')
+    argument_defaults = (1*default_units.molar,)
+    parameter_keys = ('temperature', 'molar_gas_constant',
+                      'Boltzmann_constant', 'Planck_constant')
+
+    def args_dimensionality(self, reaction):
+        order = reaction.order()
+        return (
+            {'time': -1, 'temperature': -1,
+             'amount': 1-order, 'length': 3*(order - 1)},
+            {'temperature': 1}
+        )
+
+    def __call__(self, variables, backend=math, **kwargs):
+        dH, dS = self.args(variables, backend=backend, **kwargs)
+        T, R, kB, h = [variables[k] for k in self.parameter_keys]
+        return kB/h*T*backend.exp((dH-dS)/(R*T))
 
 
 class RampedTemp(Expr):

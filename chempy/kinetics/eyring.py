@@ -160,7 +160,8 @@ class EyringParam(defaultnamedtuple('EyringParam', 'dH dS ref', [None])):
                 r" \exp \left(-\frac{{{}}}{{RT}} \right)").format(
                     str_A, str_Ea + ' ' + str_Ea_unit), str_A_unit
         else:
-            return "kB*T/h*exp({}/R)*exp(-{}/(R*T))".format(str_A, str_Ea + ' ' + str_Ea_unit), str_A_unit
+            return "kB*T/h*exp({}/R)*exp(-{}/(R*T))".format(
+                str_A, str_Ea + ' ' + str_Ea_unit), str_A_unit
 
     def __str__(self):
         return self.equation_as_string('%.5g')
@@ -175,7 +176,9 @@ class EyringParamWithUnits(EyringParam):
         return super(EyringParamWithUnits, self).__call__(
             state, constants, units, backend)
 
-    def as_RateExpr(self, unique_keys=None, constants=default_constants, units=default_units, backend=None):
+    def as_RateExpr(self, unique_keys=None, constants=default_constants,
+                    units=default_units, backend=None):
         if backend is None:
             backend = Backend()
-        return super(EyringParamWithUnits, self).as_RateExpr(unique_keys, constants, units, backend)
+        return super(EyringParamWithUnits, self).as_RateExpr(
+            unique_keys, constants, units, backend)

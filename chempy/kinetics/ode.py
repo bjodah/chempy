@@ -93,7 +93,7 @@ def dCdt_list(rsys, rates):
 
 
 def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, unit_registry=None,
-               output_conc_unit=None, output_time_unit=None, cstr=False, **kwargs):
+               output_conc_unit=None, output_time_unit=None, cstr=False, constants=None, **kwargs):
     """ Creates a :class:`pyneqsys.SymbolicSys` from a :class:`ReactionSystem`
 
     The parameters passed to RateExpr will contain the key ``'time'`` corresponding to the
@@ -120,6 +120,9 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     output_time_unit : unit (Optional)
     cstr : bool
         Generate expressions for continuously stirred tank reactor.
+    constants : module
+        e.g. ``chempy.units.default_constants``, parameter keys not found in
+        substitutions will be looked for as an attribute of ``constants`` when provided.
     \*\*kwargs :
         Keyword arguemnts passed on to `SymbolicSys`.
 
@@ -161,7 +164,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     substitutions = substitutions or {}
 
     unique = OrderedDict()
-    unique_units = {}  # OrderedDict()
+    unique_units = {}
 
     cstr_fr_fc = (
         'feedratio',
@@ -181,10 +184,12 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     def _reg_unique(expr, rxn=None):
         if not isinstance(expr, Expr):
             raise NotImplementedError("Currently only Expr sub classes are supported.")
+
         if unit_registry is None:
             arg_dim = None
         else:
             arg_dim = expr.args_dimensionality(reaction=rxn)
+
         if expr.args is None:
             for idx, k in enumerate(expr.unique_keys):
                 if k not in substitutions:
@@ -210,7 +215,15 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                 _reg_unique(sv)
         else:
             _passive_subst[sk] = sv
-    all_pk = list(filter(lambda x: x not in substitutions and x != 'time', _ori_pk.union(_subst_pk)))
+
+    all_pk = []
+    for pk in filter(lambda x: x not in substitutions and x != 'time',
+                     _ori_pk.union(_subst_pk)):
+        if hasattr(constants, pk):
+            _passive_subst[pk] = getattr(constants, pk)
+        else:
+            all_pk.append(pk)
+
 
     if not include_params:
         for rxn, ratex in zip(rsys.rxns, r_exprs):

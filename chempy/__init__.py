@@ -11,4 +11,4 @@ from .chemistry import Substance, Reaction, Equilibrium, Species, balance_stoich
 from .reactionsystem import ReactionSystem
 from .henry import Henry
 from .util.periodic import atomic_number
-from .kinetics import EyringParam
+from .kinetics import EyringParam, EyringHS, MassAction
