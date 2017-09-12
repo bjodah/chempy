@@ -184,10 +184,10 @@ class ArithmeticDict(defaultdict):
                 return False
         return True
 
-    def __hash__(self):
-        default = self.default_factory()
-        l = [self.default_factory]
-        for k, v in self.items():
-            if v != default:
-                l.append((k, v))
-        return hash(tuple(l))
+    # def __hash__(self):
+    #     default = self.default_factory()
+    #     l = [self.default_factory]
+    #     for k, v in self.items():
+    #         if v != default:
+    #             l.append((k, v))
+    #     return hash(tuple(l))

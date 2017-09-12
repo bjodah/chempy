@@ -16,7 +16,7 @@ from chempy import Equilibrium, Reaction, ReactionSystem, Substance
 from chempy.thermodynamics.expressions import MassActionEq
 from chempy.units import (
     SI_base_registry, get_derived_unit, allclose, units_library,
-    to_unitless, default_units as u
+    to_unitless, default_constants as const, default_units as u
 )
 from chempy.util._expr import Expr
 from chempy.util.testing import requires
@@ -670,3 +670,181 @@ def test_get_odesys_rsys_with_units__named_params():
 
     with pytest.raises(Exception):
         odesys.integrate(tend, c0, p, integrator='odeint')
+
+
+@requires('pycvodes', 'sym', units_library)
+def test_get_odesys__Eyring():
+    R = 8.314472
+    T_K = 300
+    dH=80e3
+    dS=10
+    rsys1 = ReactionSystem.from_string("""
+    NOBr -> NO + Br; EyringParam(dH={dH}*J/mol, dS={dS}*J/K/mol)
+    """.format(dH=dH, dS=dS))
+    kref = 20836643994.118652*T_K*np.exp(-(dH - T_K*dS)/(R*T_K))
+    NOBr0_M = 0.7
+    init_cond = dict(
+        NOBr=NOBr0_M*u.M,
+        NO=0*u.M,
+        Br=0*u.M
+    )
+    t = 5*u.second
+    params = dict(
+        temperature=T_K*u.K
+    )
+    def check(rsys):
+        odesys, extra = get_odesys(rsys, unit_registry=SI_base_registry, constants=const)
+        res = odesys.integrate(t, init_cond, params, integrator='cvode')
+        NOBr_ref = NOBr0_M*np.exp(-kref*to_unitless(res.xout, u.second))
+        ref = np.array([NOBr_ref] + [NOBr0_M - NOBr_ref]*2).T
+        cmp = to_unitless(res.yout, u.M)
+        assert np.allclose(cmp, ref)
+    check(rsys1)
+    rsys2 = ReactionSystem.from_string("""
+    NOBr -> NO + Br; MassAction(EyringHS([{dH}*J/mol, {dS}*J/K/mol]))
+    """.format(dH=dH, dS=dS))
+    check(rsys2)
+
+@requires('pycvodes', 'sym', units_library)
+def test_get_odesys__Eyring_2nd_order():
+    R = 8.314472
+    T_K = 300
+    dH=80e3
+    dS=10
+    rsys1b = ReactionSystem.from_string("""
+    NO + Br -> NOBr; EyringParam(dH={dH}*J/mol, dS={dS}*J/K/mol)
+    """.format(dH=dH, dS=dS))
+    c0 = 1 # mol/dm3 === 1000 mol/m3
+    kbref = 20836643994.118652*T_K*np.exp(-(dH - T_K*dS)/(R*T_K))/c0
+    NO0_M = 1.5
+    Br0_M = 0.7
+    init_cond = dict(
+        NOBr=0*u.M,
+        NO=NO0_M*u.M,
+        Br=Br0_M*u.M
+    )
+    t = 5*u.second
+    params = dict(
+        temperature=T_K*u.K
+    )
+    def analytic_b(t):
+        U, V = NO0_M, Br0_M
+        d = U - V
+        return (U*(1 - np.exp(-kbref*t*d)))/(U/V - np.exp(-kbref*t*d))
+    def check(rsys):
+        odesys, extra = get_odesys(rsys, unit_registry=SI_base_registry, constants=const)
+        res = odesys.integrate(t, init_cond, params, integrator='cvode')
+        t_sec = to_unitless(res.xout, u.second)
+        NOBr_ref = analytic_b(t_sec)
+        cmp = to_unitless(res.yout, u.M)
+        ref = np.empty_like(cmp)
+        ref[:, odesys.names.index('NOBr')] = NOBr_ref
+        ref[:, odesys.names.index('Br')] = Br0_M - NOBr_ref
+        ref[:, odesys.names.index('NO')] = NO0_M - NOBr_ref
+        assert np.allclose(cmp, ref)
+    check(rsys1b)
+    rsys2b = ReactionSystem.from_string("""
+    NO + Br -> NOBr; MassAction(EyringHS([{dH}*J/mol, {dS}*J/K/mol]))
+    """.format(dH=dH, dS=dS))
+    check(rsys2b)
+
+
+@requires('pycvodes', 'sym', 'scipy', units_library)
+def test_get_odesys__Eyring_1st_order_linearly_ramped_temperautre():
+    from scipy.special import expi
+
+    def analytic_unit0(t, T0, dH, dS):
+        R = 8.314472
+        kB = 1.3806504e-23
+        h = 6.62606896e-34
+        A = kB/h*np.exp(dS/R)
+        B = dH/R
+        return np.exp(A*(
+            (-B**2*np.exp(B/T0)*expi(-B/T0) - T0*(B - T0))*np.exp(-B/T0) +
+            (B**2*np.exp(B/(t + T0))*expi(-B/(t + T0)) - (t + T0)*(-B + t + T0))*np.exp(-B/(t + T0))
+        )/2)
+
+    T_K = 290
+    dH = 80e3
+    dS = 10
+    rsys1 = ReactionSystem.from_string("""
+    NOBr -> NO + Br; EyringParam(dH={dH}*J/mol, dS={dS}*J/K/mol)
+    """.format(dH=dH, dS=dS))
+
+    NOBr0_M = 0.7
+    init_cond = dict(
+        NOBr=NOBr0_M*u.M,
+        NO=0*u.M,
+        Br=0*u.M
+    )
+    t = 20*u.second
+
+    def check(rsys):
+        odes, extra = get_odesys(rsys, unit_registry=SI_base_registry, constants=const, substitutions={
+            'temperature': RampedTemp([T_K*u.K, 1*u.K/u.s])})
+        for odesys in [odes, odes.as_autonomous()]:
+            res = odesys.integrate(t, init_cond, integrator='cvode')
+            t_sec = to_unitless(res.xout, u.second)
+            NOBr_ref = NOBr0_M*analytic_unit0(t_sec, T_K, dH, dS)
+            cmp = to_unitless(res.yout, u.M)
+            ref = np.empty_like(cmp)
+            ref[:, odesys.names.index('NOBr')] = NOBr_ref
+            ref[:, odesys.names.index('Br')] = NOBr0_M - NOBr_ref
+            ref[:, odesys.names.index('NO')] = NOBr0_M - NOBr_ref
+            assert np.allclose(cmp, ref)
+
+    check(rsys1)
+    rsys2 = ReactionSystem.from_string("""
+    NOBr -> NO + Br; MassAction(EyringHS([{dH}*J/mol, {dS}*J/K/mol]))
+    """.format(dH=dH, dS=dS))
+    check(rsys2)
+
+
+@requires('pycvodes', 'sym', 'scipy', units_library)
+def test_get_odesys__Eyring_2nd_order_linearly_ramped_temperautre():
+    from scipy.special import expi
+
+    def analytic_unit0(t, k, m, dH, dS):
+        R = 8.314472
+        kB = 1.3806504e-23
+        h = 6.62606896e-34
+        A = kB/h*np.exp(dS/R)
+        B = dH/R
+        return k*np.exp(B*(k*t + 2*m)/(m*(k*t + m)))/(
+            A*(-B**2*np.exp(B/(k*t + m))*expi(-B/(k*t + m)) - B*k*t - B*m + k**2*t**2 + 2*k*m*t + m**2)*np.exp(B/m) +
+            (A*B**2*np.exp(B/m)*expi(-B/m) - A*m*(-B + m) + k*np.exp(B/m))*np.exp(B/(k*t + m))
+        )
+
+    T_K = 290
+    dTdt_Ks = 3
+    dH = 80e3
+    dS = 10
+    rsys1 = ReactionSystem.from_string("""
+    2 NO2 -> N2O4; EyringParam(dH={dH}*J/mol, dS={dS}*J/K/mol)
+    """.format(dH=dH, dS=dS))
+
+    NO2_M = 1.0
+    init_cond = dict(
+        NO2=NO2_M*u.M,
+        N2O4=0*u.M
+    )
+    t = 20*u.second
+
+    def check(rsys):
+        odes, extra = get_odesys(rsys, unit_registry=SI_base_registry, constants=const, substitutions={
+            'temperature': RampedTemp([T_K*u.K, dTdt_Ks*u.K/u.s])})
+        for odesys in [odes, odes.as_autonomous()]:
+            res = odesys.integrate(t, init_cond, integrator='cvode')
+            t_sec = to_unitless(res.xout, u.second)
+            NO2_ref = analytic_unit0(t_sec, dTdt_Ks, T_K, dH, dS)
+            cmp = to_unitless(res.yout, u.M)
+            ref = np.empty_like(cmp)
+            ref[:, odesys.names.index('NO2')] = NO2_ref
+            ref[:, odesys.names.index('N2O4')] = (NO2_M - NO2_ref)/2
+            assert np.allclose(cmp, ref)
+
+    check(rsys1)
+    rsys2 = ReactionSystem.from_string("""
+    2 NO2 -> N2O4; MassAction(EyringHS([{dH}*J/mol, {dS}*J/K/mol]))
+    """.format(dH=dH, dS=dS))
+    check(rsys2)

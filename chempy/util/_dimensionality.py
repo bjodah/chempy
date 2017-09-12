@@ -5,8 +5,8 @@ from collections import OrderedDict
 from .pyutil import defaultnamedtuple
 
 dimension_codes = OrderedDict(zip(
-    'length mass time current temperature luminous_intensity amount'.split(),
-    'L M T I Θ N J'.split()
+    'length mass time current temperature amount'.split(),  # not considering luminous_intensity
+    'L M T I Θ N'.split()
 ))
 
 

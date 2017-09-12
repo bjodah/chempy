@@ -311,6 +311,8 @@ class Expr(object):
         self.__class__ instance: with dedimensioanlised arguments
 
         """
+        if self.args is None:
+            return None, self
         from ..units import default_unit_in_registry, to_unitless
         units = [None if isinstance(arg, Expr) else default_unit_in_registry(arg, unit_registry) for arg
                  in self.all_args(variables, backend=backend, evaluate=False)]

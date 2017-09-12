@@ -13,7 +13,7 @@ from functools import reduce
 import math
 from operator import add
 
-from ..units import get_derived_unit, default_units
+from ..units import get_derived_unit, default_units, energy, concentration
 from ..util._dimensionality import dimension_codes, base_registry
 from ..util.pyutil import memoize, deprecated
 from ..util._expr import Expr
@@ -157,7 +157,7 @@ class MassAction(RateExpr):
         return rat_c
 
     def __call__(self, variables, backend=math, reaction=None, **kwargs):
-        return self.rate_coeff(variables, backend=backend)*self.active_conc_prod(
+        return self.rate_coeff(variables, backend=backend, reaction=reaction)*self.active_conc_prod(
             variables, backend=backend, reaction=reaction, **kwargs)
 
     @classmethod
@@ -199,7 +199,8 @@ class Arrhenius(Expr):
     True
 
     """
-    argument_names = ('A', 'Ea_over_R')
+    argument_names = ('A', 'Ea_over_R', 'conc0')
+    argument_defaults = (1*default_units.molar,)
     parameter_keys = ('temperature',)
 
     def args_dimensionality(self, reaction):
@@ -207,12 +208,14 @@ class Arrhenius(Expr):
         return (
             {'time': -1,
              'amount': 1-order, 'length': 3*(order - 1)},
-            {'temperature': 1}
+            {'temperature': 1},
+            concentration
         )
 
     def __call__(self, variables, backend=math, **kwargs):
         A, Ea_over_R = self.all_args(variables, backend=backend, **kwargs)
-        return A*backend.exp(-Ea_over_R/variables['temperature'])
+        return A*backend.exp(-Ea_over_R/variables['temperature'])*conc0**(
+            1-kwargs['reaction'].order())
 
 
 class Eyring(Expr):
@@ -221,7 +224,8 @@ class Eyring(Expr):
     Note that choice of standard state (c^0) will matter for order > 1.
     """
 
-    argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R')
+    argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R', 'conc0')
+    argument_defaults = (1*default_units.molar,)
     parameter_keys = ('temperature',)
 
     def args_dimensionality(self, reaction):
@@ -229,14 +233,14 @@ class Eyring(Expr):
         return (
             {'time': -1, 'temperature': -1,
              'amount': 1-order, 'length': 3*(order - 1)},
-            {'temperature': 1}
+            {'temperature': 1},
+            concentration
         )
 
-
     def __call__(self, variables, backend=math, **kwargs):
-        c0, c1 = self.all_args(variables, backend=backend, **kwargs)
+        c0, c1, conc0 = self.all_args(variables, backend=backend, **kwargs)
         T = variables['temperature']
-        return c0*T*backend.exp(-c1/T)
+        return c0*T*backend.exp(-c1/T)*conc0**(1-kwargs['reaction'].order())
 
 
 class EyringHS(Expr):
@@ -245,18 +249,17 @@ class EyringHS(Expr):
     parameter_keys = ('temperature', 'molar_gas_constant',
                       'Boltzmann_constant', 'Planck_constant')
 
-    def args_dimensionality(self, reaction):
-        order = reaction.order()
+    def args_dimensionality(self, **kwargs):
         return (
-            {'time': -1, 'temperature': -1,
-             'amount': 1-order, 'length': 3*(order - 1)},
-            {'temperature': 1}
+            energy + {'amount': -1},
+            energy + {'amount': -1, 'temperature': -1},
+            concentration
         )
 
-    def __call__(self, variables, backend=math, **kwargs):
-        dH, dS = self.args(variables, backend=backend, **kwargs)
+    def __call__(self, variables, backend=math, reaction=None, **kwargs):
+        dH, dS, c0 = self.all_args(variables, backend=backend, **kwargs)
         T, R, kB, h = [variables[k] for k in self.parameter_keys]
-        return kB/h*T*backend.exp((dH-dS)/(R*T))
+        return kB/h*T*backend.exp(-(dH-T*dS)/(R*T))*c0**(1-reaction.order())
 
 
 class RampedTemp(Expr):

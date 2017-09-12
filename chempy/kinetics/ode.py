@@ -17,7 +17,9 @@ try:
 except ImportError:
     np = None
 
-from ..units import to_unitless, get_derived_unit, rescale
+from ..units import (
+    to_unitless, get_derived_unit, rescale, magnitude, unitless_in_registry
+)
 from ..util._expr import Expr
 from .rates import RateExpr, MassAction
 
@@ -220,10 +222,15 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     for pk in filter(lambda x: x not in substitutions and x != 'time',
                      _ori_pk.union(_subst_pk)):
         if hasattr(constants, pk):
-            _passive_subst[pk] = getattr(constants, pk)
+            const = getattr(constants, pk)
+            if unit_registry is None:
+                const = magnitude(const)
+            else:
+                const = unitless_in_registry(const, unit_registry)
+
+            _passive_subst[pk] = const
         else:
             all_pk.append(pk)
-
 
     if not include_params:
         for rxn, ratex in zip(rsys.rxns, r_exprs):
@@ -244,10 +251,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         p_units = pk_units if include_params else (pk_units + [unique_units[k] for k in unique])
         new_r_exprs = []
         for ratex in r_exprs:
-            if ratex.args is None:
-                _new_ratex = ratex
-            else:
-                _pu, _new_ratex = ratex.dedimensionalisation(unit_registry)
+            _pu, _new_ratex = ratex.dedimensionalisation(unit_registry)
             new_r_exprs.append(_new_ratex)
         r_exprs = new_r_exprs
 
