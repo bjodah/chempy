@@ -82,7 +82,7 @@ def test_MassAction():
 
 
 def test_Expr__from_callback():
-    def rate_coeff(args, T, backend=math):
+    def rate_coeff(args, T, reaction, backend=math):
         return args[0]*backend.exp(args[1]/T)
     RateExpr = Expr.from_callback(rate_coeff, parameter_keys=('Tem',), nargs=2)
     k1 = RateExpr([2.1e10, -5132.2])
@@ -94,7 +94,7 @@ def test_Expr__from_callback():
 
 
 def test_MassAction__subclass_from_callback():
-    def rate_coeff(variables, all_args, backend):
+    def rate_coeff(variables, all_args, reaction, backend):
         return all_args[0]*backend.exp(all_args[1]/variables['temperature'])
     CustomMassAction = MassAction.subclass_from_callback(
         rate_coeff, cls_attrs=dict(parameter_keys=('temperature',), nargs=2))
@@ -108,7 +108,7 @@ def test_MassAction__subclass_from_callback():
 
 @requires(units_library)
 def test_MassAction__subclass_from_callback__units():
-    def rate_coeff(variables, all_args, backend):
+    def rate_coeff(variables, all_args, backend, **kwargs):
         return all_args[0]*backend.exp(all_args[1]/variables['temperature'])
     CustomMassAction = MassAction.subclass_from_callback(
         rate_coeff, cls_attrs=dict(parameter_keys=('temperature',), nargs=2))
@@ -142,7 +142,7 @@ def test_ArrheniusMassAction():
         assert abs((ma(var, reaction=r) - ref_var)/ref_var) < 1e-14
 
     with pytest.raises(ValueError):
-        Arrhenius([A, Ea_over_R, A])
+        Arrhenius([A, Ea_over_R, 1, A])
 
     # assert ama.as_mass_action({T_: 273.15}).args[0] == A*math.exp(-Ea_over_R/273.15)
 
@@ -255,14 +255,14 @@ def test_mk_Radiolytic():
 class Eyring4(Expr):
     nargs = 4
 
-    def __call__(self, variables, backend=math):
+    def __call__(self, variables, reaction, backend=math):
         Sact_fact, Hact_exp, Sref_fact, Href_exp = self.all_args(variables, backend=backend)
         T = variables['temperature']
         return T * Sact_fact / Sref_fact * backend.exp((Href_exp-Hact_exp)/T)
 
 
 def test_EyringMassAction():
-    args = kB_h_times_exp_dS_R, dH_over_R = 1.2e11/273.15, 40e3/8
+    args = kB_h_times_exp_dS_R, dH_over_R, c0 = 1.2e11/273.15, 40e3/8, 1
     ama = MassAction(Eyring(args, ('Sfreq', 'Hact')))
     rxn1 = Reaction({'A': 2, 'B': 1}, {'C': 1}, ama, {'B': 1})
     T_ = 'temperature'

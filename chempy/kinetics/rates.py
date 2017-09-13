@@ -199,8 +199,7 @@ class Arrhenius(Expr):
     True
 
     """
-    argument_names = ('A', 'Ea_over_R', 'conc0')
-    argument_defaults = (1*default_units.molar,)
+    argument_names = ('A', 'Ea_over_R')
     parameter_keys = ('temperature',)
 
     def args_dimensionality(self, reaction):
@@ -209,13 +208,11 @@ class Arrhenius(Expr):
             {'time': -1,
              'amount': 1-order, 'length': 3*(order - 1)},
             {'temperature': 1},
-            concentration
         )
 
     def __call__(self, variables, backend=math, **kwargs):
         A, Ea_over_R = self.all_args(variables, backend=backend, **kwargs)
-        return A*backend.exp(-Ea_over_R/variables['temperature'])*conc0**(
-            1-kwargs['reaction'].order())
+        return A*backend.exp(-Ea_over_R/variables['temperature'])
 
 
 class Eyring(Expr):

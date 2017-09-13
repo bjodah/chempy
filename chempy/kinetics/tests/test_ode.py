@@ -322,7 +322,7 @@ def test_get_odesys__time_dep_rate():
     class RampedRate(Expr):
         argument_names = ('rate_constant', 'ramping_rate')
 
-        def __call__(self, variables, backend=math):
+        def __call__(self, variables, reaction, backend=math):
             rate_constant, ramping_rate = self.all_args(variables, backend=backend)
             return rate_constant * ramping_rate * variables['time']
 
@@ -680,7 +680,7 @@ def test_get_odesys__Eyring():
     dS=10
     rsys1 = ReactionSystem.from_string("""
     NOBr -> NO + Br; EyringParam(dH={dH}*J/mol, dS={dS}*J/K/mol)
-    """.format(dH=dH, dS=dS))
+    """.format(dH=dH, dS=dS), substance_keys='NOBr NO Br'.split())
     kref = 20836643994.118652*T_K*np.exp(-(dH - T_K*dS)/(R*T_K))
     NOBr0_M = 0.7
     init_cond = dict(
@@ -702,7 +702,7 @@ def test_get_odesys__Eyring():
     check(rsys1)
     rsys2 = ReactionSystem.from_string("""
     NOBr -> NO + Br; MassAction(EyringHS([{dH}*J/mol, {dS}*J/K/mol]))
-    """.format(dH=dH, dS=dS))
+    """.format(dH=dH, dS=dS), substance_keys='NOBr NO Br'.split())
     check(rsys2)
 
 @requires('pycvodes', 'sym', units_library)
@@ -848,3 +848,58 @@ def test_get_odesys__Eyring_2nd_order_linearly_ramped_temperautre():
     2 NO2 -> N2O4; MassAction(EyringHS([{dH}*J/mol, {dS}*J/K/mol]))
     """.format(dH=dH, dS=dS))
     check(rsys2)
+
+
+@requires('pycvodes', 'sym', units_library)
+def test_get_odesys__Eyring_2nd_order_reversible():
+    R = 8.314472
+    T_K = 273.15 + 20  # 20 degree celsius
+    kB = 1.3806504e-23
+    h = 6.62606896e-34
+
+    dHf = 74e3
+    dSf = R*np.log(h/kB/T_K*1e16)
+
+    dHb = 79e3
+    dSb = dSf - 23
+
+    rsys1 = ReactionSystem.from_string("""
+    Fe+3 + SCN- -> FeSCN+2; EyringParam(dH={dHf}*J/mol, dS={dSf}*J/K/mol)
+    FeSCN+2 -> Fe+3 + SCN-; EyringParam(dH={dHb}*J/mol, dS={dSb}*J/K/mol)
+    """.format(dHf=dHf, dSf=dSf, dHb=dHb, dSb=dSb))
+    kf_ref = 20836643994.118652*T_K*np.exp(-(dHf - T_K*dSf)/(R*T_K))
+    kb_ref = 20836643994.118652*T_K*np.exp(-(dHb - T_K*dSb)/(R*T_K))
+    Fe0 = 6e-3
+    SCN0 = 2e-3
+    init_cond = {
+        'Fe+3': Fe0*u.M,
+        'SCN-': SCN0*u.M,
+        'FeSCN+2': 0*u.M
+    }
+    t = 3*u.second
+    def check(rsys, params):
+        odes, extra = get_odesys(rsys, include_params=False,
+                                 unit_registry=SI_base_registry, constants=const)
+        for odesys in [odes, odes.as_autonomous()]:
+            res = odesys.integrate(t, init_cond, params, integrator='cvode')
+            t_sec = to_unitless(res.xout, u.second)
+            FeSCN_ref = binary_rev(t_sec, kf_ref, kb_ref, 0, Fe0, SCN0)
+            cmp = to_unitless(res.yout, u.M)
+            ref = np.empty_like(cmp)
+            ref[:, odesys.names.index('FeSCN+2')] = FeSCN_ref
+            ref[:, odesys.names.index('Fe+3')] = Fe0 - FeSCN_ref
+            ref[:, odesys.names.index('SCN-')] = SCN0 - FeSCN_ref
+            assert np.allclose(cmp, ref)
+    check(rsys1, {'temperature': T_K*u.K})
+    rsys2 = ReactionSystem.from_string("""
+    Fe+3 + SCN- -> FeSCN+2; MassAction(EyringHS([{dHf}*J/mol, {dSf}*J/K/mol]))
+    FeSCN+2 -> Fe+3 + SCN-; MassAction(EyringHS([{dHb}*J/mol, {dSb}*J/K/mol]))
+    """.format(dHf=dHf, dSf=dSf, dHb=dHb, dSb=dSb))
+    check(rsys2, {'temperature': T_K*u.K})
+    rsys3 = ReactionSystem.from_string("""
+    Fe+3 + SCN- -> FeSCN+2; MassAction(EyringHS.fk('dHf', 'dSf'))
+    FeSCN+2 -> Fe+3 + SCN-; MassAction(EyringHS.fk('dHb', 'dSb'))
+    """)
+    check(rsys3, dict(temperature=T_K*u.K,
+                                   dHf=dHf*u.J/u.mol, dSf=dSf*u.J/u.mol/u.K,
+                                   dHb=dHb*u.J/u.mol, dSb=dSb*u.J/u.mol/u.K))

@@ -157,7 +157,6 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         from pyodesys.symbolic import SymbolicSys
 
     r_exprs = [rxn.rate_expr() for rxn in rsys.rxns]
-
     _ori_pk = set.union(*(ratex.all_parameter_keys() for ratex in r_exprs))
     _ori_uk = set.union(*(ratex.all_unique_keys() for ratex in r_exprs))
     _subst_pk = set()
