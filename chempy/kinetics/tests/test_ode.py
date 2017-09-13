@@ -676,8 +676,8 @@ def test_get_odesys_rsys_with_units__named_params():
 def test_get_odesys__Eyring():
     R = 8.314472
     T_K = 300
-    dH=80e3
-    dS=10
+    dH = 80e3
+    dS = 10
     rsys1 = ReactionSystem.from_string("""
     NOBr -> NO + Br; EyringParam(dH={dH}*J/mol, dS={dS}*J/K/mol)
     """.format(dH=dH, dS=dS), substance_keys='NOBr NO Br'.split())
@@ -692,6 +692,7 @@ def test_get_odesys__Eyring():
     params = dict(
         temperature=T_K*u.K
     )
+
     def check(rsys):
         odesys, extra = get_odesys(rsys, unit_registry=SI_base_registry, constants=const)
         res = odesys.integrate(t, init_cond, params, integrator='cvode')
@@ -705,16 +706,17 @@ def test_get_odesys__Eyring():
     """.format(dH=dH, dS=dS), substance_keys='NOBr NO Br'.split())
     check(rsys2)
 
+
 @requires('pycvodes', 'sym', units_library)
 def test_get_odesys__Eyring_2nd_order():
     R = 8.314472
     T_K = 300
-    dH=80e3
-    dS=10
+    dH = 80e3
+    dS = 10
     rsys1b = ReactionSystem.from_string("""
     NO + Br -> NOBr; EyringParam(dH={dH}*J/mol, dS={dS}*J/K/mol)
     """.format(dH=dH, dS=dS))
-    c0 = 1 # mol/dm3 === 1000 mol/m3
+    c0 = 1  # mol/dm3 === 1000 mol/m3
     kbref = 20836643994.118652*T_K*np.exp(-(dH - T_K*dS)/(R*T_K))/c0
     NO0_M = 1.5
     Br0_M = 0.7
@@ -727,10 +729,12 @@ def test_get_odesys__Eyring_2nd_order():
     params = dict(
         temperature=T_K*u.K
     )
+
     def analytic_b(t):
         U, V = NO0_M, Br0_M
         d = U - V
         return (U*(1 - np.exp(-kbref*t*d)))/(U/V - np.exp(-kbref*t*d))
+
     def check(rsys):
         odesys, extra = get_odesys(rsys, unit_registry=SI_base_registry, constants=const)
         res = odesys.integrate(t, init_cond, params, integrator='cvode')
@@ -742,6 +746,7 @@ def test_get_odesys__Eyring_2nd_order():
         ref[:, odesys.names.index('Br')] = Br0_M - NOBr_ref
         ref[:, odesys.names.index('NO')] = NO0_M - NOBr_ref
         assert np.allclose(cmp, ref)
+
     check(rsys1b)
     rsys2b = ReactionSystem.from_string("""
     NO + Br -> NOBr; MassAction(EyringHS([{dH}*J/mol, {dS}*J/K/mol]))
@@ -877,6 +882,7 @@ def test_get_odesys__Eyring_2nd_order_reversible():
         'FeSCN+2': 0*u.M
     }
     t = 3*u.second
+
     def check(rsys, params):
         odes, extra = get_odesys(rsys, include_params=False,
                                  unit_registry=SI_base_registry, constants=const)
@@ -890,6 +896,7 @@ def test_get_odesys__Eyring_2nd_order_reversible():
             ref[:, odesys.names.index('Fe+3')] = Fe0 - FeSCN_ref
             ref[:, odesys.names.index('SCN-')] = SCN0 - FeSCN_ref
             assert np.allclose(cmp, ref)
+
     check(rsys1, {'temperature': T_K*u.K})
     rsys2 = ReactionSystem.from_string("""
     Fe+3 + SCN- -> FeSCN+2; MassAction(EyringHS([{dHf}*J/mol, {dSf}*J/K/mol]))
@@ -901,5 +908,5 @@ def test_get_odesys__Eyring_2nd_order_reversible():
     FeSCN+2 -> Fe+3 + SCN-; MassAction(EyringHS.fk('dHb', 'dSb'))
     """)
     check(rsys3, dict(temperature=T_K*u.K,
-                                   dHf=dHf*u.J/u.mol, dSf=dSf*u.J/u.mol/u.K,
-                                   dHb=dHb*u.J/u.mol, dSb=dSb*u.J/u.mol/u.K))
+                      dHf=dHf*u.J/u.mol, dSf=dSf*u.J/u.mol/u.K,
+                      dHb=dHb*u.J/u.mol, dSb=dSb*u.J/u.mol/u.K))

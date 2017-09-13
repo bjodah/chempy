@@ -113,6 +113,7 @@ energy = ArithmeticDict(int, {'mass': 1, 'length': 2, 'time': -2})
 volume = ArithmeticDict(int, {'length': 3})
 concentration = {'amount': 1} - volume
 
+
 def get_derived_unit(registry, key):
     """ Get the unit of a physcial quantity in a provided unit system.
 
