@@ -1,3 +1,8 @@
+v0.5.2
+======
+- Fix balance_reacions (non-deterministic ordering could cause endless loop)
+- Fix unit scaling of .kinetics.rates.Eyring
+
 v0.5.1
 ======
 - Moved ReactionSystem to .reactionsystem, (import directly from chempy).
