@@ -28,6 +28,6 @@ sed -i -E \
 # Specific for this project:
 scp -r dist/conda-recipe-$VERSION/ $PKG@$SERVER:~/public_html/conda-recipes/
 scp "$SDIST_FILE" "$PKG@$SERVER:~/public_html/releases/"
-for CONDA_PY in 2.7 3.4 3.5; do
+for CONDA_PY in 2.7 3.5 3.6; do
         ssh $PKG@$SERVER "source /etc/profile; conda-build --python $CONDA_PY ~/public_html/conda-recipes/conda-recipe-$VERSION/"
 done
