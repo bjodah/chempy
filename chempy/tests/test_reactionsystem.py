@@ -211,6 +211,7 @@ def test_ReactionSystem__upper_conc_bounds__a_substance_no_composition():
     assert res == ref
 
 
+@requires(parsing_library)
 def test_ReactionSystem__identify_equilibria():
     rsys = ReactionSystem.from_string("""
     2 H2 +  O2 -> 2 H2O     ; 1e-3

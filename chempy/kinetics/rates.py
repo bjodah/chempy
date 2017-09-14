@@ -19,6 +19,9 @@ from ..util.pyutil import memoize, deprecated
 from ..util._expr import Expr
 
 
+_molar = getattr(default_units, 'molar', 1)  # makes module importable.
+
+
 class RateExpr(Expr):
     """ Baseclass for rate expressions, see source code of e.g. MassAction & Radiolytic. """
 
@@ -222,7 +225,7 @@ class Eyring(Expr):
     """
 
     argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R', 'conc0')
-    argument_defaults = (1*default_units.molar,)
+    argument_defaults = (1*_molar,)
     parameter_keys = ('temperature',)
 
     def args_dimensionality(self, reaction):
@@ -242,7 +245,7 @@ class Eyring(Expr):
 
 class EyringHS(Expr):
     argument_names = ('dH', 'dS', 'c0')
-    argument_defaults = (1*default_units.molar,)
+    argument_defaults = (1*_molar,)
     parameter_keys = ('temperature', 'molar_gas_constant',
                       'Boltzmann_constant', 'Planck_constant')
 
