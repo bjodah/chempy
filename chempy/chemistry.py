@@ -1142,7 +1142,6 @@ def balance_stoichiometry(reactants, products, substances=None,
     subst_keys = list(substances.keys())
 
     cks = Substance.composition_keys(substances.values())
-    nsubs = len(substances)
 
     # ?C2H2 + ?O2 -> ?CO + ?H2O
     # Ax = 0
