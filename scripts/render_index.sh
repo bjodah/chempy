@@ -7,6 +7,8 @@
 mkdir -p thumbs
 tmpdir=$(mktemp -d)
 trap "rm -r $tmpdir" INT TERM EXIT
+SCRIPTS_PATH=$(unset CDPATH && cd "$(dirname "$0")" && echo $PWD)
+bzcat $SCRIPTS_PATH/rasterize.js.bz2 >$SCRIPTS_PATH/rasterize.js
 cat <<EOF>index.html
 <!DOCTYPE html>
 <html>
@@ -23,7 +25,7 @@ for f in $@; do
         continue  # don't include bokeh apps
     fi
     img=$(basename $f .html).png
-    QT_QPA_PLATFORM=offscreen phantomjs $(unset CDPATH && cd "$(dirname "$0")" && echo $PWD)/rasterize.js $f $tmpdir/$img 1200px*900px
+    phantomjs $SCRIPTS_PATH/rasterize.js $f $tmpdir/$img 1200px*900px
     convert $tmpdir/$img -resize 400x300 thumbs/$img
     cat <<EOF>>index.html
 <p style='text-align: center'>
