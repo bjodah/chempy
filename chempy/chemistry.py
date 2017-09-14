@@ -1128,7 +1128,7 @@ def balance_stoichiometry(reactants, products, substances=None,
     balanced products : dict
 
     """
-    from sympy import Matrix
+    from sympy import Matrix, gcd
 
     _intersect = set.intersection(*map(set, (reactants, products)))
     if _intersect:
@@ -1142,7 +1142,6 @@ def balance_stoichiometry(reactants, products, substances=None,
     subst_keys = list(substances.keys())
 
     cks = Substance.composition_keys(substances.values())
-    nsubs = len(substances)
 
     # ?C2H2 + ?O2 -> ?CO + ?H2O
     # Ax = 0
@@ -1157,61 +1156,10 @@ def balance_stoichiometry(reactants, products, substances=None,
         return substances[sk].composition.get(ck, 0) * (-1 if sk in reactants else 1)
 
     A = Matrix([[_get(sk, ck) for sk in subst_keys] for ck in cks])
-
-    # A2 x = b
-    #
-    # A2:                 x:   b:
-    #
-    #      O2  CO  H2O       C2H2
-    # C    0    1   0    x0   2
-    # H    0    0   2    x1   2
-    # O   -2    1   1    x2   0
-
-    A_aug, pivot = A.rref()
-    if len(pivot) < nsubs-1:
-        raise ValueError("Unsatisfiable system of equations")
-    x_aug = Matrix(A_aug[:len(pivot), 1:]).LUsolve(Matrix(-A_aug[:len(pivot), 0]))
-
-    # Reorder to original indices
-    x = [1]
-    for si in range(1, nsubs):
-        ai = si - 1  # augmented index
-        if ai in pivot:
-            x.append(x_aug[pivot.index(ai)])
-        else:
-            x.append(None)
-
-    # Now solve for the redundant x:s
-    for si in range(1, nsubs):
-        elem = x[si]
-        if elem is None:
-            # solve
-            col = A[:, si]
-            for ri, cell in enumerate(col):
-                if cell == 0:
-                    continue
-                others = 0
-                for ci, comp in enumerate(A[ri, :]):
-                    if ci == si:
-                        continue
-                    if x[ci] is None:
-                        raise NotImplementedError("Need a second LU solve")
-                    others += comp*x[ci]
-                x[si] = -others/cell
-                break
-
-    x = Matrix(x)
-    while True:
-        for idx in range(nsubs):
-            elem = x[idx]
-            if not elem.is_integer:
-                numer, denom = elem.as_numer_denom()
-                x *= denom
-                break
-        else:
-            break
-    if 0 in x:
-        raise ValueError("Unable to balance stoichiometry (did you forget a product?)")
+    nullsp, = A.nullspace()
+    if 0 in nullsp:
+        raise ValueError("Superfluous species given.")
+    x = nullsp/reduce(gcd, nullsp.T)
 
     def _x(k):
         return x[subst_keys.index(k)]

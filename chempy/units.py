@@ -21,6 +21,7 @@ from functools import reduce
 from operator import mul
 
 from ._util import NameSpace
+from .util.arithmeticdict import ArithmeticDict
 
 units_library = 'quantities'  # info used for selective testing.
 
@@ -107,6 +108,10 @@ def magnitude(value):
         return value.magnitude
     except AttributeError:
         return value
+
+energy = ArithmeticDict(int, {'mass': 1, 'length': 2, 'time': -2})
+volume = ArithmeticDict(int, {'length': 3})
+concentration = {'amount': 1} - volume
 
 
 def get_derived_unit(registry, key):

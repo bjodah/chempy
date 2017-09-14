@@ -17,7 +17,9 @@ try:
 except ImportError:
     np = None
 
-from ..units import to_unitless, get_derived_unit, rescale
+from ..units import (
+    to_unitless, get_derived_unit, rescale, magnitude, unitless_in_registry
+)
 from ..util._expr import Expr
 from .rates import RateExpr, MassAction
 
@@ -93,7 +95,7 @@ def dCdt_list(rsys, rates):
 
 
 def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, unit_registry=None,
-               output_conc_unit=None, output_time_unit=None, cstr=False, **kwargs):
+               output_conc_unit=None, output_time_unit=None, cstr=False, constants=None, **kwargs):
     """ Creates a :class:`pyneqsys.SymbolicSys` from a :class:`ReactionSystem`
 
     The parameters passed to RateExpr will contain the key ``'time'`` corresponding to the
@@ -120,6 +122,9 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     output_time_unit : unit (Optional)
     cstr : bool
         Generate expressions for continuously stirred tank reactor.
+    constants : module
+        e.g. ``chempy.units.default_constants``, parameter keys not found in
+        substitutions will be looked for as an attribute of ``constants`` when provided.
     \*\*kwargs :
         Keyword arguemnts passed on to `SymbolicSys`.
 
@@ -152,7 +157,6 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         from pyodesys.symbolic import SymbolicSys
 
     r_exprs = [rxn.rate_expr() for rxn in rsys.rxns]
-
     _ori_pk = set.union(*(ratex.all_parameter_keys() for ratex in r_exprs))
     _ori_uk = set.union(*(ratex.all_unique_keys() for ratex in r_exprs))
     _subst_pk = set()
@@ -161,7 +165,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     substitutions = substitutions or {}
 
     unique = OrderedDict()
-    unique_units = {}  # OrderedDict()
+    unique_units = {}
 
     cstr_fr_fc = (
         'feedratio',
@@ -176,15 +180,17 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     def _reg_unique_unit(k, arg_dim, idx):
         if unit_registry is None:
             return
-        unique_units[k] = reduce(mul, [unit_registry[dim]**v for dim, v in arg_dim[idx].items()])
+        unique_units[k] = reduce(mul, [1]+[unit_registry[dim]**v for dim, v in arg_dim[idx].items()])
 
     def _reg_unique(expr, rxn=None):
         if not isinstance(expr, Expr):
             raise NotImplementedError("Currently only Expr sub classes are supported.")
+
         if unit_registry is None:
             arg_dim = None
         else:
             arg_dim = expr.args_dimensionality(reaction=rxn)
+
         if expr.args is None:
             for idx, k in enumerate(expr.unique_keys):
                 if k not in substitutions:
@@ -193,7 +199,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         else:
             for idx, arg in enumerate(expr.args):
                 if isinstance(arg, Expr):
-                    _reg_unique(arg)
+                    _reg_unique(arg, rxn=rxn)
                 elif expr.unique_keys is not None and idx < len(expr.unique_keys):
                     uk = expr.unique_keys[idx]
                     if uk not in substitutions:
@@ -210,7 +216,20 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                 _reg_unique(sv)
         else:
             _passive_subst[sk] = sv
-    all_pk = list(filter(lambda x: x not in substitutions and x != 'time', _ori_pk.union(_subst_pk)))
+
+    all_pk = []
+    for pk in filter(lambda x: x not in substitutions and x != 'time',
+                     _ori_pk.union(_subst_pk)):
+        if hasattr(constants, pk):
+            const = getattr(constants, pk)
+            if unit_registry is None:
+                const = magnitude(const)
+            else:
+                const = unitless_in_registry(const, unit_registry)
+
+            _passive_subst[pk] = const
+        else:
+            all_pk.append(pk)
 
     if not include_params:
         for rxn, ratex in zip(rsys.rxns, r_exprs):
@@ -231,10 +250,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         p_units = pk_units if include_params else (pk_units + [unique_units[k] for k in unique])
         new_r_exprs = []
         for ratex in r_exprs:
-            if ratex.args is None:
-                _new_ratex = ratex
-            else:
-                _pu, _new_ratex = ratex.dedimensionalisation(unit_registry)
+            _pu, _new_ratex = ratex.dedimensionalisation(unit_registry)
             new_r_exprs.append(_new_ratex)
         r_exprs = new_r_exprs
 
@@ -264,7 +280,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
             raise ValueError("Key 'time' is reserved.")
         variables['time'] = t
         for k, act in _active_subst.items():
-            if unit_registry is not None:
+            if unit_registry is not None and act.args:
                 _, act = act.dedimensionalisation(unit_registry)
             variables[k] = act(variables, backend=backend)
         variables.update(_passive_subst)
@@ -276,7 +292,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
             raise ValueError("Key 'time' is reserved.")
         variables['time'] = t
         for k, act in _active_subst.items():
-            if unit_registry is not None:
+            if unit_registry is not None and act.args:
                 _, act = act.dedimensionalisation(unit_registry)
             variables[k] = act(variables, backend=backend)
         variables.update(_passive_subst)

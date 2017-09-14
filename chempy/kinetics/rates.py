@@ -13,10 +13,13 @@ from functools import reduce
 import math
 from operator import add
 
-from ..units import get_derived_unit
+from ..units import get_derived_unit, default_units, energy, concentration
 from ..util._dimensionality import dimension_codes, base_registry
 from ..util.pyutil import memoize, deprecated
 from ..util._expr import Expr
+
+
+_molar = getattr(default_units, 'molar', 1)  # makes module importable.
 
 
 class RateExpr(Expr):
@@ -157,7 +160,7 @@ class MassAction(RateExpr):
         return rat_c
 
     def __call__(self, variables, backend=math, reaction=None, **kwargs):
-        return self.rate_coeff(variables, backend=backend)*self.active_conc_prod(
+        return self.rate_coeff(variables, backend=backend, reaction=reaction)*self.active_conc_prod(
             variables, backend=backend, reaction=reaction, **kwargs)
 
     @classmethod
@@ -171,7 +174,7 @@ class MassAction(RateExpr):
             return super(MassAction, self).string(*args, **kwargs)
 
     @classmethod
-    @deprecated(use_instead=Expr.from_callback)
+    @deprecated(use_instead='MassAction.from_callback')
     def subclass_from_callback(cls, cb, cls_attrs=None):
         """ Override MassAction.__call__ """
         _RateExpr = super(MassAction, cls).subclass_from_callback(cb, cls_attrs=cls_attrs)
@@ -202,20 +205,61 @@ class Arrhenius(Expr):
     argument_names = ('A', 'Ea_over_R')
     parameter_keys = ('temperature',)
 
+    def args_dimensionality(self, reaction):
+        order = reaction.order()
+        return (
+            {'time': -1,
+             'amount': 1-order, 'length': 3*(order - 1)},
+            {'temperature': 1},
+        )
+
     def __call__(self, variables, backend=math, **kwargs):
         A, Ea_over_R = self.all_args(variables, backend=backend, **kwargs)
         return A*backend.exp(-Ea_over_R/variables['temperature'])
 
 
 class Eyring(Expr):
-    """ Rate expression for Eyring eq: c0*T*exp(-c1/T) """
+    """ Rate expression for Eyring eq: c0*T*exp(-c1/T)
 
-    argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R')
+    Note that choice of standard state (c^0) will matter for order > 1.
+    """
+
+    argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R', 'conc0')
+    argument_defaults = (1*_molar,)
+    parameter_keys = ('temperature',)
+
+    def args_dimensionality(self, reaction):
+        order = reaction.order()
+        return (
+            {'time': -1, 'temperature': -1,
+             'amount': 1-order, 'length': 3*(order - 1)},
+            {'temperature': 1},
+            concentration
+        )
 
     def __call__(self, variables, backend=math, **kwargs):
-        c0, c1 = self.all_args(variables, backend=backend, **kwargs)
+        c0, c1, conc0 = self.all_args(variables, backend=backend, **kwargs)
         T = variables['temperature']
-        return c0*T*backend.exp(-c1/T)
+        return c0*T*backend.exp(-c1/T)*conc0**(1-kwargs['reaction'].order())
+
+
+class EyringHS(Expr):
+    argument_names = ('dH', 'dS', 'c0')
+    argument_defaults = (1*_molar,)
+    parameter_keys = ('temperature', 'molar_gas_constant',
+                      'Boltzmann_constant', 'Planck_constant')
+
+    def args_dimensionality(self, **kwargs):
+        return (
+            energy + {'amount': -1},
+            energy + {'amount': -1, 'temperature': -1},
+            concentration
+        )
+
+    def __call__(self, variables, backend=math, reaction=None, **kwargs):
+        dH, dS, c0 = self.all_args(variables, backend=backend, **kwargs)
+        T, R, kB, h = [variables[k] for k in self.parameter_keys]
+        return kB/h*T*backend.exp(-(dH-T*dS)/(R*T))*c0**(1-reaction.order())
 
 
 class RampedTemp(Expr):
@@ -223,6 +267,21 @@ class RampedTemp(Expr):
     argument_names = ('T0', 'dTdt')
     parameter_keys = ('time',)  # consider e.g. a parameter such as 'init_time'
 
+    def args_dimensionality(self, **kwargs):
+        return ({'temperature': 1}, {'temperature': 1, 'time': -1})
+
     def __call__(self, variables, backend=None, **kwargs):
         T0, dTdt = self.all_args(variables, backend=backend, **kwargs)
         return T0 + dTdt*variables['time']
+
+
+class SinTemp(Expr):
+    argument_names = ('Tbase', 'Tamp', 'angvel', 'phase')
+    parameter_keys = ('time',)
+
+    def args_dimensionality(self, **kwargs):
+        return ({'temperature': 1}, {'temperature': 1}, {'time': -1}, {})
+
+    def __call__(self, variables, backend=math, **kwargs):
+        Tbase, Tamp, angvel, phase = self.all_args(variables, backend=backend, **kwargs)
+        return Tbase + Tamp*backend.sin(angvel*variables['time'] + phase)

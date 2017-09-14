@@ -129,6 +129,11 @@ class Expr(object):
         self.args = args
 
     @classmethod
+    def fk(cls, *args):
+        """ Alternative constructor "from keys", \\*args is used as ``unique_keys``. """
+        return cls(unique_keys=args)
+
+    @classmethod
     def from_callback(cls, callback, attr='__call__', **kwargs):
         """ Factory of subclasses
 
@@ -159,13 +164,14 @@ class Expr(object):
         True
 
         """
-        def body(self, variables, backend=math, **kwargs):
+        def body(self, variables, backend=math, **kw):
             args = self.all_args(variables, backend=backend)
             params = self.all_params(variables, backend=backend)
-            return callback(args, *params, backend=backend, **kwargs)
+            return callback(args, *params, backend=backend, **kw)
 
         class Wrapper(cls):
             pass
+
         setattr(Wrapper, attr, body)
         Wrapper.__name__ = callback.__name__
         for k, v in kwargs.items():
@@ -305,20 +311,29 @@ class Expr(object):
         self.__class__ instance: with dedimensioanlised arguments
 
         """
-        from ..units import default_unit_in_registry, to_unitless
-        units = [None if isinstance(arg, Expr) else default_unit_in_registry(arg, unit_registry) for arg
-                 in self.all_args(variables, backend=backend, evaluate=False)]
-        new_units, unitless_args = [], []
-        for arg, unit in zip(self.all_args(variables, backend=backend, evaluate=False), units):
-            if isinstance(arg, Expr):
-                if unit is not None:
-                    raise ValueError()
-                _unit, _dedim = arg.dedimensionalisation(unit_registry, variables, backend=backend)
-            else:
-                _unit, _dedim = unit, to_unitless(arg, unit)
-            new_units.append(_unit)
-            unitless_args.append(_dedim)
-        return new_units, self.__class__(unitless_args, self.unique_keys)
+        from ..units import default_unit_in_registry, to_unitless, unitless_in_registry
+        new_units = []
+        if self.args is None:
+            unitless_args = None
+        else:
+            unitless_args = []
+            units = [None if isinstance(arg, Expr) else default_unit_in_registry(arg, unit_registry) for arg
+                     in self.all_args(variables, backend=backend, evaluate=False)]
+            for arg, unit in zip(self.all_args(variables, backend=backend, evaluate=False), units):
+                if isinstance(arg, Expr):
+                    if unit is not None:
+                        raise ValueError()
+                    _unit, _dedim = arg.dedimensionalisation(unit_registry, variables, backend=backend)
+                else:
+                    _unit, _dedim = unit, to_unitless(arg, unit)
+                new_units.append(_unit)
+                unitless_args.append(_dedim)
+        instance = self.__class__(unitless_args, self.unique_keys)
+        if self.argument_defaults is not None:
+            instance.argument_defaults = tuple(unitless_in_registry(arg, unit_registry)
+                                               for arg in self.argument_defaults)
+
+        return new_units, instance
 
     def _sympy_format(self, method, variables, backend, default):
         variables = variables or {}
@@ -497,6 +512,10 @@ class BinaryFunction(Function):
 
 class Log10(UnaryFunction):
     _func_name = 'log10'
+
+
+class Exp(UnaryFunction):
+    _func_name = 'exp'
 
 
 def create_Piecewise(parameter_name, nan_fallback=False):
