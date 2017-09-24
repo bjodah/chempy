@@ -29,9 +29,9 @@ def test_Substance():
 
 
 def test_Substance__2():
-    H2O = Substance(name='H2O',  charge=0, latex_name=r'$\mathrm{H_{2}O}$',
+    H2O = Substance(name='H2O',  charge=0, latex_name=r'\mathrm{H_{2}O}',
                     data={'pKa': 14})  # will_be_missing_in='0.5.0', use data=...
-    OH_m = Substance(name='OH-',  charge=-1, latex_name=r'$\mathrm{OH^{-}}$')
+    OH_m = Substance(name='OH-',  charge=-1, latex_name=r'\mathrm{OH^{-}}')
     assert sorted([OH_m, H2O], key=attrgetter('name')) == [H2O, OH_m]
 
 
