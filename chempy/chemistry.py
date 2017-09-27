@@ -4,7 +4,7 @@ from __future__ import (absolute_import, division, print_function)
 from collections import OrderedDict, defaultdict
 from functools import reduce
 from itertools import chain
-from operator import itemgetter, mul, add
+from operator import itemgetter, mul
 import math
 import sys
 
@@ -1109,7 +1109,8 @@ class Equilibrium(Reaction):
 
 
 def balance_stoichiometry(reactants, products, substances=None,
-                          substance_factory=Substance.from_formula):
+                          substance_factory=Substance.from_formula,
+                          parametric_symbols=None, underdetermined=True):
     """ Balances stoichiometric coefficients of a reaction
 
     Parameters
@@ -1119,6 +1120,13 @@ def balance_stoichiometry(reactants, products, substances=None,
     substances : OrderedDict or string or None
         Mapping reactant/product keys to instances of :class:`Substance`.
     substance_factory : callback
+    parametric_symbols : generator of symbols
+        Used to generate symbols for parametric solution for
+        under-determined system of equations.
+    underdetermined : bool
+        Allows to find a non-unique solution (in addition to a constant factor
+        across all terms). Set to False to disallow e.g. "C + O2 -> CO + CO2".
+        Set to ``1`` if you want the symbols replaced by ones.
 
     Examples
     --------
@@ -1136,7 +1144,7 @@ def balance_stoichiometry(reactants, products, substances=None,
     balanced products : dict
 
     """
-    from sympy import Matrix, gcd
+    from sympy import Matrix, gcd, zeros, linsolve, numbered_symbols
 
     _intersect = set.intersection(*map(set, (reactants, products)))
     if _intersect:
@@ -1151,6 +1159,9 @@ def balance_stoichiometry(reactants, products, substances=None,
 
     cks = Substance.composition_keys(substances.values())
 
+    if parametric_symbols is None:
+        parametric_symbols = numbered_symbols('x', start=1, integer=True, positive=True)
+
     # ?C2H2 + ?O2 -> ?CO + ?H2O
     # Ax = 0
     # A:                 x:
@@ -1164,13 +1175,66 @@ def balance_stoichiometry(reactants, products, substances=None,
         return substances[sk].composition.get(ck, 0) * (-1 if sk in reactants else 1)
 
     A = Matrix([[_get(sk, ck) for sk in subst_keys] for ck in cks])
-    nullsp = reduce(add, A.nullspace())
-    if any(n <= 0 for n in nullsp):
+    symbs = list(reversed([next(parametric_symbols) for _ in range(len(subst_keys))]))
+    sol, = linsolve((A, zeros(len(cks), 1)), symbs)
+    tmp = 1
+    for expr in sol:
+        iterable = expr.args if expr.is_Add else [expr]
+        for term in iterable:
+            if term.is_Mul and term.args[0].is_Rational:
+                tmp = gcd(tmp, term.args[0])
+    sol = sol.func(*[arg/tmp for arg in sol.args])
+
+    def remove(sol, symb, remaining):
+        subsd = dict(zip(remaining/symb, remaining))
+        sol = sol.func(*[(arg/symb).expand().subs(subsd) for arg in sol.args])
+        if sol.has(symb):
+            raise ValueError("Bug, please report an issue at https://github.com/bjodah/chempy")
+        return sol
+
+    done = False
+    for idx, symb in enumerate(symbs):
+        for expr in sol:
+            iterable = expr.args if expr.is_Add else [expr]
+            for term in iterable:
+                if term.is_number:
+                    done = True
+                    break
+            if done:
+                break
+        if done:
+            break
+        for expr in sol:
+            if (expr/symb).is_number:
+                sol = remove(sol, symb, Matrix(symbs[idx+1:]))
+                break
+    for symb in symbs:
+        tmp = None
+        for expr in sol:
+            iterable = expr.args if expr.is_Add else [expr]
+            for term in iterable:
+                if term.is_Mul and term.args[0].is_number and term.args[1] == symb:
+                    if tmp is None:
+                        tmp = term.args[0]
+                    else:
+                        tmp = gcd(tmp, term.args[0])
+        if tmp is not None and tmp != 1:
+            sol = sol.func(*[arg.subs(symb, symb/tmp) for arg in sol.args])
+    if underdetermined is 1:
+        subsd = {symb: 1 for symb in symbs}
+        sol = sol.func(*[arg.subs(subsd) for arg in sol.args])
+    fact = gcd(sol)
+    sol = Matrix([e/fact for e in sol])
+    sol /= reduce(gcd, sol)
+    if 0 in sol:
         raise ValueError("Superfluous species given.")
-    x = nullsp/reduce(gcd, nullsp.T)
+    if not underdetermined:
+        for x in sol:
+            if len(x.free_symbols) != 0:
+                raise ValueError("The system was under-determined")
 
     def _x(k):
-        return x[subst_keys.index(k)]
+        return sol[subst_keys.index(k)]
 
     return (
         {k: _x(k) for k in reactants},
