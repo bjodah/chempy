@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function)
 
-from operator import attrgetter
+from functools import reduce
+from operator import attrgetter, add
 
 import pytest
 
+from ..util.arithmeticdict import ArithmeticDict
 from ..util.testing import requires
 from ..util.parsing import parsing_library
 from ..units import default_units, units_library, to_unitless
@@ -236,3 +238,12 @@ def test_balance_stoichiometry():
     r4, p4 = balance_stoichiometry({'C7H5(NO2)3', 'NH4NO3'}, {'CO', 'H2O', 'N2'})
     assert r4 == {'C7H5(NO2)3': 2, 'NH4NO3': 7}
     assert p4 == {'CO': 14, 'H2O': 19, 'N2': 10}
+
+    a5, b5 = {"C3H5NO", "CH4", "NH3", "H2O"}, {"C2H6", "CH4O", "CH5N", "CH3N"}
+    formulas = list(set.union(a5, b5))
+    substances = dict(zip(formulas, map(Substance.from_formula, formulas)))
+    compositions = {k: ArithmeticDict(int, substances[k].composition) for k in formulas}
+    r5, p5 = balance_stoichiometry(a5, b5)
+    compo_reac = dict(reduce(add, [compositions[k]*v for k, v in r5.items()]))
+    compo_prod = dict(reduce(add, [compositions[k]*v for k, v in p5.items()]))
+    assert compo_reac == compo_prod

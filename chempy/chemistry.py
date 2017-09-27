@@ -4,7 +4,7 @@ from __future__ import (absolute_import, division, print_function)
 from collections import OrderedDict, defaultdict
 from functools import reduce
 from itertools import chain
-from operator import itemgetter, mul
+from operator import itemgetter, mul, add
 import math
 import sys
 
@@ -1164,8 +1164,8 @@ def balance_stoichiometry(reactants, products, substances=None,
         return substances[sk].composition.get(ck, 0) * (-1 if sk in reactants else 1)
 
     A = Matrix([[_get(sk, ck) for sk in subst_keys] for ck in cks])
-    nullsp, = A.nullspace()
-    if 0 in nullsp:
+    nullsp = reduce(add, A.nullspace())
+    if any(n <= 0 for n in nullsp):
         raise ValueError("Superfluous species given.")
     x = nullsp/reduce(gcd, nullsp.T)
 
