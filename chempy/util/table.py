@@ -179,7 +179,10 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
                     k, k_unit_str = rxn.param.equation_as_string(k_fmt, tex)
             else:
                 k_unit_str = '-'
-                k = k_fmt % rxn.param
+                if isinstance(k_fmt, str):
+                    k = k_fmt % rxn.param
+                else:
+                    k = k_fmt(rxn.param)
         r_str, ir_str, arrow_str, p_str, ip_str = rxn._get_str_parts(
             'latex_name' if tex else 'name',
             'latex_arrow' if tex else 'str_arrow',
@@ -243,8 +246,10 @@ def rsys2table(rsys, table_template=None, table_template_dict=None,
 
     if 'body' in table_template_dict:
         raise KeyError("There is already a 'body' key in table_template_dict")
+    if 'k_fmt' not in kwargs:
+        kwargs['k_fmt'] = r'\num{%.4g}' if siunitx else '%.4g'
     table_template_dict['body'] = (line_term + '\n').join(rsys2tablines(
-        rsys, k_fmt=r'\num{%.4g}' if siunitx else '%.4g', **kwargs)
+        rsys, **kwargs)
     ) + line_term
 
     if table_template is None:

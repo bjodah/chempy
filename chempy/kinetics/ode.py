@@ -300,7 +300,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                 rxn, ratex in zip(rsys.rxns, r_exprs)]
 
     names = [s.name for s in rsys.substances.values()]
-    latex_names = [None if s.latex_name is None else ('$\\mathrm{' + s.latex_name + '}$')
+    latex_names = [None if s.latex_name is None else ('\\mathrm{' + s.latex_name + '}')
                    for s in rsys.substances.values()]
 
     compo_vecs, compo_names = rsys.composition_balance_vectors()

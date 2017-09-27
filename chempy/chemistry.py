@@ -824,13 +824,21 @@ class Reaction(object):
 
         Examples
         --------
-        >>> rxn = Reaction.from_string('2 H2 + O2 -> 2 H2O; 3', None)
-        >>> r = 3*5*5*7
-        >>> rxn.rate({'H2': 5, 'O2': 7}) == {'H2': -2*r, 'O2': -r, 'H2O': 2*r}
+        >>> rxn1 = Reaction.from_string('2 H2 + O2 -> 2 H2O; 3')
+        >>> ref1 = 3*5*5*7
+        >>> rxn1.rate({'H2': 5, 'O2': 7}) == {'H2': -2*ref1, 'O2': -ref1, 'H2O': 2*ref1}
         True
+        >>> from sympy import Symbol
+        >>> k = Symbol('k')
+        >>> rxn2 = Reaction(rxn1.reac, rxn1.prod, k)
+        >>> concentrations = {key: Symbol(key) for key in set.union(set(rxn1.reac), set(rxn1.prod))}
+        >>> import pprint
+        >>> pprint.pprint(rxn2.rate(concentrations))
+        {'H2': -2*H2**2*O2*k, 'H2O': 2*H2**2*O2*k, 'O2': -H2**2*O2*k}
 
         """
         if variables is None:
+
             variables = {}
         if substance_keys is None:
             substance_keys = self.keys()
