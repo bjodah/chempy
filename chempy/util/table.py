@@ -285,10 +285,10 @@ def rsys2pdf_table(rsys, output_dir=None, doc_template=None,
     """
     if doc_template is None:
         doc_template = tex_templates['document']['default']
+    lscape = ['pdflscape' if landscape == 'pdf' else 'lscape'] if landscape else []
     _pkgs = [
-        'booktabs', 'amsmath', ('pdftex,colorlinks,unicode=True',
-                                'hyperref')] + (
-                                    ['lscape'] if landscape else [])
+        'booktabs', 'amsmath', ('pdftex,colorlinks,unicode=True', 'hyperref')
+    ] + lscape
     if kwargs.get('longtable', False):
         _pkgs += ['longtable']
     if kwargs.get('siunitx', False):
