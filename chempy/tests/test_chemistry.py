@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function)
 
-from operator import attrgetter
+from functools import reduce
+from operator import attrgetter, add
 
 import pytest
 
+from ..util.arithmeticdict import ArithmeticDict
 from ..util.testing import requires
 from ..util.parsing import parsing_library
 from ..units import default_units, units_library, to_unitless
@@ -210,6 +212,26 @@ def test_Equilibrium__cancel():
 
 
 @requires('sympy')
+def test_balance_stoichiometry__simple():
+    r2, p2 = balance_stoichiometry({'Na2CO3'}, {'Na2O', 'CO2'})
+    assert r2 == {'Na2CO3': 1}
+    assert p2 == {'Na2O': 1, 'CO2': 1}
+
+
+@requires('sympy')
+def test_balance_stoichiometry__underdetermined():
+    with pytest.raises(ValueError):
+        balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'}, underdetermined=False)
+    reac, prod = balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'})
+
+
+@requires('sympy')
+def test_balance_stoichiometry__missing_product_atom():
+    with pytest.raises(ValueError):  # No Al on product side
+        balance_stoichiometry({'C7H5(NO2)3', 'Al', 'NH4NO3'}, {'CO', 'H2O', 'N2'})
+
+
+@requires('sympy')
 def test_balance_stoichiometry():
     # 4 NH4ClO4 -> 2 N2 + 4 HCl + 6H2O + 5O2
     # 4 Al + 3O2 -> 2Al2O3
@@ -220,19 +242,19 @@ def test_balance_stoichiometry():
     assert reac == {'NH4ClO4': 6, 'Al': 10}
     assert prod == {'Al2O3': 5, 'HCl': 6, 'H2O': 9, 'N2': 3}
 
-    with pytest.raises(ValueError):
-        reac, prod = balance_stoichiometry({'C7H5(NO2)3', 'Al', 'NH4NO3'}, {'CO', 'H2O', 'N2'})
-
-    r2, p2 = balance_stoichiometry({'Na2CO3'}, {'Na2O', 'CO2'})
-    assert r2 == {'Na2CO3': 1}
-    assert p2 == {'Na2O': 1, 'CO2': 1}
-
     r3, p3 = balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2'})
     assert r3 == {'C2H6': 2, 'O2': 7}
     assert p3 == {'CO2': 4, 'H2O': 6}
-    with pytest.raises(ValueError):
-        reac, prod = balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'})
 
     r4, p4 = balance_stoichiometry({'C7H5(NO2)3', 'NH4NO3'}, {'CO', 'H2O', 'N2'})
     assert r4 == {'C7H5(NO2)3': 2, 'NH4NO3': 7}
     assert p4 == {'CO': 14, 'H2O': 19, 'N2': 10}
+
+    a5, b5 = {"C3H5NO", "CH4", "NH3", "H2O"}, {"C2H6", "CH4O", "CH5N", "CH3N"}
+    formulas = list(set.union(a5, b5))
+    substances = dict(zip(formulas, map(Substance.from_formula, formulas)))
+    compositions = {k: ArithmeticDict(int, substances[k].composition) for k in formulas}
+    r5, p5 = balance_stoichiometry(a5, b5)
+    compo_reac = dict(reduce(add, [compositions[k]*v for k, v in r5.items()]))
+    compo_prod = dict(reduce(add, [compositions[k]*v for k, v in p5.items()]))
+    assert compo_reac == compo_prod
