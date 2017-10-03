@@ -755,7 +755,7 @@ def test_get_odesys__Eyring_2nd_order():
 
 
 @requires('pycvodes', 'sym', 'scipy', units_library)
-def test_get_odesys__Eyring_1st_order_linearly_ramped_temperautre():
+def _test_get_odesys__Eyring_1st_order_linearly_ramped_temperature():
     from scipy.special import expi
 
     def analytic_unit0(t, T0, dH, dS):
@@ -806,7 +806,7 @@ def test_get_odesys__Eyring_1st_order_linearly_ramped_temperautre():
 
 
 @requires('pycvodes', 'sym', 'scipy', units_library)
-def test_get_odesys__Eyring_2nd_order_linearly_ramped_temperautre():
+def _test_get_odesys__Eyring_2nd_order_linearly_ramped_temperature():
     from scipy.special import expi
 
     def analytic_unit0(t, k, m, dH, dS):
