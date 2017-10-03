@@ -1,3 +1,9 @@
+v0.5.3
+======
+- Fixes balance_stoichiometry
+- Documentation fixes
+- More k_fmt & landscape options in .util.table.rsys2pdf_table
+
 v0.5.2
 ======
 - Fix balance_reacions (non-deterministic ordering could cause endless loop)
