@@ -1,0 +1,335 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.util.graph &mdash; chempy 0.5.3 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="chempy 0.5.3 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.5.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../index.html">chempy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      
+    <li>chempy.util.graph</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="https://github.com/bjodah/chempy/blob/v0.5.3/doc/_modules/chempy/util/graph.rst" class="fa fa-github"> Edit on GitHub</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.util.graph</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Convenince functions for representing reaction systems as graphs.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+
+
+<div class="viewcode-block" id="rsys2dot"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.graph.rsys2dot">[docs]</a><span class="k">def</span> <span class="nf">rsys2dot</span><span class="p">(</span><span class="n">rsys</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">rprefix</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">rref0</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">nodeparams</span><span class="o">=</span><span class="s1">&#39;[label=&quot;</span><span class="si">{}</span><span class="s1">&quot; shape=diamond]&#39;</span><span class="p">,</span>
+             <span class="n">colors</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;maroon&#39;</span><span class="p">,</span> <span class="s1">&#39;darkgreen&#39;</span><span class="p">),</span> <span class="n">penwidths</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_inactive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns list of lines of DOT (graph description language)</span>
+<span class="sd">    formated graph.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ==========</span>
+<span class="sd">    rsys: ReactionSystem</span>
+<span class="sd">    tex: bool (default False)</span>
+<span class="sd">        If set True, output will be LaTeX formated</span>
+<span class="sd">    (Substance need to have latex_name attribute set)</span>
+<span class="sd">    rprefix: string</span>
+<span class="sd">        Reaction enumeration prefix, default: r</span>
+<span class="sd">    rref0: integer</span>
+<span class="sd">        Reaction enumeration inital counter value, default: 1</span>
+<span class="sd">    nodeparams: string</span>
+<span class="sd">        DOT formated param list, default: [label={} shape=diamond]</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    =======</span>
+<span class="sd">    list of lines of DOT representation of the graph representation.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;digraph &quot;&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">rsys</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;&quot; {</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>
+    <span class="n">ind</span> <span class="o">=</span> <span class="s1">&#39;  &#39;</span>  <span class="c1"># indentation</span>
+    <span class="k">if</span> <span class="n">penwidths</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">penwidths</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]</span><span class="o">*</span><span class="n">rsys</span><span class="o">.</span><span class="n">nr</span>
+
+    <span class="k">def</span> <span class="nf">add_vertex</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">num</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">penwidth</span><span class="p">):</span>
+        <span class="n">snum</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">num</span><span class="p">)</span> <span class="k">if</span> <span class="n">num</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;$</span><span class="si">%s</span><span class="s1">$&#39;</span> <span class="k">if</span> <span class="n">tex</span> <span class="k">else</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">)</span> <span class="o">%</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">rsys</span><span class="o">.</span><span class="n">substances</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="s1">&#39;latex_name&#39;</span> <span class="k">if</span> <span class="n">tex</span> <span class="k">else</span> <span class="s1">&#39;name&#39;</span><span class="p">)</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="p">[</span><span class="s1">&#39;label=&quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">snum</span><span class="p">)]</span> <span class="o">+</span>
+            <span class="p">([</span><span class="s1">&#39;penwidth=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">penwidth</span><span class="p">)]</span> <span class="k">if</span> <span class="n">penwidth</span> <span class="o">!=</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">[])</span>
+        <span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ind</span> <span class="o">+</span> <span class="s1">&#39;&quot;</span><span class="si">{}</span><span class="s1">&quot; -&gt; &quot;</span><span class="si">{}</span><span class="s1">&quot; [color=</span><span class="si">{}</span><span class="s1">,fontcolor=</span><span class="si">{}</span><span class="s1">,</span><span class="si">{}</span><span class="s1">];</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="o">*</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">rid</span><span class="p">,</span> <span class="n">colors</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">colors</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">fmt</span><span class="p">)</span> <span class="k">if</span> <span class="n">reac</span> <span class="k">else</span>
+              <span class="p">(</span><span class="n">rid</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">colors</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">colors</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">fmt</span><span class="p">))</span>
+        <span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">include_inactive</span><span class="p">:</span>
+        <span class="n">reac_stoichs</span> <span class="o">=</span> <span class="n">rsys</span><span class="o">.</span><span class="n">all_reac_stoichs</span><span class="p">()</span>
+        <span class="n">prod_stoichs</span> <span class="o">=</span> <span class="n">rsys</span><span class="o">.</span><span class="n">all_prod_stoichs</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">reac_stoichs</span> <span class="o">=</span> <span class="n">rsys</span><span class="o">.</span><span class="n">active_reac_stoichs</span><span class="p">()</span>
+        <span class="n">prod_stoichs</span> <span class="o">=</span> <span class="n">rsys</span><span class="o">.</span><span class="n">active_prod_stoichs</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">ri</span><span class="p">,</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rsys</span><span class="o">.</span><span class="n">rxns</span><span class="p">):</span>
+        <span class="n">rid</span> <span class="o">=</span> <span class="n">rprefix</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">ri</span><span class="o">+</span><span class="n">rref0</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ind</span> <span class="o">+</span> <span class="s1">&#39;{&#39;</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ind</span><span class="o">*</span><span class="mi">2</span> <span class="o">+</span> <span class="s1">&#39;node &#39;</span> <span class="o">+</span> <span class="n">nodeparams</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rxn</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="n">rid</span><span class="p">))</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ind</span><span class="o">*</span><span class="mi">2</span> <span class="o">+</span> <span class="n">rid</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ind</span> <span class="o">+</span> <span class="s1">&#39;}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rsys</span><span class="o">.</span><span class="n">substances</span><span class="p">):</span>
+            <span class="n">num</span> <span class="o">=</span> <span class="n">reac_stoichs</span><span class="p">[</span><span class="n">ri</span><span class="p">,</span> <span class="n">idx</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">num</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">add_vertex</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">num</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">penwidths</span><span class="p">[</span><span class="n">ri</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rsys</span><span class="o">.</span><span class="n">substances</span><span class="p">):</span>
+            <span class="n">num</span> <span class="o">=</span> <span class="n">prod_stoichs</span><span class="p">[</span><span class="n">ri</span><span class="p">,</span> <span class="n">idx</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">num</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">add_vertex</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">num</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">penwidths</span><span class="p">[</span><span class="n">ri</span><span class="p">])</span>
+    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">lines</span></div>
+
+
+<div class="viewcode-block" id="rsys2graph"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.graph.rsys2graph">[docs]</a><span class="k">def</span> <span class="nf">rsys2graph</span><span class="p">(</span><span class="n">rsys</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">prog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convenience function to call `rsys2dot` and write output to file</span>
+<span class="sd">    and render the graph</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rsys: ReactionSystem</span>
+<span class="sd">    fname: str</span>
+<span class="sd">        filename</span>
+<span class="sd">    output_dir: str (optional)</span>
+<span class="sd">        path to directory (default: temporary directory)</span>
+<span class="sd">    prog: str (optional)</span>
+<span class="sd">        default: &#39;dot&#39;</span>
+<span class="sd">    save: bool</span>
+<span class="sd">        removes temporary directory if False, default: False</span>
+<span class="sd">    \*\*kwargs:</span>
+<span class="sd">        parameters to pass along to `rsys2dot`</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        Outpath</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; rsys2graph(rsys, sbstncs, &#39;/tmp/out.png&#39;)  # doctest: +SKIP</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">rsys2dot</span><span class="p">(</span><span class="n">rsys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">created_tempdir</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">output_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
+            <span class="n">created_tempdir</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">basename</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">fname</span><span class="p">))</span>
+        <span class="n">outpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+        <span class="n">dotpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">basename</span> <span class="o">+</span> <span class="s1">&#39;.dot&#39;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dotpath</span><span class="p">,</span> <span class="s1">&#39;wt&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ofh</span><span class="p">:</span>
+            <span class="n">ofh</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.tex&#39;</span><span class="p">:</span>
+            <span class="n">cmds</span> <span class="o">=</span> <span class="p">[</span><span class="n">prog</span> <span class="ow">or</span> <span class="s1">&#39;dot2tex&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cmds</span> <span class="o">=</span> <span class="p">[</span><span class="n">prog</span> <span class="ow">or</span> <span class="s1">&#39;dot&#39;</span><span class="p">,</span> <span class="s1">&#39;-T&#39;</span><span class="o">+</span><span class="n">outpath</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">cmds</span> <span class="o">+</span> <span class="p">[</span><span class="n">dotpath</span><span class="p">,</span> <span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="n">outpath</span><span class="p">])</span>
+        <span class="n">retcode</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">retcode</span><span class="p">:</span>
+            <span class="n">fmtstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="se">\n</span><span class="s2"> returned with exit status </span><span class="si">{}</span><span class="s2">&quot;</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">fmtstr</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmds</span><span class="p">),</span> <span class="n">retcode</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">outpath</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">save</span> <span class="ow">is</span> <span class="kc">True</span> <span class="ow">or</span> <span class="n">save</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">save</span> <span class="ow">is</span> <span class="kc">False</span> <span class="ow">or</span> <span class="n">save</span> <span class="o">==</span> <span class="s1">&#39;False&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">created_tempdir</span><span class="p">:</span>
+                    <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># interpret save as path to copy pdf to.</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">outpath</span><span class="p">,</span> <span class="n">save</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.5.3',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

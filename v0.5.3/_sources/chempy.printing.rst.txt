@@ -1,0 +1,28 @@
+chempy\.printing package
+========================
+
+.. automodule:: chempy.printing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Submodules
+----------
+
+chempy\.printing\.numbers module
+--------------------------------
+
+.. automodule:: chempy.printing.numbers
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy\.printing\.table module
+------------------------------
+
+.. automodule:: chempy.printing.table
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
