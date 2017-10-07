@@ -518,7 +518,7 @@ class Exp(UnaryFunction):
     _func_name = 'exp'
 
 
-def create_Piecewise(parameter_name, nan_fallback=False, **kwargs):
+def create_Piecewise(parameter_name, nan_fallback=False):
     """
     Examples
     --------
@@ -557,10 +557,10 @@ def create_Piecewise(parameter_name, nan_fallback=False, **kwargs):
             return pw(*([(ex, backend.And(lo <= x, x <= up)) for lo, up, ex in zip(lower, upper, exprs)] +
                         ([(_NAN, True)] if nan_fallback else [])))
 
-    return Expr.from_callback(_pw, parameter_keys=(parameter_name,), **kwargs)
+    return Expr.from_callback(_pw, parameter_keys=(parameter_name,))
 
 
-def create_Poly(parameter_name, reciprocal=False, shift=None, name=None, **kwargs):
+def create_Poly(parameter_name, reciprocal=False, shift=None, name=None):
     """
     Examples
     --------
@@ -611,8 +611,7 @@ def create_Poly(parameter_name, reciprocal=False, shift=None, name=None, **kwarg
         argument_names = (shift, Ellipsis)
     if name is not None:
         _poly.__name__ = name
-    return Expr.from_callback(_poly, parameter_keys=(parameter_name,), argument_names=argument_names,
-                              **kwargs)
+    return Expr.from_callback(_poly, parameter_keys=(parameter_name,), argument_names=argument_names)
 
 from ._expr_deprecated import _mk_PiecewisePoly, _mk_Poly  # noqa
 

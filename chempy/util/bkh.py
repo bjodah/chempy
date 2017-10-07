@@ -106,7 +106,6 @@ def integration_with_sliders(
             value=_C(k), **slider_kwargs.get(k, slider_defaults)
         )
 
-
     param_widgets = OrderedDict([
         (k, Slider(title=k if u is None else k + ' / ' + u.dimensionality.unicode,
                    value=v, **_dict_to_unitless(
