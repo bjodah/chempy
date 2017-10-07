@@ -182,20 +182,21 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
             return
         unique_units[k] = reduce(mul, [1]+[unit_registry[dim]**v for dim, v in arg_dim[idx].items()])
 
+    def _get_arg_dim(expr):
+        if unit_registry is None:
+            return None
+        else:
+            return expr.args_dimensionality(reaction=rxn)
+
     def _reg_unique(expr, rxn=None):
         if not isinstance(expr, Expr):
             raise NotImplementedError("Currently only Expr sub classes are supported.")
-
-        if unit_registry is None:
-            arg_dim = None
-        else:
-            arg_dim = expr.args_dimensionality(reaction=rxn)
 
         if expr.args is None:
             for idx, k in enumerate(expr.unique_keys):
                 if k not in substitutions:
                     unique[k] = None
-                    _reg_unique_unit(k, arg_dim, idx)
+                    _reg_unique_unit(k, _get_arg_dim(expr), idx)
         else:
             for idx, arg in enumerate(expr.args):
                 if isinstance(arg, Expr):
@@ -204,7 +205,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                     uk = expr.unique_keys[idx]
                     if uk not in substitutions:
                         unique[uk] = arg
-                        _reg_unique_unit(uk, arg_dim, idx)
+                        _reg_unique_unit(uk, _get_arg_dim(expr), idx)
 
     for sk, sv in substitutions.items():
         if sk not in _ori_pk and sk not in _ori_uk:

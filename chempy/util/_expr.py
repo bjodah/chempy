@@ -15,7 +15,7 @@ import math
 from itertools import chain
 from operator import add, mul, truediv, sub, pow
 from .pyutil import defaultkeydict, deprecated
-
+from .arithmeticdict import ArithmeticDict
 
 def _implicit_conversion(obj):
     if isinstance(obj, (int, float)):
@@ -91,7 +91,7 @@ class Expr(object):
     parameter_keys = ()
     nargs = None
 
-    def __init__(self, args=None, unique_keys=None):
+    def __init__(self, args=None, unique_keys=None, args_dimensionality=None):
         if isinstance(args, str):
             args = (args,)
         if self.argument_names is not None and self.argument_names[-1] != Ellipsis and self.nargs is None:
@@ -127,6 +127,8 @@ class Expr(object):
             args = [args[k] for k in self.argument_names or self.unique_keys]
 
         self.args = args
+        if args_dimensionality is not None:
+            self.args_dimensionality = types.MethodType(args_dimensionality, self)
 
     @classmethod
     def fk(cls, *args):
@@ -518,7 +520,7 @@ class Exp(UnaryFunction):
     _func_name = 'exp'
 
 
-def create_Piecewise(parameter_name, nan_fallback=False):
+def create_Piecewise(parameter_name, nan_fallback=False, **kwargs):
     """
     Examples
     --------
@@ -557,10 +559,10 @@ def create_Piecewise(parameter_name, nan_fallback=False):
             return pw(*([(ex, backend.And(lo <= x, x <= up)) for lo, up, ex in zip(lower, upper, exprs)] +
                         ([(_NAN, True)] if nan_fallback else [])))
 
-    return Expr.from_callback(_pw, parameter_keys=(parameter_name,))
+    return Expr.from_callback(_pw, parameter_keys=(parameter_name,), **kwargs)
 
 
-def create_Poly(parameter_name, reciprocal=False, shift=None, name=None):
+def create_Poly(parameter_name, reciprocal=False, shift=None, name=None, **kwargs):
     """
     Examples
     --------
@@ -611,7 +613,8 @@ def create_Poly(parameter_name, reciprocal=False, shift=None, name=None):
         argument_names = (shift, Ellipsis)
     if name is not None:
         _poly.__name__ = name
-    return Expr.from_callback(_poly, parameter_keys=(parameter_name,), argument_names=argument_names)
+    return Expr.from_callback(_poly, parameter_keys=(parameter_name,), argument_names=argument_names,
+                              **kwargs)
 
 from ._expr_deprecated import _mk_PiecewisePoly, _mk_Poly  # noqa
 
