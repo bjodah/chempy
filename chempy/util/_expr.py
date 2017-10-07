@@ -15,7 +15,7 @@ import math
 from itertools import chain
 from operator import add, mul, truediv, sub, pow
 from .pyutil import defaultkeydict, deprecated
-from .arithmeticdict import ArithmeticDict
+
 
 def _implicit_conversion(obj):
     if isinstance(obj, (int, float)):
@@ -91,7 +91,7 @@ class Expr(object):
     parameter_keys = ()
     nargs = None
 
-    def __init__(self, args=None, unique_keys=None, args_dimensionality=None):
+    def __init__(self, args=None, unique_keys=None):
         if isinstance(args, str):
             args = (args,)
         if self.argument_names is not None and self.argument_names[-1] != Ellipsis and self.nargs is None:
@@ -127,8 +127,6 @@ class Expr(object):
             args = [args[k] for k in self.argument_names or self.unique_keys]
 
         self.args = args
-        if args_dimensionality is not None:
-            self.args_dimensionality = types.MethodType(args_dimensionality, self)
 
     @classmethod
     def fk(cls, *args):
