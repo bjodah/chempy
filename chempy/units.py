@@ -172,7 +172,6 @@ def unit_registry_to_human_readable(unit_registry):
                 raise TypeError("Compound units not allowed: {}".format(
                     dim_list))
             u_symbol = dim_list[0].u_symbol
-            # u_symbol = unit_registry[k].u_symbol
             new_registry[k] = float(unit_registry[k]), u_symbol
     return new_registry
 
