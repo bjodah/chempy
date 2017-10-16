@@ -64,8 +64,8 @@ class Substance(object):
     ...     data={'mass': 18.0385, 'pKa': 9.24})
     >>> ammonium.name
     'NH4+'
-    >>> ammonium.composition  # note that charge was inserted as composition[0]
-    {0: 1, 1: 4, 7: 1}
+    >>> ammonium.composition == {0: 1, 1: 4, 7: 1}  # charge represented by key '0'
+    True
     >>> ammonium.data['mass']
     18.0385
     >>> ammonium.data['pKa']
@@ -120,7 +120,7 @@ class Substance(object):
         >>> nh4p = Substance.from_formula('NH4+')  # simpler
         >>> from chempy.units import default_units as u
         >>> nh4p.molar_mass(u)
-        array(18.0384511) * g/mol
+        array(18.0384511...) * g/mol
 
         """
         if units is None:

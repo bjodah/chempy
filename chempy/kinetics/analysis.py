@@ -14,6 +14,7 @@ except ImportError:
 from .. import ReactionSystem, Equilibrium
 from ..units import get_derived_unit, to_unitless, default_units as u
 
+
 def _dominant_reaction_effects(substance_key, rsys, rates, linthreshy, eqk1, eqk2, eqs):
     tot = np.zeros(rates.shape[0])
     reaction_effects = rsys.per_reaction_effect_on_substance(substance_key)
