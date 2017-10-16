@@ -12,6 +12,7 @@ except ImportError:
     plt = None
 
 from .. import ReactionSystem, Equilibrium
+from ..units import get_derived_unit, to_unitless, default_units as u
 
 
 def _dominant_reaction_effects(substance_key, rsys, rates, linthreshy, eqk1, eqk2, eqs):
@@ -44,29 +45,42 @@ def _combine_rxns_to_eq(rsys):
     return eqk1, eqk2, eqs
 
 
-def plot_reaction_contributions(varied, concs, rate_exprs_cb, rsys, substance_keys=None, axes=None,
-                                total=False, linthreshy=1e-9, relative=False, xscale='log', yscale='symlog',
-                                xlabel='Time', ylabel=None, combine_equilibria=False):
+def plot_reaction_contributions(
+        xyp, rsys, rate_exprs_cb, substance_keys=None, varied=None, axes=None,
+        total=False, linthreshy=1e-9, relative=False, xscale='log', yscale='symlog',
+        xlabel='Time', ylabel=None, combine_equilibria=False, selection=slice(None),
+        unit_registry=None):
     """ Plots per reaction contributions to concentration evolution of a substance.
 
     Parameters
     ----------
+    xyp : ``pyodesys.results.Result`` instance or length 3 tuple or xout,yout,params
     result : pyodesys.results.Result
     substance_key : str
 
     """
-    if concs.shape[0] != varied.size:
-        raise ValueError("Size mismatch between varied and concs")
+    from pyodesys.results import Result
+    if isinstance(xyp, Result):
+        xyp = xyp.odesys.to_arrays(xyp.xout, xyp.yout, xyp.params, reshape=False)
+    if varied is None:
+        varied = xyp[0]
+    if xyp[1].shape[-2] != varied.size:
+        raise ValueError("Size mismatch between varied and yout")
     if substance_keys is None:
         substance_keys = rsys.substances.keys()
     if axes is None:
         _fig, axes = plt.subplots(len(substance_keys))
-    rates = rate_exprs_cb(np.zeros(concs.shape[0]), concs)
+    rates = rate_exprs_cb(*xyp)
+    if unit_registry is not None:
+        time_unit = get_derived_unit(unit_registry, 'time')
+        conc_unit = get_derived_unit(unit_registry, 'concentration')
+        rates = to_unitless(rates*conc_unit/time_unit, u.molar/u.second)
+
     eqk1, eqk2, eqs = _combine_rxns_to_eq(rsys) if combine_equilibria else ([], [], [])
 
     for sk, ax in zip(substance_keys, axes):
         data, tot = _dominant_reaction_effects(sk, rsys, rates, linthreshy, eqk1, eqk2, eqs)
-        factor = 1/concs[:, rsys.as_substance_index(sk)] if relative else 1
+        factor = 1/xyp[1][:, rsys.as_substance_index(sk)] if relative else 1
         if total:
             ax.plot(varied, factor*tot, c='k', label='Total', linewidth=2, ls=':')
         for y, rxn in sorted(data, key=lambda args: args[0][-1], reverse=True):

@@ -7,7 +7,7 @@ evolution of concentrations in reaction systems.
 from __future__ import (absolute_import, division, print_function)
 
 from collections import OrderedDict
-from functools import reduce
+from functools import reduce, partial
 from itertools import chain
 from operator import mul
 import math
@@ -18,8 +18,10 @@ except ImportError:
     np = None
 
 from ..units import (
-    to_unitless, get_derived_unit, rescale, magnitude, unitless_in_registry
+    to_unitless, get_derived_unit, rescale, magnitude, unitless_in_registry,
+    default_units as u
 )
+from ..util.pyutil import deprecated
 from ..util._expr import Expr
 from .rates import RateExpr, MassAction
 
@@ -182,20 +184,21 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
             return
         unique_units[k] = reduce(mul, [1]+[unit_registry[dim]**v for dim, v in arg_dim[idx].items()])
 
+    def _get_arg_dim(expr, rxn):
+        if unit_registry is None:
+            return None
+        else:
+            return expr.args_dimensionality(reaction=rxn)
+
     def _reg_unique(expr, rxn=None):
         if not isinstance(expr, Expr):
             raise NotImplementedError("Currently only Expr sub classes are supported.")
-
-        if unit_registry is None:
-            arg_dim = None
-        else:
-            arg_dim = expr.args_dimensionality(reaction=rxn)
 
         if expr.args is None:
             for idx, k in enumerate(expr.unique_keys):
                 if k not in substitutions:
                     unique[k] = None
-                    _reg_unique_unit(k, arg_dim, idx)
+                    _reg_unique_unit(k, _get_arg_dim(expr, rxn), idx)
         else:
             for idx, arg in enumerate(expr.args):
                 if isinstance(arg, Expr):
@@ -204,7 +207,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
                     uk = expr.unique_keys[idx]
                     if uk not in substitutions:
                         unique[uk] = arg
-                        _reg_unique_unit(uk, arg_dim, idx)
+                        _reg_unique_unit(uk, _get_arg_dim(expr, rxn), idx)
 
     for sk, sv in substitutions.items():
         if sk not in _ori_pk and sk not in _ori_uk:
@@ -309,7 +312,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         dydt, dep_by_name=True, par_by_name=True, names=names,
         latex_names=latex_names, param_names=param_names_for_odesys,
         linear_invariants=None if len(compo_vecs) == 0 else compo_vecs,
-        linear_invariant_names=None if len(compo_names) == 0 else compo_names,
+        linear_invariant_names=None if len(compo_names) == 0 else list(map(str, compo_names)),
         **kwargs)
 
     symbolic_ratexs = reaction_rates(
@@ -389,6 +392,8 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     }
 
 
+@deprecated(last_supported_version='0.5.3', will_be_missing_in='0.8.0',
+            use_instead='pyodesys.chained_parameter_variation')
 def chained_parameter_variation(odesys, durations, init_conc, varied_params, default_params, integrate_kwargs=None):
     """ Integrate an ODE-system for a serie of durations with some parameters changed in-between
 
@@ -431,3 +436,98 @@ def chained_parameter_variation(odesys, durations, init_conc, varied_params, def
             else:
                 infos[k] = (v,)
     return np.concatenate(touts), np.concatenate(couts), infos
+
+
+def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_replace=lambda x: x,
+                   backend=None, SymbolicSys=None, time_symbol=None):
+    """ This will be a simpler version of get_odesys without the unit handling code.
+    The motivation is to reduce complexity (the code of get_odesys is long with multiple closeures).
+
+    This will also rely on SymPy explicitly and the user will be expected to deal with sympy
+    expressions.
+
+    Only when this function has the same capabilities as get_odesys will it become and public API
+    (along with a deprecation of get_odesys).
+
+    Parameters
+    ----------
+    rsys : ReactionSystem instance
+    substance_symbols : OrderedDict
+       If ``None``: ``rsys.substances`` will be used.
+    parameter_symbols : OrderedDict
+    backend : str or module
+        Symbolic backend (e.g. sympy). The package ``sym`` is used as a wrapper.
+
+    """
+    if backend is None:
+        from sym import Backend
+        backend = Backend(backend)
+    if SymbolicSys is None:
+        from pyodesys.symbolic import SymbolicSys
+
+    if substance_symbols is None:
+        substance_symbols = OrderedDict([(key, backend.Symbol(key)) for key in rsys.substances])
+
+    variables = OrderedDict(chain(substance_symbols.items(), parameter_symbols.items()))
+    variables['time'] = time_symbol or backend.Symbol('t')
+    if any(variables['time'] == v for k, v in variables.items() if k != 'time'):
+        raise ValueError("time_symbol already in use (name clash?)")
+    rates = rsys.rates(variables)
+    compo_vecs, compo_names = rsys.composition_balance_vectors()
+
+    odesys = SymbolicSys(
+        zip(substance_symbols.values(), [rates[key] for key in rsys.substances]),
+        variables['time'],
+        parameter_symbols.values(),
+        names=rsys.substances.keys(),
+        latex_names=[s.latex_name for s in rsys.substances.values()],
+        param_names=parameter_symbols.keys(),
+        latex_param_names=[pretty_replace(n) for n in parameter_symbols.keys()],
+        linear_invariants=compo_vecs,
+        linear_invariant_names=list(map(str, compo_names)),
+        backend=backend,
+        dep_by_name=True,
+        par_by_name=True
+    )
+
+    return odesys, {
+        'variables': variables,
+        'validate': partial(_validate, rsys=rsys, variables=variables,
+                            odesys=odesys, backend=backend),
+    }
+
+
+def _validate(conditions, rsys, variables, odesys, backend=None):
+    """ For use with create_odesys
+
+    Parameters
+    ----------
+    conditions : OrderedDict
+        Parameters, values with units from ``chempy.units``.
+    rsys : ReactionSystem
+    variables : dict
+        Mapping variable name to symbols.
+    backend : module
+        Module for symbolic mathematics. (defaults to SymPy)
+
+    Raises
+    ------
+    ``KeyError`` if a key in conditions is not in odesys.names or odesys.param_names
+
+    """
+    if backend is None:
+        from sym import Backend
+        backend = Backend(backend)
+    args = [variables[key] for key in conditions]
+    seen = [False]*len(args)
+    rates = {}
+    for k, v in rsys.rates(variables).items():
+        rate = backend.lambdify(args, v)(*conditions.values())
+        to_unitless(rate, u.molar/u.second)
+        rates[k] = rate
+        seen = [b or a in v.free_symbols for b, a in zip(seen, args)]
+    not_seen = [a for s, a in zip(seen, args) if not s]
+    for k in conditions:
+        if k not in odesys.param_names and k not in odesys.names:
+            raise KeyError("Unknown param: %s" % k)
+    return {'not_seen': not_seen, 'rates': rates}

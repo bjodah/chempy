@@ -50,7 +50,7 @@ class EqCalcResult(object):
 
     def _repr_html_(self):
         def fmt(num):
-            return number_to_scientific_html(num, '%.5e')
+            return number_to_scientific_html(num, fmt=5)
         if len(self.varied_keys) == 0:
             raise NotImplementedError()
         elif len(self.varied_keys) == 1:
