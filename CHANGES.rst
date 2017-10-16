@@ -1,3 +1,7 @@
+v0.5.4
+======
+- Fix to bokeh interface (``chempy.util.bkh``).
+
 v0.5.3
 ======
 - Fixes balance_stoichiometry
