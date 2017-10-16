@@ -120,8 +120,8 @@ setup_kwargs = dict(
     classifiers=classifiers,
     install_requires=[
         'numpy>1.7', 'scipy>=0.16.1', 'matplotlib>=1.3.1',
-        'sympy>=1.0', 'quantities>=0.11.1', 'pyneqsys>=0.4.4',
-        'pyodesys>=0.10.3', 'pyparsing>=2.0.3', 'sym'
+        'sympy>=1.0', 'quantities>=0.12.1', 'pyneqsys>=0.4.4',
+        'pyodesys>=0.11.3', 'pyparsing>=2.0.3', 'sym>=0.3.0'
         # 'dot2tex>=2.9.0'
     ],
     extras_require=extras_req
