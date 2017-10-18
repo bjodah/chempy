@@ -162,8 +162,8 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     _ori_pk = set.union(*(ratex.all_parameter_keys() for ratex in r_exprs))
     _ori_uk = set.union(*(ratex.all_unique_keys() for ratex in r_exprs))
     _subst_pk = set()
-    _active_subst = {}
-    _passive_subst = {}
+    _active_subst = OrderedDict()
+    _passive_subst = OrderedDict()
     substitutions = substitutions or {}
 
     unique = OrderedDict()

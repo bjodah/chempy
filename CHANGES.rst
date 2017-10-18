@@ -1,3 +1,7 @@
+v0.5.5
+======
+- Fix non-deterministic ordering of dictionary in ``get_odesys()``.
+
 v0.5.4
 ======
 - Fix to bokeh interface (``chempy.util.bkh``).
