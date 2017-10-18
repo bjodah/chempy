@@ -1,0 +1,19 @@
+machine:
+  environment:
+    PATH: "$HOME/miniconda/bin:${PATH}"
+
+dependencies:
+  pre:
+    - ./bin/circleci_dependencies.sh
+  cache_directories:
+    - "~/miniconda"
+
+test:
+  override:
+    - sudo apt-get remove gcc
+    - cd && rm -rf ~/.pyenv && rm -rf ~/virtualenvs
+    - source $HOME/miniconda/bin/activate root
+    - conda install pip pytest
+    - pip install .
+    - pytest
+
