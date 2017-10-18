@@ -1,0 +1,717 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.units &mdash; chempy 0.5.5 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="chempy 0.5.5 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.5.5
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">chempy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>chempy.units</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="https://github.com/bjodah/chempy/blob/v0.5.5/doc/_modules/chempy/units.rst" class="fa fa-github"> Edit on GitHub</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.units</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot; The units module provides the following attributes:</span>
+
+<span class="sd">- ``chempy.units.default_units``</span>
+<span class="sd">- ``chempy.units.default_constants``</span>
+<span class="sd">- ``chempy.units.SI_base_registry``</span>
+
+<span class="sd">together with some functions.</span>
+
+<span class="sd">Currently `quantities &lt;https://pypi.python.org/pypi/quantities&gt;`_ is used as</span>
+<span class="sd">the underlying package to handle units. If it is possible you should try to</span>
+<span class="sd">only use the ``chempy.units`` module (since it is likely that ``ChemPy``</span>
+<span class="sd">will change this backend at some point in the future). Therefore you should not</span>
+<span class="sd">rely on any attributes of the ``Quantity`` instances (and rather use</span>
+<span class="sd">getter &amp; setter functions in `chempy.units`).</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">reduce</span>
+<span class="kn">from</span> <span class="nn">operator</span> <span class="k">import</span> <span class="n">mul</span>
+
+<span class="kn">from</span> <span class="nn">._util</span> <span class="k">import</span> <span class="n">NameSpace</span>
+<span class="kn">from</span> <span class="nn">.util.arithmeticdict</span> <span class="k">import</span> <span class="n">ArithmeticDict</span>
+
+<span class="n">units_library</span> <span class="o">=</span> <span class="s1">&#39;quantities&#39;</span>  <span class="c1"># info used for selective testing.</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">pq</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span><span class="n">units_library</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">UncertainQuantity</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">default_constants</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">default_units</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">SI_base_registry</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">np</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+    <span class="kn">from</span> <span class="nn">.util._quantities</span> <span class="k">import</span> <span class="n">_patch_quantities</span>
+    <span class="n">_patch_quantities</span><span class="p">(</span><span class="n">pq</span><span class="p">)</span>
+    <span class="n">UncertainQuantity</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">UncertainQuantity</span>
+    <span class="c1"># Let us extend the underlying pq namespace with some common units in</span>
+    <span class="c1"># chemistry</span>
+    <span class="n">default_constants</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">constants</span>
+
+    <span class="n">default_units</span> <span class="o">=</span> <span class="n">NameSpace</span><span class="p">(</span><span class="n">pq</span><span class="p">)</span>
+    <span class="n">default_units</span><span class="o">.</span><span class="n">dm</span> <span class="o">=</span> <span class="n">default_units</span><span class="o">.</span><span class="n">decimetre</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">UnitQuantity</span><span class="p">(</span>
+        <span class="s1">&#39;decimetre&#39;</span><span class="p">,</span>  <span class="n">default_units</span><span class="o">.</span><span class="n">m</span> <span class="o">/</span> <span class="mf">10.0</span><span class="p">,</span> <span class="n">u_symbol</span><span class="o">=</span><span class="s1">&#39;dm&#39;</span><span class="p">)</span>
+    <span class="n">default_units</span><span class="o">.</span><span class="n">m3</span> <span class="o">=</span> <span class="n">default_units</span><span class="o">.</span><span class="n">metre</span><span class="o">**</span><span class="mi">3</span>
+    <span class="n">default_units</span><span class="o">.</span><span class="n">dm3</span> <span class="o">=</span> <span class="n">default_units</span><span class="o">.</span><span class="n">decimetre</span><span class="o">**</span><span class="mi">3</span>
+    <span class="n">default_units</span><span class="o">.</span><span class="n">cm3</span> <span class="o">=</span> <span class="n">default_units</span><span class="o">.</span><span class="n">centimetre</span><span class="o">**</span><span class="mi">3</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">default_units</span><span class="p">,</span> <span class="s1">&#39;molar&#39;</span><span class="p">):</span>
+        <span class="n">default_units</span><span class="o">.</span><span class="n">molar</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">UnitQuantity</span><span class="p">(</span>
+            <span class="s1">&#39;M&#39;</span><span class="p">,</span>  <span class="mf">1e3</span> <span class="o">*</span> <span class="n">default_units</span><span class="o">.</span><span class="n">mole</span><span class="o">/</span><span class="n">default_units</span><span class="o">.</span><span class="n">m3</span><span class="p">,</span>
+            <span class="n">u_symbol</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">default_units</span><span class="p">,</span> <span class="s1">&#39;millimolar&#39;</span><span class="p">):</span>
+        <span class="n">default_units</span><span class="o">.</span><span class="n">millimolar</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">UnitQuantity</span><span class="p">(</span>
+            <span class="s1">&#39;mM&#39;</span><span class="p">,</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">default_units</span><span class="o">.</span><span class="n">mole</span><span class="o">/</span><span class="n">default_units</span><span class="o">.</span><span class="n">m3</span><span class="p">,</span>
+            <span class="n">u_symbol</span><span class="o">=</span><span class="s1">&#39;mM&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">default_units</span><span class="p">,</span> <span class="s1">&#39;micromolar&#39;</span><span class="p">):</span>
+        <span class="n">default_units</span><span class="o">.</span><span class="n">micromolar</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">UnitQuantity</span><span class="p">(</span>
+            <span class="s1">&#39;uM&#39;</span><span class="p">,</span>  <span class="mf">1e-3</span> <span class="o">*</span> <span class="n">default_units</span><span class="o">.</span><span class="n">mole</span><span class="o">/</span><span class="n">default_units</span><span class="o">.</span><span class="n">m3</span><span class="p">,</span>
+            <span class="n">u_symbol</span><span class="o">=</span><span class="s1">&#39;μM&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">default_units</span><span class="p">,</span> <span class="s1">&#39;nanomolar&#39;</span><span class="p">):</span>
+        <span class="n">default_units</span><span class="o">.</span><span class="n">nanomolar</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">UnitQuantity</span><span class="p">(</span>
+            <span class="s1">&#39;nM&#39;</span><span class="p">,</span> <span class="mf">1e-6</span> <span class="o">*</span> <span class="n">default_units</span><span class="o">.</span><span class="n">mole</span><span class="o">/</span><span class="n">default_units</span><span class="o">.</span><span class="n">m3</span><span class="p">,</span>
+            <span class="n">u_symbol</span><span class="o">=</span><span class="s1">&#39;nM&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">default_units</span><span class="p">,</span> <span class="s1">&#39;molal&#39;</span><span class="p">):</span>
+        <span class="n">default_units</span><span class="o">.</span><span class="n">molal</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">UnitQuantity</span><span class="p">(</span>
+            <span class="s1">&#39;molal&#39;</span><span class="p">,</span>  <span class="n">default_units</span><span class="o">.</span><span class="n">mole</span> <span class="o">/</span> <span class="n">default_units</span><span class="o">.</span><span class="n">kg</span><span class="p">,</span>
+            <span class="n">u_symbol</span><span class="o">=</span><span class="s1">&#39;molal&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">default_units</span><span class="p">,</span> <span class="s1">&#39;per100eV&#39;</span><span class="p">):</span>
+        <span class="n">default_units</span><span class="o">.</span><span class="n">per100eV</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">UnitQuantity</span><span class="p">(</span>
+            <span class="s1">&#39;per_100_eV&#39;</span><span class="p">,</span>
+            <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="mi">100</span><span class="o">*</span><span class="n">default_units</span><span class="o">.</span><span class="n">eV</span><span class="o">*</span><span class="n">default_constants</span><span class="o">.</span><span class="n">Avogadro_constant</span><span class="p">),</span>
+            <span class="n">u_symbol</span><span class="o">=</span><span class="s1">&#39;(100eV)**-1&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">default_units</span><span class="p">,</span> <span class="s1">&#39;micromole&#39;</span><span class="p">):</span>
+        <span class="n">default_units</span><span class="o">.</span><span class="n">micromole</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">UnitQuantity</span><span class="p">(</span>
+            <span class="s1">&#39;micromole&#39;</span><span class="p">,</span>  <span class="n">pq</span><span class="o">.</span><span class="n">mole</span><span class="o">/</span><span class="mf">1e6</span><span class="p">,</span>  <span class="n">u_symbol</span><span class="o">=</span><span class="sa">u</span><span class="s1">&#39;μmol&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">default_units</span><span class="p">,</span> <span class="s1">&#39;nanomole&#39;</span><span class="p">):</span>
+        <span class="n">default_units</span><span class="o">.</span><span class="n">nanomole</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">UnitQuantity</span><span class="p">(</span>
+            <span class="s1">&#39;nanomole&#39;</span><span class="p">,</span>  <span class="n">pq</span><span class="o">.</span><span class="n">mole</span><span class="o">/</span><span class="mf">1e9</span><span class="p">,</span>  <span class="n">u_symbol</span><span class="o">=</span><span class="sa">u</span><span class="s1">&#39;nmol&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">default_units</span><span class="p">,</span> <span class="s1">&#39;kilojoule&#39;</span><span class="p">):</span>
+        <span class="n">default_units</span><span class="o">.</span><span class="n">kilojoule</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">UnitQuantity</span><span class="p">(</span>
+            <span class="s1">&#39;kilojoule&#39;</span><span class="p">,</span>  <span class="mf">1e3</span><span class="o">*</span><span class="n">pq</span><span class="o">.</span><span class="n">joule</span><span class="p">,</span>  <span class="n">u_symbol</span><span class="o">=</span><span class="s1">&#39;kJ&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">default_units</span><span class="p">,</span> <span class="s1">&#39;perMolar_perSecond&#39;</span><span class="p">):</span>
+        <span class="n">default_units</span><span class="o">.</span><span class="n">perMolar_perSecond</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">default_units</span><span class="o">.</span><span class="n">molar</span><span class="o">/</span><span class="n">pq</span><span class="o">.</span><span class="n">s</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">default_units</span><span class="p">,</span> <span class="s1">&#39;umol&#39;</span><span class="p">):</span>
+        <span class="n">default_units</span><span class="o">.</span><span class="n">umol</span> <span class="o">=</span> <span class="n">default_units</span><span class="o">.</span><span class="n">micromole</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">default_units</span><span class="p">,</span> <span class="s1">&#39;umol_per_J&#39;</span><span class="p">):</span>
+        <span class="n">default_units</span><span class="o">.</span><span class="n">umol_per_J</span> <span class="o">=</span> <span class="n">default_units</span><span class="o">.</span><span class="n">umol</span> <span class="o">/</span> <span class="n">pq</span><span class="o">.</span><span class="n">joule</span>
+
+    <span class="c1"># unit registry data and logic:</span>
+
+    <span class="n">SI_base_registry</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;length&#39;</span><span class="p">:</span> <span class="n">default_units</span><span class="o">.</span><span class="n">metre</span><span class="p">,</span>
+        <span class="s1">&#39;mass&#39;</span><span class="p">:</span> <span class="n">default_units</span><span class="o">.</span><span class="n">kilogram</span><span class="p">,</span>
+        <span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="n">default_units</span><span class="o">.</span><span class="n">second</span><span class="p">,</span>
+        <span class="s1">&#39;current&#39;</span><span class="p">:</span> <span class="n">default_units</span><span class="o">.</span><span class="n">ampere</span><span class="p">,</span>
+        <span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="n">default_units</span><span class="o">.</span><span class="n">kelvin</span><span class="p">,</span>
+        <span class="s1">&#39;luminous_intensity&#39;</span><span class="p">:</span> <span class="n">default_units</span><span class="o">.</span><span class="n">candela</span><span class="p">,</span>
+        <span class="s1">&#39;amount&#39;</span><span class="p">:</span> <span class="n">default_units</span><span class="o">.</span><span class="n">mole</span>
+    <span class="p">}</span>
+
+
+<div class="viewcode-block" id="magnitude"><a class="viewcode-back" href="../../chempy.html#chempy.units.magnitude">[docs]</a><span class="k">def</span> <span class="nf">magnitude</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">magnitude</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">value</span></div>
+
+<span class="n">energy</span> <span class="o">=</span> <span class="n">ArithmeticDict</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;mass&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;length&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">2</span><span class="p">})</span>
+<span class="n">volume</span> <span class="o">=</span> <span class="n">ArithmeticDict</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;length&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">})</span>
+<span class="n">concentration</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;amount&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span> <span class="o">-</span> <span class="n">volume</span>
+
+
+<div class="viewcode-block" id="get_derived_unit"><a class="viewcode-back" href="../../chempy.html#chempy.units.get_derived_unit">[docs]</a><span class="k">def</span> <span class="nf">get_derived_unit</span><span class="p">(</span><span class="n">registry</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Get the unit of a physcial quantity in a provided unit system.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    registry: dict (str: unit)</span>
+<span class="sd">        mapping &#39;length&#39;, &#39;mass&#39;, &#39;time&#39;, &#39;current&#39;, &#39;temperature&#39;,</span>
+<span class="sd">        &#39;luminous_intensity&#39;, &#39;amount&#39;. If registry is ``None`` the</span>
+<span class="sd">        function returns 1.0 unconditionally.</span>
+<span class="sd">    key: str</span>
+<span class="sd">        one of the registry keys or one of: &#39;diffusivity&#39;, &#39;electrical_mobility&#39;,</span>
+<span class="sd">        &#39;permittivity&#39;, &#39;charge&#39;, &#39;energy&#39;, &#39;concentration&#39;, &#39;density&#39;,</span>
+<span class="sd">        &#39;radiolytic_yield&#39;</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; m, s = default_units.meter, default_units.second</span>
+<span class="sd">    &gt;&gt;&gt; get_derived_unit(SI_base_registry, &#39;diffusivity&#39;) == m**2/s</span>
+<span class="sd">    True</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">registry</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">1.0</span>
+    <span class="n">derived</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;diffusivity&#39;</span><span class="p">:</span> <span class="n">registry</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">registry</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;electrical_mobility&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">registry</span><span class="p">[</span><span class="s1">&#39;current&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">registry</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span>
+                                <span class="n">registry</span><span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;permittivity&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">registry</span><span class="p">[</span><span class="s1">&#39;current&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">registry</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">4</span> <span class="o">/</span>
+                         <span class="p">(</span><span class="n">registry</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">3</span><span class="o">*</span><span class="n">registry</span><span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">])),</span>
+        <span class="s1">&#39;charge&#39;</span><span class="p">:</span> <span class="n">registry</span><span class="p">[</span><span class="s1">&#39;current&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">registry</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;energy&#39;</span><span class="p">:</span> <span class="n">registry</span><span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">registry</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">registry</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span>
+        <span class="s1">&#39;concentration&#39;</span><span class="p">:</span> <span class="n">registry</span><span class="p">[</span><span class="s1">&#39;amount&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">registry</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">3</span><span class="p">,</span>
+        <span class="s1">&#39;density&#39;</span><span class="p">:</span> <span class="n">registry</span><span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">registry</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">3</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">derived</span><span class="p">[</span><span class="s1">&#39;diffusion&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">derived</span><span class="p">[</span><span class="s1">&#39;diffusivity&#39;</span><span class="p">]</span>  <span class="c1"># &#39;diffusion&#39; is deprecated</span>
+    <span class="n">derived</span><span class="p">[</span><span class="s1">&#39;radiolytic_yield&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">registry</span><span class="p">[</span><span class="s1">&#39;amount&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">derived</span><span class="p">[</span><span class="s1">&#39;energy&#39;</span><span class="p">]</span>
+    <span class="n">derived</span><span class="p">[</span><span class="s1">&#39;doserate&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">derived</span><span class="p">[</span><span class="s1">&#39;energy&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">registry</span><span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">registry</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">derived</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">registry</span><span class="p">[</span><span class="n">key</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="unit_registry_to_human_readable"><a class="viewcode-back" href="../../chempy.html#chempy.units.unit_registry_to_human_readable">[docs]</a><span class="k">def</span> <span class="nf">unit_registry_to_human_readable</span><span class="p">(</span><span class="n">unit_registry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Serialization of a unit registry. &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">unit_registry</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">new_registry</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">SI_base_registry</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">unit_registry</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="ow">is</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">new_registry</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dim_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">unit_registry</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dim_list</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Compound units not allowed: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">dim_list</span><span class="p">))</span>
+            <span class="n">u_symbol</span> <span class="o">=</span> <span class="n">dim_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">u_symbol</span>
+            <span class="n">new_registry</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">unit_registry</span><span class="p">[</span><span class="n">k</span><span class="p">]),</span> <span class="n">u_symbol</span>
+    <span class="k">return</span> <span class="n">new_registry</span></div>
+
+
+<div class="viewcode-block" id="latex_of_unit"><a class="viewcode-back" href="../../chempy.html#chempy.units.latex_of_unit">[docs]</a><span class="k">def</span> <span class="nf">latex_of_unit</span><span class="p">(</span><span class="n">quant</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns LaTeX reperesentation of the unit of a quantity</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; print(latex_of_unit(1/default_units.kelvin))</span>
+<span class="sd">    \\mathrm{\\frac{1}{K}}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">quant</span><span class="o">.</span><span class="n">dimensionality</span><span class="o">.</span><span class="n">latex</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;$&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="unicode_of_unit"><a class="viewcode-back" href="../../chempy.html#chempy.units.unicode_of_unit">[docs]</a><span class="k">def</span> <span class="nf">unicode_of_unit</span><span class="p">(</span><span class="n">quant</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns unicode reperesentation of the unit of a quantity</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; print(unicode_of_unit(1/default_units.kelvin))</span>
+<span class="sd">    1/K</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">quant</span><span class="o">.</span><span class="n">dimensionality</span><span class="o">.</span><span class="n">unicode</span></div>
+
+
+<div class="viewcode-block" id="html_of_unit"><a class="viewcode-back" href="../../chempy.html#chempy.units.html_of_unit">[docs]</a><span class="k">def</span> <span class="nf">html_of_unit</span><span class="p">(</span><span class="n">quant</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns HTML reperesentation of the unit of a quantity</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; print(html_of_unit(2*default_units.m**2))</span>
+<span class="sd">    m&lt;sup&gt;2&lt;/sup&gt;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">quant</span><span class="o">.</span><span class="n">dimensionality</span><span class="o">.</span><span class="n">html</span></div>
+
+
+<div class="viewcode-block" id="unit_registry_from_human_readable"><a class="viewcode-back" href="../../chempy.html#chempy.units.unit_registry_from_human_readable">[docs]</a><span class="k">def</span> <span class="nf">unit_registry_from_human_readable</span><span class="p">(</span><span class="n">unit_registry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Deserialization of unit_registry. &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">unit_registry</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">new_registry</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">SI_base_registry</span><span class="p">:</span>
+        <span class="n">factor</span><span class="p">,</span> <span class="n">u_symbol</span> <span class="o">=</span> <span class="n">unit_registry</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">u_symbol</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">unit_quants</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">unit_quants</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pq</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">u_symbol</span><span class="p">)</span><span class="o">.</span><span class="n">dimensionality</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unit_quants</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Unkown UnitQuantity: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">unit_registry</span><span class="p">[</span><span class="n">k</span><span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_registry</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">factor</span><span class="o">*</span><span class="n">unit_quants</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">new_registry</span></div>
+
+
+<span class="c1"># Abstraction of underlying package providing units and dimensional analysis:</span>
+
+<div class="viewcode-block" id="is_unitless"><a class="viewcode-back" href="../../chempy.html#chempy.units.is_unitless">[docs]</a><span class="k">def</span> <span class="nf">is_unitless</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns ``True`` if ``expr`` is unitless, otherwise ``False``</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; is_unitless(42)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; is_unitless(42*default_units.kilogram)</span>
+<span class="sd">    False</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="s1">&#39;dimensionality&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">expr</span><span class="o">.</span><span class="n">simplified</span><span class="o">.</span><span class="n">dimensionality</span> <span class="o">==</span> <span class="n">pq</span><span class="o">.</span><span class="n">dimensionless</span><span class="o">.</span><span class="n">dimensionality</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">is_unitless</span><span class="p">(</span><span class="n">_</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">expr</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="unit_of"><a class="viewcode-back" href="../../chempy.html#chempy.units.unit_of">[docs]</a><span class="k">def</span> <span class="nf">unit_of</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">simplified</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns the unit of a quantity</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; unit_of(42*pq.second) == unit_of(12*pq.second)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; unit_of(42)</span>
+<span class="sd">    1</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">simplified</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">expr</span><span class="o">.</span><span class="n">units</span><span class="o">.</span><span class="n">simplified</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">expr</span><span class="o">.</span><span class="n">units</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span></div>
+
+
+<div class="viewcode-block" id="rescale"><a class="viewcode-back" href="../../chempy.html#chempy.units.rescale">[docs]</a><span class="k">def</span> <span class="nf">rescale</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">unit</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="n">unit</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="to_unitless"><a class="viewcode-back" href="../../chempy.html#chempy.units.to_unitless">[docs]</a><span class="k">def</span> <span class="nf">to_unitless</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">new_unit</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Nondimensionalization of a quantity.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value: quantity</span>
+<span class="sd">    new_unit: unit</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; &#39;%.1g&#39; % to_unitless(1*default_units.metre, default_units.nm)</span>
+<span class="sd">    &#39;1e+09&#39;</span>
+<span class="sd">    &gt;&gt;&gt; &#39;%.1g %.1g&#39; % tuple(to_unitless([1*default_units.m, 1*default_units.mm], default_units.nm))</span>
+<span class="sd">    &#39;1e+09 1e+06&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">new_unit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">new_unit</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">dimensionless</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;rescale&#39;</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">to_unitless</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">new_unit</span><span class="p">)</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">value</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">new_value</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>  <span class="c1"># value.copy()</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+            <span class="n">new_value</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">to_unitless</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">new_unit</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_value</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span> <span class="ow">and</span> <span class="n">new_unit</span> <span class="ow">is</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">new_unit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">value</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;str not supported&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">value</span><span class="o">*</span><span class="n">pq</span><span class="o">.</span><span class="n">dimensionless</span><span class="o">/</span><span class="n">new_unit</span><span class="p">)</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="n">pq</span><span class="o">.</span><span class="n">dimensionless</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">new_unit</span> <span class="o">==</span> <span class="n">pq</span><span class="o">.</span><span class="n">dimensionless</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">value</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">to_unitless</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">new_unit</span><span class="p">)</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">value</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="get_physical_quantity"><a class="viewcode-back" href="../../chempy.html#chempy.units.get_physical_quantity">[docs]</a><span class="k">def</span> <span class="nf">get_physical_quantity</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">is_unitless</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    <span class="n">_quantities_mapping</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">pq</span><span class="o">.</span><span class="n">UnitLength</span><span class="p">:</span> <span class="s1">&#39;length&#39;</span><span class="p">,</span>
+        <span class="n">pq</span><span class="o">.</span><span class="n">UnitMass</span><span class="p">:</span> <span class="s1">&#39;mass&#39;</span><span class="p">,</span>
+        <span class="n">pq</span><span class="o">.</span><span class="n">UnitTime</span><span class="p">:</span> <span class="s1">&#39;time&#39;</span><span class="p">,</span>
+        <span class="n">pq</span><span class="o">.</span><span class="n">UnitCurrent</span><span class="p">:</span> <span class="s1">&#39;current&#39;</span><span class="p">,</span>
+        <span class="n">pq</span><span class="o">.</span><span class="n">UnitTemperature</span><span class="p">:</span> <span class="s1">&#39;temperature&#39;</span><span class="p">,</span>
+        <span class="n">pq</span><span class="o">.</span><span class="n">UnitLuminousIntensity</span><span class="p">:</span> <span class="s1">&#39;luminous_intensity&#39;</span><span class="p">,</span>
+        <span class="n">pq</span><span class="o">.</span><span class="n">UnitSubstance</span><span class="p">:</span> <span class="s1">&#39;amount&#39;</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">_quantities_mapping</span><span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="vm">__class__</span><span class="p">]:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span>
+            <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">simplified</span><span class="o">.</span><span class="n">dimensionality</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_unit_from_registry</span><span class="p">(</span><span class="n">dimensionality</span><span class="p">,</span> <span class="n">registry</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">reduce</span><span class="p">(</span><span class="n">mul</span><span class="p">,</span> <span class="p">[</span><span class="n">registry</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">**</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dimensionality</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+
+
+<div class="viewcode-block" id="default_unit_in_registry"><a class="viewcode-back" href="../../chempy.html#chempy.units.default_unit_in_registry">[docs]</a><span class="k">def</span> <span class="nf">default_unit_in_registry</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">registry</span><span class="p">):</span>
+    <span class="n">_dimensionality</span> <span class="o">=</span> <span class="n">get_physical_quantity</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">_dimensionality</span> <span class="o">==</span> <span class="p">{}:</span>
+        <span class="k">return</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">_get_unit_from_registry</span><span class="p">(</span><span class="n">_dimensionality</span><span class="p">,</span> <span class="n">registry</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="unitless_in_registry"><a class="viewcode-back" href="../../chempy.html#chempy.units.unitless_in_registry">[docs]</a><span class="k">def</span> <span class="nf">unitless_in_registry</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">registry</span><span class="p">):</span>
+    <span class="n">_default_unit</span> <span class="o">=</span> <span class="n">default_unit_in_registry</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">registry</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">to_unitless</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_default_unit</span><span class="p">)</span></div>
+
+
+<span class="c1"># NumPy like functions for compatibility:</span>
+
+<div class="viewcode-block" id="allclose"><a class="viewcode-back" href="../../chempy.html#chempy.units.allclose">[docs]</a><span class="k">def</span> <span class="nf">allclose</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Analogous to ``numpy.allclose``. &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">a</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">allclose</span><span class="p">(</span><span class="n">_a</span><span class="p">,</span> <span class="n">_b</span><span class="p">,</span> <span class="n">rtol</span><span class="p">,</span> <span class="n">atol</span><span class="p">)</span> <span class="k">for</span> <span class="n">_a</span><span class="p">,</span> <span class="n">_b</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">))</span>
+        <span class="k">raise</span>
+    <span class="n">lim</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">*</span><span class="n">rtol</span>
+    <span class="k">if</span> <span class="n">atol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">lim</span> <span class="o">+=</span> <span class="n">atol</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">d</span> <span class="o">&lt;=</span> <span class="n">lim</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">([</span><span class="n">_d</span> <span class="o">&lt;=</span> <span class="n">_lim</span> <span class="k">for</span> <span class="n">_d</span><span class="p">,</span> <span class="n">_lim</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">lim</span><span class="p">)])</span></div>
+
+
+<div class="viewcode-block" id="linspace"><a class="viewcode-back" href="../../chempy.html#chempy.units.linspace">[docs]</a><span class="k">def</span> <span class="nf">linspace</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Analogous to ``numpy.linspace``.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; abs(linspace(2, 8, num=3)[1] - 5) &lt; 1e-15</span>
+<span class="sd">    True</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># work around for quantities v0.10.1 and NumPy</span>
+    <span class="n">unit</span> <span class="o">=</span> <span class="n">unit_of</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+    <span class="n">start_</span> <span class="o">=</span> <span class="n">to_unitless</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
+    <span class="n">stop_</span> <span class="o">=</span> <span class="n">to_unitless</span><span class="p">(</span><span class="n">stop</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start_</span><span class="p">,</span> <span class="n">stop_</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span><span class="o">*</span><span class="n">unit</span></div>
+
+
+<div class="viewcode-block" id="logspace_from_lin"><a class="viewcode-back" href="../../chempy.html#chempy.units.logspace_from_lin">[docs]</a><span class="k">def</span> <span class="nf">logspace_from_lin</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Logarithmically spaced data points</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; abs(logspace_from_lin(2, 8, num=3)[1] - 4) &lt; 1e-15</span>
+<span class="sd">    True</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">unit</span> <span class="o">=</span> <span class="n">unit_of</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+    <span class="n">start_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">to_unitless</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">unit</span><span class="p">))</span>
+    <span class="n">stop_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">to_unitless</span><span class="p">(</span><span class="n">stop</span><span class="p">,</span> <span class="n">unit</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp2</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start_</span><span class="p">,</span> <span class="n">stop_</span><span class="p">,</span> <span class="n">num</span><span class="p">))</span><span class="o">*</span><span class="n">unit</span></div>
+
+
+<span class="k">def</span> <span class="nf">_sum</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">iterable</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="n">result</span> <span class="o">+=</span> <span class="n">elem</span>
+        <span class="k">return</span> <span class="n">result</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">+=</span> <span class="nb">next</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Not sure how this point was reached&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Backend"><a class="viewcode-back" href="../../chempy.html#chempy.units.Backend">[docs]</a><span class="k">class</span> <span class="nc">Backend</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Wrapper around modules such as numpy and math</span>
+
+<span class="sd">    Instances of Backend wraps a module, e.g. `numpy` and ensures that</span>
+<span class="sd">    arguments passed on are unitless, i.e. it raises an error if a</span>
+<span class="sd">    transcendental function is used with quantities with units.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    underlying_backend : module, str or tuple of str</span>
+<span class="sd">        e.g. &#39;numpy&#39; or (&#39;sympy&#39;, &#39;math&#39;)</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import math</span>
+<span class="sd">    &gt;&gt;&gt; km, m = default_units.kilometre, default_units.metre</span>
+<span class="sd">    &gt;&gt;&gt; math.exp(3*km) == math.exp(3*m)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; be = Backend(&#39;math&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; be.exp(3*km)</span>
+<span class="sd">    Traceback (most recent call last):</span>
+<span class="sd">        ...</span>
+<span class="sd">    ValueError: Unable to convert between units of &quot;km&quot; and &quot;dimensionless&quot;</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; np.sum([1000*pq.metre/pq.kilometre, 1])</span>
+<span class="sd">    1001.0</span>
+<span class="sd">    &gt;&gt;&gt; be_np = Backend(np)</span>
+<span class="sd">    &gt;&gt;&gt; be_np.sum([[1000*pq.metre/pq.kilometre, 1], [3, 4]], axis=1)</span>
+<span class="sd">    array([ 2.,  7.])</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">underlying_backend</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;numpy&#39;</span><span class="p">,</span> <span class="s1">&#39;math&#39;</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">underlying_backend</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">underlying_backend</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">be</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Could not import any of </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span>
+                                 <span class="nb">str</span><span class="p">(</span><span class="n">underlying_backend</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">underlying_backend</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">be</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span><span class="n">underlying_backend</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">be</span> <span class="o">=</span> <span class="n">underlying_backend</span>
+
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="n">be_attr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">be</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">be_attr</span><span class="p">):</span>
+            <span class="k">return</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">be_attr</span><span class="p">(</span><span class="o">*</span><span class="nb">map</span><span class="p">(</span><span class="n">to_unitless</span><span class="p">,</span> <span class="n">args</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">be_attr</span></div>
+
+
+<span class="c1"># TODO: decide whether to deprecate in favor of &quot;number_to_scientific_latex&quot;?</span>
+<div class="viewcode-block" id="format_string"><a class="viewcode-back" href="../../chempy.html#chempy.units.format_string">[docs]</a><span class="k">def</span> <span class="nf">format_string</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%.5g</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Formats a scalar with unit as two strings</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value: float with unit</span>
+<span class="sd">    precision: str</span>
+<span class="sd">    tex: bool</span>
+<span class="sd">       LaTeX formatted or not? (no &#39;$&#39; signs)</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; print(&#39; &#39;.join(format_string(0.42*default_units.mol/default_units.decimetre**3)))</span>
+<span class="sd">    0.42 mol/decimetre**3</span>
+<span class="sd">    &gt;&gt;&gt; print(&#39; &#39;.join(format_string(2/default_units.s, tex=True)))</span>
+<span class="sd">    2 \\mathrm{\\frac{1}{s}}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">tex</span><span class="p">:</span>
+        <span class="n">unit_str</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">dimensionality</span><span class="o">.</span><span class="n">latex</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;$&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">quantities.markup</span> <span class="k">import</span> <span class="n">config</span>
+        <span class="n">attr</span> <span class="o">=</span> <span class="s1">&#39;unicode&#39;</span> <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">use_unicode</span> <span class="k">else</span> <span class="s1">&#39;string&#39;</span>
+        <span class="n">unit_str</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">precision</span> <span class="o">%</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">magnitude</span><span class="p">),</span> <span class="n">unit_str</span></div>
+
+
+<div class="viewcode-block" id="concatenate"><a class="viewcode-back" href="../../chempy.html#chempy.units.concatenate">[docs]</a><span class="k">def</span> <span class="nf">concatenate</span><span class="p">(</span><span class="n">arrays</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Patched version of numpy.concatenate &quot;&quot;&quot;</span>
+    <span class="n">unit</span> <span class="o">=</span> <span class="n">unit_of</span><span class="p">(</span><span class="n">arrays</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">to_unitless</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span> <span class="k">for</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">arrays</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span><span class="o">*</span><span class="n">unit</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.5.5',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

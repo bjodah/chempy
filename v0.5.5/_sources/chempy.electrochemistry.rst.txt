@@ -1,0 +1,20 @@
+chempy\.electrochemistry package
+================================
+
+.. automodule:: chempy.electrochemistry
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Submodules
+----------
+
+chempy\.electrochemistry\.nernst module
+---------------------------------------
+
+.. automodule:: chempy.electrochemistry.nernst
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
