@@ -1,5 +1,5 @@
 {% set name = "chempy" %}
-{% set version = "0.5.0.git" %}
+{% set version = "0.6.0.dev0+git" %}
 
 package:
   name: {{ name|lower }}
@@ -17,32 +17,28 @@ requirements:
   build:
     - python
     - setuptools
-    - numpy
-    - sympy
-    - scipy
-    - matplotlib
-    - quantities
-    - sym
-    - appdirs
-    - pyodesys
-    - pyneqsys
-    - pyparsing
   run:
     - python
     - numpy
-    - sympy
     - scipy
     - matplotlib
+    - sympy
     - quantities
-    - sym
-    - appdirs
-    - pyodesys
     - pyneqsys
+    - pyodesys
     - pyparsing
+    - sym
 
 test:
   imports:
     - {{ name }}
+    - {{ name }}.kinetics
+    - {{ name }}.printing
+    - {{ name }}.properties
+  requires:
+    - pytest
+  commands:
+    - pytest --pyargs chempy
 
 about:
   home: https://github.com/bjodah/chempy
