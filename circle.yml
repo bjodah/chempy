@@ -4,7 +4,7 @@ machine:
 
 dependencies:
   pre:
-    - ./bin/circleci_dependencies.sh
+    - ./scripts/circleci_dependencies.sh
   cache_directories:
     - "~/miniconda"
 
