@@ -41,8 +41,10 @@ class EqSystem(ReactionSystem):
         return [equilibrium_quotient(concs, stoichs[ri, :])
                 for ri in range(self.nr)]
 
-    def stoichs_constants(self, eq_params, rref=False, Matrix=None,
+    def stoichs_constants(self, eq_params=None, rref=False, Matrix=None,
                           backend=None, non_precip_rids=()):
+        if eq_params is None:
+            eq_params = self.eq_constants()
         if rref:
             from pyneqsys.symbolic import linear_rref
             be = get_backend(backend)
@@ -119,11 +121,13 @@ class EqSystem(ReactionSystem):
                 return True
         return bw_cond
 
-    def _SymbolicSys_from_NumSys(self, NS, conds, rref_equil, rref_preserv):
+    def _SymbolicSys_from_NumSys(self, NS, conds, rref_equil, rref_preserv,
+                                 new_eq_params=True):
         from pyneqsys.symbolic import SymbolicSys
         import sympy as sp
         ns = NS(self, backend=sp, rref_equil=rref_equil,
-                rref_preserv=rref_preserv, precipitates=conds)
+                rref_preserv=rref_preserv, precipitates=conds,
+                new_eq_params=new_eq_params)
         symb_kw = {}
         if ns.pre_processor is not None:
             symb_kw['pre_processors'] = [ns.pre_processor]
@@ -132,15 +136,17 @@ class EqSystem(ReactionSystem):
         if ns.internal_x0_cb is not None:
             symb_kw['internal_x0_cb'] = ns.internal_x0_cb
         return SymbolicSys.from_callback(
-            ns.f, self.ns, nparams=self.ns + self.nr, **symb_kw)
+            ns.f, self.ns, nparams=self.ns + (self.nr if new_eq_params else 0),
+            **symb_kw)
 
     def get_neqsys_conditional_chained(self, init_concs, rref_equil=False,
-                                       rref_preserv=False, NumSys=NumSysLin):
+                                       rref_preserv=False, NumSys=NumSysLin, **kwargs):
         from pyneqsys import ConditionalNeqSys, ChainedNeqSys
 
         def factory(conds):
             return ChainedNeqSys([self._SymbolicSys_from_NumSys(
-                NS, conds, rref_equil, rref_preserv) for NS in NumSys])
+                NS, conds, rref_equil, rref_preserv, **kwargs
+            ) for NS in NumSys])
 
         cond_cbs = [(self._fw_cond_factory(ri),
                      self._bw_cond_factory(ri, NumSys[0].small)) for
@@ -149,13 +155,13 @@ class EqSystem(ReactionSystem):
 
     def get_neqsys_chained_conditional(self, init_concs, rref_equil=False,
                                        rref_preserv=False,
-                                       NumSys=NumSysLin):
+                                       NumSys=NumSysLin, **kwargs):
         from pyneqsys import ConditionalNeqSys, ChainedNeqSys
 
         def mk_factory(NS):
             def factory(conds):
                 return self._SymbolicSys_from_NumSys(NS, conds, rref_equil,
-                                                     rref_preserv)
+                                                     rref_preserv, **kwargs)
             return factory
 
         return ChainedNeqSys(
@@ -168,12 +174,12 @@ class EqSystem(ReactionSystem):
 
     def get_neqsys_static_conditions(self, init_concs, rref_equil=False,
                                      rref_preserv=False,
-                                     NumSys=NumSysLin, precipitates=None):
+                                     NumSys=(NumSysLin,), precipitates=None, **kwargs):
         if precipitates is None:
             precipitates = (False,)*len(self.phase_transfer_reaction_idxs())
         from pyneqsys import ChainedNeqSys
         return ChainedNeqSys([self._SymbolicSys_from_NumSys(
-            NS, precipitates, rref_equil, rref_preserv) for NS in NumSys])
+            NS, precipitates, rref_equil, rref_preserv, **kwargs) for NS in NumSys])
 
     def get_neqsys(self, neqsys_type, init_concs, NumSys=NumSysLin, **kwargs):
         new_kw = {'rref_equil': False, 'rref_preserv': False}
@@ -208,7 +214,8 @@ class EqSystem(ReactionSystem):
             return False
         return True
 
-    def _solve(self, init_concs, x0=None, NumSys=(NumSysLog, NumSysLin), neqsys='chained_conditional', **kwargs):
+    def _solve(self, init_concs, x0=None, NumSys=(NumSysLog, NumSysLin),
+               neqsys='chained_conditional', **kwargs):
         if isinstance(neqsys, str):
             neqsys = self.get_neqsys(
                 neqsys, init_concs, NumSys=NumSys,
