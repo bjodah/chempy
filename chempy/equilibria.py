@@ -33,8 +33,8 @@ class EqSystem(ReactionSystem):
     def eq_constants(self, non_precip_rids=(), eq_params=None, small=0):
         if eq_params is None:
             eq_params = [eq.param for eq in self.rxns]
-        return np.array([small if idx in non_precip_rids else
-                         eq_params[idx] for idx, eq in enumerate(eq_params)])
+        return [small if idx in non_precip_rids else
+                eq_params[idx] for idx, eq in enumerate(eq_params)]
 
     def equilibrium_quotients(self, concs):
         stoichs = self.stoichs()
