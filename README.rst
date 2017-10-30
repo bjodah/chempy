@@ -183,9 +183,7 @@ Chemical kinetics (system of ordinary differential equations)
    >>> rsys = ReactionSystem.from_string("""2 Fe+2 + H2O2 -> 2 Fe+3 + 2 OH-; 42
    ...     2 Fe+3 + H2O2 -> 2 Fe+2 + O2 + 2 H+; 17
    ...     H+ + OH- -> H2O; 1e10
-   ...     H2O -> H+ + OH-; 1e-4
-   ...     Fe+3 + 2 H2O -> FeOOH(s) + 3 H+; 1
-   ...     FeOOH(s) + 3 H+ -> Fe+3 + 2 H2O; 2.5""")  # "[H2O]" = 1.0 (actually 55.4 at RT)
+   ...     H2O -> H+ + OH-; 1e-4""")  # "[H2O]" = 1.0 (actually 55.4 at RT)
    >>> from chempy.kinetics.ode import get_odesys
    >>> odesys, extra = get_odesys(rsys)
    >>> from collections import defaultdict
