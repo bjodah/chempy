@@ -34,7 +34,7 @@ class EqSystem(ReactionSystem):
         if eq_params is None:
             eq_params = [eq.param for eq in self.rxns]
         return [small if idx in non_precip_rids else
-                eq_params[idx] for idx, eq in enumerate(eq_params)]
+                eq for idx, eq in enumerate(eq_params)]
 
     def equilibrium_quotients(self, concs):
         stoichs = self.stoichs()
@@ -139,7 +139,7 @@ class EqSystem(ReactionSystem):
             ns.f, self.ns, nparams=self.ns + (self.nr if new_eq_params else 0),
             **symb_kw)
 
-    def get_neqsys_conditional_chained(self, init_concs, rref_equil=False,
+    def get_neqsys_conditional_chained(self, rref_equil=False,
                                        rref_preserv=False, NumSys=NumSysLin, **kwargs):
         from pyneqsys import ConditionalNeqSys, ChainedNeqSys
 
@@ -153,7 +153,7 @@ class EqSystem(ReactionSystem):
                     ri in self.phase_transfer_reaction_idxs()]
         return ConditionalNeqSys(cond_cbs, factory)
 
-    def get_neqsys_chained_conditional(self, init_concs, rref_equil=False,
+    def get_neqsys_chained_conditional(self, rref_equil=False,
                                        rref_preserv=False,
                                        NumSys=NumSysLin, **kwargs):
         from pyneqsys import ConditionalNeqSys, ChainedNeqSys
@@ -172,7 +172,7 @@ class EqSystem(ReactionSystem):
                 mk_factory(NS)
             ) for NS in NumSys])
 
-    def get_neqsys_static_conditions(self, init_concs, rref_equil=False,
+    def get_neqsys_static_conditions(self, rref_equil=False,
                                      rref_preserv=False,
                                      NumSys=(NumSysLin,), precipitates=None, **kwargs):
         if precipitates is None:
@@ -181,7 +181,7 @@ class EqSystem(ReactionSystem):
         return ChainedNeqSys([self._SymbolicSys_from_NumSys(
             NS, precipitates, rref_equil, rref_preserv, **kwargs) for NS in NumSys])
 
-    def get_neqsys(self, neqsys_type, init_concs, NumSys=NumSysLin, **kwargs):
+    def get_neqsys(self, neqsys_type, NumSys=NumSysLin, **kwargs):
         new_kw = {'rref_equil': False, 'rref_preserv': False}
         if neqsys_type == 'static_conditions':
             new_kw['precipitates'] = None
@@ -196,7 +196,7 @@ class EqSystem(ReactionSystem):
         else:
             new_kw['NumSys'] = NumSys
 
-        return getattr(self, 'get_neqsys_' + neqsys_type)(init_concs, **new_kw)
+        return getattr(self, 'get_neqsys_' + neqsys_type)(**new_kw)
 
     def non_precip_rids(self, precipitates):
         return [idx for idx, precip in zip(
@@ -218,7 +218,7 @@ class EqSystem(ReactionSystem):
                neqsys='chained_conditional', **kwargs):
         if isinstance(neqsys, str):
             neqsys = self.get_neqsys(
-                neqsys, init_concs, NumSys=NumSys,
+                neqsys, NumSys=NumSys,
                 rref_equil=kwargs.pop('rref_equil', False),
                 rref_preserv=kwargs.pop('rref_preserv', False),
                 precipitates=kwargs.pop('precipitates', None))
@@ -244,7 +244,7 @@ class EqSystem(ReactionSystem):
                                               in self.eq_constants()]))
         if neqsys is None:
             neqsys = self.get_neqsys(
-                neqsys_type, init_concs, NumSys=NumSys,
+                neqsys_type, NumSys=NumSys,
                 rref_equil=kwargs.pop('rref_equil', False),
                 rref_preserv=kwargs.pop('rref_preserv', False),
                 precipitates=kwargs.pop('precipitates', None))
@@ -303,7 +303,7 @@ class EqSystem(ReactionSystem):
 
         init_concs = self.as_per_substance_array(init_concs)
         neqsys = self.get_neqsys(
-            neqsys_type, init_concs, NumSys=NumSys,
+            neqsys_type, NumSys=NumSys,
             rref_equil=kwargs.pop('rref_equil', False),
             rref_preserv=kwargs.pop('rref_preserv', False),
             precipitates=kwargs.pop('precipitates', None))

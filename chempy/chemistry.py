@@ -967,6 +967,10 @@ class Equilibrium(Reaction):
         """
         return self.equilibrium_expr().eq_const(variables, backend=backend)
 
+    def equilibrium_equation(self, variables, backend=None, **kwargs):
+        return self.equilibrium_expr().equilibrium_equation(
+            variables, equilibrium=self, backend=backend, **kwargs)
+
     @deprecated(use_instead=equilibrium_constant)
     def K(self, *args, **kwargs):
         return self.equilibrium_constant(*args, **kwargs)
@@ -986,14 +990,14 @@ class Equilibrium(Reaction):
                 factor *= sc_concs[substances.index(p)]**n
         return factor
 
-    def dimensionality(self):
+    def dimensionality(self, substances):
         result = 0
         for r, n in self.reac.items():
-            if r.precipitate:
+            if getattr(substances[r], 'precipitate', False):
                 continue
             result -= n
         for p, n in self.prod.items():
-            if p.precipitate:
+            if getattr(substances[p], 'precipitate', False):
                 continue
             result += n
         return result
