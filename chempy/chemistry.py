@@ -550,7 +550,7 @@ class Reaction(object):
 
     def _xprecipitate_stoich(self, substances, xor):
         return tuple((
-            0 if xor ^ v.phase_idx > 0 else
+            0 if xor ^ getattr(v, 'phase_idx', 0) > 0 else
             self.prod.get(k, 0) + self.inact_prod.get(k, 0) -
             self.reac.get(k, 0) - self.inact_reac.get(k, 0)
         ) for k, v in substances.items())
@@ -573,7 +573,7 @@ class Reaction(object):
 
     def has_precipitates(self, substances):
         for s_name in chain(self.reac.keys(), self.prod.keys(), self.inact_reac.keys(), self.inact_prod.keys()):
-            if substances[s_name].phase_idx > 0:
+            if getattr(substances[s_name], 'phase_idx', 0) > 0:
                 return True
         return False
 
@@ -967,6 +967,10 @@ class Equilibrium(Reaction):
         """
         return self.equilibrium_expr().eq_const(variables, backend=backend)
 
+    def equilibrium_equation(self, variables, backend=None, **kwargs):
+        return self.equilibrium_expr().equilibrium_equation(
+            variables, equilibrium=self, backend=backend, **kwargs)
+
     @deprecated(use_instead=equilibrium_constant)
     def K(self, *args, **kwargs):
         return self.equilibrium_constant(*args, **kwargs)
@@ -986,14 +990,14 @@ class Equilibrium(Reaction):
                 factor *= sc_concs[substances.index(p)]**n
         return factor
 
-    def dimensionality(self):
+    def dimensionality(self, substances):
         result = 0
         for r, n in self.reac.items():
-            if r.precipitate:
+            if getattr(substances[r], 'precipitate', False):
                 continue
             result -= n
         for p, n in self.prod.items():
-            if p.precipitate:
+            if getattr(substances[p], 'precipitate', False):
                 continue
             result += n
         return result
