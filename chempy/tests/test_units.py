@@ -148,6 +148,7 @@ def test_linspace():
     assert abs(to_unitless(ls[0], u.hour) - 2/3600.) < 1e-15
 
 
+
 @requires(units_library)
 def test_logspace_from_lin():
     ls = logspace_from_lin(2*u.second, 3*u.second)

@@ -515,7 +515,15 @@ def format_string(value, precision='%.5g', tex=False):
 
 
 def concatenate(arrays, **kwargs):
-    """ Patched version of numpy.concatenate """
+    """ Patched version of numpy.concatenate
+
+    Examples
+    --------
+    >>> from chempy.units import default_units as u
+    >>> all(concatenate(([2, 3]*u.s, [4, 5]*u.s)) == [2, 3, 4, 5]*u.s)
+    True
+
+    """
     unit = unit_of(arrays[0])
     result = np.concatenate([to_unitless(arr, unit) for arr in arrays], **kwargs)
     return result*unit
