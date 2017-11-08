@@ -527,3 +527,8 @@ def concatenate(arrays, **kwargs):
     unit = unit_of(arrays[0])
     result = np.concatenate([to_unitless(arr, unit) for arr in arrays], **kwargs)
     return result*unit
+
+patched_numpy = NameSpace(np)
+patched_numpy.allclose = allclose
+patched_numpy.concatenate = concatenate
+patched_numpy.linspace = linspace
