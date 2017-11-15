@@ -11,6 +11,7 @@ from functools import reduce, partial
 from itertools import chain
 from operator import mul
 import math
+import warnings
 
 try:
     import numpy as np
@@ -388,7 +389,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         'max_euler_step_cb': max_euler_step_cb,
         'linear_dependencies': linear_dependencies,
         'rate_exprs_cb': rate_exprs_cb,
-        'cstr_fr_fc': cstr_fr_fc
+        'cstr_fr_fc': cstr_fr_fc,
     }
 
 
@@ -443,7 +444,7 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
     """ This will be a simpler version of get_odesys without the unit handling code.
     The motivation is to reduce complexity (the code of get_odesys is long with multiple closeures).
 
-    This will also rely on SymPy explicitly and the user will be expected to deal with sympy
+    This will also rely on SymPy explicitly and the user will be expected to deal with SymPy
     expressions.
 
     Only when this function has the same capabilities as get_odesys will it become and public API
@@ -458,6 +459,13 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
     backend : str or module
         Symbolic backend (e.g. sympy). The package ``sym`` is used as a wrapper.
 
+
+    Returns
+    -------
+    SymbolicSys (subclass of ``pyodesys.ODESys``)
+    dict :
+        - ``'symbols'``: dict mapping str to symbol.
+        - ``'validate'``: callable acppeting a dictionary mapping str to quantities
     """
     if backend is None:
         from sym import Backend
@@ -468,16 +476,16 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
     if substance_symbols is None:
         substance_symbols = OrderedDict([(key, backend.Symbol(key)) for key in rsys.substances])
 
-    variables = OrderedDict(chain(substance_symbols.items(), parameter_symbols.items()))
-    variables['time'] = time_symbol or backend.Symbol('t')
-    if any(variables['time'] == v for k, v in variables.items() if k != 'time'):
+    symbols = OrderedDict(chain(substance_symbols.items(), parameter_symbols.items()))
+    symbols['time'] = time_symbol or backend.Symbol('t')
+    if any(symbols['time'] == v for k, v in symbols.items() if k != 'time'):
         raise ValueError("time_symbol already in use (name clash?)")
-    rates = rsys.rates(variables)
+    rates = rsys.rates(symbols)
     compo_vecs, compo_names = rsys.composition_balance_vectors()
 
     odesys = SymbolicSys(
         zip(substance_symbols.values(), [rates[key] for key in rsys.substances]),
-        variables['time'],
+        symbols['time'],
         parameter_symbols.values(),
         names=rsys.substances.keys(),
         latex_names=[s.latex_name for s in rsys.substances.values()],
@@ -491,13 +499,13 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
     )
 
     return odesys, {
-        'variables': variables,
-        'validate': partial(_validate, rsys=rsys, variables=variables,
+        'symbols': symbols,
+        'validate': partial(_validate, rsys=rsys, symbols=symbols,
                             odesys=odesys, backend=backend),
     }
 
 
-def _validate(conditions, rsys, variables, odesys, backend=None):
+def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None):
     """ For use with create_odesys
 
     Parameters
@@ -505,10 +513,11 @@ def _validate(conditions, rsys, variables, odesys, backend=None):
     conditions : OrderedDict
         Parameters, values with units from ``chempy.units``.
     rsys : ReactionSystem
-    variables : dict
+    symbols : dict
         Mapping variable name to symbols.
     backend : module
         Module for symbolic mathematics. (defaults to SymPy)
+    transform : callable for rewriting expressions
 
     Raises
     ------
@@ -518,10 +527,21 @@ def _validate(conditions, rsys, variables, odesys, backend=None):
     if backend is None:
         from sym import Backend
         backend = Backend(backend)
-    args = [variables[key] for key in conditions]
+
+    if transform is None:
+        if backend.__name__ != 'sympy':
+            warnings.warn("Backend does not seem to be SymPy, please provide your own transform function.")
+        def transform(arg):
+            expr = backend.logcombine(arg, force=True)
+            v, w = map(backend.Wild, 'v w'.split())
+            expr = expr.replace(backend.log(w**v), v*backend.log(w))
+            return expr
+
+    args = [symbols[key] for key in conditions]
     seen = [False]*len(args)
     rates = {}
-    for k, v in rsys.rates(variables).items():
+    for k, v in rsys.rates(symbols).items():
+        expr = transform(v)
         rate = backend.lambdify(args, v)(*conditions.values())
         to_unitless(rate, u.molar/u.second)
         rates[k] = rate

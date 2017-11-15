@@ -109,6 +109,13 @@ def magnitude(value):
     except AttributeError:
         return value
 
+def is_quantity(arg):
+    if arg.__class__.__name__ == 'Quantity':
+        return True  # this checks works even if quantities is not installed.
+    else:
+        return False
+
+
 energy = ArithmeticDict(int, {'mass': 1, 'length': 2, 'time': -2})
 volume = ArithmeticDict(int, {'length': 3})
 concentration = {'amount': 1} - volume
