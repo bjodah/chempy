@@ -109,6 +109,14 @@ def magnitude(value):
     except AttributeError:
         return value
 
+
+def is_quantity(arg):
+    if arg.__class__.__name__ == 'Quantity':
+        return True  # this checks works even if quantities is not installed.
+    else:
+        return False
+
+
 energy = ArithmeticDict(int, {'mass': 1, 'length': 2, 'time': -2})
 volume = ArithmeticDict(int, {'length': 3})
 concentration = {'amount': 1} - volume
@@ -294,7 +302,11 @@ def to_unitless(value, new_unit=None):
     if new_unit is None:
         new_unit = pq.dimensionless
 
-    if isinstance(value, (list, tuple)) or (isinstance(value, np.ndarray) and not hasattr(value, 'rescale')):
+    if isinstance(value, (list, tuple)):
+        return np.array([to_unitless(elem, new_unit) for elem in value])
+    elif isinstance(value, np.ndarray) and not hasattr(value, 'rescale'):
+        if new_unit == 1 and value.dtype != object:
+            return value
         return np.array([to_unitless(elem, new_unit) for elem in value])
     elif isinstance(value, dict):
         new_value = dict(value.items())  # value.copy()
