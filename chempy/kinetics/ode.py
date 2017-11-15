@@ -531,6 +531,7 @@ def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None):
     if transform is None:
         if backend.__name__ != 'sympy':
             warnings.warn("Backend does not seem to be SymPy, please provide your own transform function.")
+
         def transform(arg):
             expr = backend.logcombine(arg, force=True)
             v, w = map(backend.Wild, 'v w'.split())
@@ -542,10 +543,10 @@ def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None):
     rates = {}
     for k, v in rsys.rates(symbols).items():
         expr = transform(v)
-        rate = backend.lambdify(args, v)(*conditions.values())
+        rate = backend.lambdify(args, expr)(*conditions.values())
         to_unitless(rate, u.molar/u.second)
         rates[k] = rate
-        seen = [b or a in v.free_symbols for b, a in zip(seen, args)]
+        seen = [b or a in expr.free_symbols for b, a in zip(seen, args)]
     not_seen = [a for s, a in zip(seen, args) if not s]
     for k in conditions:
         if k not in odesys.param_names and k not in odesys.names:

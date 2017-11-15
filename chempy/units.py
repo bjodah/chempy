@@ -109,6 +109,7 @@ def magnitude(value):
     except AttributeError:
         return value
 
+
 def is_quantity(arg):
     if arg.__class__.__name__ == 'Quantity':
         return True  # this checks works even if quantities is not installed.
