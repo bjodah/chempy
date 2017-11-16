@@ -16,7 +16,7 @@ from .util.parsing import (
     formula_to_latex, formula_to_unicode, formula_to_html
 )
 
-from .units import default_units
+from .units import default_units, is_quantity, unit_of
 from ._util import intdiv
 from .util.pyutil import deprecated, DeferredImport
 
@@ -414,7 +414,7 @@ class Reaction(object):
     def __init__(
             self, reac, prod, param=None, inact_reac=None, inact_prod=None,
             name=None, ref=None, data=None,
-            checks=('any_effect', 'all_positive', 'all_integral')):
+            checks=('any_effect', 'all_positive', 'all_integral', 'consistent_units')):
         if isinstance(reac, set):
             reac = {k: 1 for k in reac}
         if isinstance(inact_reac, set):
@@ -433,7 +433,7 @@ class Reaction(object):
         self.data = data or {}
         for check in checks:
             if not getattr(self, 'check_'+check)():
-                raise ValueError("Check failed %s" % check)
+                raise ValueError("Check failed: '%s'" % check)
 
     @classmethod
     def from_string(cls, string, substance_keys=None, globals_=None, **kwargs):
@@ -467,6 +467,11 @@ class Reaction(object):
         >>> r4 = Reaction.from_string("A -> B; 'k'", 'A B')
         >>> r4.param.unique_keys
         ('k',)
+        >>> r5 = Reaction.from_string("A -> B; 1/molar/second", 'A B')
+        Traceback (most recent call last):
+            ...
+        ValueError: Check failed: 'consistent_units'
+
 
         Notes
         -----
@@ -503,6 +508,13 @@ class Reaction(object):
                 if v != type(v)(int(v)):
                     return False
         return True
+
+    def check_consistent_units(self):
+        if is_quantity(self.param):  # This will assume mass action
+            return unit_of(self.param, simplified=True) == unit_of(
+                default_units.molar**(1-self.order())/default_units.s, simplified=True)
+        else:
+            return True  # the user might not be using ``chempy.units``
 
     def __eq__(lhs, rhs):
         if lhs is rhs:
@@ -550,7 +562,7 @@ class Reaction(object):
 
     def _xprecipitate_stoich(self, substances, xor):
         return tuple((
-            0 if xor ^ v.phase_idx > 0 else
+            0 if xor ^ getattr(v, 'phase_idx', 0) > 0 else
             self.prod.get(k, 0) + self.inact_prod.get(k, 0) -
             self.reac.get(k, 0) - self.inact_reac.get(k, 0)
         ) for k, v in substances.items())
@@ -573,7 +585,7 @@ class Reaction(object):
 
     def has_precipitates(self, substances):
         for s_name in chain(self.reac.keys(), self.prod.keys(), self.inact_reac.keys(), self.inact_prod.keys()):
-            if substances[s_name].phase_idx > 0:
+            if getattr(substances[s_name], 'phase_idx', 0) > 0:
                 return True
         return False
 
@@ -668,8 +680,8 @@ class Reaction(object):
         >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", subst)
         >>> r.latex(subst) == r'H_{2}O \rightarrow H^{+} + OH^{-}'
         True
-        >>> r2 = Reaction.from_string("H2O -> H+ + OH-; 1e-8/molar/second", subst)
-        >>> ref = r'H_{2}O \rightarrow H^{+} + OH^{-}; 10^{-8} $\mathrm{\frac{1}{(s{\cdot}M)}}$'
+        >>> r2 = Reaction.from_string("H+ + OH- -> H2O; 1e8/molar/second", subst)
+        >>> ref = r'H^{+} + OH^{-} \rightarrow H_{2}O; 10^{8} $\mathrm{\frac{1}{(s{\cdot}M)}}$'
         >>> r2.latex(subst, with_param=True) == ref
         True
 
@@ -690,8 +702,8 @@ class Reaction(object):
         >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", subst)
         >>> r.unicode(subst) == u'H₂O → H⁺ + OH⁻'
         True
-        >>> r2 = Reaction.from_string("H2O -> H+ + OH-; 1e-8/molar/second", subst)
-        >>> r2.unicode(subst, with_param=True) == u'H₂O → H⁺ + OH⁻; 10⁻⁸ 1/(s·M)'
+        >>> r2 = Reaction.from_string("H+ + OH- -> H2O; 1e8/molar/second", subst)
+        >>> r2.unicode(subst, with_param=True) == u'H⁺ + OH⁻ → H₂O; 10⁸ 1/(s·M)'
         True
 
         """
@@ -717,9 +729,9 @@ class Reaction(object):
         >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", subst)
         >>> r.html(subst)
         'H<sub>2</sub>O &rarr; H<sup>+</sup> + OH<sup>-</sup>'
-        >>> r2 = Reaction.from_string("H2O -> H+ + OH-; 1e-8/molar/second", subst)
+        >>> r2 = Reaction.from_string("H+ + OH- -> H2O; 1e8/molar/second", subst)
         >>> r2.html(subst, with_param=True)
-        'H<sub>2</sub>O &rarr; H<sup>+</sup> + OH<sup>-</sup>&#59; 10<sup>-8</sup> 1/(s*M)'
+        'H<sup>+</sup> + OH<sup>-</sup> &rarr; H<sub>2</sub>O&#59; 10<sup>8</sup> 1/(s*M)'
 
         """
         res = self._get_str('html_name', 'html_arrow', substances, **kwargs)
@@ -893,6 +905,14 @@ class Equilibrium(Reaction):
     html_arrow = '&harr;'
     param_char = 'K'  # convention
 
+    def check_consistent_units(self):
+        if is_quantity(self.param):  # This will assume mass action
+            exponent = sum(self.prod.values()) - sum(self.reac.values())
+            return unit_of(self.param, simplified=True) == unit_of(
+                default_units.molar**exponent, simplified=True)
+        else:
+            return True  # the user might not be using ``chempy.units``
+
     def as_reactions(self, kf=None, kb=None, units=None, variables=None, backend=math, new_name=None):
         """ Creates a forward and backward :class:`Reaction` pair
 
@@ -967,6 +987,10 @@ class Equilibrium(Reaction):
         """
         return self.equilibrium_expr().eq_const(variables, backend=backend)
 
+    def equilibrium_equation(self, variables, backend=None, **kwargs):
+        return self.equilibrium_expr().equilibrium_equation(
+            variables, equilibrium=self, backend=backend, **kwargs)
+
     @deprecated(use_instead=equilibrium_constant)
     def K(self, *args, **kwargs):
         return self.equilibrium_constant(*args, **kwargs)
@@ -986,14 +1010,14 @@ class Equilibrium(Reaction):
                 factor *= sc_concs[substances.index(p)]**n
         return factor
 
-    def dimensionality(self):
+    def dimensionality(self, substances):
         result = 0
         for r, n in self.reac.items():
-            if r.precipitate:
+            if getattr(substances[r], 'precipitate', False):
                 continue
             result -= n
         for p, n in self.prod.items():
-            if p.precipitate:
+            if getattr(substances[p], 'precipitate', False):
                 continue
             result += n
         return result

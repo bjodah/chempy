@@ -147,6 +147,10 @@ def test_Reaction__from_string():
         Reaction.from_string("H2O -> H2O")
     Reaction.from_string("H2O -> H2O; None; checks=()")
 
+    Reaction.from_string("H+ + OH- -> H2O; 1e10/M/s", 'H2O H+ OH-'.split())
+    with pytest.raises(ValueError):
+        Reaction.from_string("H2O -> H+ + OH-; 1e-4/M/s", 'H2O H+ OH-'.split())
+
 
 @requires(parsing_library)
 def test_ReactioN__latex():
@@ -201,6 +205,15 @@ def test_Equilibrium__eliminate():
 
     assert (-e1).reac == {'C': 3}
     assert (e2*-3).reac == {'E': 33}
+
+
+@requires(parsing_library, units_library)
+def test_Equilibrium__from_string():
+    Equilibrium.from_string('H2O = H+ + OH-')
+    Equilibrium.from_string('H2O = H+ + OH-; 1e-14')
+    Equilibrium.from_string('H2O = H+ + OH-; 1e-14*molar')
+    with pytest.raises(ValueError):
+        Equilibrium.from_string('H+ + OH- = H2O; 1e-14*molar')
 
 
 def test_Equilibrium__cancel():

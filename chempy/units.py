@@ -109,6 +109,14 @@ def magnitude(value):
     except AttributeError:
         return value
 
+
+def is_quantity(arg):
+    if arg.__class__.__name__ == 'Quantity':
+        return True  # this checks works even if quantities is not installed.
+    else:
+        return False
+
+
 energy = ArithmeticDict(int, {'mass': 1, 'length': 2, 'time': -2})
 volume = ArithmeticDict(int, {'length': 3})
 concentration = {'amount': 1} - volume
@@ -294,7 +302,11 @@ def to_unitless(value, new_unit=None):
     if new_unit is None:
         new_unit = pq.dimensionless
 
-    if isinstance(value, (list, tuple)) or (isinstance(value, np.ndarray) and not hasattr(value, 'rescale')):
+    if isinstance(value, (list, tuple)):
+        return np.array([to_unitless(elem, new_unit) for elem in value])
+    elif isinstance(value, np.ndarray) and not hasattr(value, 'rescale'):
+        if new_unit == 1 and value.dtype != object:
+            return value
         return np.array([to_unitless(elem, new_unit) for elem in value])
     elif isinstance(value, dict):
         new_value = dict(value.items())  # value.copy()
@@ -515,7 +527,20 @@ def format_string(value, precision='%.5g', tex=False):
 
 
 def concatenate(arrays, **kwargs):
-    """ Patched version of numpy.concatenate """
+    """ Patched version of numpy.concatenate
+
+    Examples
+    --------
+    >>> from chempy.units import default_units as u
+    >>> all(concatenate(([2, 3]*u.s, [4, 5]*u.s)) == [2, 3, 4, 5]*u.s)
+    True
+
+    """
     unit = unit_of(arrays[0])
     result = np.concatenate([to_unitless(arr, unit) for arr in arrays], **kwargs)
     return result*unit
+
+patched_numpy = NameSpace(np)
+patched_numpy.allclose = allclose
+patched_numpy.concatenate = concatenate
+patched_numpy.linspace = linspace

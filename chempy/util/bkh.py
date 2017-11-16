@@ -12,16 +12,35 @@ from chempy.units import to_unitless, linspace, logspace_from_lin
 
 
 def integration_with_sliders(
-        rsys, tend, c0, parameters, fig_kwargs=None,
-        slider_kwargs=None, conc_bounds=None, x_axis_type="linear", y_axis_type="linear",
-        integrate_kwargs=None, odesys_extra=None, get_odesys_kw=None):
+        rsys, tend, c0, parameters, fig_kwargs=None, slider_kwargs=None, conc_bounds=None,
+        x_axis_type="linear", y_axis_type="linear", integrate_kwargs=None, odesys_extra=None,
+        get_odesys_kw=None, integrate=None):
     """
     Parameters
     ----------
-    odesys_extra : tuple of :class:`pyodesys.ODESys` & dict
-        From :func:`chempy.kinetics.ode.get_odesys`.
+    rsys : ReactionSystem
+    tend : float like
+    c0 : dict
+        Initial concentrations.
+    parameters : dict
+        Parameter values.
+    fig_kwargs : dict
+        Keyword-arguments passed to bokeh's ``Figure``.
+    slider_kwargs : dict
+        Keyword-arguments passed to bokeh's ``Slider``.
+    conc_bounds : dict of dicts
+        Mapping substance key to dict of bounds ('start', 'end', 'step').
+    x_axis_type : str
+    y_axis_type : str
+    integrate_kwargs : dict
+        Keyword-arguments passed to integrate.
+    odesys_extra : tuple
+        If odesys & extra have already been generated (avoids call to ``get_odesys``).
     get_odesys_kw : dict
-        If odesys_extra is ``None`` the user may pass this for :func:`chempy.kinetics.ode.get_odesys`.
+        Keyword-arguments passed to ``get_odesys``.
+    integrate : callback
+        Defaults to ``odesys.integrate``.
+
     """
 
     import numpy as np
@@ -37,6 +56,8 @@ def integration_with_sliders(
         odesys, extra = get_odesys(rsys, **get_odesys_kw)
     else:
         odesys, extra = odesys_extra
+    if integrate is None:
+        integrate = odesys.integrate
 
     state_keys, rarg_keys, p_units = [extra[k] for k in ('param_keys', 'unique', 'p_units')]
     output_conc_unit = get_odesys_kw.get('output_conc_unit', None)
@@ -59,14 +80,14 @@ def integration_with_sliders(
     else:
         raise NotImplementedError("Unknown x_axis_type: %s" % x_axis_type)
 
-    tout, Cout, info = odesys.integrate(tout, c0, parameters, **(integrate_kwargs or {}))
+    result = integrate(tout, c0, parameters, **(integrate_kwargs or {}))
     sources = [ColumnDataSource(data={
-        'tout': to_unitless(tout, output_time_unit),
-        k: to_unitless(Cout[:, idx], output_conc_unit)
+        'tout': to_unitless(result.xout, output_time_unit),
+        k: to_unitless(result.yout[:, idx], output_conc_unit)
     }) for idx, k in enumerate(rsys.substances)]
     if fig_kwargs is None:
-        Cmax = np.max(Cout)
-        x_range = list(to_unitless([tend*0, tend], output_time_unit))
+        Cmax = np.max(result.yout)
+        x_range = list(to_unitless([result.xout[0], result.xout[-1]], output_time_unit))
         y_range = list(to_unitless([Cmax*0, Cmax*1.1], output_conc_unit))
         fig_kwargs = dict(plot_height=400, plot_width=400, title="C vs t",
                           tools="crosshair,pan,reset,save,wheel_zoom",
@@ -121,11 +142,11 @@ def integration_with_sliders(
         _params = {}
         for (k, w), u in zip(param_widgets.items(), p_units):
             _params[k] = w.value if u is None else w.value * u
-        _tout, _Cout, _info = odesys.integrate(tout, _c0, _params)
+        _result = integrate(tout, _c0, _params)
         for idx, k in enumerate(rsys.substances):
             sources[idx].data = {
-                'tout': to_unitless(_tout, output_time_unit),
-                k: to_unitless(_Cout[:, idx], output_conc_unit)
+                'tout': to_unitless(_result.xout, output_time_unit),
+                k: to_unitless(_result.yout[:, idx], output_conc_unit)
             }
 
     for w in all_widgets:
