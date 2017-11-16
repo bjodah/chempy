@@ -21,9 +21,9 @@ def Henry_H_at_T(T, H, Tderiv, T0=None, units=None, backend=None):
         Henry's constant
     Tderiv: float (optional)
         dln(H)/d(1/T), assumed to be in Kelvin if ``units == None``.
-        default: 298.15 K
     T0: float
         Reference temperature, assumed to be in Kelvin if ``units == None``
+        default: 298.15 K
     units: object (optional)
         object with attributes: kelvin (e.g. chempy.units.default_units)
     backend : module (optional)
@@ -49,11 +49,11 @@ class Henry(defaultnamedtuple('Henry', 'Hcp Tderiv T0 ref', [None, None])):
 
     Parameters
     ----------
-    kH0: float
+    Hcp: float
         Henry's constant [M/atm]
-    derivative: float
+    Tderiv: float
         dln(kH)/d(1/T) [K]
-        Equivalent to \Delta_soln H / R
+        Equivalent to $\\Delta_{soln}H / R$
     ref: object
         Reference for origin of parameters
     units: object (optional)
