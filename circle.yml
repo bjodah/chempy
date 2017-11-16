@@ -13,7 +13,10 @@ test:
     - sudo apt-get remove gcc
     - cd && rm -rf ~/.pyenv && rm -rf ~/virtualenvs
     - source $HOME/miniconda/bin/activate root
-    - conda install pip pytest
+    - conda config --remove channels defaults
+    - conda config --add channels defaults
+    - conda config --add channels conda-forge
+    - conda config --set show_channel_urls true
+    - conda install pip pytest numpy scipy matplotlib sympy quantities pyparsing
     - pip install .
     - pytest
-
