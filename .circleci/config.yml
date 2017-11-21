@@ -6,11 +6,8 @@ jobs:
       - image: continuumio/miniconda
     steps:
       - checkout
-      - run:
-          name: Configure conda
-          commands:
-            - conda config --add channels conda-forge
-            - conda config --set show_channel_urls true
-            - conda config --set always_yes yes
-            - conda install conda-build
-            - conda build conda-recipe/
+      - run: conda config --add channels conda-forge
+      - run: conda config --set show_channel_urls true
+      - run: conda config --set always_yes yes
+      - run: conda install conda-build
+      - run: conda build conda-recipe/
