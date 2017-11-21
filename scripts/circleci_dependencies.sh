@@ -9,5 +9,5 @@ if [[ ! -d $HOME/miniconda ]]; then
     conda config --set show_channel_urls true
     conda config --set always_yes yes
     conda update --quiet --all
-    conda install pip pytest numpy scipy matplotlib sympy quantities pyparsing
+    conda install --quiet pip pytest numpy scipy matplotlib sympy quantities pyparsing
 fi

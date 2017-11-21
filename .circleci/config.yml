@@ -1,0 +1,16 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: continuumio/miniconda
+    steps:
+      - checkout
+      - run:
+          name: Configure conda
+          command:
+            - conda config --add channels conda-forge
+            - conda config --set show_channel_urls true
+            - conda config --set always_yes yes
+            - conda install conda-build
+            - conda build conda-recipe/
