@@ -38,10 +38,10 @@ test:
   requires:
     - pytest
   commands:
-    - pytest --pyargs chempy
+    - pytest --pyargs {{ name }}
 
 about:
-  home: https://github.com/bjodah/chempy
+  home: https://github.com/bjodah/{{ name }}
   license: BSD 2-Clause
   license_file: LICENSE
   summary: 'Python package useful for (physical) chemistry'
