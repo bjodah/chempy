@@ -18,6 +18,7 @@ getter & setter functions in `chempy.units`).
 from __future__ import (absolute_import, division, print_function)
 
 from functools import reduce
+from itertools import cycle
 from operator import mul
 
 from ._util import NameSpace
@@ -101,7 +102,6 @@ else:
         'luminous_intensity': default_units.candela,
         'amount': default_units.mole
     }
-
 
 def magnitude(value):
     try:
@@ -375,32 +375,35 @@ def unitless_in_registry(value, registry):
 
 # NumPy like functions for compatibility:
 
+
 def allclose(a, b, rtol=1e-8, atol=None):
     """ Analogous to ``numpy.allclose``. """
     try:
         d = abs(a - b)
-    except TypeError:
-        if len(a) == len(b):
-            return all(allclose(_a, _b, rtol, atol) for _a, _b in zip(a, b))
-        raise
-    except ValueError:
-        for _a, _b in zip(a, b):
-            if not allclose(_a, _b, rtol=rtol, atol=atol):
+    except:
+        try:
+            if len(a) == len(b):
+                return all(allclose(_a, _b, rtol, atol) for _a, _b in zip(a, b))
+            else:
                 return False
-        else:
-            return True
+        except:
+            return False
     lim = abs(a)*rtol
     if atol is not None:
         lim += atol
-    try:
-        n = len(d)
-    except TypeError:
-        n = 1
 
-    if n == 1:
+    try:
+        lend = len(d)
+    except TypeError:
         return d <= lim
     else:
-        return np.all([_d <= _lim for _d, _lim in zip(d, lim)])
+        try:
+            lenlim = len(lim)
+        except TypeError:
+            return np.all([_d <= lim for _d in d])
+        else:
+            return np.all([_d <= _lim for _d, _lim in zip(d, lim)])
+
 
 
 def linspace(start, stop, num=50):
