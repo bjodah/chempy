@@ -110,6 +110,10 @@ def magnitude(value):
         return value
 
 
+def simplified(value):
+    return value.simplified
+
+
 def is_quantity(arg):
     if arg.__class__.__name__ == 'Quantity':
         return True  # this checks works even if quantities is not installed.

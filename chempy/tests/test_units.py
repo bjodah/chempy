@@ -14,9 +14,9 @@ from ..units import (
     allclose, concatenate, get_derived_unit, is_unitless, linspace, logspace_from_lin,
     SI_base_registry, unitless_in_registry, format_string, get_physical_quantity,
     to_unitless, magnitude, default_unit_in_registry, Backend, latex_of_unit,
-    unit_of, unit_registry_to_human_readable, units_library,
+    unit_of, unit_registry_to_human_readable, units_library, simplified,
     unit_registry_from_human_readable, _sum, UncertainQuantity,
-    default_units as u, patched_numpy as pnp
+    default_units as u, patched_numpy as pnp, default_constants as dc
 )
 
 
@@ -386,6 +386,12 @@ def test_pow0():
     assert allclose(c, [1, 4]*u.m**2)
 
 
+@requires(units_library)
 def test_tile():
     a = [2*u.m, 3*u.km]
     assert allclose(pnp.tile(a, 2), [2*u.m, 3000*u.m, 2e-3*u.km, 3*u.km])
+
+
+@requires(units_library)
+def test_simplified():
+    assert allclose(simplified(dc.molar_gas_constant), 8.314*u.J/u.mol/u.K, rtol=2e-3)
