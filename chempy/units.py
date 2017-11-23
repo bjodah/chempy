@@ -18,7 +18,6 @@ getter & setter functions in `chempy.units`).
 from __future__ import (absolute_import, division, print_function)
 
 from functools import reduce
-from itertools import cycle
 from operator import mul
 
 from ._util import NameSpace
@@ -102,6 +101,7 @@ else:
         'luminous_intensity': default_units.candela,
         'amount': default_units.mole
     }
+
 
 def magnitude(value):
     try:
@@ -393,17 +393,16 @@ def allclose(a, b, rtol=1e-8, atol=None):
         lim += atol
 
     try:
-        lend = len(d)
+        len(d)
     except TypeError:
         return d <= lim
     else:
         try:
-            lenlim = len(lim)
+            len(lim)
         except TypeError:
             return np.all([_d <= lim for _d in d])
         else:
             return np.all([_d <= _lim for _d, _lim in zip(d, lim)])
-
 
 
 def linspace(start, stop, num=50):
