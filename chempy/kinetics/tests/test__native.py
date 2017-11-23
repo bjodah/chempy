@@ -150,8 +150,9 @@ def test_get_native__named_parameter__units(dep_scaling):
 
 @pytest.mark.veryslow
 @requires('pycvodes', 'pyodesys')
-@pytest.mark.parametrize('dep_scaling', [1, 763])
-def test_get_native__Radiolytic__named_parameter__units(dep_scaling):
+@pytest.mark.parametrize('scaling_density', [(1, False), (763, False), (1, True)])
+def test_get_native__Radiolytic__named_parameter__units(scaling_density):
+    scaling, density = scaling_density
     rsys = ReactionSystem.from_string("""
     -> H; Radiolytic(2*per100eV)
     H + H -> H2; 'k2'
@@ -159,12 +160,16 @@ def test_get_native__Radiolytic__named_parameter__units(dep_scaling):
     gval = 2*u.per100eV
 
     from pyodesys.symbolic import ScaledSys
-    kwargs = {} if dep_scaling == 1 else dict(SymbolicSys=ScaledSys, dep_scaling=dep_scaling)
-    odesys, extra = get_odesys(rsys, include_params=False, unit_registry=SI_base_registry, **kwargs)
+    kwargs = {} if scaling == 1 else dict(SymbolicSys=ScaledSys, dep_scaling=scaling)
+    dens = {'density': 998*u.g/u.dm3}
+    odesys, extra = get_odesys(rsys, include_params=False, substitutions=dens if density else {},
+                               unit_registry=SI_base_registry, **kwargs)
     c0 = {'H': 42e-6*u.molar, 'H2': 17e3*u.nanomolar}
     native = get_native(rsys, odesys, 'cvode')
     tend = 7*60*u.minute
-    params = {'doserate': 314*u.Gy/u.hour, 'k2': 53/u.molar/u.minute, 'density': 998*u.g/u.dm3}
+    params = {'doserate': 314*u.Gy/u.hour, 'k2': 53/u.molar/u.minute}
+    if not density:
+        params.update(dens)
     result = native.integrate(tend, c0, params, atol=1e-15, rtol=1e-15, integrator='cvode', nsteps=8000)
     assert result.info['success']
 
@@ -182,7 +187,7 @@ def test_get_native__Radiolytic__named_parameter__units(dep_scaling):
         return x1*(x7 - x8)/(2*x2*(x7 + x8))
 
     t_ul = to_unitless(result.xout, u.s)
-    p_ul = to_unitless(params['doserate']*params['density']*gval, u.micromolar/u.s)
+    p_ul = to_unitless(params['doserate']*dens['density']*gval, u.micromolar/u.s)
     ref_H_uM = analytic_H(
         t_ul,
         p_ul,

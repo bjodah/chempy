@@ -219,6 +219,9 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
             if not include_params:
                 _reg_unique(sv)
         else:
+            # if unit_registry is None:
+            if unit_registry is not None:
+                sv = unitless_in_registry(sv, unit_registry)
             _passive_subst[sk] = sv
 
     all_pk = []

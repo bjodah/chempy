@@ -31,9 +31,9 @@ install:
       conda config --set show_channel_urls true
 
 script:
-    - conda install pip pytest
+    - conda install --quiet pip pytest numpy scipy matplotlib sympy quantities pyparsing
     - pip install .
-    - pytest
+    - pytest -ra --doctest-modules
 
 notifications:
   email: false

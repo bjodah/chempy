@@ -16,7 +16,7 @@ from ..units import (
     to_unitless, magnitude, default_unit_in_registry, Backend, latex_of_unit,
     unit_of, unit_registry_to_human_readable, units_library,
     unit_registry_from_human_readable, _sum, UncertainQuantity,
-    default_units as u
+    default_units as u, patched_numpy as pnp
 )
 
 
@@ -364,3 +364,8 @@ def test_pow0():
 
     c = a**2
     assert allclose(c, [1, 4]*u.m**2)
+
+
+def test_tile():
+    a = [2*u.m, 3*u.km]
+    assert allclose(pnp.tile(a, 2), [2*u.m, 3000*u.m, 2e-3*u.km, 3*u.km])
