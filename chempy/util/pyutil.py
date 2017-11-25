@@ -13,11 +13,11 @@ from .. import __url__
 from .deprecation import Deprecation
 
 
-def memoize(nargs=0):
+def memoize(max_nargs=0):
     def decorator(func):
         @wraps(func)
         def wrapper(*args):
-            if nargs is not None and len(args) > nargs:
+            if max_nargs is not None and len(args) > max_nargs:
                 raise ValueError("memoization error")
             if args not in wrapper.results:
                 wrapper.results[args] = func(*args)

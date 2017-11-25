@@ -604,11 +604,11 @@ class Reaction(object):
             for k, v in filter(itemgetter(1), d.items())
         ] for d in (self.reac, self.prod, self.inact_reac, self.inact_prod)]
         r_str = str_(" + ").join(sorted(reac))
-        ir_str = (str_(' (+ ') + str_(" + ").join(sorted(i_reac)) + str_(')')
+        ir_str = (str_(' + ( ') + str_(" + ").join(sorted(i_reac)) + str_(')')
                   if len(i_reac) > 0 else nullstr)
         arrow_str = getattr(self, arrow_attr)
         p_str = str_(" + ").join(sorted(prod))
-        ip_str = (str_(' (+ ') + str_(" + ").join(sorted(i_prod)) + str_(')')
+        ip_str = (str_(' + ( ') + str_(" + ").join(sorted(i_prod)) + str_(')')
                   if len(i_prod) > 0 else nullstr)
         return r_str, ir_str, arrow_str, p_str, ip_str
 

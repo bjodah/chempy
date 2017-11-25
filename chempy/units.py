@@ -110,6 +110,10 @@ def magnitude(value):
         return value
 
 
+def simplified(value):
+    return value.simplified
+
+
 def is_quantity(arg):
     if arg.__class__.__name__ == 'Quantity':
         return True  # this checks works even if quantities is not installed.
@@ -280,7 +284,13 @@ def unit_of(expr, simplified=False):
 
 
 def rescale(value, unit):
-    return value.rescale(unit)
+    try:
+        return value.rescale(unit)
+    except AttributeError:
+        if unit == 1:
+            return value
+        else:
+            raise
 
 
 def to_unitless(value, new_unit=None):
@@ -369,26 +379,34 @@ def unitless_in_registry(value, registry):
 
 # NumPy like functions for compatibility:
 
+
 def allclose(a, b, rtol=1e-8, atol=None):
     """ Analogous to ``numpy.allclose``. """
     try:
         d = abs(a - b)
-    except TypeError:
-        if len(a) == len(b):
-            return all(allclose(_a, _b, rtol, atol) for _a, _b in zip(a, b))
-        raise
+    except:
+        try:
+            if len(a) == len(b):
+                return all(allclose(_a, _b, rtol, atol) for _a, _b in zip(a, b))
+            else:
+                return False
+        except:
+            return False
     lim = abs(a)*rtol
     if atol is not None:
         lim += atol
-    try:
-        n = len(d)
-    except TypeError:
-        n = 1
 
-    if n == 1:
+    try:
+        len(d)
+    except TypeError:
         return d <= lim
     else:
-        return np.all([_d <= _lim for _d, _lim in zip(d, lim)])
+        try:
+            len(lim)
+        except TypeError:
+            return np.all([_d <= lim for _d in d])
+        else:
+            return np.all([_d <= _lim for _d, _lim in zip(d, lim)])
 
 
 def linspace(start, stop, num=50):
@@ -540,7 +558,21 @@ def concatenate(arrays, **kwargs):
     result = np.concatenate([to_unitless(arr, unit) for arr in arrays], **kwargs)
     return result*unit
 
+
+def tile(array, *args, **kwargs):
+    """ Parched version of numpy.tile """
+    try:
+        elem = array[0, ...]
+    except TypeError:
+        elem = array[0]
+
+    unit = unit_of(elem)
+    result = np.tile(to_unitless(array, unit), *args, **kwargs)
+    return result*unit
+
+
 patched_numpy = NameSpace(np)
 patched_numpy.allclose = allclose
 patched_numpy.concatenate = concatenate
 patched_numpy.linspace = linspace
+patched_numpy.tile = tile

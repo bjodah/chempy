@@ -1,0 +1,14 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: continuumio/miniconda
+    steps:
+      - checkout
+      - run: conda config --add channels conda-forge
+      - run: conda config --set show_channel_urls true
+      - run: conda config --set always_yes yes
+      - run: conda install --quiet pip pytest numpy scipy matplotlib sympy quantities pyparsing
+      - run: pip install .
+      - run: pytest -ra --doctest-modules

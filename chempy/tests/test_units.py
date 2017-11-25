@@ -14,9 +14,9 @@ from ..units import (
     allclose, concatenate, get_derived_unit, is_unitless, linspace, logspace_from_lin,
     SI_base_registry, unitless_in_registry, format_string, get_physical_quantity,
     to_unitless, magnitude, default_unit_in_registry, Backend, latex_of_unit,
-    unit_of, unit_registry_to_human_readable, units_library,
+    unit_of, unit_registry_to_human_readable, units_library, simplified,
     unit_registry_from_human_readable, _sum, UncertainQuantity,
-    default_units as u
+    default_units as u, patched_numpy as pnp, default_constants as dc
 )
 
 
@@ -53,6 +53,13 @@ def test_default_units():
 
 @requires(units_library)
 def test_allclose():
+    assert allclose(42, 42)
+    assert allclose(42*u.meter, 0.042*u.km)
+    assert not allclose(42, 43)
+    assert not allclose(42, 42*u.meter)
+    assert not allclose(42, 43*u.meter)
+    assert not allclose(42*u.meter, 42)
+
     a = np.linspace(2, 3)*u.second
     b = np.linspace(2/3600., 3/3600.)*u.hour
     assert allclose(a, b)
@@ -62,6 +69,19 @@ def test_allclose():
     c2 = [[3000, 4000], [436.2, 5281.89]]*u.mol/u.metre**3
     assert not allclose(c1, c2)
     assert allclose(0*u.second, 0*u.second)
+
+    # Possibly allow comparison with scalars in future (broadcasting):
+    # assert allclose(2, [2, 2])
+    # assert allclose([2, 2], 2)
+
+    # assert not allclose(2, [2, 3])
+    # assert not allclose([2, 3], 2)
+
+    # assert allclose(2*u.second, [2, 2]*u.second)
+    # assert allclose([2, 2]*u.second, 2*u.second)
+
+    # assert not allclose(2*u.second, [2, 3]*u.second)
+    # assert not allclose([2, 3]*u.second, 2*u.second)
 
 
 @requires(units_library)
@@ -364,3 +384,14 @@ def test_pow0():
 
     c = a**2
     assert allclose(c, [1, 4]*u.m**2)
+
+
+@requires(units_library)
+def test_tile():
+    a = [2*u.m, 3*u.km]
+    assert allclose(pnp.tile(a, 2), [2*u.m, 3000*u.m, 2e-3*u.km, 3*u.km])
+
+
+@requires(units_library)
+def test_simplified():
+    assert allclose(simplified(dc.molar_gas_constant), 8.314*u.J/u.mol/u.K, rtol=2e-3)
