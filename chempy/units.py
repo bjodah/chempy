@@ -571,8 +571,30 @@ def tile(array, *args, **kwargs):
     return result*unit
 
 
+def polyfit(x, y, deg, **kwargs):
+    u_x = unit_of(x[0])
+    u_y = unit_of(y[0])
+    _x, _y = to_unitless(x, u_x), to_unitless(y, u_y)
+    p = np.polyfit(_x, _y, deg)
+    return [v*u_y*u_x**(i-deg) for i, v in enumerate(p)]
+
+
+def polyval(p, x):
+    try:
+        u_x = unit_of(x[0])
+    except (TypeError, IndexError):
+        u_x = unit_of(x)
+    u_y = unit_of(p[-1])
+    deg = len(p) - 1
+    _p = [to_unitless(v, u_y*u_x**(i-deg)) for i, v in enumerate(p)]
+    _x = to_unitless(x, u_x)
+    _y = np.polyval(_p, _x)
+    return _y*u_y
+
 patched_numpy = NameSpace(np)
 patched_numpy.allclose = allclose
 patched_numpy.concatenate = concatenate
 patched_numpy.linspace = linspace
 patched_numpy.tile = tile
+patched_numpy.polyfit = polyfit
+patched_numpy.polyval = polyval
