@@ -1,3 +1,10 @@
+v0.5.6
+======
+- New method: ``ReactionSystem.sort_substances_inplace()``
+- New patched NumPy "module": ``.units.patched_numpy``
+- Updated ``.util.bkh.integration_with_sliders`` to be compatible with
+  latest bokeh.
+
 v0.5.5
 ======
 - Fix non-deterministic ordering of dictionary in ``get_odesys()``.
