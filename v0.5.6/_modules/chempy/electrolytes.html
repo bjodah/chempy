@@ -1,0 +1,483 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.electrolytes &mdash; chempy 0.5.6 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="chempy 0.5.6 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.5.6
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">chempy</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>chempy.electrolytes</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <a href="https://github.com/bjodah/chempy/blob/v0.5.6/doc/_modules/chempy/electrolytes.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.electrolytes</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This modules collects expressions related to ionic strenght, e.g. the Debye-Hückel expressions.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">._util</span> <span class="k">import</span> <span class="n">get_backend</span>
+<span class="kn">from</span> <span class="nn">.chemistry</span> <span class="k">import</span> <span class="n">Substance</span>
+<span class="kn">from</span> <span class="nn">.units</span> <span class="k">import</span> <span class="n">allclose</span>
+
+
+<span class="k">def</span> <span class="nf">_get_b0</span><span class="p">(</span><span class="n">b0</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">units</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">b0</span> <span class="ow">is</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">b0</span><span class="o">*</span><span class="n">units</span><span class="o">.</span><span class="n">molal</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">b0</span>
+
+
+<div class="viewcode-block" id="ionic_strength"><a class="viewcode-back" href="../../chempy.html#chempy.electrolytes.ionic_strength">[docs]</a><span class="k">def</span> <span class="nf">ionic_strength</span><span class="p">(</span><span class="n">molalities</span><span class="p">,</span> <span class="n">charges</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">substances</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">substance_factory</span><span class="o">=</span><span class="n">Substance</span><span class="o">.</span><span class="n">from_formula</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Calculates the ionic strength</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    molalities: array_like or dict</span>
+<span class="sd">        Optionally with unit (amount / mass).</span>
+<span class="sd">        when dict: mapping substance key to molality.</span>
+<span class="sd">    charges: array_like</span>
+<span class="sd">        Charge of respective ion, taken for substances when None.</span>
+<span class="sd">    units: object (optional, default: None)</span>
+<span class="sd">        Attributes accessed: molal.</span>
+<span class="sd">    substances: dict, optional</span>
+<span class="sd">        Mapping of substance keys to Substance instances (used when molalities</span>
+<span class="sd">        is a dict).</span>
+<span class="sd">    substance_factory: callback</span>
+<span class="sd">        Used if `substances` is a string.</span>
+<span class="sd">    warn: bool</span>
+<span class="sd">        Issue a warning if molalities violates net charge neutrality.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; ionic_strength([1e-3, 3e-3], [3, -1]) == .5 * (9 + 3) * 1e-3</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; ionic_strength({&#39;Mg+2&#39;: 6, &#39;PO4-3&#39;: 4})</span>
+<span class="sd">    30.0</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tot</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">charges</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">substances</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">substances</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">molalities</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">substances</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">substances</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">k</span><span class="p">,</span> <span class="n">substance_factory</span><span class="p">(</span><span class="n">k</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span>
+                                      <span class="ow">in</span> <span class="n">substances</span><span class="o">.</span><span class="n">split</span><span class="p">()])</span>
+        <span class="n">charges</span><span class="p">,</span> <span class="n">molalities</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[(</span><span class="n">substances</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">molalities</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">molalities</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">charges</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;molalities and charges of different lengths&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">b</span><span class="p">,</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">molalities</span><span class="p">,</span> <span class="n">charges</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">tot</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tot</span> <span class="o">=</span> <span class="n">b</span> <span class="o">*</span> <span class="n">z</span><span class="o">**</span><span class="mi">2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tot</span> <span class="o">+=</span> <span class="n">b</span> <span class="o">*</span> <span class="n">z</span><span class="o">**</span><span class="mi">2</span>
+    <span class="k">if</span> <span class="n">warn</span><span class="p">:</span>
+        <span class="n">net</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">b</span><span class="p">,</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">molalities</span><span class="p">,</span> <span class="n">charges</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">net</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">net</span> <span class="o">=</span> <span class="n">b</span> <span class="o">*</span> <span class="n">z</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">net</span> <span class="o">+=</span> <span class="n">b</span> <span class="o">*</span> <span class="n">z</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">allclose</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">tot</span><span class="o">*</span><span class="mi">0</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">tot</span><span class="o">*</span><span class="mf">1e-14</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Molalities not charge neutral: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">net</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">tot</span><span class="o">/</span><span class="mi">2</span></div>
+
+
+<span class="k">class</span> <span class="nc">_ActivityProductBase</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Baseclass for activity products &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stoich</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stoich</span> <span class="o">=</span> <span class="n">stoich</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="A"><a class="viewcode-back" href="../../chempy.html#chempy.electrolytes.A">[docs]</a><span class="k">def</span> <span class="nf">A</span><span class="p">(</span><span class="n">eps_r</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">b0</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">constants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Debye Huckel constant A</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    eps_r: float</span>
+<span class="sd">        relative permittivity</span>
+<span class="sd">    T: float with unit</span>
+<span class="sd">        Temperature (default: assume Kelvin)</span>
+<span class="sd">    rho: float with unit</span>
+<span class="sd">        density (default: assume kg/m**3)</span>
+<span class="sd">    b0: float, optional</span>
+<span class="sd">        Reference molality, optionally with unit (amount / mass)</span>
+<span class="sd">        IUPAC defines it as 1 mol/kg. (default: 1).</span>
+<span class="sd">    units: object (optional, default: None)</span>
+<span class="sd">        attributes accessed: meter, Kelvin and mol</span>
+<span class="sd">    constants: object (optional, default: None)</span>
+<span class="sd">        if None:</span>
+<span class="sd">            T assumed to be in Kelvin and b0 = 1 mol/kg</span>
+<span class="sd">        else:</span>
+<span class="sd">            see source code for what attributes are used.</span>
+<span class="sd">            Tip: pass quantities.constants</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Remember to divide by ln(10) if you want to use the constant</span>
+<span class="sd">    with log10 based expression.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Atkins, De Paula, Physical Chemistry, 8th edition</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">b0</span> <span class="o">=</span> <span class="n">_get_b0</span><span class="p">(</span><span class="n">b0</span><span class="p">,</span> <span class="n">units</span><span class="p">)</span>
+    <span class="n">be</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+    <span class="n">one</span> <span class="o">=</span> <span class="n">be</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">0</span>
+    <span class="k">if</span> <span class="n">constants</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">combined</span> <span class="o">=</span> <span class="mf">132871.85866393594</span>
+        <span class="k">if</span> <span class="n">units</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">meter</span>
+            <span class="n">K</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">Kelvin</span>
+            <span class="n">mol</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">mol</span>
+            <span class="n">combined</span> <span class="o">*=</span> <span class="p">(</span><span class="n">m</span><span class="o">*</span><span class="n">K</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">one</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">mol</span><span class="o">**</span><span class="p">(</span><span class="n">one</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">combined</span><span class="o">*</span><span class="p">(</span><span class="n">rho</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">*</span> <span class="n">T</span><span class="o">**-</span><span class="mi">3</span> <span class="o">*</span> <span class="n">eps_r</span><span class="o">**-</span><span class="mi">3</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>
+    <span class="n">F</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">Faraday_constant</span>
+    <span class="n">NA</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">Avogadro_constant</span>
+    <span class="n">eps0</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">vacuum_permittivity</span>
+    <span class="n">kB</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">Boltzmann_constant</span>
+    <span class="n">pi</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">pi</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">F</span><span class="o">**</span><span class="mi">3</span><span class="o">/</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">pi</span><span class="o">*</span><span class="n">NA</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">rho</span><span class="o">*</span><span class="n">b0</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">eps0</span><span class="o">*</span><span class="n">eps_r</span><span class="o">*</span><span class="n">kB</span><span class="o">*</span><span class="n">NA</span><span class="o">*</span><span class="n">T</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span><span class="p">))</span><span class="o">**</span><span class="p">(</span><span class="n">one</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">A</span></div>
+
+
+<div class="viewcode-block" id="B"><a class="viewcode-back" href="../../chempy.html#chempy.electrolytes.B">[docs]</a><span class="k">def</span> <span class="nf">B</span><span class="p">(</span><span class="n">eps_r</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">b0</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">constants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extended Debye-Huckel parameter B</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    eps_r: float</span>
+<span class="sd">        relative permittivity</span>
+<span class="sd">    T: float with unit</span>
+<span class="sd">        temperature</span>
+<span class="sd">    rho: float with unit</span>
+<span class="sd">        density</span>
+<span class="sd">    b0: float with unit</span>
+<span class="sd">        reference molality</span>
+<span class="sd">    units: object (optional, default: None)</span>
+<span class="sd">        attributes accessed: meter, Kelvin and mol</span>
+<span class="sd">    constants: object (optional, default: None)</span>
+<span class="sd">        if None:</span>
+<span class="sd">            T assumed to be in Kelvin, rho in kg/m**3 and b0 = 1 mol/kg</span>
+<span class="sd">        else:</span>
+<span class="sd">            attributes accessed: molar_gas_constant, Faraday_constant</span>
+<span class="sd">            Tip: pass quantities.constants</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Debye Huckel B constant (default in m**-1)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">b0</span> <span class="o">=</span> <span class="n">_get_b0</span><span class="p">(</span><span class="n">b0</span><span class="p">,</span> <span class="n">units</span><span class="p">)</span>
+    <span class="n">be</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+    <span class="n">one</span> <span class="o">=</span> <span class="n">be</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">0</span>
+    <span class="k">if</span> <span class="n">constants</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">combined</span> <span class="o">=</span> <span class="mf">15903203868.740343</span>
+        <span class="k">if</span> <span class="n">units</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">meter</span>
+            <span class="n">K</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">Kelvin</span>
+            <span class="n">mol</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">mol</span>
+            <span class="n">combined</span> <span class="o">*=</span> <span class="p">(</span><span class="n">m</span><span class="o">*</span><span class="n">K</span><span class="o">/</span><span class="n">mol</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">one</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">combined</span><span class="o">*</span><span class="p">(</span><span class="n">rho</span><span class="o">*</span><span class="n">b0</span><span class="o">/</span><span class="p">(</span><span class="n">T</span><span class="o">*</span><span class="n">eps_r</span><span class="p">))</span><span class="o">**</span><span class="mf">0.5</span>
+    <span class="n">F</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">Faraday_constant</span>
+    <span class="n">eps0</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">vacuum_permittivity</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">molar_gas_constant</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">F</span><span class="o">*</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">rho</span><span class="o">*</span><span class="n">b0</span><span class="o">/</span><span class="p">(</span><span class="n">eps_r</span><span class="o">*</span><span class="n">eps0</span><span class="o">*</span><span class="n">R</span><span class="o">*</span><span class="n">T</span><span class="p">))</span><span class="o">**</span><span class="p">(</span><span class="n">one</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">B</span></div>
+
+
+<div class="viewcode-block" id="limiting_log_gamma"><a class="viewcode-back" href="../../chempy.html#chempy.electrolytes.limiting_log_gamma">[docs]</a><span class="k">def</span> <span class="nf">limiting_log_gamma</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">I0</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Debye-Hyckel limiting formula &quot;&quot;&quot;</span>
+    <span class="n">be</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+    <span class="n">one</span> <span class="o">=</span> <span class="n">be</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">0</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">A</span><span class="o">*</span><span class="n">z</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">I</span><span class="o">/</span><span class="n">I0</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">one</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="extended_log_gamma"><a class="viewcode-back" href="../../chempy.html#chempy.electrolytes.extended_log_gamma">[docs]</a><span class="k">def</span> <span class="nf">extended_log_gamma</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">I0</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Debye-Huckel extended formula &quot;&quot;&quot;</span>
+    <span class="n">be</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+    <span class="n">one</span> <span class="o">=</span> <span class="n">be</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">0</span>
+    <span class="n">I_I0</span> <span class="o">=</span> <span class="n">I</span><span class="o">/</span><span class="n">I0</span>
+    <span class="n">sqrt_I_I0</span> <span class="o">=</span> <span class="p">(</span><span class="n">I_I0</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">one</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">A</span><span class="o">*</span><span class="n">z</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">sqrt_I_I0</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">B</span><span class="o">*</span><span class="n">a</span><span class="o">*</span><span class="n">sqrt_I_I0</span><span class="p">)</span> <span class="o">+</span> <span class="n">C</span><span class="o">*</span><span class="n">I_I0</span></div>
+
+
+<div class="viewcode-block" id="davies_log_gamma"><a class="viewcode-back" href="../../chempy.html#chempy.electrolytes.davies_log_gamma">[docs]</a><span class="k">def</span> <span class="nf">davies_log_gamma</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">C</span><span class="o">=-</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">I0</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Davies formula &quot;&quot;&quot;</span>
+    <span class="n">be</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+    <span class="n">one</span> <span class="o">=</span> <span class="n">be</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">0</span>
+    <span class="n">I_I0</span> <span class="o">=</span> <span class="n">I</span><span class="o">/</span><span class="n">I0</span>
+    <span class="n">sqrt_I_I0</span> <span class="o">=</span> <span class="p">(</span><span class="n">I_I0</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">one</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">A</span> <span class="o">*</span> <span class="n">z</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">sqrt_I_I0</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">sqrt_I_I0</span><span class="p">)</span> <span class="o">+</span> <span class="n">C</span><span class="o">*</span><span class="n">I_I0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="limiting_activity_product"><a class="viewcode-back" href="../../chempy.html#chempy.electrolytes.limiting_activity_product">[docs]</a><span class="k">def</span> <span class="nf">limiting_activity_product</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">stoich</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">eps_r</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Product of activity coefficients based on DH limiting law. &quot;&quot;&quot;</span>
+    <span class="n">be</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+    <span class="n">Aval</span> <span class="o">=</span> <span class="n">A</span><span class="p">(</span><span class="n">eps_r</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
+    <span class="n">tot</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">nr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">stoich</span><span class="p">):</span>
+        <span class="n">tot</span> <span class="o">+=</span> <span class="n">nr</span><span class="o">*</span><span class="n">limiting_log_gamma</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">z</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">Aval</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">be</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tot</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="extended_activity_product"><a class="viewcode-back" href="../../chempy.html#chempy.electrolytes.extended_activity_product">[docs]</a><span class="k">def</span> <span class="nf">extended_activity_product</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">stoich</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">eps_r</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">be</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+    <span class="n">Aval</span> <span class="o">=</span> <span class="n">A</span><span class="p">(</span><span class="n">eps_r</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
+    <span class="n">Bval</span> <span class="o">=</span> <span class="n">B</span><span class="p">(</span><span class="n">eps_r</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
+    <span class="n">tot</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">nr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">stoich</span><span class="p">):</span>
+        <span class="n">tot</span> <span class="o">+=</span> <span class="n">nr</span><span class="o">*</span><span class="n">extended_log_gamma</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">z</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">Aval</span><span class="p">,</span> <span class="n">Bval</span><span class="p">,</span> <span class="n">C</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">be</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tot</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="davies_activity_product"><a class="viewcode-back" href="../../chempy.html#chempy.electrolytes.davies_activity_product">[docs]</a><span class="k">def</span> <span class="nf">davies_activity_product</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">stoich</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">eps_r</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">C</span><span class="o">=-</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">be</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+    <span class="n">Aval</span> <span class="o">=</span> <span class="n">A</span><span class="p">(</span><span class="n">eps_r</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
+    <span class="n">tot</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">nr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">stoich</span><span class="p">):</span>
+        <span class="n">tot</span> <span class="o">+=</span> <span class="n">nr</span><span class="o">*</span><span class="n">davies_log_gamma</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">z</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">Aval</span><span class="p">,</span> <span class="n">C</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">be</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tot</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LimitingDebyeHuckelActivityProduct"><a class="viewcode-back" href="../../chempy.html#chempy.electrolytes.LimitingDebyeHuckelActivityProduct">[docs]</a><span class="k">class</span> <span class="nc">LimitingDebyeHuckelActivityProduct</span><span class="p">(</span><span class="n">_ActivityProductBase</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">ionic_strength</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">limiting_activity_product</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stoich</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ExtendedDebyeHuckelActivityProduct"><a class="viewcode-back" href="../../chempy.html#chempy.electrolytes.ExtendedDebyeHuckelActivityProduct">[docs]</a><span class="k">class</span> <span class="nc">ExtendedDebyeHuckelActivityProduct</span><span class="p">(</span><span class="n">_ActivityProductBase</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">ionic_strength</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">extended_activity_product</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stoich</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.5.6',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
