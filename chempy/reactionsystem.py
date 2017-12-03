@@ -84,7 +84,12 @@ class ReactionSystem(object):
         for check in checks:
             getattr(self, 'check_'+check)(throw=True)
 
+    def sort_substances_inplace(self, key=lambda kv: kv[0]):
+        """ Sorts the OrderedDict attribute ``substances`` """
+        self.substances = OrderedDict(sorted(self.substances.items(), key=key))
+
     def html(self, with_param=True):
+        """ Returns a string with an HTML representation """
         def _format(r):
             return r.html(self.substances, with_param=with_param)
         return '<br>'.join(map(_format, self.rxns))
@@ -93,7 +98,7 @@ class ReactionSystem(object):
         return self.html()
 
     def check_duplicate(self, throw=False):
-        """ Raies ValueError if there are duplicates in self.rxns """
+        """ Raies ValueError if there are duplicates in ``self.rxns`` """
         for i1, rxn1 in enumerate(self.rxns):
             for i2, rxn2 in enumerate(self.rxns[i1+1:], i1+1):
                 if rxn1 == rxn2:

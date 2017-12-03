@@ -788,11 +788,11 @@ class Reaction(object):
         If composition keys correspond to conserved entities e.g. atoms
         in chemical reactions, this function should return a list of zeros.
         """
+        keys, values = zip(*substances.items())
         if composition_keys is None:
-            composition_keys = Substance.composition_keys(substances.values())
+            composition_keys = Substance.composition_keys(values)
         net = [0]*len(composition_keys)
-        for substance, coeff in zip(substances.values(),
-                                    self.net_stoich(substances.keys())):
+        for substance, coeff in zip(values, self.net_stoich(keys)):
             for idx, key in enumerate(composition_keys):
                 net[idx] += substance.composition.get(key, 0) * coeff
         return net
