@@ -58,7 +58,7 @@ _first_step = """
     return m_rtol*std::min(get_dx_max(x, y), 1.0);
 """
 
-_roots = """
+_roots_ss = """
     const int ny = get_ny();
     std::vector<double> f(ny);
     double tot=0.0;
@@ -107,7 +107,7 @@ def _get_subst_comp(rsys, odesys, comp_keys, skip_keys):
     return subst_comp
 
 
-def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False):
+def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False, conc_roots=None):
     comp_keys = Substance.composition_keys(rsys.substances.values(), skip_keys=skip_keys)
     if isinstance(odesys, PartiallySolvedSystem):
         init_conc = '&m_p[%d]' % (len(odesys.params) - len(odesys.original_dep))
@@ -128,16 +128,36 @@ def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False
             _first_step, init_conc=init_conc, odesys=odesys)
     ns_extend = kw.get('namespace_extend', {})
 
-    if steady_state_root:
+    if steady_state_root or conc_roots:
         if not native_sys[integrator]._NativeCode._support_roots:
             raise ValueError("integrator '%s' does not support roots." % integrator)
         if odesys.roots is not None:
             raise ValueError("roots already set")
+    if steady_state_root:
+        assert conc_roots is None
         kw['namespace_override']['p_nroots'] = ' return 1; '
-        kw['namespace_override']['p_roots'] = _roots
+        kw['namespace_override']['p_roots'] = _roots_ss
         if 'p_constructor' not in ns_extend:
             ns_extend['p_constructor'] = []
         ns_extend['p_constructor'] += [_constr_special_settings]
+    elif conc_roots:
+        # This could (with some effort) be rewritten to take limits as parameters and have a
+        # preprocessor in odesys.pre_processors do the dedimensionalization.
+        assert not steady_state_root
+        assert all(k in odesys.names and k in rsys.substances for k in conc_roots)
+        kw['namespace_override']['p_nroots'] = ' return %d; ' % len(conc_roots)
+        kw['namespace_override']['p_roots'] = (
+            ''.join(['    out[%(i)d] = y[%(j)d] - m_special_settings[%(i)d];\n' %
+                     dict(i=i, j=odesys.names.index(k)) for i, k in enumerate(conc_roots)]) +
+            '    return AnyODE::Status::success;\n'
+        )
+        if 'p_constructor' not in ns_extend:
+            ns_extend['p_constructor'] = []
+        ns_extend['p_constructor'] += [
+            'if (m_special_settings.size() != %d) throw std::runtime_error("special_settings missing");' %
+            len(conc_roots)
+        ]
+
     if 'p_includes' not in ns_extend:
         ns_extend['p_includes'] = set()
     ns_extend['p_includes'] |= {"<type_traits>",  "<vector>"}
