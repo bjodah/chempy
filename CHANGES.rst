@@ -1,3 +1,7 @@
+v0.5.7
+======
+- New option in ``.kinetics._native.get_native``: conc_roots
+
 v0.5.6
 ======
 - New method: ``ReactionSystem.sort_substances_inplace()``
