@@ -1,0 +1,272 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.electrochemistry package &mdash; chempy 0.5.7 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="chempy 0.5.7 documentation" href="index.html"/>
+        <link rel="up" title="chempy package" href="chempy.html"/>
+        <link rel="next" title="chempy.kinetics package" href="chempy.kinetics.html"/>
+        <link rel="prev" title="chempy package" href="chempy.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.5.7
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="chempy.html">chempy package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="chempy.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">chempy.electrochemistry package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.electrochemistry.nernst">chempy.electrochemistry.nernst module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.kinetics.html">chempy.kinetics package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.printing.html">chempy.printing package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.properties.html">chempy.properties package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.thermodynamics.html">chempy.thermodynamics package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.util.html">chempy.util package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.arrhenius">chempy.arrhenius module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.chemistry">chempy.chemistry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.debye_huckel">chempy.debye_huckel module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.einstein_smoluchowski">chempy.einstein_smoluchowski module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.electrolytes">chempy.electrolytes module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.equilibria">chempy.equilibria module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.eyring">chempy.eyring module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.henry">chempy.henry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.reactionsystem">chempy.reactionsystem module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.symbolic">chempy.symbolic module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.units">chempy.units module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">chempy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="chempy.html">chempy package</a> &raquo;</li>
+      
+    <li>chempy.electrochemistry package</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="https://github.com/bjodah/chempy/blob/v0.5.7/doc/chempy.electrochemistry.rst" class="fa fa-github"> Edit on GitHub</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-chempy.electrochemistry">
+<span id="chempy-electrochemistry-package"></span><h1>chempy.electrochemistry package<a class="headerlink" href="#module-chempy.electrochemistry" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-chempy.electrochemistry.nernst">
+<span id="chempy-electrochemistry-nernst-module"></span><h2>chempy.electrochemistry.nernst module<a class="headerlink" href="#module-chempy.electrochemistry.nernst" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="chempy.electrochemistry.nernst.nernst_potential">
+<code class="descclassname">chempy.electrochemistry.nernst.</code><code class="descname">nernst_potential</code><span class="sig-paren">(</span><em>ion_conc_out</em>, <em>ion_conc_in</em>, <em>charge</em>, <em>T</em>, <em>constants=None</em>, <em>units=None</em>, <em>backend=&lt;module 'math' (built-in)&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/electrochemistry/nernst.html#nernst_potential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.electrochemistry.nernst.nernst_potential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the Nernst potential using the Nernst equation for a particular
+ion.</p>
+<dl class="docutils">
+<dt>ion_conc_out: float with unit</dt>
+<dd>Extracellular concentration of ion</dd>
+<dt>ion_conc_in: float with unit</dt>
+<dd>Intracellular concentration of ion</dd>
+<dt>charge: integer</dt>
+<dd>Charge of the ion</dd>
+<dt>T: float with unit</dt>
+<dd>Absolute temperature</dd>
+<dt>constants: object (optional, default: None)</dt>
+<dd><dl class="first last docutils">
+<dt>constant attributes accessed:</dt>
+<dd>F - Faraday constant
+R - Ideal Gas constant</dd>
+</dl>
+</dd>
+<dt>units: object (optional, default: None)</dt>
+<dd>unit attributes: coulomb, joule, kelvin, mol</dd>
+<dt>backend: module (optional, default: math)</dt>
+<dd>module used to calculate log using <cite>log</cite> method, can be substituted
+with sympy to get symbolic answers</dd>
+</dl>
+<p>Membrane potential</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="chempy.kinetics.html" class="btn btn-neutral float-right" title="chempy.kinetics package" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="chempy.html" class="btn btn-neutral" title="chempy package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.5.7',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
