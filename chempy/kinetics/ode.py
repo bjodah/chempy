@@ -445,7 +445,7 @@ def chained_parameter_variation(odesys, durations, init_conc, varied_params, def
 def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_replace=lambda x: x,
                    backend=None, SymbolicSys=None, time_symbol=None):
     """ This will be a simpler version of get_odesys without the unit handling code.
-    The motivation is to reduce complexity (the code of get_odesys is long with multiple closeures).
+    The motivation is to reduce complexity (the code of get_odesys is long with multiple closures).
 
     This will also rely on SymPy explicitly and the user will be expected to deal with SymPy
     expressions.

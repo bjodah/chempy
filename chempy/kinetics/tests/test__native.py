@@ -2,6 +2,8 @@
 from __future__ import (absolute_import, division, print_function)
 
 from collections import defaultdict
+from functools import reduce
+from operator import mul
 
 try:
     import numpy as np
@@ -11,7 +13,10 @@ except ImportError:
 import pytest
 
 from chempy import ReactionSystem
-from chempy.units import to_unitless, SI_base_registry, default_units as u
+from chempy.units import (
+    allclose, logspace_from_lin, unitless_in_registry, to_unitless, SI_base_registry,
+    rescale, default_units as u
+)
 from chempy.util.testing import requires
 from ..integrated import binary_rev
 from ..ode import get_odesys
@@ -114,9 +119,9 @@ def test_get_native__named_parameter__units(dep_scaling):
     c0 = {'H': 42e-6*u.molar, 'H2': 17*u.micromolar}
     native = get_native(rsys, odesys, 'cvode')
     tend = 7*60*u.minute
-    g_rho_Ddot = 314*u.Gy/u.hour * 998*u.g/u.dm3 * 2*u.per100eV
+    g_rho_Ddot = g, rho, Ddot = 2*u.per100eV, 998*u.g/u.dm3, 314*u.Gy/u.hour
     params = {
-        'p': g_rho_Ddot,
+        'p': reduce(mul, g_rho_Ddot),
         'k2': 53/u.molar/u.minute
     }
     result = native.integrate(tend, c0, params, atol=1e-15, rtol=1e-15, integrator='cvode', nsteps=16000)
@@ -146,6 +151,31 @@ def test_get_native__named_parameter__units(dep_scaling):
     ref_H2_uM = to_unitless(c0['H2'], u.micromolar) + to_unitless(c0['H'], u.micromolar)/2 + t_ul*p_ul/2 - ref_H_uM/2
     assert np.allclose(to_unitless(result.named_dep('H'), u.micromolar), ref_H_uM)
     assert np.allclose(to_unitless(result.named_dep('H2'), u.micromolar), ref_H2_uM)
+
+
+@pytest.mark.veryslow
+@requires('pycvodes', 'pyodesys')
+def test_get_native__conc_roots():
+    M, s = u.M, u.s
+    rsys = ReactionSystem.from_string("2 O3 -> 3 O2; 'k2'")
+    u_reg = SI_base_registry.copy()
+    odesys, extra = get_odesys(rsys, include_params=False, unit_registry=u_reg)
+    c0 = {'O3': 4.2e-3*M, 'O2': 0*M}
+    cr = ['O2']
+    native = get_native(rsys, odesys, 'cvode', conc_roots=cr)
+    tend = 1e5*u.s
+    params = {'k2': logspace_from_lin(1e-3/M/s, 1e3/M/s, 14)}
+    tgt_O2 = 1e-3*M
+    results = native.integrate(tend, c0, params, integrator='native', return_on_root=True,
+                               special_settings=[unitless_in_registry(tgt_O2, u_reg)])
+    assert len(results) == params['k2'].size
+    # dydt = -p*y**2
+    # 1/y0 - 1/y = -2*pt
+    # t = 1/2/p*(1/y - 1/y0)
+    tgt_O3 = c0['O3'] - 2/3 * tgt_O2
+    for r in results:
+        ref = rescale(1/2/r.named_param('k2')*(1/tgt_O3 - 1/c0['O3']), u.s)
+        assert allclose(r.xout[-1], ref, rtol=1e-6)
 
 
 @pytest.mark.veryslow

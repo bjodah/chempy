@@ -65,8 +65,8 @@ class ReactionSystem(object):
             substances = set.union(*[set(rxn.keys()) for rxn in self.rxns])
         if isinstance(substances, OrderedDict):
             self.substances = substances
-        elif isinstance(substances, str):
-            if ' ' in substances:
+        elif isinstance(substances, (str, set)):
+            if isinstance(substances, str) and ' ' in substances:
                 substances = substances.split()
             self.substances = OrderedDict([
                 (s, substance_factory(s)) for s in substances])

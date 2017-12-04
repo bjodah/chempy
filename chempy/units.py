@@ -83,6 +83,9 @@ else:
     if not hasattr(default_units, 'kilojoule'):
         default_units.kilojoule = pq.UnitQuantity(
             'kilojoule',  1e3*pq.joule,  u_symbol='kJ')
+    if not hasattr(default_units, 'kilogray'):
+        default_units.kilogray = pq.UnitQuantity(
+            'kilogray',  1e3*pq.gray,  u_symbol='kGy')
     if not hasattr(default_units, 'perMolar_perSecond'):
         default_units.perMolar_perSecond = 1/default_units.molar/pq.s
     if not hasattr(default_units, 'umol'):
