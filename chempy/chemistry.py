@@ -436,14 +436,14 @@ class Reaction(object):
                 raise ValueError("Check failed: '%s'" % check)
 
     @classmethod
-    def from_string(cls, string, substance_keys=None, globals_=None, **kwargs):
+    def from_string(cls, string, substances=None, globals_=None, **kwargs):
         """ Parses a string into a Reaction instance
 
         Parameters
         ----------
         string : str
             String representation of the reaction.
-        substance_keys : iterable of strings or string or None
+        substances : convertible to iterable of strings or string or None
             Used prevent e.g. misspelling.
             if str: split is invoked, if None: no checking done.
         globals_ : dict (optional)
@@ -479,10 +479,10 @@ class Reaction(object):
         :func:`eval` which is a severe security concern for untrusted input.
 
         """
-        if isinstance(substance_keys, str):
-            if ' ' in substance_keys:
-                substance_keys = substance_keys.split()
-        return to_reaction(string, substance_keys, cls.str_arrow, cls, globals_, **kwargs)
+        if isinstance(substances, str):
+            if ' ' in substances:
+                substances = substances.split()
+        return to_reaction(string, substances, cls.str_arrow, cls, globals_, **kwargs)
 
     def copy(self, **kwargs):
         return self.__class__(**{k: kwargs.get(k, getattr(self, k)) for k in self._all_attr})

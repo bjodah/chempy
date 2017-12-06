@@ -20,6 +20,8 @@ class ReactionSystem(object):
          Sequence of :py:class:`Reaction` instances.
     substances : OrderedDict or string or None
          Mapping str -> Substance instances, None => deduced from reactions.
+         If a set is passed as substances (or a string which is split), then
+         ``substance_factory`` will be used to construct substances from the items.
     name : string (optional)
          Name of ReactionSystem (e.g. model name / citation key).
     checks : iterable of str, optional
@@ -59,10 +61,12 @@ class ReactionSystem(object):
 
     def __init__(self, rxns, substances=None, name=None, checks=('balance', 'substance_keys',
                                                                  'duplicate', 'duplicate_names'),
-                 substance_factory=Substance):
+                 substance_factory=Substance, missing_substances_from_keys=False):
         self.rxns = list(rxns)
+
         if substances is None:
             substances = set.union(*[set(rxn.keys()) for rxn in self.rxns])
+
         if isinstance(substances, OrderedDict):
             self.substances = substances
         elif isinstance(substances, (str, set)):
@@ -71,13 +75,16 @@ class ReactionSystem(object):
             self.substances = OrderedDict([
                 (s, substance_factory(s)) for s in substances])
         else:
-            try:
+            if all(isinstance(s, Substance) for s in substances):
                 self.substances = OrderedDict([(s.name, s) for s in substances])
-            except:
-                try:
-                    self.substances = OrderedDict(substances)
-                except ValueError:
-                    self.substances = OrderedDict((k, substance_factory(k)) for k in substances)
+            elif hasattr(substances, 'values') and all(isinstance(s, Substance) for s in substances.values()):
+                self.substances = OrderedDict(substances)
+            else:
+                self.substances = OrderedDict((k, substance_factory(k)) for k in substances)
+
+        if missing_substances_from_keys:
+            for k in set.union(*[set(rxn.keys()) for rxn in self.rxns]) - set(self.substances):
+                self.substances[k] = substance_factory(k)
 
         self.name = name
 
@@ -177,13 +184,14 @@ class ReactionSystem(object):
         return True
 
     @classmethod
-    def from_string(cls, s, substance_keys=None, rxn_parse_kwargs=None, **kwargs):
+    def from_string(cls, s, substances=None, rxn_parse_kwargs=None, **kwargs):
         """ Create a reaction system from a string
 
         Parameters
         ----------
         s : str
             Multiline string.
+        substances : convertible to iterable of str
 
         Examples
         --------
@@ -193,11 +201,11 @@ class ReactionSystem(object):
         True
 
         """
-        rxns = [cls._BaseReaction.from_string(r, substance_keys, **(rxn_parse_kwargs or {}))
+        rxns = [cls._BaseReaction.from_string(r, substances, **(rxn_parse_kwargs or {}))
                 for r in s.split('\n') if r.strip() != '']
         if 'substance_factory' not in kwargs:
             kwargs['substance_factory'] = cls._BaseSubstance.from_formula
-        return cls(rxns, substance_keys, **kwargs)
+        return cls(rxns, substances, **kwargs)
 
     def __getitem__(self, key):
         candidate = None
@@ -222,7 +230,7 @@ class ReactionSystem(object):
 
     def __add__(self, other):
         try:
-            substances = list(chain(self.substances.items(), other.substances.items()))
+            substances = OrderedDict(chain(self.substances.items(), other.substances.items()))
         except AttributeError:
             substances = self.substances.copy()
         return self.__class__(chain(self.rxns, getattr(other, 'rxns', other)), substances, checks=())

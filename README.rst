@@ -150,7 +150,7 @@ Chemical equilibria
    >>> water_autop = Equilibrium({'H2O'}, {'H+', 'OH-'}, 10**-14)  # unit "molar" assumed
    >>> ammonia_prot = Equilibrium({'NH4+'}, {'NH3', 'H+'}, 10**-9.24)  # same here
    >>> from chempy.equilibria import EqSystem
-   >>> substances = map(Species.from_formula, 'H2O OH- H+ NH3 NH4+'.split())
+   >>> substances = [Species.from_formula(f) for f in 'H2O OH- H+ NH3 NH4+'.split()]
    >>> eqsys = EqSystem([water_autop, ammonia_prot], substances)
    >>> print('\n'.join(map(str, eqsys.rxns)))  # "rxns" short for "reactions"
    H2O = H+ + OH-; 1e-14
