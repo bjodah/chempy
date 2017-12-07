@@ -603,11 +603,14 @@ class Reaction(object):
         if str_num is None:
             str_num = str_
         if str_formula is None:
-            str_formula = lambda s, k: str_(s)
+            def str_formula(s, k):
+                return s
         nullstr, space = str_(''), str_(' ')
         reac, prod, i_reac, i_prod = [[
-            ((str_num(v)+space) if v > 1 else nullstr) + str_formula(not_None(getattr(substances[k], name_attr, k), k), k)
-            for k, v in filter(itemgetter(1), d.items())
+            (
+                ((str_num(v)+space) if v > 1 else nullstr) +
+                str_formula(not_None(getattr(substances[k], name_attr, k), k), k)
+            ) for k, v in filter(itemgetter(1), d.items())
         ] for d in (self.reac, self.prod, self.inact_reac, self.inact_prod)]
         r_str = str_(" + ").join(sorted(reac))
         ir_str = (str_(' + ( ') + str_(" + ").join(sorted(i_reac)) + str_(')')

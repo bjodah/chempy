@@ -99,11 +99,11 @@ def test_ReactionSystem__html_tables():
     rs = ReactionSystem([r1, r2])
     ut, unc = rs.unimolecular_html_table()
     assert unc == [r1]
-    assert ut == u'<table><tr><td>A</td><td ><a title="A → 2 A">R2</a></td></tr></table>'
+    assert ut == u'<table><tr><td>A</td><td ><a title="1: A → 2 A">R2</a></td></tr></table>'
 
     bt, bnc = rs.bimolecular_html_table()
     assert bnc == [r2]
-    assert bt == u'<table><th></th><th>A</th>\n<tr><td>A</td><td ><a title="2 A → A">R1</a></td></tr></table>'
+    assert bt == u'<table><th></th><th>A</th>\n<tr><td>A</td><td ><a title="0: 2 A → A">R1</a></td></tr></table>'
 
 
 @requires(parsing_library, 'numpy')
@@ -251,6 +251,8 @@ def test_ReactionSystem__sinks_sources_disjoint():
     rsys4 = ReactionSystem([Reaction({'H2': 2, 'O2': 1}, {'H2O': 2})], 'H2 O2 H2O N2 Ar')
     assert rsys4.sinks_sources_disjoint() == ({'H2O'}, {'H2', 'O2'}, {'N2', 'Ar'})
 
+
+@requires(parsing_library)
 def test_ReactionSystem__split():
     a = """
     2 H2 +  O2 -> 2 H2O     ; 1e-3
