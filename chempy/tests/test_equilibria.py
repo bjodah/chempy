@@ -22,7 +22,8 @@ from ..chemistry import (
 def test_EqSystem():
     a, b = sbstncs = Substance('a'), Substance('b')
     rxns = [Reaction({'a': 1}, {'b': 1})]
-    es = EqSystem(rxns, [(s.name, s) for s in sbstncs])
+    es = EqSystem(rxns, collections.OrderedDict(
+        [(s.name, s) for s in sbstncs]))
     assert es.net_stoichs().tolist() == [[-1, 1]]
 
 
