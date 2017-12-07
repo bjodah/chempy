@@ -230,3 +230,47 @@ def test_ReactionSystem__identify_equilibria():
          2 H2O -> 2 H2 + O2
     """)
     assert rsys.identify_equilibria() == [(0, 3), (1, 2)]
+
+
+@requires(parsing_library)
+def test_ReactionSystem__sinks_sources_disjoint():
+    rsys1 = ReactionSystem.from_string("""
+    2 H2 +  O2 -> 2 H2O     ; 1e-3
+           H2O -> H+ + OH-  ; 1e-4/55.35
+      H+ + OH- -> H2O       ; 1e10
+         2 H2O -> 2 H2 + O2
+    """)
+    assert all(not s for s in rsys1.sinks_sources_disjoint())
+
+    rsys2 = ReactionSystem.from_string('\n'.join(['2 NH3 -> N2 + 3 H2', 'N2H4 -> N2 +   2  H2']))
+    assert rsys2.sinks_sources_disjoint() == ({'N2', 'H2'}, {'NH3', 'N2H4'}, set())
+
+    rsys3 = ReactionSystem.from_string("H+ + OH- -> H2O; 'kf'")
+    assert rsys3.sinks_sources_disjoint() == ({'H2O'}, {'H+', 'OH-'}, set())
+
+    rsys4 = ReactionSystem([Reaction({'H2': 2, 'O2': 1}, {'H2O': 2})], 'H2 O2 H2O N2 Ar')
+    assert rsys4.sinks_sources_disjoint() == ({'H2O'}, {'H2', 'O2'}, {'N2', 'Ar'})
+
+def test_ReactionSystem__split():
+    a = """
+    2 H2 +  O2 -> 2 H2O     ; 1e-3
+           H2O -> H+ + OH-  ; 1e-4/55.35
+      H+ + OH- -> H2O       ; 1e10
+        2 H2O  -> 2 H2 + O2"""
+    b = """
+        2 N    -> N2"""
+    c = """
+        2 ClBr -> Cl2 + Br2
+    """
+    rsys1 = ReactionSystem.from_string(a+b+c)
+    res = rsys1.split()
+    ref = list(map(ReactionSystem.from_string, [a, b, c]))
+    for rs in chain(res, ref):
+        rs.sort_substances_inplace()
+    res1a, res1b, res1c = res
+    ref1a, ref1b, ref1c = ref
+    assert res1a == ref1a
+    assert res1b == ref1b
+    assert res1c == ref1c
+    assert res1c != ref1a
+    assert rsys1.sinks_sources_disjoint() == ({'N2', 'Cl2', 'Br2'}, {'N', 'ClBr'}, set())

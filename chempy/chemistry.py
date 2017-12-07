@@ -89,6 +89,12 @@ class Substance(object):
         'composition', 'data'
     )
 
+    def __eq__(self, other):
+        for attr in self.attrs:
+            if getattr(self, attr) != getattr(other, attr):
+                return False
+        return True
+
     @property
     def charge(self):
         """ Convenience property for accessing ``composition[0]`` """
@@ -436,14 +442,14 @@ class Reaction(object):
                 raise ValueError("Check failed: '%s'" % check)
 
     @classmethod
-    def from_string(cls, string, substances=None, globals_=None, **kwargs):
+    def from_string(cls, string, substance_keys=None, globals_=None, **kwargs):
         """ Parses a string into a Reaction instance
 
         Parameters
         ----------
         string : str
             String representation of the reaction.
-        substances : convertible to iterable of strings or string or None
+        substance_keys : convertible to iterable of strings or string or None
             Used prevent e.g. misspelling.
             if str: split is invoked, if None: no checking done.
         globals_ : dict (optional)
@@ -479,10 +485,10 @@ class Reaction(object):
         :func:`eval` which is a severe security concern for untrusted input.
 
         """
-        if isinstance(substances, str):
-            if ' ' in substances:
-                substances = substances.split()
-        return to_reaction(string, substances, cls.str_arrow, cls, globals_, **kwargs)
+        if isinstance(substance_keys, str):
+            if ' ' in substance_keys:
+                substance_keys = substance_keys.split()
+        return to_reaction(string, substance_keys, cls.str_arrow, cls, globals_, **kwargs)
 
     def copy(self, **kwargs):
         return self.__class__(**{k: kwargs.get(k, getattr(self, k)) for k in self._all_attr})
@@ -597,10 +603,10 @@ class Reaction(object):
         if str_num is None:
             str_num = str_
         if str_formula is None:
-            str_formula = str_
+            str_formula = lambda s, k: str_(s)
         nullstr, space = str_(''), str_(' ')
         reac, prod, i_reac, i_prod = [[
-            ((str_num(v)+space) if v > 1 else nullstr) + str_formula(not_None(getattr(substances[k], name_attr, k), k))
+            ((str_num(v)+space) if v > 1 else nullstr) + str_formula(not_None(getattr(substances[k], name_attr, k), k), k)
             for k, v in filter(itemgetter(1), d.items())
         ] for d in (self.reac, self.prod, self.inact_reac, self.inact_prod)]
         r_str = str_(" + ").join(sorted(reac))

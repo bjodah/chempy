@@ -91,15 +91,110 @@ class ReactionSystem(object):
         for check in checks:
             getattr(self, 'check_'+check)(throw=True)
 
+    def split(self, **kwargs):
+        """ Splits the reaction system into multiple disjoint reaction systems. """
+        groups = []  # tuples of (list, set) -- list of reactions, set of substance keys
+        for i, r in enumerate(self.rxns):
+            for gr, gs in groups: # check if reaction is part of group, break out
+                rks = r.keys()
+                group_found = False
+                for k in rks:
+                    if k in gs:
+                        gr.append(i)
+                        gs.update(rks)
+                        group_found = True
+                        break
+                if group_found:
+                    break
+            else:  # reaction did not fit any group
+                groups.append(([i], set(r.keys())))
+        # We might have too many groups as this point, we will now recursively fuse groups
+        i = 0
+        while True:
+            for j in range(i+1, len(groups)):
+                if groups[i][1] & groups[j][1]:  # do groups share a substance?
+                    groups[i][0].extend(groups[j][0])
+                    groups[i][1].update(groups[j][1])
+                    groups.pop(j)
+                    break
+            else:
+                i += 1
+            if i >= len(groups):
+                break
+        return [self.__class__(
+            [self.rxns[i] for i in gr],
+            OrderedDict([(k, v) for k, v in self.substances.items() if k in gs]),
+            **kwargs
+        ) for gr, gs in groups]
+
+    def sinks_sources_disjoint(self, **kwargs):
+        """ Returns the keys for sink-, source- and disjoint-substances in the reaction system.
+
+        Sinks are substances that are irreversibly formed (they don't appear on the
+        reactant side of any reaction). Sources are eventually completely depleted (they do not
+        appear on the product side of any reaction). Disjoint substances don't appear on either
+        side and are thus unaffected by the reactionsystem.
+
+        Returns
+        -------
+        Length-3 tuple of sets with substance keys (strings)
+
+        """
+        import numpy as np
+        irrev_rxns = []
+        for r in self.rxns:
+            try:
+                irrev_rxns.extend(r.as_reactions())
+            except AttributeError:
+                irrev_rxns.append(r)
+        irrev_rsys = ReactionSystem(irrev_rxns, self.substances, **kwargs)
+        all_r = irrev_rsys.all_reac_stoichs()
+        all_p = irrev_rsys.all_prod_stoichs()
+        if np.any(all_r < 0) or np.any(all_p < 0):
+            raise ValueError("Expected positive stoichiometric coefficients")
+        result = sinks, sources, disjoint = set(), set(), set()
+        for i, sk in enumerate(irrev_rsys.substances.keys()):
+            in_r = np.any(all_r[:, i])
+            in_p = np.any(all_p[:, i])
+            if in_r and in_p:
+                pass
+            elif in_r:
+                sources.add(sk)
+            elif in_p:
+                sinks.add(sk)
+            else:
+                disjoint.add(sk)
+        return result
+
     def sort_substances_inplace(self, key=lambda kv: kv[0]):
         """ Sorts the OrderedDict attribute ``substances`` """
         self.substances = OrderedDict(sorted(self.substances.items(), key=key))
 
-    def html(self, with_param=True):
+    def html(self, with_param=True, checks=(), color_sinks_sources=True):
         """ Returns a string with an HTML representation """
+        parts = self.split(checks=checks)
+        if len(parts) > 1:
+            return '<br><br>'.join(rs.html(with_param) for rs in parts)
+
+        sinks, sources, disjoint = self.sinks_sources_disjoint(checks=checks)
+        def _str_formula(s, k):
+            if k in sinks:
+                fmt = '<span style="color:darkgreen">%s</span>'
+            elif k in sources:
+                fmt = '<span style="color:darkred">%s</span>'
+            else:
+                fmt = '%s'
+            return fmt % s
+
         def _format(r):
-            return r.html(self.substances, with_param=with_param)
+            return r.html(self.substances, with_param=with_param,
+                          str_formula=_str_formula if color_sinks_sources else None)
         return '<br>'.join(map(_format, self.rxns))
+
+    def string(self, with_param=True):
+        def _format(r):
+            return r.string(self.substances, with_param=with_param)
+        return '\n'.join(map(_format, self.rxns))
 
     def _repr_html_(self):
         return self.html()
@@ -192,6 +287,10 @@ class ReactionSystem(object):
         s : str
             Multiline string.
         substances : convertible to iterable of str
+        rxn_parse_kwargs : dict
+            Keyword arguments passed on to the Reaction baseclass' method ``from_string``.
+        \\*\\*kwargs:
+            Keyword arguments passed to the constructor of the class
 
         Examples
         --------
@@ -201,7 +300,8 @@ class ReactionSystem(object):
         True
 
         """
-        rxns = [cls._BaseReaction.from_string(r, substances, **(rxn_parse_kwargs or {}))
+        substance_keys = None if kwargs.get('missing_substances_from_keys', False) else substances
+        rxns = [cls._BaseReaction.from_string(r, substance_keys, **(rxn_parse_kwargs or {}))
                 for r in s.split('\n') if r.strip() != '']
         if 'substance_factory' not in kwargs:
             kwargs['substance_factory'] = cls._BaseSubstance.from_formula
