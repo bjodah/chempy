@@ -14,9 +14,9 @@ from .units import to_unitless
 def _str_formula_factory(sinks, sources):
     def html_formula(s, k):
         if k in sinks:
-            fmt = '<span style="color:darkgreen">%s</span>'
+            fmt = '<span style="background-color:LightGreen; border-radius: 5pt; border: 1px solid Green; padding: 0pt 3pt 0pt 3pt;">%s</span>'
         elif k in sources:
-            fmt = '<span style="color:maroon">%s</span>'
+            fmt = '<span style="background-color:LightPink; border-radius: 5pt; border: 1px solid Pink; padding: 0pt 3pt 0pt 3pt;">%s</span>'
         else:
             fmt = '%s'
         return fmt % s

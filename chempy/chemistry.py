@@ -859,7 +859,6 @@ class Reaction(object):
 
         """
         if variables is None:
-
             variables = {}
         if substance_keys is None:
             substance_keys = self.keys()
