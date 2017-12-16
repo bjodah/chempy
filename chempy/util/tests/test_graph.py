@@ -27,8 +27,10 @@ def test_rsys2dot():
     rsys = _get_rsys()
     assert list(map(str.strip, rsys2dot(rsys))) == [
         'digraph "None" {',
+        '"A" [fontcolor=maroon label="A"];',
+        '"B" [fontcolor=darkgreen label="B"];',
         '{',
-        'node [label="r1" shape=diamond]',
+        'node [label="r1",shape=diamond]',
         'r1',
         '}',
         '"A" -> "r1" [color=maroon,fontcolor=maroon,label="2"];',

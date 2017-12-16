@@ -30,6 +30,11 @@ class EqSystem(ReactionSystem):
     _BaseReaction = Equilibrium
     _BaseSubstance = Species
 
+    def html(self, *args, **kwargs):
+        k = 'color_sinks_sources'
+        kwargs[k] = kwargs.get(k, False)
+        return super(EqSystem, self).html(*args, **kwargs)
+
     def eq_constants(self, non_precip_rids=(), eq_params=None, small=0):
         if eq_params is None:
             eq_params = [eq.param for eq in self.rxns]

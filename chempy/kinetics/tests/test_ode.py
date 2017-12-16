@@ -680,7 +680,7 @@ def test_get_odesys__Eyring():
     dS = 10
     rsys1 = ReactionSystem.from_string("""
     NOBr -> NO + Br; EyringParam(dH={dH}*J/mol, dS={dS}*J/K/mol)
-    """.format(dH=dH, dS=dS), substance_keys='NOBr NO Br'.split())
+    """.format(dH=dH, dS=dS), substances='NOBr NO Br'.split())
     kref = 20836643994.118652*T_K*np.exp(-(dH - T_K*dS)/(R*T_K))
     NOBr0_M = 0.7
     init_cond = dict(
@@ -703,7 +703,7 @@ def test_get_odesys__Eyring():
     check(rsys1)
     rsys2 = ReactionSystem.from_string("""
     NOBr -> NO + Br; MassAction(EyringHS([{dH}*J/mol, {dS}*J/K/mol]))
-    """.format(dH=dH, dS=dS), substance_keys='NOBr NO Br'.split())
+    """.format(dH=dH, dS=dS), substances='NOBr NO Br'.split())
     check(rsys2)
 
 
