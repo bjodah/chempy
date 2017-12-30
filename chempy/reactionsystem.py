@@ -9,24 +9,7 @@ import warnings
 
 from .chemistry import Reaction, Substance
 from .units import to_unitless
-
-
-def _str_formula_factory(sinks, sources):
-    def html_formula(s, k):
-        if k in sinks:
-            fmt = '<span style="background-color:LightGreen; border-radius: 5pt; border: 1px solid Green; padding: 0pt 3pt 0pt 3pt;">%s</span>'
-        elif k in sources:
-            fmt = '<span style="background-color:LightPink; border-radius: 5pt; border: 1px solid Pink; padding: 0pt 3pt 0pt 3pt;">%s</span>'
-        else:
-            fmt = '%s'
-        return fmt % s
-    return html_formula
-
-
-def _cell_label_name(idx, reaction, substances):
-    lbl = reaction.name or reaction.param
-    return '<a title="%d: %s">%s</a>' % (idx, reaction.unicode(substances, with_param=True), lbl)
-
+from .util.pyutil import deprecated
 
 class ReactionSystem(object):
     """ Collection of reactions forming a system (model).
@@ -46,6 +29,9 @@ class ReactionSystem(object):
         for all ``%s`` in ``checks``.
     substance_factory : callback
         Could also be e.g. :meth:`Substance.from_formula`.
+    sort_substances : bool
+        Sort keys in substances lexicographically by key? default: ``None`` implies
+        True unless substances is either one of ``OrderedDict``, list, tuple or str.
 
     Attributes
     ----------
@@ -76,14 +62,20 @@ class ReactionSystem(object):
     _BaseReaction = Reaction
     _BaseSubstance = Substance
 
-    def __init__(self, rxns, substances=None, name=None, checks=('balance', 'substance_keys',
-                                                                 'duplicate', 'duplicate_names'),
-                 substance_factory=Substance, missing_substances_from_keys=False):
+    def __init__(self, rxns, substances=None, name=None,
+                 checks=('balance', 'substance_keys', 'duplicate', 'duplicate_names'),
+                 substance_factory=Substance, missing_substances_from_keys=False,
+                 sort_substances=None):
         self.rxns = list(rxns)
 
         if substances is None:
             substances = set.union(*[set(rxn.keys()) for rxn in self.rxns])
 
+        if sort_substances is None:
+            if isinstance(substances, (OrderedDict, tuple, list, str)):
+                sort_substances = False
+            else:
+                sort_substances = True
         if isinstance(substances, OrderedDict):
             self.substances = substances
         elif isinstance(substances, (str, set)):
@@ -107,6 +99,9 @@ class ReactionSystem(object):
 
         for check in checks:
             getattr(self, 'check_'+check)(throw=True)
+
+        if sort_substances:
+            self.sort_substances_inplace()
 
     def split(self, **kwargs):
         """ Splits the reaction system into multiple disjoint reaction systems. """
@@ -187,27 +182,45 @@ class ReactionSystem(object):
         """ Sorts the OrderedDict attribute ``substances`` """
         self.substances = OrderedDict(sorted(self.substances.items(), key=key))
 
-    def html(self, with_param=True, checks=(), color_sinks_sources=True):
-        """ Returns a string with an HTML representation """
-        parts = self.split(checks=checks)
-        if len(parts) > 1:
-            return '<br><br>'.join(rs.html(with_param) for rs in parts)
+    def _sinks_sources_colors(self, checks=()):
+        colors = {}
+        sinks, sources, disjoint = self.sinks_sources_disjoint(checks=checks)
+        for k in sinks:
+            colors[k] = ('90ee90', '008000')  # LightGreen, Green
+        for k in sources:
+            colors[k] = ('ffb6c1', 'c71585')  # LightPink, MediumVioletRed
+        return colors
 
-        if color_sinks_sources:
-            sinks, sources, disjoint = self.sinks_sources_disjoint(checks=checks)
+    def html(self, with_param=True, checks=(), color_sinks_sources=True, split=True, print_fn=None):
+        """ Returns a string with an HTML representation
 
-        def _format(r):
-            return r.html(self.substances, with_param=with_param,
-                          str_formula=_str_formula_factory(sinks, sources) if color_sinks_sources else None)
-        return '<br>'.join(map(_format, self.rxns))
+        Parameters
+        ----------
+        with_param : bool
+        checks : tuple
+        color_sinks_sources : bool
+        split : bool
+        print_fn : callable
+            default: :func:`chempy.printing.html`
+
+        """
+        if print_fn is None:
+            from .printing import html as print_fn
+
+        if split:
+            parts = rsys.split(checks=checks)
+            if len(parts) > 1:
+                return '<br><hl><br>'.join(rs.html(with_param) for rs in parts)
+        colors = self._sinks_sources_colors(checks=checks) if color_sinks_sources else {}
+        return print_fn(self, colors=colors, substances=self.substances)
 
     def string(self, with_param=True):
-        def _format(r):
-            return r.string(self.substances, with_param=with_param)
-        return '\n'.join(map(_format, self.rxns))
+        from .printing import str_
+        return str_(self, with_param=with_param)
 
-    def _repr_html_(self):
-        return self.html()
+    def _repr_html_(self):  # jupyter notebook hook
+        from .printing import html
+        return self.html(print_fn=javascript)
 
     def check_duplicate(self, throw=False):
         """ Raies ValueError if there are duplicates in ``self.rxns`` """
@@ -355,11 +368,21 @@ class ReactionSystem(object):
         return tuple(substance.name for substance in self.substances.values())
 
     def substance_participation(self, substance_key):
-        """ Returns indices of reactions where substance_key occurs
+        r""" Returns indices of reactions where substance_key occurs
 
         Parameters
         ----------
         substance_key: str
+
+        Examples
+        --------
+        >>> rs = ReactionSystem.from_string('2 H2 + O2 -> 2 H2O\n 2 H2O2 -> 2 H2O + O2')
+        >>> rs.substance_participation('H2')
+        [0]
+        >>> rs.substance_participation('O2')
+        [0, 1]
+        >>> rs.substance_participation('O3')
+        []
 
         Returns
         -------
@@ -616,9 +639,6 @@ class ReactionSystem(object):
 
         """
         import numpy as np
-        # A, composition_keys = self.composition_balance_vectors()
-        # composition_amounts = np.dot(A, self.as_per_substance_array(init_conc))
-        # return np.min(composition_amounts.reshape((composition_amounts.size, 1))/A, axis=0)
         if dtype is None:
             dtype = np.float64
         init_concs_arr = self.as_per_substance_array(init_concs, dtype=dtype)
@@ -641,35 +661,9 @@ class ReactionSystem(object):
                 bounds.append(min_(choose_from))
         return bounds
 
-    def _html_table_cell_factory(self, cell_label=None):
-        cell_label = cell_label or _cell_label_name
-        missing = [len(self.substance_participation(k)) == 0 for k in self.substances]
-
-        def cell(A, ri, ci=None):
-            args = []
-            if ci is not None and ri > ci:
-                r = '-'
-            else:
-                if ci is None:
-                    c = A[ri]
-                    color_red = missing[ri]
-                else:
-                    c = A[ri][ci]
-                    color_red = missing[ri] or missing[ci]
-
-                if c is None:
-                    r = ''
-                else:
-                    r = ', '.join(cell_label(r[0], r[1], self.substances) for r in c)
-
-                if color_red:
-                    args.append('style="background-color:#faa"')
-            return '<td %s>%s</td>' % (' '.join(args), r)
-        return cell
-
     def _unimolecular_reactions(self):
         A = [None]*self.ns
-        unconsidered = []
+        unconsidered_ri = set()
         for i, r in enumerate(self.rxns):
             if r.order() == 1:
                 keys = list(r.reac.keys())
@@ -681,45 +675,18 @@ class ReactionSystem(object):
                     A[ri] = list()
                 A[ri].append((i, r))
             else:
-                unconsidered.append(r)
-        return A, unconsidered
+                unconsidered_ri.add(i)
+        return A, unconsidered_ri
 
-    def unimolecular_html_table(self, sinks_sources_disjoint=None, cell_label=None):
-        """ Returns a HTML table of unimolecular reactions
-
-        Parameters
-        ----------
-        sinks_sources_disjoint : tuple, None or True
-            Colors sinks & sources. When ``True`` :meth:`sinks_sources_disjoint` is called.
-        cell_label : Reaction formatting callback
-            The function takes an integer, a Reaction instance and a dict of Substances as
-            parameters and return a string.
-
-        Returns
-        -------
-        string: html representation
-        list: reactions not considered
-        """
-        if sinks_sources_disjoint is True:
-            sinks_sources_disjoint = self.sinks_sources_disjoint()
-
-        if sinks_sources_disjoint:
-            _str_formula = _str_formula_factory(*sinks_sources_disjoint[:2])
-        else:
-            def _str_formula(s, k):
-                return s
-
-        A, unconsidered = self._unimolecular_reactions()
-        _cell = self._html_table_cell_factory(cell_label=cell_label)
-        rows = '\n'.join('<tr><td>%s</td>%s</tr>' % (
-            _str_formula(s.html_name or s.name, sk), _cell(A, ri)
-        ) for ri, (sk, s) in enumerate(self.substances.items()))
-        html = '<table>%s</table>' % rows
-        return html, unconsidered
+    @deprecated(last_supported_version='0.5.7', will_be_missing_in='0.7.0',
+                use_instead='chempy.printing.tables.UnimolecularTable')
+    def unimolecular_html_table(self, *args, **kwargs):
+        from .printing.tables import UnimolecularTable
+        return UnimolecularTable.from_ReactionSystem(self)
 
     def _bimolecular_reactions(self):
         A = [[None]*self.ns for _ in range(self.ns)]
-        unconsidered = []
+        unconsidered_ri = set()
         for i, r in enumerate(self.rxns):
             if r.order() == 2:
                 keys = list(r.reac.keys())
@@ -733,45 +700,17 @@ class ReactionSystem(object):
                     A[ri][ci] = list()
                 A[ri][ci].append((i, r))
             else:
-                unconsidered.append(r)
-        return A, unconsidered
+                unconsidered_ri.add(i)
+        return A, unconsidered_ri
 
-    def bimolecular_html_table(self, sinks_sources_disjoint=None, cell_label=None):
-        """ Returns a HTML table of bimolecular reactions
-
-        Parameters
-        ----------
-        sinks_sources_disjoint : tuple, None or True
-            Colors sinks & sources. When ``True`` :meth:`sinks_sources_disjoint` is called.
-        cell_label : Reaction formatting callback
-            The function takes an integer, a Reaction instance and a dict of Substances as
-            parameters and return a string.
-
-        Returns
-        -------
-        string: html representation
-        list: reactions not considered
-        """
-        if sinks_sources_disjoint is True:
-            sinks_sources_disjoint = self.sinks_sources_disjoint()
-
-        if sinks_sources_disjoint:
-            _str_formula = _str_formula_factory(*sinks_sources_disjoint[:2])
-        else:
-            def _str_formula(s, k):
-                return s
-
-        A, unconsidered = self._bimolecular_reactions()
-        header = '<th></th>' + ''.join('<th>%s</th>' % _str_formula(s.html_name or s.name, sk)
-                                       for sk, s in self.substances.items())
-        _cell = self._html_table_cell_factory(cell_label=_cell_label_name)
-        rows = '\n'.join('<tr><td>%s</td>%s</tr>' % (
-            _str_formula(s.html_name or s.name, sk), ''.join(_cell(A, ri, ci) for ci in range(self.ns))
-        ) for ri, (sk, s) in enumerate(self.substances.items()))
-        html = '<table>%s</table>' % '\n'.join([header, rows])
-        return html, unconsidered
+    @deprecated(last_supported_version='0.5.7', will_be_missing_in='0.7.0',
+                use_instead='chempy.printing.tables.BimolecularTable')
+    def bimolecular_html_table(self, *args, **kwargs):
+        from .printing.tables import BimolecularTable
+        return BimolecularTable.from_ReactionSystem(self)
 
     def identify_equilibria(self):
+        """ Identifies pairs of reactions which constitute equilibria. """
         eq = []
         for ri1, rxn1 in enumerate(self.rxns):
             for ri2, rxn2 in enumerate(self.rxns[ri1+1:], ri1+1):

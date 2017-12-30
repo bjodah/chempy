@@ -139,9 +139,9 @@ def get_derived_unit(registry, key):
         'luminous_intensity', 'amount'. If registry is ``None`` the
         function returns 1.0 unconditionally.
     key: str
-        one of the registry keys or one of: 'diffusivity', 'electrical_mobility',
+        one of the registry keys or one of: 'diffusivity', 'electricalmobility',
         'permittivity', 'charge', 'energy', 'concentration', 'density',
-        'radiolytic_yield'
+        'radiolyticyield'.
 
     Examples
     --------

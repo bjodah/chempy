@@ -26,6 +26,12 @@ from ..util.pyutil import deprecated
 from ..util._expr import Expr
 from .rates import RateExpr, MassAction
 
+def _get_derived_unit(reg, key):
+    try:
+        return get_derived_unit(reg, key)
+    except KeyError:
+        return get_derived_unit(reg, '_'.join(key.split('_')[:-1]))
+
 
 def law_of_mass_action_rates(conc, rsys, variables=None):
     """ Returns a generator of reaction rate expressions
@@ -253,7 +259,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     else:
         # We need to make rsys_params unitless and create
         # a pre- & post-processor for SymbolicSys
-        pk_units = [get_derived_unit(unit_registry, k) for k in all_pk]
+        pk_units = [_get_derived_unit(unit_registry, k) for k in all_pk]
         p_units = pk_units if include_params else (pk_units + [unique_units[k] for k in unique])
         new_r_exprs = []
         for ratex in r_exprs:

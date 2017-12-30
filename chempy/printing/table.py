@@ -10,13 +10,18 @@ class Table(object):
     def __init__(self, rows, headers=None):
         self.rows, self.headers = rows, headers
 
-    def html(self):
-        rows = ['\n'.join('<th>%s</th>' % _ for _ in self.headers)]
-        rows += ['\n'.join('<td>%s</td>' % _ for _ in r) for r in self.rows]
-        return '<table>%s</table>' % '\n'.join(['<tr>%s</tr>' % r for r in rows])
+    def _html(self, printer, **kwargs):
+        def map_fmt(cont, fmt, joiner='\n'):
+            return joiner.join(map(lambda x: fmt % printer._print(x, **kwargs), cont))
+        rows = (
+            [map_fmt(self.headers, '<th>%s</th>')] +
+            [map_fmt(row, '<td>%s</td>') for row in self.rows]
+        )
+        return '<table>%s</table>' % map_fmt(rows, '<tr>%s</tr>')
 
     def _repr_html_(self):
-        return self.html()
+        from .web import html
+        return html(self)
 
 
 def as_per_substance_html_table(cont, substances=None, header=None,
