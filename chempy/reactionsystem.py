@@ -11,6 +11,7 @@ from .chemistry import Reaction, Substance
 from .units import to_unitless
 from .util.pyutil import deprecated
 
+
 class ReactionSystem(object):
     """ Collection of reactions forming a system (model).
 
@@ -142,10 +143,10 @@ class ReactionSystem(object):
     def sinks_sources_disjoint(self, **kwargs):
         """ Returns the keys for sink-, source- and disjoint-substances in the reaction system.
 
-        Sinks are substances that are irreversibly formed (they don't appear on the
-        reactant side of any reaction). Sources are eventually completely depleted (they do not
-        appear on the product side of any reaction). Disjoint substances don't appear on either
-        side and are thus unaffected by the reactionsystem.
+        Sinks are substances that are irreversibly formed (they are never net reactants in any
+        reactions). Sources are eventually completely depleted (they are never net proucts in
+        any reaction). Disjoint substances don't appear on either side and are thus unaffected
+        by the reactionsystem.
 
         Returns
         -------
@@ -164,10 +165,11 @@ class ReactionSystem(object):
         all_p = irrev_rsys.all_prod_stoichs()
         if np.any(all_r < 0) or np.any(all_p < 0):
             raise ValueError("Expected positive stoichiometric coefficients")
+        net = all_p - all_r
         result = sinks, sources, disjoint = set(), set(), set()
         for i, sk in enumerate(irrev_rsys.substances.keys()):
-            in_r = np.any(all_r[:, i])
-            in_p = np.any(all_p[:, i])
+            in_r = np.any(net[:, i] < 0)
+            in_p = np.any(net[:, i] > 0)
             if in_r and in_p:
                 pass
             elif in_r:
@@ -208,7 +210,7 @@ class ReactionSystem(object):
             from .printing import html as print_fn
 
         if split:
-            parts = rsys.split(checks=checks)
+            parts = self.split(checks=checks)
             if len(parts) > 1:
                 return '<br><hl><br>'.join(rs.html(with_param) for rs in parts)
         colors = self._sinks_sources_colors(checks=checks) if color_sinks_sources else {}
@@ -219,7 +221,7 @@ class ReactionSystem(object):
         return str_(self, with_param=with_param)
 
     def _repr_html_(self):  # jupyter notebook hook
-        from .printing import html
+        from .printing import javascript
         return self.html(print_fn=javascript)
 
     def check_duplicate(self, throw=False):

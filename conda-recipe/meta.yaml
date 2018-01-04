@@ -11,7 +11,7 @@ source:
 build:
   noarch: python
   number: 0
-  script: python setup.py install --single-version-externally-managed --record record.txt
+  script: python -m pip install --no-deps --ignore-installed .
 
 requirements:
   build:
@@ -22,12 +22,14 @@ requirements:
     - numpy >1.7
     - scipy >=0.16.1
     - matplotlib >=1.3.1
-    - sympy >=1.0
+    - sympy >=1.1.1
     - quantities >=0.12.1
     - pyneqsys >=0.4.4
-    - pyodesys >=0.11.3
+    - pyodesys >=0.11.6
     - pyparsing >=2.0.3
     - sym >=0.3.0
+    - notebook
+    - nbconvert
 
 test:
   imports:
@@ -35,6 +37,8 @@ test:
     - {{ name }}.kinetics
     - {{ name }}.printing
     - {{ name }}.properties
+    - {{ name }}.thermodynamics
+    - {{ name }}.util
   requires:
     - pytest
   commands:

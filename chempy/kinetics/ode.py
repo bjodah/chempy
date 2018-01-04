@@ -26,6 +26,7 @@ from ..util.pyutil import deprecated
 from ..util._expr import Expr
 from .rates import RateExpr, MassAction
 
+
 def _get_derived_unit(reg, key):
     try:
         return get_derived_unit(reg, key)

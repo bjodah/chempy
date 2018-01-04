@@ -1,6 +1,7 @@
 from .numbers import number_to_scientific_latex
 from .string import StrPrinter
 
+
 class LatexPrinter(StrPrinter):
 
     _default_settings = dict(
@@ -14,6 +15,7 @@ class LatexPrinter(StrPrinter):
 
     def _print_Substance(self, substance, **kwargs):
         return substance.latex_name or substance.name
+
 
 def latex(obj, **settings):
     return LatexPrinter(settings).doprint(obj)

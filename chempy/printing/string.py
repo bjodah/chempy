@@ -1,6 +1,7 @@
 from operator import itemgetter
 from .printer import Printer
 
+
 class StrPrinter(Printer):
     _default_settings = dict(
         Printer._default_settings,
@@ -31,7 +32,7 @@ class StrPrinter(Printer):
         return r_str, ir_str, arrow_str, p_str, ip_str
 
     def _Reaction_str(self, rxn, **kwargs):
-        fmtstr = "{}{}%s{}%s{}{}" % self._get('Reaction_around_arrow', **kwargs)
+        fmtstr = self._str("{}{}%s{}%s{}{}") % self._get('Reaction_around_arrow', **kwargs)
         return fmtstr.format(*self._Reaction_parts(rxn, **kwargs))
 
     def _Reaction_param_str(self, rxn, **kwargs):
@@ -64,5 +65,5 @@ class StrPrinter(Printer):
         return header + '\n'.join(map(self._print, rsys.rxns))
 
 
-def str_(obj, **settings): # Python keyword, hence the trailing '_'
+def str_(obj, **settings):  # Python keyword, hence the trailing '_'
     return StrPrinter(settings).doprint(obj)

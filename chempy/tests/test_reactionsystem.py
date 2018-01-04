@@ -44,15 +44,6 @@ def test_ReactionSystem():
         rs['r2']
 
 
-def test_ReactionSystem__missing_substances_from_keys():
-    r1 = Reaction({'H2O'}, {'H+', 'OH-'})
-    with pytest.raises(ValueError):
-        ReactionSystem([r1], substances={'H2O': Substance.from_formula('H2O')})
-    kw = dict(missing_substances_from_keys=True, substance_factory=Substance.from_formula)
-    rs = ReactionSystem([r1], substances={'H2O': Substance.from_formula('H2O')}, **kw)
-    assert rs.substances['OH-'].composition == {0: -1, 1: 1, 8: 1}
-
-
 @requires(parsing_library)
 def test_ReactionSystem__missing_substances_from_keys():
     r1 = Reaction({'H2O'}, {'H+', 'OH-'})
@@ -260,6 +251,13 @@ def test_ReactionSystem__sinks_sources_disjoint():
 
     rsys4 = ReactionSystem([Reaction({'H2': 2, 'O2': 1}, {'H2O': 2})], 'H2 O2 H2O N2 Ar')
     assert rsys4.sinks_sources_disjoint() == ({'H2O'}, {'H2', 'O2'}, {'N2', 'Ar'})
+
+    rsys5 = ReactionSystem.from_string("""
+    A -> B; MassAction(unique_keys=('k1',))
+    B + C -> A + C; MassAction(unique_keys=('k2',))
+    2 B -> B + C; MassAction(unique_keys=('k3',))
+    """, substance_factory=lambda formula: Substance(formula))
+    assert rsys5.sinks_sources_disjoint() == ({'C'}, set(), set())
 
 
 @requires(parsing_library)

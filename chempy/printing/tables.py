@@ -44,7 +44,8 @@ class _RxnTable(object):
                 r = ', '.join(self._cell_label_html(*r) for r in c)
 
             if is_missing:
-                args.append('style="background-color:%s"' % missing_color)
+                args.append('style="background-color: #%s;"' % self.missing_color)
+            print(is_missing)
         return '<td %s>%s</td>' % (' '.join(args), r)
 
 

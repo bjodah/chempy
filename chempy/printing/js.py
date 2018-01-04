@@ -1,5 +1,6 @@
 from .web import CSSPrinter, _html_clsname
 
+
 def _js_hover(s, script_tags=True):
     codestr = """
 var classes = [%s];
@@ -31,11 +32,9 @@ for(var k = 0; k < nclasses; k ++) {
     else:
         return codestr
 
+
 class JSPrinter(CSSPrinter):
     """ Prints javascript-enabled HTML representaions """
-
-    def _print_Reaction(self, rxn, **kwargs):
-        res = self._get_str_Reaction('html_name', 'html_arrow', substances, **kwargs)
 
     def _print(self, obj, **kwargs):
         return super(JSPrinter, self)._print(obj, **kwargs) + self._js()

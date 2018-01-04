@@ -1,13 +1,15 @@
+# -*- coding: utf-8 -*-
 import sys
 from .string import StrPrinter
 from .numbers import number_to_scientific_unicode
+
 
 class UnicodePrinter(StrPrinter):
 
     _default_settings = dict(
         StrPrinter._default_settings,
         repr_name='unicode',
-        Equilibrium_arrow='⇌',
+        Equilibrium_arrow=u'⇌',
         Reaction_arrow=u'→',
         magnitude_fmt=number_to_scientific_unicode,
         unit_fmt=lambda dim: (

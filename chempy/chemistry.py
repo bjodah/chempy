@@ -6,7 +6,6 @@ from functools import reduce
 from itertools import chain
 from operator import mul
 import math
-import sys
 
 from .util.arithmeticdict import ArithmeticDict
 from .util._expr import Expr

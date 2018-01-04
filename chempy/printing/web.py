@@ -11,6 +11,7 @@ def _html_clsname(key):
 
 _html_semicolon = '&#59; '
 
+
 class HTMLPrinter(StrPrinter):
 
     printmethod_attr = '_html'
@@ -29,6 +30,7 @@ class HTMLPrinter(StrPrinter):
     def _print_ReactionSystem(self, rsys, **kwargs):
         return super(HTMLPrinter, self)._print_ReactionSystem(rsys, **kwargs).replace('\n', '<br>\n')
 
+
 def html(obj, **settings):
     return HTMLPrinter(settings).doprint(obj)
 
@@ -42,7 +44,7 @@ class CSSPrinter(HTMLPrinter):
         if key in colors:
             style = 'background-color:#%s; border: 1px solid #%s; %s' % (colors[key] + (common_sty,))
         else:
-            style = 'style="%s"' % common_sty
+            style = common_sty
         fmt = '<span class="%s" style="%s">%s</span>'
         return fmt % (_html_clsname(key), style, name)
 
@@ -58,26 +60,3 @@ class CSSPrinter(HTMLPrinter):
 
 def css(obj, **settings):
     return CSSPrinter(settings).doprint(obj)
-
-
-def bimolecular_table(rsys, sinks_sources_disjoint=None, cell_label=None):
-    if sinks_sources_disjoint is True:
-        sinks_sources_disjoint = rsys.sinks_sources_disjoint()
-
-    if sinks_sources_disjoint:
-        _str_formula = _str_formula_factory(*sinks_sources_disjoint[:2])
-    else:
-        def _str_formula(s, k):
-            return s
-
-def unimolecular_table(rsys, sinks_sources_disjoint=None, cell_label=None):
-    if sinks_sources_disjoint is True:
-        sinks_sources_disjoint = rsys.sinks_sources_disjoint()
-
-    if sinks_sources_disjoint:
-        _str_formula = _str_formula_factory(*sinks_sources_disjoint[:2])
-    else:
-        def _str_formula(s, k):
-            return s
-
-    A, unconsidered = rsys._unimolecular_reactions()

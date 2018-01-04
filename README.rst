@@ -58,19 +58,32 @@ Auto-generated API documentation for the latest stable release is found here:
 
 Installation
 ------------
-Simplest way to install ChemPy and its (optional) dependencies is to use the `conda package manager <https://conda.pydata.org/docs/>`_::
+Simplest way to install ChemPy and its (optional) dependencies is to use the
+`conda package manager <https://conda.pydata.org/docs/>`_::
 
    $ conda install -c bjodah chempy pytest
-   $ python -m pytest --pyargs chempy  # runs the test-suite
+   $ pytest -rs --pyargs chempy
 
-alternatively you may also use `pip`::
+Optional dependencies
+~~~~~~~~~~~~~~~~~~~~~
+If you used ``conda`` to install ChemPy you can skip this section.
+But if you use ``pip`` the default installation is achieved by writing::
 
    $ python -m pip install --user --upgrade chempy pytest
-   $ python -m pytest --pyargs chempy
+   $ python -m pytest -rs --pyargs chempy
 
 you can skip the ``--user`` flag if you have got root permissions.
-See `setup.py <setup.py>`_ for optional requirements.
+You may be interested in using additional backends (in addition to those provided by SciPy)
+for solving ODE-systems and non-linear optimization problems::
 
+   $ pip install chempy[all]
+
+(see `setup.py <setup.py>`_ for optional requirements.). Note that this option requires you
+to have the following libraries installed (including their development headers):
+
+- `pygslodeiv2 <https://github.com/bjodah/pygslodeiv2>`_ (requires GSL_ >=1.16)
+- `pyodeint <https://github.com/bjodah/pyodeint>`_ (requires boost_ >=1.65.0)
+- `pycvodes <https://github.com/bjodah/pycvodes>`_ (requires SUNDIALS_ >=2.7.0)
 
 Examples
 --------
@@ -239,6 +252,7 @@ See also
 Contributing
 ------------
 Contributors are welcome to suggest improvements at https://github.com/bjodah/chempy
+(see further details `here <CONTRIBUTORS.rst>`_).
 
 
 Author
