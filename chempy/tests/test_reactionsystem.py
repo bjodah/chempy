@@ -93,6 +93,7 @@ def test_ReactionSystem__rates__cstr():
         assert rs.rates(variables, cstr_fr_fc=('fr', fck)) == ref
 
 
+@requires('numpy')
 def test_ReactionSystem__html_tables():
     r1 = Reaction({'A': 2}, {'A'}, name='R1')
     r2 = Reaction({'A'}, {'A': 2}, name='R2')

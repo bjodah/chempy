@@ -9,6 +9,10 @@ jobs:
       - run: conda config --add channels conda-forge
       - run: conda config --set show_channel_urls true
       - run: conda config --set always_yes yes
-      - run: conda install --quiet pip pytest numpy scipy matplotlib sympy quantities pyparsing
-      - run: pip install .
-      - run: pytest -ra --doctest-modules
+      - run: conda update conda
+      - run: conda update python
+      # - run: conda install --quiet pip pytest numpy scipy matplotlib sympy quantities pyparsing
+      # - run: pip install .
+      # - run: pytest -ra --doctest-modules
+      - run: conda install conda-build
+      - run: conda build conda-recipe/
