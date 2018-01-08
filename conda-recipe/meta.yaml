@@ -24,7 +24,7 @@ requirements:
     - matplotlib >=1.3.1
     - sympy >=1.1.1
     - quantities >=0.12.1
-    - pyneqsys >=0.4.4
+    - pyneqsys >=0.5.1
     - pyodesys >=0.11.6
     - pyparsing >=2.0.3
     - sym >=0.3.0
