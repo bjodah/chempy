@@ -45,6 +45,7 @@ chemistry (mainly physical/inorganic/analytical chemistry). Currently it include
   - water density as function of temperature
   - water permittivity as function of temperature and pressure
   - water diffusivity as function of temperature
+  - water viscosity as function of temperature
   - sulfuric acid density as function of temperature & weight fraction H₂SO₄
   - More to come... (and contributions are most welcome!)
 

@@ -1,12 +1,12 @@
-import math
-from .._util import _any, get_backend
+import warnings
+from .._util import _any
 
 
 A, B, C = 1.1709, 0.001827, 89.93
 eta20_cP = 1.0020
 
 
-def water_viscosity(T=None, eta20=None, units=None, backend=None, warn=True):
+def water_viscosity(T=None, eta20=None, units=None, warn=True):
     """ Viscosity of water (cP) as function of temperature (K)
 
     Parameters
@@ -17,8 +17,6 @@ def water_viscosity(T=None, eta20=None, units=None, backend=None, warn=True):
         Viscosity of water at 20 degree Celsius.
     units : object (optional)
         object with attributes: kelvin & centipoise
-    backend : module (default: None)
-        modules which contains "exp", default: numpy, math
     warn : bool
         Emit UserWarning when outside temperature range.
 
@@ -40,7 +38,6 @@ def water_viscosity(T=None, eta20=None, units=None, backend=None, warn=True):
     t = T - 273.15*K
     if warn and (_any(t < 0*K) or _any(t > 100*K)):
         warnings.warn("Temperature is outside range (0-100 degC)")
-    be = get_backend(backend)
     # equation (5) in the paper says "log" but they seem to mean "log10"
     # when comparing with Table II.
     return eta20 * 10**((A*(20 - t) - B*(t - 20)**2)/(t + C))
