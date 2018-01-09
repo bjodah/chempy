@@ -88,7 +88,7 @@ class Henry(defaultnamedtuple('Henry', 'Hcp Tderiv T0 ref', [None, None])):
             Temperature
         P: float
             Pressure
-        \*\*kwargs:
+        \\*\\*kwargs:
             Keyword arguments passed on to :meth:`__call__`
 
         """
@@ -106,7 +106,7 @@ class Henry(defaultnamedtuple('Henry', 'Hcp Tderiv T0 ref', [None, None])):
             Temperature
         P: float
             Pressure
-        \*\*kwargs:
+        \\*\\*kwargs:
             Keyword arguments passed on to :meth:`__call__`
         """
         return c / self(T, **kwargs)

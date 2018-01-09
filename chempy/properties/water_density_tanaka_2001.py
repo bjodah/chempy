@@ -22,17 +22,17 @@ def water_density(T=None, T0=None, units=None, a=None,
 
     Parameters
     ----------
-    T: float
-        Temperature (in Kelvin) (default: 298.15)
-    T0: float
-        Value of T for 0 degree Celsius (default: 273.15)
-    units: object (optional)
-        object with attributes: Kelvin, meter, kilogram
-    a: array_like (optional)
+    T : float
+        Temperature (in Kelvin) (default: 298.15).
+    T0 : float
+        Value of T for 0 degree Celsius (default: 273.15).
+    units : object (optional)
+        Object with attributes: Kelvin, meter, kilogram.
+    a : array_like (optional)
         5 parameters to the equation.
-    just_return_a: bool (optional, default: False)
+    just_return_a : bool (optional, default: False)
         Do not compute rho, just return the parameters ``a``.
-    warn: bool (default: True)
+    warn : bool (default: True)
         Emit UserWarning when outside temperature range.
 
     Returns

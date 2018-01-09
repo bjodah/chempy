@@ -156,7 +156,7 @@ class Substance(object):
         ----------
         formula: str
             e.g. 'Na+', 'H2O', 'Fe(CN)6-4'
-        \*\*kwargs:
+        \\*\\*kwargs:
             keyword arguments passed on to `.Substance`
 
         Examples
@@ -238,7 +238,7 @@ class Species(Substance):
         formula: str
             e.g. 'H2O', 'NaCl(s)', 'CO2(aq)', 'CO2(g)'
         phases: iterable of str or dict mapping str -> int
-            if not in \*\*kwargs, ``phase_idx`` is determined from the suffix
+            if not in \\*\\*kwargs, ``phase_idx`` is determined from the suffix
             of ``formula`` where the suffixes is mapped from phases:
                 if ``phases`` is a dictionary:
                     ``phase_idx = phases[suffix]``
@@ -249,7 +249,7 @@ class Species(Substance):
             If ``default_phase_idx`` is ``None``, ``ValueError`` is raised for
                 unkown suffixes.
             Else ``default_phase_idx`` is used as ``phase_idx`` in those cases.
-        \*\*kwargs:
+        \\*\\*kwargs:
             Keyword arguments passed on.
 
         Examples
@@ -451,7 +451,7 @@ class Reaction(object):
         globals_ : dict (optional)
             Dictionary for eval for (default: None -> {'chempy': chempy})
             If ``False``: no eval will be called (useful for web-apps).
-        \*\*kwargs :
+        \\*\\*kwargs :
             Passed on to constructor.
 
         Examples

@@ -135,7 +135,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     constants : module
         e.g. ``chempy.units.default_constants``, parameter keys not found in
         substitutions will be looked for as an attribute of ``constants`` when provided.
-    \*\*kwargs :
+    \\*\\*kwargs :
         Keyword arguemnts passed on to `SymbolicSys`.
 
     Returns

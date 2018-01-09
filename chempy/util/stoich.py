@@ -16,10 +16,10 @@ def get_coeff_mtx(substances, stoichs):
 
     Parameters
     ----------
-    substances: sequence of keys in stoichs dict pairs
-    stoichs: sequence of pairs of dicts
-        pairs of reactant and product dicts mapping substance keys
-        to stoichiometric coefficients (integers)
+    substances : sequence of keys in stoichs dict pairs
+    stoichs : sequence of pairs of dicts
+        Pairs of reactant and product dicts mapping substance keys
+        to stoichiometric coefficients (integers).
 
     Returns
     -------
@@ -47,14 +47,14 @@ def decompose_yields(yields, rxns, atol=1e-10):
 
     Parameters
     ----------
-    yields: OrderedDict
-        specie names as keys and yields as values
-    rxns: iterable :class:`Reaction` instances
-        dict keys must match those of ``yields`` each pair
+    yields : OrderedDict
+        Specie names as keys and yields as values.
+    rxns : iterable :class:`Reaction` instances
+        Dict keys must match those of ``yields`` each pair
         of dictionaries gives stoichiometry
-        (1st is reactant, 2nd is products)
-    atol: float
-        absolute tolerance for residuals
+        (1st is reactant, 2nd is products).
+    atol : float
+        Absolute tolerance for residuals.
 
 
     Examples

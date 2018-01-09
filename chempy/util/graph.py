@@ -96,17 +96,17 @@ def rsys2graph(rsys, fname, output_dir=None, prog=None, save=False, **kwargs):
 
     Parameters
     ----------
-    rsys: ReactionSystem
-    fname: str
+    rsys : ReactionSystem
+    fname : str
         filename
-    output_dir: str (optional)
+    output_dir : str (optional)
         path to directory (default: temporary directory)
-    prog: str (optional)
+    prog : str (optional)
         default: 'dot'
-    save: bool
+    save : bool
         removes temporary directory if False, default: False
-    \*\*kwargs:
-        parameters to pass along to `rsys2dot`
+    \\*\\*kwargs :
+        Keyword arguments passed along to py:func:`rsys2dot`.
 
     Returns
     -------
