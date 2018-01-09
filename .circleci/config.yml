@@ -12,5 +12,6 @@ jobs:
       - run: conda config --set always_yes yes
       - run: conda update --quiet conda
       - run: conda update --quiet python
-      - run: conda install --quiet conda-build
-      - run: conda build conda-recipe
+      - run: conda install --quiet pip pytest numpy scipy matplotlib sympy quantities pyparsing
+      - run: pip install .
+      - run: pytest -ra
