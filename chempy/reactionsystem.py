@@ -712,7 +712,10 @@ class ReactionSystem(object):
         return BimolecularTable.from_ReactionSystem(self)
 
     def identify_equilibria(self):
-        """ Identifies pairs of reactions which constitute equilibria. """
+        """ Returns a list of index pairs of reactions forming equilibria.
+
+        The pairs are sorted with respect to index (lowest first)
+        """
         eq = []
         for ri1, rxn1 in enumerate(self.rxns):
             for ri2, rxn2 in enumerate(self.rxns[ri1+1:], ri1+1):

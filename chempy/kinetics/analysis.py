@@ -38,10 +38,13 @@ def _dominant_reaction_effects(substance_key, rsys, rates, linthreshy, eqk1, eqk
 
 def _combine_rxns_to_eq(rsys):
     eqk1, eqk2 = zip(*rsys.identify_equilibria())
-    eqs = [Equilibrium(rsys.rxns[ri].reac,
-                       rsys.rxns[ri].prod,
-                       inact_reac=rsys.rxns[ri].inact_reac,
-                       inact_prod=rsys.rxns[ri].inact_prod) for ri in eqk1]
+    eqs = [Equilibrium(
+        rsys.rxns[i1].reac,
+        rsys.rxns[i1].prod,
+        (rsys.rxns[i1].param, rsys.rxns[i2].param),
+        inact_reac=rsys.rxns[i1].inact_reac,
+        inact_prod=rsys.rxns[i1].inact_prod
+    ) for i1, i2 in zip(eqk1, eqk2)]
     return eqk1, eqk2, eqs
 
 

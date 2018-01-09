@@ -121,7 +121,7 @@ setup_kwargs = dict(
     install_requires=[
         'numpy>1.8', 'scipy>=0.16.1', 'matplotlib>=1.5.3',
         'sympy>=1.1.1', 'quantities>=0.12.1', 'pyneqsys>=0.5.1',
-        'pyodesys>=0.11.6', 'pyparsing>=2.0.3', 'sym>=0.3.0', 'jupyter'
+        'pyodesys>=0.11.6', 'pyparsing>=2.0.3', 'sym>=0.3.1', 'jupyter'
         # 'dot2tex>=2.9.0'
     ],
     extras_require=extras_req

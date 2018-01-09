@@ -863,17 +863,22 @@ class Equilibrium(Reaction):
             c0 = 1*units.molar  # standard concentration IUPAC
 
         if kf is None:
-            if kb is None:
-                raise ValueError("Exactly one rate needs to be provided")
-            kf = kb * self.param * c0**(nb - nf)
             fw_name = self.name
             bw_name = new_name
+            if kb is None:
+                try:
+                    kf, kb = self.param
+                except TypeError:
+                    raise ValueError("Exactly one rate needs to be provided")
+            else:
+                kf = kb * self.param * c0**(nb - nf)
         elif kb is None:
             kb = kf / (self.param * c0**(nb - nf))
             fw_name = new_name
             bw_name = self.name
         else:
             raise ValueError("Exactly one rate needs to be provided")
+
         return (
             Reaction(self.reac, self.prod, kf, self.inact_reac,
                      self.inact_prod, ref=self.ref, name=fw_name),

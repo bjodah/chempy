@@ -318,7 +318,7 @@ class EqSystem(ReactionSystem):
         if _plot:
             cb = neqsys.solve_and_plot_series
             if 'plot_kwargs' not in kwargs:
-                kwargs['plot_kwargs'] = {}
+                kwargs['plot_kwargs'] = plot_kwargs
             if 'labels' not in kwargs['plot_kwargs']:
                 kwargs['plot_kwargs']['labels'] = (
                     self.substance_labels(latex_names))

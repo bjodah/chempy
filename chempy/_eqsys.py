@@ -222,7 +222,7 @@ class NumSysLinTanh(NumSysLin):
 
 class NumSysLog(_NumSys):
 
-    small = math.exp(-80)  # anything less than `small` is insignificant
+    small = math.exp(-36)  # anything less than `small` is insignificant
 
     def pre_processor(self, x, params):
         return (np.log(np.asarray(x) + NumSysLog.small),  # 10: damping
