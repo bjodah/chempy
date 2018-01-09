@@ -207,10 +207,10 @@ class EqSystem(ReactionSystem):
         return [idx for idx, precip in zip(
             self.phase_transfer_reaction_idxs(), precipitates) if not precip]
 
-    def _result_is_sane(self, init_concs, x):
+    def _result_is_sane(self, init_concs, x, rtol=1e-9):
         sc_upper_bounds = np.array(self.upper_conc_bounds(init_concs))
         neg_conc, too_much = np.any(x < 0), np.any(
-            x > sc_upper_bounds*(1 + 1e-12))
+            x > sc_upper_bounds*(1 + rtol))
         if neg_conc or too_much:
             if neg_conc:
                 warnings.warn("Negative concentration")

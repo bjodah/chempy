@@ -142,7 +142,7 @@ def test_precipitate(NumSys):
 
     for init, final in cases:
         x, sol, sane = eqsys.root(dict(zip(species, init)),
-                                  NumSys=NumSys, rref_preserv=True)
+                                  NumSys=NumSys, rref_preserv=True, tol=1e-12)
         assert sol['success'] and sane
         assert x is not None
         assert np.allclose(x, np.asarray(final))
