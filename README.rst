@@ -7,7 +7,7 @@ ChemPy
 .. image:: https://img.shields.io/pypi/v/chempy.svg
    :target: https://pypi.python.org/pypi/chempy
    :alt: PyPI version
-.. image:: https://img.shields.io/badge/python-2.7,3.4,3.5-blue.svg
+.. image:: https://img.shields.io/badge/python-2.7,3.5,3.6-blue.svg
    :target: https://www.python.org/
    :alt: Python version
 .. image:: https://zenodo.org/badge/8840/bjodah/chempy.svg
@@ -31,52 +31,75 @@ About ChemPy
 `ChemPy <https://github.com/bjodah/chempy>`_ is a `Python <https://www.python.org>`_ package useful for
 chemistry (mainly physical/inorganic/analytical chemistry). Currently it includes:
 
-- Solver for equilibria (including multiphase systems)
 - Numerical integration routines for chemical kinetics (ODE solver front-end)
 - Integrated rate expressions (and convenience fitting routines)
+- Solver for equilibria (including multiphase systems)
 - Relations in physical chemistry:
 
   - Debye-Hückel expressions
-  - Arrhenius equation
+  - Arrhenius & Eyring equation
   - Einstein-Smoluchowski equation
 
-- Properties
+- Properties (pure python implementations from the litterature)
 
   - water density as function of temperature
   - water permittivity as function of temperature and pressure
   - water diffusivity as function of temperature
+  - water viscosity as function of temperature
   - sulfuric acid density as function of temperature & weight fraction H₂SO₄
+  - More to come... (and contributions are most welcome!)
 
 
 Documentation
 -------------
-Auto-generated API documentation for the latest stable release is found here:
-`<https://bjodah.github.io/chempy/latest>`_
-(and the development version for the current master branch is found here:
-`<http://hera.physchem.kth.se/~chempy/branches/master/html>`_).
+The easiest way to get started is to have a look at the examples in this README,
+and also the jupyter notebooks_. In addition there is auto-generated API documentation
+for the latest stable release `here <https://bjodah.github.io/chempy/latest>`_
+(and the API docs for the development version is found
+`here <http://hera.physchem.kth.se/~chempy/branches/master/html>`_).
 
+.. _notebooks: http://hera.physchem.kth.se/~chempy/branches/master/examples
 
 Installation
 ------------
-Simplest way to install ChemPy and its (optional) dependencies is to use the `conda package manager <https://conda.pydata.org/docs/>`_::
+Simplest way to install ChemPy and its (optional) dependencies is to use the
+`conda package manager <https://conda.pydata.org/docs/>`_::
 
    $ conda install -c bjodah chempy pytest
-   $ python -m pytest --pyargs chempy  # runs the test-suite
+   $ pytest -rs --pyargs chempy
 
-alternatively you may also use `pip`::
+Optional dependencies
+~~~~~~~~~~~~~~~~~~~~~
+If you used ``conda`` to install ChemPy you can skip this section.
+But if you use ``pip`` the default installation is achieved by writing::
 
    $ python -m pip install --user --upgrade chempy pytest
-   $ python -m pytest --pyargs chempy
+   $ python -m pytest -rs --pyargs chempy
 
 you can skip the ``--user`` flag if you have got root permissions.
-See `setup.py <setup.py>`_ for optional requirements.
+You may be interested in using additional backends (in addition to those provided by SciPy)
+for solving ODE-systems and non-linear optimization problems::
 
+   $ pip install chempy[all]
+
+(see `setup.py <setup.py>`_ for optional requirements.). Note that this option requires you
+to have the following libraries installed (including their development headers):
+
+- `pygslodeiv2 <https://github.com/bjodah/pygslodeiv2>`_ (requires GSL_ >=1.16)
+- `pyodeint <https://github.com/bjodah/pyodeint>`_ (requires boost_ >=1.65.0)
+- `pycvodes <https://github.com/bjodah/pycvodes>`_ (requires SUNDIALS_ >=2.7.0)
+
+.. _GSL: https://www.gnu.org/software/gsl/
+.. _boost: http://www.boost.org/
+.. _SUNDIALS: https://computation.llnl.gov/projects/sundials
+
+if you want to see what packages need to be installed on a Debian based system you may look at this
+`Dockerfile <scripts/environment/Dockerfile>`_.
 
 Examples
 --------
 See demonstration scripts in `examples/ <https://github.com/bjodah/chempy/tree/master/examples>`_,
-and some rendered `jupyter <https://www.jupyter.org>`_ notebooks here:
-`<http://hera.physchem.kth.se/~chempy/branches/master/examples>`_.
+and some rendered jupyter notebooks_.
 You may also browse the documentation for more examples. Below you will find a few code snippets:
 
 Parsing formulae
@@ -150,7 +173,7 @@ Chemical equilibria
    >>> water_autop = Equilibrium({'H2O'}, {'H+', 'OH-'}, 10**-14)  # unit "molar" assumed
    >>> ammonia_prot = Equilibrium({'NH4+'}, {'NH3', 'H+'}, 10**-9.24)  # same here
    >>> from chempy.equilibria import EqSystem
-   >>> substances = map(Species.from_formula, 'H2O OH- H+ NH3 NH4+'.split())
+   >>> substances = [Species.from_formula(f) for f in 'H2O OH- H+ NH3 NH4+'.split()]
    >>> eqsys = EqSystem([water_autop, ammonia_prot], substances)
    >>> print('\n'.join(map(str, eqsys.rxns)))  # "rxns" short for "reactions"
    H2O = H+ + OH-; 1e-14
@@ -160,12 +183,10 @@ Chemical equilibria
    >>> x, sol, sane = eqsys.root(init_conc)
    >>> assert sol['success'] and sane
    >>> print(sorted(sol.keys()))  # see package "pyneqsys" for more info
-   ['fun', 'intermediate_info', 'internal_x_vecs', 'nfev', 'njev', 'success', 'x', 'x_vecs']
+   ['intermediate_info', 'internal_x_vecs', 'nfev', 'njev', 'success', 'x', 'x_vecs']
    >>> print(', '.join('%.2g' % v for v in x))
    1, 0.0013, 7.6e-12, 0.099, 0.0013
 
-Please note that the API of the ``chempy.equilibria`` module is not finalized at
-the moment.
 
 Ionic strength
 ~~~~~~~~~~~~~~
@@ -239,6 +260,7 @@ See also
 Contributing
 ------------
 Contributors are welcome to suggest improvements at https://github.com/bjodah/chempy
+(see further details `here <CONTRIBUTING.rst>`_).
 
 
 Author

@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import tempfile
 
+from ..printing import latex
 from ..kinetics.rates import RadiolyticBase
 from ..units import to_unitless, get_derived_unit
 
@@ -183,15 +184,24 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
                     k = k_fmt % rxn.param
                 else:
                     k = k_fmt(rxn.param)
-        r_str, ir_str, arrow_str, p_str, ip_str = rxn._get_str_parts(
-            'latex_name' if tex else 'name',
-            'latex_arrow' if tex else 'str_arrow',
-            rsys.substances)
+        # r_str, ir_str, arrow_str, p_str, ip_str = rxn._get_str_parts(
+        #     'latex_name' if tex else 'name',
+        #     'latex_arrow' if tex else 'str_arrow',
+        #     rsys.substances)
+        latex_kw = dict(with_param=False)
+        if tex:
+            latex_kw['substances'] = rsys.substances
+            latex_kw['Reaction_around_arrow'] = ('}}' + coldelim + '\\ensuremath{{',
+                                                 '}}' + coldelim + '\\ensuremath{{')
+        else:
+            latex_kw['Reaction_around_arrow'] = (coldelim,)*2
+            latex_kw['Reaction_arrow'] = '->'
         lines.append(coldelim.join([
             str(rref0+ri),
-            _wrap(r_str + ir_str),
-            _wrap(arrow_str),
-            _wrap(p_str + ip_str),
+            # _wrap(r_str + ir_str),
+            # _wrap(arrow_str),
+            # _wrap(p_str + ip_str),
+            ('\\ensuremath{%s}' if tex else '%s') % latex(rxn, **latex_kw),
             _wrap(k),
             unit_fmt.format(_wrap(k_unit_str)),
             ref_fmt(rxn_ref) if callable(ref_fmt) else ref_fmt.format(rxn_ref)

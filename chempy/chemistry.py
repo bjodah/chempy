@@ -4,9 +4,8 @@ from __future__ import (absolute_import, division, print_function)
 from collections import OrderedDict, defaultdict
 from functools import reduce
 from itertools import chain
-from operator import itemgetter, mul
+from operator import mul
 import math
-import sys
 
 from .util.arithmeticdict import ArithmeticDict
 from .util._expr import Expr
@@ -89,6 +88,12 @@ class Substance(object):
         'composition', 'data'
     )
 
+    def __eq__(self, other):
+        for attr in self.attrs:
+            if getattr(self, attr) != getattr(other, attr):
+                return False
+        return True
+
     @property
     def charge(self):
         """ Convenience property for accessing ``composition[0]`` """
@@ -151,7 +156,7 @@ class Substance(object):
         ----------
         formula: str
             e.g. 'Na+', 'H2O', 'Fe(CN)6-4'
-        \*\*kwargs:
+        \\*\\*kwargs:
             keyword arguments passed on to `.Substance`
 
         Examples
@@ -233,7 +238,7 @@ class Species(Substance):
         formula: str
             e.g. 'H2O', 'NaCl(s)', 'CO2(aq)', 'CO2(g)'
         phases: iterable of str or dict mapping str -> int
-            if not in \*\*kwargs, ``phase_idx`` is determined from the suffix
+            if not in \\*\\*kwargs, ``phase_idx`` is determined from the suffix
             of ``formula`` where the suffixes is mapped from phases:
                 if ``phases`` is a dictionary:
                     ``phase_idx = phases[suffix]``
@@ -244,7 +249,7 @@ class Species(Substance):
             If ``default_phase_idx`` is ``None``, ``ValueError`` is raised for
                 unkown suffixes.
             Else ``default_phase_idx`` is used as ``phase_idx`` in those cases.
-        \*\*kwargs:
+        \\*\\*kwargs:
             Keyword arguments passed on.
 
         Examples
@@ -404,11 +409,8 @@ class Reaction(object):
 
     _cmp_attr = ('reac', 'prod', 'param', 'inact_reac', 'inact_prod')
     _all_attr = _cmp_attr + ('name', 'ref', 'data')
+    _str_arrow = '->'
 
-    str_arrow = '->'
-    latex_arrow = r'\rightarrow'
-    unicode_arrow = u'→'
-    html_arrow = '&rarr;'
     param_char = 'k'  # convention
 
     def __init__(
@@ -443,13 +445,13 @@ class Reaction(object):
         ----------
         string : str
             String representation of the reaction.
-        substance_keys : iterable of strings or string or None
+        substance_keys : convertible to iterable of strings or string or None
             Used prevent e.g. misspelling.
             if str: split is invoked, if None: no checking done.
         globals_ : dict (optional)
             Dictionary for eval for (default: None -> {'chempy': chempy})
             If ``False``: no eval will be called (useful for web-apps).
-        \*\*kwargs :
+        \\*\\*kwargs :
             Passed on to constructor.
 
         Examples
@@ -482,7 +484,7 @@ class Reaction(object):
         if isinstance(substance_keys, str):
             if ' ' in substance_keys:
                 substance_keys = substance_keys.split()
-        return to_reaction(string, substance_keys, cls.str_arrow, cls, globals_, **kwargs)
+        return to_reaction(string, substance_keys, cls._str_arrow, cls, globals_, **kwargs)
 
     def copy(self, **kwargs):
         return self.__class__(**{k: kwargs.get(k, getattr(self, k)) for k in self._all_attr})
@@ -589,46 +591,7 @@ class Reaction(object):
                 return True
         return False
 
-    def _get_str_parts(self, name_attr, arrow_attr, substances, str_=str, str_num=None, str_formula=None):
-        def not_None(arg, default):
-            if arg is None:
-                return default
-            return arg
-        if str_num is None:
-            str_num = str_
-        if str_formula is None:
-            str_formula = str_
-        nullstr, space = str_(''), str_(' ')
-        reac, prod, i_reac, i_prod = [[
-            ((str_num(v)+space) if v > 1 else nullstr) + str_formula(not_None(getattr(substances[k], name_attr, k), k))
-            for k, v in filter(itemgetter(1), d.items())
-        ] for d in (self.reac, self.prod, self.inact_reac, self.inact_prod)]
-        r_str = str_(" + ").join(sorted(reac))
-        ir_str = (str_(' + ( ') + str_(" + ").join(sorted(i_reac)) + str_(')')
-                  if len(i_reac) > 0 else nullstr)
-        arrow_str = getattr(self, arrow_attr)
-        p_str = str_(" + ").join(sorted(prod))
-        ip_str = (str_(' + ( ') + str_(" + ").join(sorted(i_prod)) + str_(')')
-                  if len(i_prod) > 0 else nullstr)
-        return r_str, ir_str, arrow_str, p_str, ip_str
-
-    def _get_str(self, *args, **kwargs):
-        str_ = kwargs.get('str_', str)
-        return str_("{}{} {} {}{}").format(*self._get_str_parts(*args, **kwargs))
-
-    def _str_param(self, magnitude_fmt=lambda x: '%.3g' % x, unit_fmt=str, str_=str):
-        try:
-            magnitude_str = magnitude_fmt(self.param.magnitude)
-            unit_str = unit_fmt(self.param.dimensionality)
-        except AttributeError:
-            try:
-                return magnitude_fmt(self.param)
-            except TypeError:
-                return str(self.param)
-        else:
-            return magnitude_str + str_(' ') + unit_str
-
-    def string(self, substances=None, with_param=False):
+    def string(self, substances=None, with_param=False, **kwargs):
         """ Returns a string representation of the reaction
 
         Parameters
@@ -645,20 +608,8 @@ class Reaction(object):
         'Cl- + H+ -> HCl'
 
         """
-        if substances is None:
-            substances = {
-                k: k for k in chain(self.reac.keys(), self.prod.keys(),
-                                    self.inact_reac.keys(),
-                                    self.inact_prod.keys())
-            }
-        res = self._get_str('name', 'str_arrow', substances)
-        if with_param and self.param is not None:
-            res += '; '
-            try:
-                res += self.param.string()
-            except AttributeError:
-                res += self._str_param()
-        return res
+        from .printing import str_
+        return str_(self, substances=substances, with_param=with_param, **kwargs)
 
     def __str__(self):
         return self.string(with_param=True)
@@ -686,11 +637,8 @@ class Reaction(object):
         True
 
         """
-        res = self._get_str('latex_name', 'latex_arrow', substances, **kwargs)
-        if with_param and self.param is not None:
-            from .printing import number_to_scientific_latex as _fmt
-            res += '; %s' % self._str_param(magnitude_fmt=_fmt, unit_fmt=lambda dim: dim.latex)
-        return res
+        from .printing import latex
+        return latex(self, substances=substances, with_param=with_param, **kwargs)
 
     def unicode(self, substances, with_param=False, **kwargs):
         u""" Returns a unicode string representation of the reaction
@@ -707,17 +655,8 @@ class Reaction(object):
         True
 
         """
-        res = self._get_str('unicode_name', 'unicode_arrow', substances,
-                            str_=str if sys.version_info[0] > 2 else unicode, **kwargs)  # noqa
-        if with_param and self.param is not None:
-            from .printing import number_to_scientific_unicode
-            res += u'; ' + self._str_param(
-                magnitude_fmt=number_to_scientific_unicode,
-                unit_fmt=lambda dim: (
-                    dim.unicode if sys.version_info[0] > 2
-                    else dim.unicode.decode(encoding='utf-8')
-                ), str_=str if sys.version_info[0] > 2 else unicode)  # noqa
-        return res
+        from .printing import unicode_
+        return unicode_(self, substances=substances, with_param=with_param, **kwargs)
 
     def html(self, substances, with_param=False, **kwargs):
         """ Returns a HTML representation of the reaction
@@ -734,15 +673,8 @@ class Reaction(object):
         'H<sup>+</sup> + OH<sup>-</sup> &rarr; H<sub>2</sub>O&#59; 10<sup>8</sup> 1/(s*M)'
 
         """
-        res = self._get_str('html_name', 'html_arrow', substances, **kwargs)
-        if with_param and self.param is not None:
-            from .printing import number_to_scientific_html as _fmt
-            res += '&#59; '
-            try:
-                res += self.param.string(_fmt)
-            except AttributeError:
-                res += self._str_param(magnitude_fmt=_fmt)
-        return res
+        from .printing import html
+        return html(self, with_param=with_param, substances=substances, **kwargs)
 
     def _repr_html_(self):
         return self.html({k: k for k in self.keys()})
@@ -850,7 +782,6 @@ class Reaction(object):
 
         """
         if variables is None:
-
             variables = {}
         if substance_keys is None:
             substance_keys = self.keys()
@@ -899,10 +830,7 @@ class Equilibrium(Reaction):
     See :class:`Reaction` for parameters
 
     """
-    str_arrow = '='
-    latex_arrow = r'\rightleftharpoons'
-    unicode_arrow = '⇌'
-    html_arrow = '&harr;'
+    _str_arrow = '='
     param_char = 'K'  # convention
 
     def check_consistent_units(self):
@@ -935,17 +863,22 @@ class Equilibrium(Reaction):
             c0 = 1*units.molar  # standard concentration IUPAC
 
         if kf is None:
-            if kb is None:
-                raise ValueError("Exactly one rate needs to be provided")
-            kf = kb * self.param * c0**(nb - nf)
             fw_name = self.name
             bw_name = new_name
+            if kb is None:
+                try:
+                    kf, kb = self.param
+                except TypeError:
+                    raise ValueError("Exactly one rate needs to be provided")
+            else:
+                kf = kb * self.param * c0**(nb - nf)
         elif kb is None:
             kb = kf / (self.param * c0**(nb - nf))
             fw_name = new_name
             bw_name = self.name
         else:
             raise ValueError("Exactly one rate needs to be provided")
+
         return (
             Reaction(self.reac, self.prod, kf, self.inact_reac,
                      self.inact_prod, ref=self.ref, name=fw_name),

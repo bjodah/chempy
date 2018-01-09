@@ -110,25 +110,25 @@ def density_from_concentration(conc, T=None, molar_mass=None,
 
     Parameters
     ----------
-    conc: float (optionally with units)
-        concentration (mol / m³)
-    T: float (optionally with units)
-        passed to ``rho_cb``
-    molar_mass: float (optionally with units)
-        Molar mass of solute
-    rho_cb: callback
-        callback with signature f(w, T, units=None) -> rho
-        (default: :func:`sulfuric_acid_density`)
-    units: object (optional)
-        object with attributes: meter, kilogram, mol
-    atol: float (optionally with units)
-        convergence criterion for fixed-point iteration
-        (default: 1e-3 kg/m³)
-    maxiter: int
-        maximum number of iterations (when exceeded a NoConvergence excpetion
-        is raised)
-    \*\*kwargs:
-        keyword arguments passed onto ``rho_cb``
+    conc : float (optionally with units)
+        Concentration (mol / m³).
+    T : float (optionally with units)
+        Passed to ``rho_cb``.
+    molar_mass : float (optionally with units)
+        Molar mass of solute.
+    rho_cb : callback
+        Callback with signature f(w, T, units=None) -> rho
+        (default: :func:`sulfuric_acid_density`).
+    units : object (optional)
+        Object with attributes: meter, kilogram, mol.
+    atol : float (optionally with units)
+        Convergence criterion for fixed-point iteration
+        (default: 1e-3 kg/m³).
+    maxiter : int
+        Maximum number of iterations (when exceeded a NoConvergence excpetion
+        is raised).
+    \\*\\*kwargs:
+        Keyword arguments passed onto ``rho_cb``.
 
     Returns
     -------

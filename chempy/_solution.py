@@ -51,7 +51,8 @@ class QuantityDict(ArithmeticDict):
         else:
             header = ''
         header += html_of_unit(self.units)
-        return as_per_substance_html_table(to_unitless(self, self.units), header=header).html()
+        tab = as_per_substance_html_table(to_unitless(self, self.units), header=header)
+        return tab._repr_html_()
 
     def _check(self):
         for k, v in self.items():

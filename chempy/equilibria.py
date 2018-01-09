@@ -30,6 +30,11 @@ class EqSystem(ReactionSystem):
     _BaseReaction = Equilibrium
     _BaseSubstance = Species
 
+    def html(self, *args, **kwargs):
+        k = 'color_sinks_sources'
+        kwargs[k] = kwargs.get(k, False)
+        return super(EqSystem, self).html(*args, **kwargs)
+
     def eq_constants(self, non_precip_rids=(), eq_params=None, small=0):
         if eq_params is None:
             eq_params = [eq.param for eq in self.rxns]
@@ -202,10 +207,10 @@ class EqSystem(ReactionSystem):
         return [idx for idx, precip in zip(
             self.phase_transfer_reaction_idxs(), precipitates) if not precip]
 
-    def _result_is_sane(self, init_concs, x):
+    def _result_is_sane(self, init_concs, x, rtol=1e-9):
         sc_upper_bounds = np.array(self.upper_conc_bounds(init_concs))
         neg_conc, too_much = np.any(x < 0), np.any(
-            x > sc_upper_bounds*(1 + 1e-12))
+            x > sc_upper_bounds*(1 + rtol))
         if neg_conc or too_much:
             if neg_conc:
                 warnings.warn("Negative concentration")
@@ -290,8 +295,8 @@ class EqSystem(ReactionSystem):
                 conc_unit_str: str (default: 'M')
         neqsys_type : str
             what method to use for NeqSys construction (get_neqsys_*)
-        \*\*kwargs :
-            kwargs passed on to py:meth:`pyneqsys.NeqSys.solve_series`
+        \\*\\*kwargs :
+            Keyword argumetns passed on to py:meth:`pyneqsys.NeqSys.solve_series`.
 
         """
         _plot = plot_kwargs is not None
@@ -313,7 +318,7 @@ class EqSystem(ReactionSystem):
         if _plot:
             cb = neqsys.solve_and_plot_series
             if 'plot_kwargs' not in kwargs:
-                kwargs['plot_kwargs'] = {}
+                kwargs['plot_kwargs'] = plot_kwargs
             if 'labels' not in kwargs['plot_kwargs']:
                 kwargs['plot_kwargs']['labels'] = (
                     self.substance_labels(latex_names))

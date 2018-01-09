@@ -22,7 +22,8 @@ from ..chemistry import (
 def test_EqSystem():
     a, b = sbstncs = Substance('a'), Substance('b')
     rxns = [Reaction({'a': 1}, {'b': 1})]
-    es = EqSystem(rxns, [(s.name, s) for s in sbstncs])
+    es = EqSystem(rxns, collections.OrderedDict(
+        [(s.name, s) for s in sbstncs]))
     assert es.net_stoichs().tolist() == [[-1, 1]]
 
 
@@ -141,7 +142,7 @@ def test_precipitate(NumSys):
 
     for init, final in cases:
         x, sol, sane = eqsys.root(dict(zip(species, init)),
-                                  NumSys=NumSys, rref_preserv=True)
+                                  NumSys=NumSys, rref_preserv=True, tol=1e-12)
         assert sol['success'] and sane
         assert x is not None
         assert np.allclose(x, np.asarray(final))

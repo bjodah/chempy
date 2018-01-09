@@ -119,9 +119,9 @@ setup_kwargs = dict(
     packages=[pkg_name] + submodules + tests,
     classifiers=classifiers,
     install_requires=[
-        'numpy>1.7', 'scipy>=0.16.1', 'matplotlib>=1.3.1',
-        'sympy>=1.0', 'quantities>=0.12.1', 'pyneqsys>=0.4.4',
-        'pyodesys>=0.11.3', 'pyparsing>=2.0.3', 'sym>=0.3.0'
+        'numpy>1.8', 'scipy>=0.16.1', 'matplotlib>=1.5.3',
+        'sympy>=1.1.1', 'quantities>=0.12.1', 'pyneqsys>=0.5.1',
+        'pyodesys>=0.11.6', 'pyparsing>=2.0.3', 'sym>=0.3.1', 'jupyter'
         # 'dot2tex>=2.9.0'
     ],
     extras_require=extras_req

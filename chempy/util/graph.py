@@ -8,7 +8,7 @@ import shutil
 import tempfile
 
 
-def rsys2dot(rsys, tex=False, rprefix='r', rref0=1, nodeparams='[label="{}" shape=diamond]',
+def rsys2dot(rsys, tex=False, rprefix='r', rref0=1, nodeparams='[label="{}",shape=diamond]',
              colors=('maroon', 'darkgreen'), penwidths=None, include_inactive=True):
     """
     Returns list of lines of DOT (graph description language)
@@ -37,16 +37,29 @@ def rsys2dot(rsys, tex=False, rprefix='r', rref0=1, nodeparams='[label="{}" shap
     if penwidths is None:
         penwidths = [1.0]*rsys.nr
 
+    sinks, sources, disjoint = rsys.sinks_sources_disjoint()
+
+    def add_substance(key):
+        fc = 'black'
+        if key in sources:
+            fc = colors[0]
+        if key in sinks:
+            fc = colors[1]
+        label = ('$%s$' if tex else '%s') % getattr(rsys.substances[key], 'latex_name' if tex else 'name')
+        lines.append(ind + '"{key}" [fontcolor={fc} label="{lbl}"];\n'.format(key=key, fc=fc, lbl=label))
+
+    for sk in rsys.substances:
+        add_substance(sk)
+
     def add_vertex(key, num, reac, penwidth):
         snum = str(num) if num > 1 else ''
-        name = ('$%s$' if tex else '%s') % getattr(rsys.substances[key], 'latex_name' if tex else 'name')
         fmt = ','.join(
             ['label="{}"'.format(snum)] +
             (['penwidth={}'.format(penwidth)] if penwidth != 1 else [])
         )
         lines.append(ind + '"{}" -> "{}" [color={},fontcolor={},{}];\n'.format(
-            *((name, rid, colors[0], colors[0], fmt) if reac else
-              (rid, name, colors[1], colors[1], fmt))
+            *((key, rid, colors[0], colors[0], fmt) if reac else
+              (rid, key, colors[1], colors[1], fmt))
         ))
 
     if include_inactive:
@@ -83,17 +96,17 @@ def rsys2graph(rsys, fname, output_dir=None, prog=None, save=False, **kwargs):
 
     Parameters
     ----------
-    rsys: ReactionSystem
-    fname: str
+    rsys : ReactionSystem
+    fname : str
         filename
-    output_dir: str (optional)
+    output_dir : str (optional)
         path to directory (default: temporary directory)
-    prog: str (optional)
+    prog : str (optional)
         default: 'dot'
-    save: bool
+    save : bool
         removes temporary directory if False, default: False
-    \*\*kwargs:
-        parameters to pass along to `rsys2dot`
+    \\*\\*kwargs :
+        Keyword arguments passed along to py:func:`rsys2dot`.
 
     Returns
     -------

@@ -33,7 +33,7 @@ install:
 script:
     - conda install --quiet pip pytest numpy scipy matplotlib sympy quantities pyparsing
     - pip install .
-    - pytest -ra --doctest-modules
+    - pytest -ra
 
 notifications:
   email: false

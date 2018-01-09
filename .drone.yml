@@ -13,7 +13,8 @@ build:
     - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
     - PATH=/opt/miniconda3/bin:$PATH conda build conda-recipe
     - bash -c '[[ $(python setup.py --version) =~ ^[0-9]+.* ]]'
-    - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
+    - ./scripts/grep-for-merge-blocking-token.sh
+    - ./scripts/grep-for-binary-data.sh
 
 deploy:
 

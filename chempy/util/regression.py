@@ -217,7 +217,7 @@ def irls_units(x, y, **kwargs):
     ----------
     x : array_like
     y : array_like
-    \*\*kwargs
+    \\*\\*kwargs
         Keyword arguments passed on to :func:`irls`
 
     See also

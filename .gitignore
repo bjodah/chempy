@@ -21,3 +21,7 @@ doc/
 examples/equilibria.pdf
 venv/
 build/
+.local/
+.ipython/
+.jupyter/*
+!.jupyter/jupyter_notebook_config.py

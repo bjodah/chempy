@@ -3,12 +3,15 @@ version: 2
 jobs:
   build:
     docker:
-      - image: continuumio/miniconda
+      - image: continuumio/miniconda3
     steps:
       - checkout
+      - run: conda install --quiet gcc_linux-64 gxx_linux-64
       - run: conda config --add channels conda-forge
       - run: conda config --set show_channel_urls true
       - run: conda config --set always_yes yes
+      - run: conda update --quiet conda
+      - run: conda update --quiet python
       - run: conda install --quiet pip pytest numpy scipy matplotlib sympy quantities pyparsing
       - run: pip install .
-      - run: pytest -ra --doctest-modules
+      - run: pytest -ra

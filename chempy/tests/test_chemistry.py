@@ -175,9 +175,9 @@ def test_Reaction__html():
     r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
     assert r2.html(subst) == \
         '2 H<sub>2</sub>O &rarr; 2 H<sub>2</sub> + O<sub>2</sub>'
-    assert r2.html(subst, str_num=lambda s: '<b>{0}</b>'.format(s)) == \
+    assert r2.html(subst, Reaction_coeff_fmt=lambda s: '<b>{0}</b>'.format(s)) == \
         '<b>2</b> H<sub>2</sub>O &rarr; <b>2</b> H<sub>2</sub> + O<sub>2</sub>'
-    assert r2.html(subst, str_formula=lambda s: '<b>{0}</b>'.format(s)) == \
+    assert r2.html(subst, Reaction_formula_fmt=lambda s: '<b>{0}</b>'.format(s)) == \
         '2 <b>H<sub>2</sub>O</b> &rarr; 2 <b>H<sub>2</sub></b> + <b>O<sub>2</sub></b>'
 
 

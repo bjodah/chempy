@@ -6,13 +6,12 @@
 #
 # Usage if doc/ is actually published in master branch on github:
 #
-#    $ ./scripts/generate_docs.sh my_github_username my_github_repo master
+#    $ ./scripts/generate_docs.sh GITHUB_USERNAME GITHUB_REPO master
 #
 NARGS=$#
 PKG=$(find . -maxdepth 2 -name __init__.py -print0 | xargs -0 -n1 dirname | xargs basename)
 AUTHOR=$(head -n 1 AUTHORS)
 sphinx-apidoc --full --force -A "$AUTHOR" --module-first --doc-version=$(python setup.py --version) -F -o doc $PKG/ $(find . -type d -name tests)
-sed -i "s/chempy's/ChemPy's/g" doc/index.rst
 #sed -i 's/Contents/.. include:: ..\/README.rst\n\nContents/g' doc/index.rst
 #echo ".. include:: ../README.rst" >>doc/index.rst
 cat <<EOF >>doc/index.rst
@@ -20,7 +19,9 @@ Overview
 ========
 $(tail -n+3 README.rst)
 EOF
-sed -i "s/'sphinx.ext.viewcode',/'sphinx.ext.viewcode',\n    'sphinx.ext.autosummary',\n    'sphinx.ext.mathjax',\n    'numpydoc',/g" doc/conf.py
+MATCH="'sphinx.ext.viewcode'"
+NEW="'sphinx.ext.viewcode',\n    'sphinx.ext.autosummary',\n    'numpydoc'"
+sed -i "s/$MATCH/$NEW/g" doc/conf.py
 sed -i "s/alabaster/sphinx_rtd_theme/g" doc/conf.py
 if [[ $NARGS -eq 3 ]]; then
 cat <<EOF>>doc/conf.py
@@ -41,4 +42,7 @@ EOF
 fi
 echo "numpydoc_class_members_toctree = False" >>doc/conf.py
 ABS_REPO_PATH=$(unset CDPATH && cd "$(dirname "$0")/.." && echo $PWD)
-( cd doc; PYTHONPATH=$ABS_REPO_PATH make html )
+if [[ ! -d doc/_build/html ]]; then
+    mkdir doc/_build/html
+fi
+( cd doc; PYTHONPATH=$ABS_REPO_PATH make html >_build/html/build.log )

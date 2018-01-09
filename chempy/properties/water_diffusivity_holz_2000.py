@@ -31,13 +31,13 @@ def water_self_diffusion_coefficient(T=None, units=None, warn=True,
 
     Parameters
     ----------
-    T: float
+    T : float
         Temperature (default: in Kelvin)
-    units: object (optional)
+    units : object (optional)
         object with attributes: Kelvin, meter, kilogram
-    warn: bool (default: True)
+    warn : bool (default: True)
         Emit UserWarning when outside temperature range.
-    err_mult: length 2 array_like (default: None)
+    err_mult : length 2 array_like (default: None)
         Perturb paramaters D0 and TS with err_mult[0]*dD0 and
         err_mult[1]*dTS respectively, where dD0 and dTS are the
         reported uncertainties in the fitted paramters. Useful
