@@ -45,7 +45,7 @@ class _RxnTable(object):
 
             if is_missing:
                 args.append('style="background-color: #%s;"' % self.missing_color)
-            print(is_missing)
+
         return '<td %s>%s</td>' % (' '.join(args), r)
 
 
