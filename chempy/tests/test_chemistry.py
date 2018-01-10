@@ -237,6 +237,12 @@ def test_balance_stoichiometry__underdetermined():
         balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'}, underdetermined=False)
     reac, prod = balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'})
 
+    r1 = {'C7H5O3-', 'O2', 'C21H27N7O14P2-2', 'H+'}
+    p1 = {'C7H5O4-', 'C21H26N7O14P2-', 'H2O'}  # see https://github.com/bjodah/chempy/issues/67
+    bal1 = balance_stoichiometry(r1, p1, underdetermined=None)
+    assert bal1 == ({'C21H27N7O14P2-2': 1, 'H+': 1, 'C7H5O3-': 1, 'O2': 1},
+                    {'C21H26N7O14P2-': 1, 'H2O': 1, 'C7H5O4-': 1})
+
 
 @requires('sympy')
 def test_balance_stoichiometry__missing_product_atom():
