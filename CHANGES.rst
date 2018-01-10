@@ -1,3 +1,7 @@
+v0.6.0
+======
+- balance_stoichiometry now accepts either of True, False, None as ``underdetermined``.
+
 v0.5.7
 ======
 - New option in ``.kinetics._native.get_native``: conc_roots

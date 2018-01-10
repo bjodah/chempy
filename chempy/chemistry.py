@@ -6,6 +6,7 @@ from functools import reduce
 from itertools import chain
 from operator import mul
 import math
+import warnings
 
 from .util.arithmeticdict import ArithmeticDict
 from .util._expr import Expr
@@ -17,7 +18,7 @@ from .util.parsing import (
 
 from .units import default_units, is_quantity, unit_of
 from ._util import intdiv
-from .util.pyutil import deprecated, DeferredImport
+from .util.pyutil import deprecated, DeferredImport, ChemPyDeprecationWarning
 
 
 ReactionSystem = DeferredImport('chempy.reactionsystem', 'ReactionSystem',
@@ -1082,8 +1083,9 @@ def balance_stoichiometry(reactants, products, substances=None,
         under-determined system of equations.
     underdetermined : bool
         Allows to find a non-unique solution (in addition to a constant factor
-        across all terms). Set to False to disallow e.g. "C + O2 -> CO + CO2".
-        Set to ``1`` if you want the symbols replaced by ones.
+        across all terms). Set to ``False`` to disallow e.g. "C + O2 -> CO + CO2".
+        Set to ``None`` if you want the symbols replaced by the smallest possible
+        integers giving integer coefficients.
 
     Examples
     --------
@@ -1101,7 +1103,7 @@ def balance_stoichiometry(reactants, products, substances=None,
     balanced products : dict
 
     """
-    from sympy import Matrix, gcd, zeros, linsolve, numbered_symbols
+    from sympy import Matrix, gcd, zeros, linsolve, numbered_symbols, Wild, preorder_traversal
 
     _intersect = set.intersection(*map(set, (reactants, products)))
     if _intersect:
@@ -1178,7 +1180,24 @@ def balance_stoichiometry(reactants, products, substances=None,
         if tmp is not None and tmp != 1:
             sol = sol.func(*[arg.subs(symb, symb/tmp) for arg in sol.args])
     if underdetermined is 1:
-        subsd = {symb: 1 for symb in symbs}
+        from ._release import __version__
+        if int(__version__.split('.')[1]) > 6:
+            warnings.warn(  # deprecated because comparison with ``1`` problematic (True==1)
+                ("Pass underdetermined == None instead of ``1`` (depreacted since 0.7.0,"
+                 " will_be_missing_in='0.9.0')"), ChemPyDeprecationWarning)
+        underdetermined = None
+    if underdetermined is None:
+        subsd = {}
+        w = Wild('w')
+        for symb in symbs:
+            if not sol.has(symb):
+                continue
+            cd = w**0
+            for m in map(lambda node: node.match(symb/w), preorder_traversal(sol)):
+                if m is None or not m[w].is_number:
+                    continue
+                cd = gcd(cd, 1/m[w])
+            subsd[symb] = 1/cd
         sol = sol.func(*[arg.subs(subsd) for arg in sol.args])
     fact = gcd(sol)
     sol = Matrix([e/fact for e in sol])
@@ -1191,7 +1210,8 @@ def balance_stoichiometry(reactants, products, substances=None,
                 raise ValueError("The system was under-determined")
 
     def _x(k):
-        return sol[subst_keys.index(k)]
+        coeff = sol[subst_keys.index(k)]
+        return int(coeff) if underdetermined is None else coeff
 
     return (
         {k: _x(k) for k in reactants},
