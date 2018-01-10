@@ -1187,7 +1187,7 @@ def balance_stoichiometry(reactants, products, substances=None,
                  " will_be_missing_in='0.9.0')"), ChemPyDeprecationWarning)
         underdetermined = None
     if underdetermined is None:
-        cds, subsd = [], {}
+        subsd = {}
         w = Wild('w')
         for symb in symbs:
             if not sol.has(symb):
