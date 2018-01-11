@@ -48,14 +48,21 @@ class CSSPrinter(HTMLPrinter):
         fmt = '<span class="%s" style="%s">%s</span>'
         return fmt % (_html_clsname(key), style, name)
 
+    def _tr_id(self, rsys, i):
+        return 'chempy_%d_%d' % (id(rsys), i)
+
     def _print_ReactionSystem(self, rsys, **kwargs):
         sep = '</td><td style="text-align:left;">&nbsp;'
         around = '</td><td style="text-align:center;">', '</td><td style="text-align:left;">'
         # cf. https://github.com/jupyter/notebook/issues/2160#issuecomment-352216152
-        rxns = '</td></tr>\n<tr><td style="text-align:right;">'.join(map(lambda r: self._print(
-            r, Reaction_param_separator=sep, Reaction_around_arrow=around), rsys.rxns))
-        tab = '<table class="chempy_table"><tr><td style="text-align:right;">%s</td></tr></table>'
-        return tab % rxns
+        row_template = '<tr class="%s"><td style="text-align:right;">%s</td></tr>'
+        rows = [row_template % (self._tr_id(rsys, i), s) for i, s in enumerate(map(
+            lambda r: self._print(r, Reaction_param_separator=sep, Reaction_around_arrow=around),
+            rsys.rxns
+        ))]
+        tab_template = '<table class="chempy_ReactionSystem chempy_%d">%s%s</table>'
+        header = '<tr><th style="text-align:center;" colspan="4">%s</th></tr>' % (rsys.name or '')
+        return tab_template % (id(rsys), header, '\n\n'.join(rows))
 
 
 def css(obj, **settings):
