@@ -37,13 +37,13 @@ def rsys2dot(rsys, tex=False, rprefix='r', rref0=1, nodeparams='[label="{}",shap
     if penwidths is None:
         penwidths = [1.0]*rsys.nr
 
-    sinks, sources, disjoint = rsys.sinks_sources_disjoint()
+    categories = rsys.categorize_substances()
 
     def add_substance(key):
         fc = 'black'
-        if key in sources:
+        if key in categories['depleted']:
             fc = colors[0]
-        if key in sinks:
+        if key in categories['accumulated']:
             fc = colors[1]
         label = ('$%s$' if tex else '%s') % getattr(rsys.substances[key], 'latex_name' if tex else 'name')
         lines.append(ind + '"{key}" [fontcolor={fc} label="{lbl}"];\n'.format(key=key, fc=fc, lbl=label))
