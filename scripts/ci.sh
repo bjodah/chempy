@@ -15,7 +15,6 @@ python2 setup.py sdist  # test pip installable sdist (checks MANIFEST.in)
 for PY in python2 python3; do
     $PY -m pip install --upgrade --upgrade-strategy only-if-needed .[all]
 done
-PYTHON=python2 ./scripts/run_tests.sh
 PYTHON=python3 ./scripts/run_tests.sh --cov $PKG_NAME --cov-report html
 ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
 

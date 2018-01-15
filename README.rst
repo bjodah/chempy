@@ -183,7 +183,7 @@ Chemical equilibria
    >>> x, sol, sane = eqsys.root(init_conc)
    >>> assert sol['success'] and sane
    >>> print(sorted(sol.keys()))  # see package "pyneqsys" for more info
-   ['fun', 'intermediate_info', 'internal_x_vecs', 'nfev', 'njev', 'success', 'x', 'x_vecs']
+   ['intermediate_info', 'internal_x_vecs', 'nfev', 'njev', 'success', 'x', 'x_vecs']
    >>> print(', '.join('%.2g' % v for v in x))
    1, 0.0013, 7.6e-12, 0.099, 0.0013
 

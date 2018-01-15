@@ -77,6 +77,9 @@ def test_Reaction():
     substance_dict = {n: s for n, s in zip(substance_names, substances)}
     r1 = Reaction({Hp: 1, OHm: 1}, {H2O: 1})
     assert sum(r1.composition_violation(substance_dict)) == 0
+    assert r1.composition_violation(substance_dict, ['H+']) == [0]
+    viol, cks = r1.composition_violation(substance_dict, True)
+    assert viol == [0]*3 and sorted(cks) == [0, 1, 8]
     assert r1.charge_neutrality_violation(substance_dict) == 0
 
     r2 = Reaction({Hp: 1, OHm: 1}, {H2O: 2})
@@ -86,7 +89,6 @@ def test_Reaction():
     r3 = Reaction({Hp: 2, OHm: 1}, {H2O: 2})
     assert sum(r3.composition_violation(substance_dict)) != 0
     assert r3.charge_neutrality_violation(substance_dict) != 0
-
     assert r3.keys() == {Hp, OHm, H2O}
 
     with pytest.raises(ValueError):

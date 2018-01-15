@@ -31,7 +31,7 @@ class EqSystem(ReactionSystem):
     _BaseSubstance = Species
 
     def html(self, *args, **kwargs):
-        k = 'color_sinks_sources'
+        k = 'color_categories'
         kwargs[k] = kwargs.get(k, False)
         return super(EqSystem, self).html(*args, **kwargs)
 

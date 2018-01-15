@@ -151,18 +151,12 @@ class ArithmeticDict(defaultdict):
 
     def _discrepancy(self, other, cb):
         default = self.default_factory()
+        _self = self.copy()  # getitem is not idempotent on defaultdict
+        _other = other.copy()
         try:
-            for k, v in self.items():
-                if cb(v, default):
-                    continue
-                if not cb(v, other[k]):
+            for k in set(chain(_self.keys(), _other.keys())):
+                if not cb(_self[k], _other.get(k, default)):
                     return False
-            for k, v in other.items():
-                if cb(v, default):
-                    continue
-                if k in self:
-                    continue
-                return False
             return True
         except TypeError:
             return False
@@ -183,11 +177,3 @@ class ArithmeticDict(defaultdict):
             if v < v*0:
                 return False
         return True
-
-    # def __hash__(self):
-    #     default = self.default_factory()
-    #     l = [self.default_factory]
-    #     for k, v in self.items():
-    #         if v != default:
-    #             l.append((k, v))
-    #     return hash(tuple(l))
