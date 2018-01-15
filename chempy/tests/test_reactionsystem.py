@@ -235,30 +235,39 @@ def test_ReactionSystem__identify_equilibria():
 
 
 @requires(parsing_library)
-def test_ReactionSystem__sinks_sources_disjoint():
+def test_ReactionSystem__categorize_substances():
     rsys1 = ReactionSystem.from_string("""
     2 H2 +  O2 -> 2 H2O     ; 1e-3
            H2O -> H+ + OH-  ; 1e-4/55.35
       H+ + OH- -> H2O       ; 1e10
          2 H2O -> 2 H2 + O2
     """)
-    assert all(not s for s in rsys1.sinks_sources_disjoint())
+    assert all(not s for s in rsys1.categorize_substances().values())
 
     rsys2 = ReactionSystem.from_string('\n'.join(['2 NH3 -> N2 + 3 H2', 'N2H4 -> N2 +   2  H2']))
-    assert rsys2.sinks_sources_disjoint() == ({'N2', 'H2'}, {'NH3', 'N2H4'}, set())
+    assert rsys2.categorize_substances() == dict(accumulated={'N2', 'H2'}, depleted={'NH3', 'N2H4'},
+                                                 unaffected=set(), nonparticipating=set())
 
     rsys3 = ReactionSystem.from_string("H+ + OH- -> H2O; 'kf'")
-    assert rsys3.sinks_sources_disjoint() == ({'H2O'}, {'H+', 'OH-'}, set())
+    assert rsys3.categorize_substances() == dict(accumulated={'H2O'}, depleted={'H+', 'OH-'},
+                                                 unaffected=set(), nonparticipating=set())
 
     rsys4 = ReactionSystem([Reaction({'H2': 2, 'O2': 1}, {'H2O': 2})], 'H2 O2 H2O N2 Ar')
-    assert rsys4.sinks_sources_disjoint() == ({'H2O'}, {'H2', 'O2'}, {'N2', 'Ar'})
+    assert rsys4.categorize_substances() == dict(accumulated={'H2O'}, depleted={'H2', 'O2'},
+                                                 unaffected=set(), nonparticipating={'N2', 'Ar'})
 
     rsys5 = ReactionSystem.from_string("""
     A -> B; MassAction(unique_keys=('k1',))
     B + C -> A + C; MassAction(unique_keys=('k2',))
     2 B -> B + C; MassAction(unique_keys=('k3',))
     """, substance_factory=lambda formula: Substance(formula))
-    assert rsys5.sinks_sources_disjoint() == ({'C'}, set(), set())
+    assert rsys5.categorize_substances() == dict(accumulated={'C'}, depleted=set(),
+                                                 unaffected=set(), nonparticipating=set())
+
+    rsys6 = ReactionSystem.from_string("""H2O2 + Fe+3 + (H2O2) -> 2 H2O + O2 + Fe+3""")
+    assert rsys6.rxns[0].order() == 2  # the additional H2O2 within parenthesis
+    assert rsys6.categorize_substances() == dict(accumulated={'H2O', 'O2'}, depleted={'H2O2'},
+                                                 unaffected={'Fe+3'}, nonparticipating=set())
 
 
 @requires(parsing_library)
@@ -284,4 +293,6 @@ def test_ReactionSystem__split():
     assert res1b == ref1b
     assert res1c == ref1c
     assert res1c != ref1a
-    assert rsys1.sinks_sources_disjoint() == ({'N2', 'Cl2', 'Br2'}, {'N', 'ClBr'}, set())
+    assert rsys1.categorize_substances() == dict(
+        accumulated={'N2', 'Cl2', 'Br2'}, depleted={'N', 'ClBr'},
+        unaffected=set(), nonparticipating=set())

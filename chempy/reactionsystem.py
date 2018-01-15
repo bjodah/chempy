@@ -140,17 +140,27 @@ class ReactionSystem(object):
             **kwargs
         ) for gr, gs in groups]
 
-    def sinks_sources_disjoint(self, **kwargs):
-        """ Returns the keys for sink-, source- and disjoint-substances in the reaction system.
+    def categorize_substances(self, **kwargs):
+        """ Returns categories of substance keys (e.g. nonparticipating, unaffected etc.)
 
-        Sinks are substances that are irreversibly formed (they are never net reactants in any
-        reactions). Sources are eventually completely depleted (they are never net proucts in
-        any reaction). Disjoint substances don't appear on either side and are thus unaffected
-        by the reactionsystem.
+        Some substances are only *accumulated* (i.e. irreversibly formed) and are never net
+        reactants in any reactions, others are *depleted* (they are never net proucts in
+        any reaction). Some substanaces are *unaffected* since they appear with equal coefficients on
+        both reactant and product side, while some may be *nonparticipating* (they don't appear on
+        either side and have thus no effect on the reactionsystem).
+
+        Parameters
+        ----------
+        \\*\\*kwargs:
+             Keyword arguments passed on to :class:`ReactionSystem`.
 
         Returns
         -------
-        Length-3 tuple of sets with substance keys (strings)
+        dict of sets of substance keys, the dictionary has the following keys:
+            - ``'accumulated'``: keys only participating as net products.
+            - ``'depleted'``: keys only participating as net reactants.
+            - ``'unaffected'``: keys appearing in reactions but with zero net effect.
+            - ``'nonparticipating'``: keys not appearing in any reactions.
 
         """
         import numpy as np
@@ -166,41 +176,50 @@ class ReactionSystem(object):
         if np.any(all_r < 0) or np.any(all_p < 0):
             raise ValueError("Expected positive stoichiometric coefficients")
         net = all_p - all_r
-        result = sinks, sources, disjoint = set(), set(), set()
+        accumulated, depleted, unaffected, nonparticipating = set(), set(), set(), set()
         for i, sk in enumerate(irrev_rsys.substances.keys()):
             in_r = np.any(net[:, i] < 0)
             in_p = np.any(net[:, i] > 0)
             if in_r and in_p:
                 pass
             elif in_r:
-                sources.add(sk)
+                depleted.add(sk)
             elif in_p:
-                sinks.add(sk)
+                accumulated.add(sk)
             else:
-                disjoint.add(sk)
-        return result
+                if np.any(all_p[:, i] > 0):
+                    assert all_p[:, i] == all_r[:, i], "Open issue at github.com/bjodah/chempy"
+                    unaffected.add(sk)
+                else:
+                    nonparticipating.add(sk)
+        return dict(
+            accumulated=accumulated,
+            depleted=depleted,
+            unaffected=unaffected,
+            nonparticipating=nonparticipating
+        )
 
     def sort_substances_inplace(self, key=lambda kv: kv[0]):
         """ Sorts the OrderedDict attribute ``substances`` """
         self.substances = OrderedDict(sorted(self.substances.items(), key=key))
 
-    def _sinks_sources_colors(self, checks=()):
+    def _category_colors(self, checks=()):
         colors = {}
-        sinks, sources, disjoint = self.sinks_sources_disjoint(checks=checks)
-        for k in sinks:
+        categories = self.categorize_substances(checks=checks)
+        for k in categories['accumulated']:
             colors[k] = ('90ee90', '008000')  # LightGreen, Green
-        for k in sources:
+        for k in categories['depleted']:
             colors[k] = ('ffb6c1', 'c71585')  # LightPink, MediumVioletRed
         return colors
 
-    def html(self, with_param=True, checks=(), color_sinks_sources=True, split=True, print_fn=None):
+    def html(self, with_param=True, checks=(), color_categories=True, split=True, print_fn=None):
         """ Returns a string with an HTML representation
 
         Parameters
         ----------
         with_param : bool
         checks : tuple
-        color_sinks_sources : bool
+        color_categories : bool
         split : bool
         print_fn : callable
             default: :func:`chempy.printing.html`
@@ -213,7 +232,7 @@ class ReactionSystem(object):
             parts = self.split(checks=checks)
             if len(parts) > 1:
                 return '<br><hl><br>'.join(rs.html(with_param) for rs in parts)
-        colors = self._sinks_sources_colors(checks=checks) if color_sinks_sources else {}
+        colors = self._category_colors(checks=checks) if color_categories else {}
         return print_fn(self, colors=colors, substances=self.substances)
 
     def string(self, with_param=True):

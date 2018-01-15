@@ -720,15 +720,32 @@ class Reaction(object):
 
         If composition keys correspond to conserved entities e.g. atoms
         in chemical reactions, this function should return a list of zeros.
+
+        Parameters
+        ----------
+        substances : dict
+        composition_keys : iterable of str, ``None`` or ``True``
+            When ``None`` or True: composition keys are taken from substances.
+            When ``True`` the keys are also return as an extra return value
+
+        Returns
+        -------
+        - If ``composition_keys == True``: a tuple: (violations, composition_keys)
+        - Otherwise: violations (list of coefficients)
+
         """
         keys, values = zip(*substances.items())
-        if composition_keys is None:
+        ret_comp_keys = composition_keys is True
+        if composition_keys in (None, True):
             composition_keys = Substance.composition_keys(values)
         net = [0]*len(composition_keys)
         for substance, coeff in zip(values, self.net_stoich(keys)):
             for idx, key in enumerate(composition_keys):
                 net[idx] += substance.composition.get(key, 0) * coeff
-        return net
+        if ret_comp_keys:
+            return net, composition_keys
+        else:
+            return net
 
     def rate_expr(self):
         """ Turns self.param into a RateExpr instance (if not already)
