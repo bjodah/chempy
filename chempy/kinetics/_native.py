@@ -42,7 +42,7 @@ _anon = """
       % endfor
       % for si, subst_key in enumerate(getattr(odesys, 'free_names', odesys.names)):
        % if len(subst_comp[si]) > 0:
-        bounds[${si}] = vecmin(${', '.join([('cc[%d]/%d' % (ci, n)) if n != 1 else 'cc[%d]' % ci for ci, n in subst_comp[si].items()])});
+        bounds[${si}] = vecmin(${', '.join(['INFINITY' if n == 0 else ('cc[%d]/%d' % (ci, n)) if n != 1 else 'cc[%d]' % ci for ci, n in subst_comp[si].items()])});
        % else:
         bounds[${si}] = INFINITY;
        % endif
