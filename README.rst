@@ -139,6 +139,24 @@ Balancing stoichiometry of a chemical reaction
    {'Al': '27.7 wt%', 'NH4ClO4': '72.3 wt%'}
    {'Al2O3': '52.3 wt%', 'H2O': '16.6 wt%', 'HCl': '22.4 wt%', 'N2': '8.62 wt%'}
 
+ChemPy can even handle Reactions with linear dependencies (underdetermined systems), e.g.:
+
+.. code:: python
+
+   >>> balance_stoichiometry({'C', 'O2'}, {'CO2', 'CO'})
+   ({'C': x1 + 2, 'O2': x1/2 + 2}, {'CO': x1, 'CO2': 2})
+
+that ``x1`` object is an instance of SymPy's Symbol_. If we prefer to get a solution
+with minimal (non-zero) integer coefficients we can pass ``underdetermined=None``:
+
+   >>> balance_stoichiometry({'C', 'O2'}, {'CO2', 'CO'}, underdetermined=None)
+   ({'C': 4, 'O2': 3}, {'CO': 2, 'CO2': 2})
+
+note however that even though this solution is in some sense "canonical",
+it is merely one of an inifite number of solutions (any integer x1 is valid).
+
+.. _Symbol: http://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol
+
 
 Balancing reactions
 ~~~~~~~~~~~~~~~~~~~
@@ -182,8 +200,6 @@ Chemical equilibria
    >>> init_conc = defaultdict(float, {'H2O': 1, 'NH3': 0.1})
    >>> x, sol, sane = eqsys.root(init_conc)
    >>> assert sol['success'] and sane
-   >>> print(sorted(sol.keys()))  # see package "pyneqsys" for more info
-   ['intermediate_info', 'internal_x_vecs', 'nfev', 'njev', 'success', 'x', 'x_vecs']
    >>> print(', '.join('%.2g' % v for v in x))
    1, 0.0013, 7.6e-12, 0.099, 0.0013
 
@@ -223,7 +239,7 @@ Chemical kinetics (system of ordinary differential equations)
    >>> _ = axes[1].set_xscale('log')
    >>> _ = axes[1].set_yscale('log')
    >>> _ = fig.tight_layout()
-   >>> _ = fig.savefig('examples/kinetics.png')
+   >>> _ = fig.savefig('examples/kinetics.png', dpi=72)
 
 .. image:: https://raw.githubusercontent.com/bjodah/chempy/master/examples/kinetics.png
 
