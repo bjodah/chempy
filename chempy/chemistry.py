@@ -1120,17 +1120,18 @@ def balance_stoichiometry(reactants, products, substances=None,
     balanced products : dict
 
     """
-    from sympy import Matrix, gcd, zeros, linsolve, numbered_symbols, Wild, preorder_traversal
+    from sympy import (
+        Matrix, gcd, zeros, linsolve, numbered_symbols, Wild, Symbol,
+        preorder_traversal as pre
+    )
 
     _intersect = set.intersection(*map(set, (reactants, products)))
     if _intersect:
         raise ValueError("Substances on both sides: %s" % str(_intersect))
     if substances is None:
-        substances = OrderedDict([(k, substance_factory(k)) for k
-                                  in chain(reactants, products)])
+        substances = OrderedDict([(k, substance_factory(k)) for k in chain(reactants, products)])
     if isinstance(substances, str):
-        substances = OrderedDict([(k, substance_factory(k)) for k
-                                  in substances.split()])
+        substances = OrderedDict([(k, substance_factory(k)) for k in substances.split()])
     subst_keys = list(substances.keys())
 
     cks = Substance.composition_keys(substances.values())
@@ -1153,14 +1154,10 @@ def balance_stoichiometry(reactants, products, substances=None,
     A = Matrix([[_get(sk, ck) for sk in subst_keys] for ck in cks])
     symbs = list(reversed([next(parametric_symbols) for _ in range(len(subst_keys))]))
     sol, = linsolve((A, zeros(len(cks), 1)), symbs)
-    tmp = 1
-    for expr in sol:
-        iterable = expr.args if expr.is_Add else [expr]
-        for term in iterable:
-            if term.is_Mul and term.args[0].is_Rational:
-                tmp = gcd(tmp, term.args[0])
-    sol = sol.func(*[arg/tmp for arg in sol.args])
-
+    wi = Wild('wi', properties=[lambda k: k.is_Integer])
+    cd = reduce(gcd, [1] + [1/m[wi] for m in map(
+        lambda n: n.match(symbs[-1]/wi), pre(sol)) if m is not None])
+    sol = sol.func(*[arg/cd for arg in sol.args])
     def remove(sol, symb, remaining):
         subsd = dict(zip(remaining/symb, remaining))
         sol = sol.func(*[(arg/symb).expand().subs(subsd) for arg in sol.args])
@@ -1185,17 +1182,14 @@ def balance_stoichiometry(reactants, products, substances=None,
                 sol = remove(sol, symb, Matrix(symbs[idx+1:]))
                 break
     for symb in symbs:
-        tmp = None
+        cd = 1
         for expr in sol:
             iterable = expr.args if expr.is_Add else [expr]
             for term in iterable:
                 if term.is_Mul and term.args[0].is_number and term.args[1] == symb:
-                    if tmp is None:
-                        tmp = term.args[0]
-                    else:
-                        tmp = gcd(tmp, term.args[0])
-        if tmp is not None and tmp != 1:
-            sol = sol.func(*[arg.subs(symb, symb/tmp) for arg in sol.args])
+                    cd = gcd(cd, term.args[0])
+        if cd != 1:
+            sol = sol.func(*[arg.subs(symb, symb/cd) for arg in sol.args])
     if underdetermined is 1:
         from ._release import __version__
         if int(__version__.split('.')[1]) > 6:
@@ -1205,16 +1199,11 @@ def balance_stoichiometry(reactants, products, substances=None,
         underdetermined = None
     if underdetermined is None:
         subsd = {}
-        w = Wild('w')
         for symb in symbs:
             if not sol.has(symb):
                 continue
-            cd = w**0
-            for m in map(lambda node: node.match(symb/w), preorder_traversal(sol)):
-                if m is None or not m[w].is_number:
-                    continue
-                cd = gcd(cd, 1/m[w])
-            subsd[symb] = 1/cd
+            subsd[symb] = 1/reduce(gcd, [1] + [1/m[wi] for m in map(
+                lambda n: n.match(symb/wi), pre(sol)) if m is not None])
         sol = sol.func(*[arg.subs(subsd) for arg in sol.args])
     fact = gcd(sol)
     sol = Matrix([e/fact for e in sol])

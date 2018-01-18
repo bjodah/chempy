@@ -144,7 +144,7 @@ ChemPy can even handle Reactions with linear dependencies (underdetermined syste
 .. code:: python
 
    >>> balance_stoichiometry({'C', 'O2'}, {'CO2', 'CO'})
-   ({'C': x1 + 2, 'O2': x1/2 + 2}, {'CO': x1, 'CO2': 2})
+   ({'C': x1 + 2, 'O2': x1 + 1}, {'CO': 2, 'CO2': x1})
 
 that ``x1`` object is an instance of SymPy's Symbol_. If we prefer to get a solution
 with minimal (non-zero) integer coefficients we can pass ``underdetermined=None``:
@@ -152,10 +152,26 @@ with minimal (non-zero) integer coefficients we can pass ``underdetermined=None`
 .. code:: python
 
    >>> balance_stoichiometry({'C', 'O2'}, {'CO2', 'CO'}, underdetermined=None)
-   ({'C': 4, 'O2': 3}, {'CO': 2, 'CO2': 2})
+   ({'C': 3, 'O2': 2}, {'CO': 2, 'CO2': 1})
 
 note however that even though this solution is in some sense "canonical",
 it is merely one of an inifite number of solutions (any integer x1 is valid).
+
+ChemPy can also balance reactions where the reacting species are more complex and
+are better described in other terms than their molecular formula. A silly, yet
+illustrative example would be how to make pancakes without any partially used packages:
+
+.. code:: python
+
+   >>> substances = {s.name: s for s in [
+   ...     Substance('pancake', composition=dict(eggs=1, spoons_of_flour=2, cups_of_milk=1)),
+   ...     Substance('eggs_6pack', composition=dict(eggs=6)),
+   ...     Substance('milk_carton', composition=dict(cups_of_milk=4)),
+   ...     Substance('flour_bag', composition=dict(spoons_of_flour=60))
+   ... ]}
+   >>> pprint(balance_stoichiometry({'eggs_6pack', 'milk_carton', 'flour_bag'}, {'pancake'},
+   ...                              substances=substances))
+   ({'eggs_6pack': 10, 'flour_bag': 2, 'milk_carton': 15}, {'pancake': 60})
 
 .. _Symbol: http://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol
 
