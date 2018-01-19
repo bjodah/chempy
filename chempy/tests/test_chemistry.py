@@ -245,6 +245,7 @@ def test_balance_stoichiometry__underdetermined():
     assert bal1 == ({'C21H27N7O14P2-2': 1, 'H+': 1, 'C7H5O3-': 1, 'O2': 1},
                     {'C21H26N7O14P2-': 1, 'H2O': 1, 'C7H5O4-': 1})
 
+
 def test_balance_stoichiometry__substances__underdetermined():
     substances = {s.name: s for s in [
         Substance('eggs_6pack', composition=dict(eggs=6)),
@@ -259,8 +260,9 @@ def test_balance_stoichiometry__substances__underdetermined():
     ref_r1 = {'eggs_6pack': 6, 'flour_bag': 2, 'milk_carton': 9}
     ref_p1 = {'pancake': 12, 'waffle': 12}
     assert all(viol == 0 for viol in Reaction(ref_r1, ref_p1).composition_violation(substances))
-    assert br1 == ref_r1
+    assert all(v > 0 for v in br1.values()) and all(v > 0 for v in bp1.values())
     assert bp1 == ref_p1
+    assert br1 == ref_r1
 
 
 @requires('sympy')

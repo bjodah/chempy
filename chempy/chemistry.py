@@ -1132,7 +1132,7 @@ def balance_stoichiometry(reactants, products, substances=None,
         substances = OrderedDict([(k, substance_factory(k)) for k in chain(reactants, products)])
     if isinstance(substances, str):
         substances = OrderedDict([(k, substance_factory(k)) for k in substances.split()])
-    subst_keys = list(substances.keys())
+    subst_keys = list(reactants) + list(products)
 
     cks = Substance.composition_keys(substances.values())
 
@@ -1154,10 +1154,11 @@ def balance_stoichiometry(reactants, products, substances=None,
     A = Matrix([[_get(sk, ck) for sk in subst_keys] for ck in cks])
     symbs = list(reversed([next(parametric_symbols) for _ in range(len(subst_keys))]))
     sol, = linsolve((A, zeros(len(cks), 1)), symbs)
-    wi = Wild('wi', properties=[lambda k: k.is_Integer])
+    wi = Wild('wi', properties=[lambda k: not k.has(Symbol)])
     cd = reduce(gcd, [1] + [1/m[wi] for m in map(
         lambda n: n.match(symbs[-1]/wi), pre(sol)) if m is not None])
     sol = sol.func(*[arg/cd for arg in sol.args])
+
     def remove(sol, symb, remaining):
         subsd = dict(zip(remaining/symb, remaining))
         sol = sol.func(*[(arg/symb).expand().subs(subsd) for arg in sol.args])
