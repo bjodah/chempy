@@ -143,7 +143,7 @@ ChemPy can even handle Reactions with linear dependencies (underdetermined syste
 
 .. code:: python
 
-   >>> balance_stoichiometry({'C', 'O2'}, {'CO2', 'CO'})
+   >>> pprint(balance_stoichiometry({'C', 'O2'}, {'CO2', 'CO'}))
    ({'C': x1 + 2, 'O2': x1/2 + 2}, {'CO': x1, 'CO2': 2})
 
 that ``x1`` object is an instance of SymPy's Symbol_. If we prefer to get a solution
@@ -151,7 +151,7 @@ with minimal (non-zero) integer coefficients we can pass ``underdetermined=None`
 
 .. code:: python
 
-   >>> balance_stoichiometry({'C', 'O2'}, {'CO2', 'CO'}, underdetermined=None)
+   >>> pprint(balance_stoichiometry({'C', 'O2'}, {'CO2', 'CO'}, underdetermined=None))
    ({'C': 4, 'O2': 3}, {'CO': 2, 'CO2': 2})
 
 note however that even though this solution is in some sense "canonical",

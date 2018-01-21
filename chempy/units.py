@@ -20,8 +20,8 @@ from __future__ import (absolute_import, division, print_function)
 from functools import reduce
 from operator import mul
 
-from ._util import NameSpace
 from .util.arithmeticdict import ArithmeticDict
+from .util.pyutil import NameSpace
 
 units_library = 'quantities'  # info used for selective testing.
 

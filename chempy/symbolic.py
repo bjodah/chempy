@@ -2,7 +2,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-from ._util import AttributeDict
+from .util.pyutil import AttributeContainer
 
 
 def get_constant_symbols(Symbol=None):
@@ -16,4 +16,4 @@ def get_constant_symbols(Symbol=None):
         ('pi', 'pi'),
         ('molar_gas_constant', 'R'),
     ]
-    return AttributeDict({k: Symbol(v) for k, v in consts})
+    return AttributeContainer(**{k: Symbol(v) for k, v in consts})
