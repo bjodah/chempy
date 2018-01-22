@@ -385,11 +385,11 @@ class Reaction(object):
 
     Attributes
     ----------
-    reac : dict
-    prod : dict
+    reac : OrderedDict
+    prod : OrderedDict
     param : object
-    inact_reac : dict
-    inact_prod : dict
+    inact_reac : OrderedDict
+    inact_prod : OrderedDict
     name : str
     ref : str
     data : dict
@@ -414,23 +414,24 @@ class Reaction(object):
 
     param_char = 'k'  # convention
 
+    @staticmethod
+    def _init_stoich(container):
+        if isinstance(container, set):
+            container = {k: 1 for k in container}
+        container = container or {}
+        if type(container) == dict:  # we don't want isinstance here in case of OrderedDict
+            container = OrderedDict(sorted(container.items(), key=lambda kv: kv[0]))
+        return container
+
     def __init__(
             self, reac, prod, param=None, inact_reac=None, inact_prod=None,
             name=None, ref=None, data=None,
             checks=('any_effect', 'all_positive', 'all_integral', 'consistent_units')):
-        if isinstance(reac, set):
-            reac = {k: 1 for k in reac}
-        if isinstance(inact_reac, set):
-            inact_reac = {k: 1 for k in inact_reac}
-        if isinstance(prod, set):
-            prod = {k: 1 for k in prod}
-        if isinstance(inact_prod, set):
-            inact_prod = {k: 1 for k in inact_prod}
-        self.reac = reac
-        self.prod = prod
+        self.reac = self._init_stoich(reac)
+        self.inact_reac = self._init_stoich(inact_reac)
+        self.prod = self._init_stoich(prod)
+        self.inact_prod = self._init_stoich(inact_prod)
         self.param = param
-        self.inact_reac = inact_reac or {}
-        self.inact_prod = inact_prod or {}
         self.name = name
         self.ref = ref
         self.data = data or {}
@@ -1042,7 +1043,7 @@ class Equilibrium(Reaction):
         >>> Equilibrium.eliminate([e1, e2], 'Cd+2')
         [1, 4]
         >>> print(1*e1 + 4*e2)
-        4 Cd(OH)2(s) + 4 H2O = 4 H+ + 8 OH- + Cd4(OH)4+4; 7.94e-91
+        4 Cd(OH)2(s) + 4 H2O = Cd4(OH)4+4 + 4 H+ + 8 OH-; 7.94e-91
 
         """
         import sympy
@@ -1070,7 +1071,7 @@ class Equilibrium(Reaction):
         >>> e1.cancel(e2)
         -4
         >>> print(e1 - 4*e2)
-        4 Cd(OH)2(s) = 4 OH- + Cd4(OH)4+4; 7.94e-35
+        4 Cd(OH)2(s) = Cd4(OH)4+4 + 4 OH-; 7.94e-35
 
         """
         keys = rxn.keys()
@@ -1097,12 +1098,13 @@ def balance_stoichiometry(reactants, products, substances=None,
     substance_factory : callback
     parametric_symbols : generator of symbols
         Used to generate symbols for parametric solution for
-        under-determined system of equations.
+        under-determined system of equations. Default is numbered "x-symbols" starting
+        from 1.
     underdetermined : bool
         Allows to find a non-unique solution (in addition to a constant factor
-        across all terms). Set to ``False`` to disallow e.g. "C + O2 -> CO + CO2".
-        Set to ``None`` if you want the symbols replaced by the smallest possible
-        integers giving integer coefficients.
+        across all terms). Set to ``False`` to disallow (raise ValueError) on
+        e.g. "C + O2 -> CO + CO2". Set to ``None`` if you want the symbols replaced
+        so that the coefficients are the smallest possible positive (non-zero) integers.
 
     Examples
     --------
@@ -1112,7 +1114,19 @@ def balance_stoichiometry(reactants, products, substances=None,
     >>> ref2 = {'H2': 1, 'O2': 1}, {'H2O2': 1}
     >>> balance_stoichiometry('H2 O2'.split(), ['H2O2'], 'H2 O2 H2O2') == ref2
     True
-
+    >>> reac, prod = 'CuSCN KIO3 HCl'.split(), 'CuSO4 KCl HCN ICl H2O'.split()
+    >>> Reaction(*balance_stoichiometry(reac, prod)).string()
+    '4 CuSCN + 7 KIO3 + 14 HCl -> 4 CuSO4 + 7 KCl + 4 HCN + 7 ICl + 5 H2O'
+    >>> balance_stoichiometry({'Fe', 'O2'}, {'FeO', 'Fe2O3'}, underdetermined=False)
+    Traceback (most recent call last):
+        ...
+    ValueError: The system was under-determined
+    >>> r, p = balance_stoichiometry({'Fe', 'O2'}, {'FeO', 'Fe2O3'})
+    >>> set.union(*[v.free_symbols for v in r.values()])
+    set([x1])
+    >>> b = balance_stoichiometry({'Fe', 'O2'}, {'FeO', 'Fe2O3'}, underdetermined=None)
+    >>> b == ({'Fe': 3, 'O2': 2}, {'FeO': 1, 'Fe2O3': 1})
+    True
 
     Returns
     -------
@@ -1132,6 +1146,10 @@ def balance_stoichiometry(reactants, products, substances=None,
         substances = OrderedDict([(k, substance_factory(k)) for k in chain(reactants, products)])
     if isinstance(substances, str):
         substances = OrderedDict([(k, substance_factory(k)) for k in substances.split()])
+    if type(reactants) == set:  # we don't want isinstance since it might be "OrderedSet"
+        reactants = sorted(reactants)
+    if type(products) == set:
+        products = sorted(products)
     subst_keys = list(reactants) + list(products)
 
     cks = Substance.composition_keys(substances.values())
@@ -1141,12 +1159,13 @@ def balance_stoichiometry(reactants, products, substances=None,
 
     # ?C2H2 + ?O2 -> ?CO + ?H2O
     # Ax = 0
-    # A:                 x:
+    #   A:                    x:
     #
     #   C2H2   O2  CO  H2O
-    # C  2     0    1   0    x0
-    # H  2     0    0   2    x1
-    # O  0    -2    1   1    x2
+    # C -2     0    1   0      x0    =   0
+    # H -2     0    0   2      x1        0
+    # O  0    -2    1   1      x2        0
+    #                          x3
 
     def _get(sk, ck):
         return substances[sk].composition.get(ck, 0) * (-1 if sk in reactants else 1)
@@ -1221,8 +1240,8 @@ def balance_stoichiometry(reactants, products, substances=None,
         return int(coeff) if underdetermined is None else coeff
 
     return (
-        {k: _x(k) for k in reactants},
-        {k: _x(k) for k in products}
+        OrderedDict([(k, _x(k)) for k in reactants]),
+        OrderedDict([(k, _x(k)) for k in products])
     )
 
 

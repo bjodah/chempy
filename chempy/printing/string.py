@@ -22,12 +22,12 @@ class StrPrinter(Printer):
                 formula_fmt(self._print(substances.get(k, k)))
             ) for k, v in filter(itemgetter(1), d.items())
         ] for d in (rxn.reac, rxn.prod, rxn.inact_reac, rxn.inact_prod)]
-        r_str = str_(" + ").join(sorted(reac))
-        ir_str = (str_(' + ( ') + str_(" + ").join(sorted(i_reac)) + str_(')')
+        r_str = str_(" + ").join(reac)
+        ir_str = (str_(' + ( ') + str_(" + ").join(i_reac) + str_(')')
                   if len(i_reac) > 0 else nullstr)
         arrow_str = self._get('%s_arrow' % rxn.__class__.__name__, **kwargs)
-        p_str = str_(" + ").join(sorted(prod))
-        ip_str = (str_(' + ( ') + str_(" + ").join(sorted(i_prod)) + str_(')')
+        p_str = str_(" + ").join(prod)
+        ip_str = (str_(' + ( ') + str_(" + ").join(i_prod) + str_(')')
                   if len(i_prod) > 0 else nullstr)
         return r_str, ir_str, arrow_str, p_str, ip_str
 
