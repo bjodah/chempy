@@ -103,6 +103,10 @@ def test_Reaction():
     assert r5 == r4
     assert r5 != r1
 
+    lhs5, rhs5 = {'H+': 1, 'OH-': 1}, {'H2O': 1}
+    r5 = Reaction(lhs5, rhs5)
+    assert r5.reac == lhs5 and r5.prod == rhs5
+
 
 @requires(parsing_library, units_library)
 def test_Reaction_parsing():
@@ -227,32 +231,6 @@ def test_Equilibrium__cancel():
 
 
 @requires('sympy')
-def test_balance_stoichiometry__simple():
-    r2, p2 = balance_stoichiometry({'Na2CO3'}, {'Na2O', 'CO2'})
-    assert r2 == {'Na2CO3': 1}
-    assert p2 == {'Na2O': 1, 'CO2': 1}
-
-
-@requires('sympy')
-def test_balance_stoichiometry__underdetermined():
-    with pytest.raises(ValueError):
-        balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'}, underdetermined=False)
-    reac, prod = balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'})
-
-    r1 = {'C7H5O3-', 'O2', 'C21H27N7O14P2-2', 'H+'}
-    p1 = {'C7H5O4-', 'C21H26N7O14P2-', 'H2O'}  # see https://github.com/bjodah/chempy/issues/67
-    bal1 = balance_stoichiometry(r1, p1, underdetermined=None)
-    assert bal1 == ({'C21H27N7O14P2-2': 1, 'H+': 1, 'C7H5O3-': 1, 'O2': 1},
-                    {'C21H26N7O14P2-': 1, 'H2O': 1, 'C7H5O4-': 1})
-
-
-@requires('sympy')
-def test_balance_stoichiometry__missing_product_atom():
-    with pytest.raises(ValueError):  # No Al on product side
-        balance_stoichiometry({'C7H5(NO2)3', 'Al', 'NH4NO3'}, {'CO', 'H2O', 'N2'})
-
-
-@requires('sympy')
 def test_balance_stoichiometry():
     # 4 NH4ClO4 -> 2 N2 + 4 HCl + 6H2O + 5O2
     # 4 Al + 3O2 -> 2Al2O3
@@ -279,3 +257,82 @@ def test_balance_stoichiometry():
     compo_reac = dict(reduce(add, [compositions[k]*v for k, v in r5.items()]))
     compo_prod = dict(reduce(add, [compositions[k]*v for k, v in p5.items()]))
     assert compo_reac == compo_prod
+
+    a6, b6 = map(lambda x: set(x.split()), 'CuSCN KIO3 HCl;CuSO4 KCl HCN ICl H2O'.split(';'))
+    r6, p6 = balance_stoichiometry(a6, b6)
+    assert r6 == dict(CuSCN=4, KIO3=7, HCl=14)
+    assert p6 == dict(CuSO4=4, KCl=7, HCN=4, ICl=7, H2O=5)
+
+
+@requires('sympy')
+def test_balance_stoichiometry__ordering():
+    reac, prod = 'CuSCN KIO3 HCl'.split(), 'CuSO4 KCl HCN ICl H2O'.split()
+    rxn = Reaction(*balance_stoichiometry(reac, prod))
+    res = rxn.string()
+    ref = '4 CuSCN + 7 KIO3 + 14 HCl -> 4 CuSO4 + 7 KCl + 4 HCN + 7 ICl + 5 H2O'
+    assert res == ref
+
+
+@requires('sympy')
+def test_balance_stoichiometry__simple():
+    r2, p2 = balance_stoichiometry({'Na2CO3'}, {'Na2O', 'CO2'})
+    assert r2 == {'Na2CO3': 1}
+    assert p2 == {'Na2O': 1, 'CO2': 1}
+
+
+@requires('sympy')
+def test_balance_stoichiometry__underdetermined():
+    with pytest.raises(ValueError):
+        balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'}, underdetermined=False)
+    reac, prod = balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'})
+
+    r1 = {'C7H5O3-', 'O2', 'C21H27N7O14P2-2', 'H+'}
+    p1 = {'C7H5O4-', 'C21H26N7O14P2-', 'H2O'}  # see https://github.com/bjodah/chempy/issues/67
+    bal1 = balance_stoichiometry(r1, p1, underdetermined=None)
+    assert bal1 == ({'C21H27N7O14P2-2': 1, 'H+': 1, 'C7H5O3-': 1, 'O2': 1},
+                    {'C21H26N7O14P2-': 1, 'H2O': 1, 'C7H5O4-': 1})
+
+
+@requires('sympy')
+@pytest.mark.xfail
+def test_balance_stoichiometry__underdetermined__canoncial():
+    # This tests for canoncial representation of the underdetermined system
+    # where all coefficients are integer and >= 1. It is however of limited
+    # practical use (and hence marked ``xfail``) since underdetermined systems
+    # have infinite number of solutions. It should however be possible to rewrite
+    # the logic so that such canoncial results are returned from balance_stoichiometry
+    r2 = {'O2', 'O3', 'C', 'NO', 'N2O', 'NO2', 'N2O4'}
+    p2 = {'CO', 'CO2', 'N2'}
+    bal2 = balance_stoichiometry(r2, p2, underdetermined=None)
+    ref2 = ({'O2': 1, 'O3': 1, 'C': 7, 'NO': 1, 'N2O': 1, 'NO2': 1, 'N2O4': 1},
+            {'CO': 1, 'CO2': 6, 'N2': 3})
+    substances = {k: Substance.from_formula(k) for k in r2 | p2}
+    assert all(viol == 0 for viol in Reaction(*ref2).composition_violation(substances))
+    assert sum(bal2[0].values()) + sum(bal2[1].values()) <= sum(ref2[0].values()) + sum(ref2[1].values())
+    assert bal2 == ref2
+
+
+@requires('sympy')
+def test_balance_stoichiometry__substances__underdetermined():
+    substances = {s.name: s for s in [
+        Substance('eggs_6pack', composition=dict(eggs=6)),
+        Substance('milk_carton', composition=dict(cups_of_milk=4)),
+        Substance('flour_bag', composition=dict(spoons_of_flour=30)),
+        Substance('pancake', composition=dict(eggs=1, cups_of_milk=1, spoons_of_flour=2)),
+        Substance('waffle', composition=dict(eggs=2, cups_of_milk=2, spoons_of_flour=3)),
+    ]}
+    ur1 = {'eggs_6pack', 'milk_carton', 'flour_bag'}
+    up1 = {'pancake', 'waffle'}
+    br1, bp1 = balance_stoichiometry(ur1, up1, substances=substances, underdetermined=None)
+    ref_r1 = {'eggs_6pack': 6, 'flour_bag': 2, 'milk_carton': 9}
+    ref_p1 = {'pancake': 12, 'waffle': 12}
+    assert all(viol == 0 for viol in Reaction(ref_r1, ref_p1).composition_violation(substances))
+    assert all(v > 0 for v in br1.values()) and all(v > 0 for v in bp1.values())
+    assert bp1 == ref_p1
+    assert br1 == ref_r1
+
+
+@requires('sympy')
+def test_balance_stoichiometry__missing_product_atom():
+    with pytest.raises(ValueError):  # No Al on product side
+        balance_stoichiometry({'C7H5(NO2)3', 'Al', 'NH4NO3'}, {'CO', 'H2O', 'N2'})

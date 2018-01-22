@@ -1,7 +1,7 @@
 Contributing
 ============
 Thank you for your interest in contributing. As in most open source projects,
-contrbutions are very welcome.
+contributions are very welcome.
 
 Reporting issues
 ----------------
@@ -11,7 +11,7 @@ If applicable, try to include a self-contained code example. Also test the lates
 
 Contributing code
 -----------------
-In case this is your first contribtion to a project hosted on github you may be helped by
+In case this is your first contribution to a project hosted on github you may be helped by
 this excellent documentation:
 
 - https://help.github.com/categories/collaborating-with-issues-and-pull-requests/
