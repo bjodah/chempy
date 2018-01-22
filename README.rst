@@ -54,9 +54,8 @@ Documentation
 -------------
 The easiest way to get started is to have a look at the examples in this README,
 and also the jupyter notebooks_. In addition there is auto-generated API documentation
-for the latest stable release `here <https://bjodah.github.io/chempy/latest>`_
-(and the API docs for the development version is found
-`here <http://hera.physchem.kth.se/~chempy/branches/master/html>`_).
+for the latest `stable release here <https://bjodah.github.io/chempy/latest>`_
+(and `here are <http://hera.physchem.kth.se/~chempy/branches/master/html>`_ the API docs for the development version).
 
 .. _notebooks: http://hera.physchem.kth.se/~chempy/branches/master/examples
 

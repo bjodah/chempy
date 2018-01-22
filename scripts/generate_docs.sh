@@ -20,7 +20,7 @@ Overview
 $(tail -n+3 README.rst)
 EOF
 MATCH="'sphinx.ext.viewcode'"
-NEW="'sphinx.ext.viewcode',\n    'sphinx.ext.autosummary',\n    'numpydoc'"
+NEW="'sphinx.ext.viewcode',\n    'sphinx.ext.autosummary',\n    'sphinx.ext.mathjax',\n    'numpydoc'"
 sed -i "s/$MATCH/$NEW/g" doc/conf.py
 sed -i "s/alabaster/sphinx_rtd_theme/g" doc/conf.py
 if [[ $NARGS -eq 3 ]]; then
