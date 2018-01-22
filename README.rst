@@ -191,6 +191,31 @@ Balancing reactions
    >>> print(redox2)
    12 H+ + 4 MnO4- = 6 H2O + 4 Mn+2 + 5 O2; K1**4*Kw**20/K2**5
 
+Working with units
+~~~~~~~~~~~~~~~~~~
+Functions and objects useful
+for working with units are available from the ``chempy.units`` module. Here is an
+example of how ChemPy can check consistency of units:
+
+.. code:: python
+
+   >>> from chempy import Reaction
+   >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4/M/s")
+   Traceback (most recent call last):
+   ...
+   ValueError: Check failed: 'consistent_units'
+   >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4/s")
+   >>> from chempy.units import to_unitless, default_units as u
+   >>> to_unitless(r.param, 1/u.minute)
+   0.006
+
+right now the ``.units`` module wraps the quantities_ package with some minor
+additions and work-arounds. However, there is no guarantee that the underlying
+package will not change in a future version of ChemPy (there are many packages
+for dealing with units in the scientific Python ecosystem).
+
+.. _quantities: http://python-quantities.readthedocs.io/en/latest/
+
 
 Chemical equilibria
 ~~~~~~~~~~~~~~~~~~~
@@ -214,36 +239,38 @@ Chemical equilibria
    1, 0.0013, 7.6e-12, 0.099, 0.0013
 
 
-Ionic strength
-~~~~~~~~~~~~~~
+Concepcts
+~~~~~~~~~
+ChemPy collects equations and utility functions for working with
+concepts such as `ionic strength <https://en.wikipedia.org/wiki/Ionic_strength>`_:
+
 .. code:: python
 
    >>> from chempy.electrolytes import ionic_strength
    >>> ionic_strength({'Fe+3': 0.050, 'ClO4-': 0.150}) == .3
    True
 
-Working with units
-~~~~~~~~~~~~~~~~~~
-ChemPy wraps the `quantities <>`_ package with some minor additions
-and work-arounds. Functions and objects useful for working with units
-are available from the ``chempy.units`` module. Here is an example
-of how ChemPy can check consistency of units:
+note how ChemPy parsed the charges from the names of the substances. There are
+also e.g. empirical equations and convenience classes for them available, e.g.:
 
 .. code:: python
 
-   >>> from chempy import Reaction
-   >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4/M/s")
-   Traceback (most recent call last):
-   ...
-   ValueError: Check failed: 'consistent_units'
-   >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4/s")
-   >>> from chempy.units import to_unitless, default_units as u
-   >>> to_unitless(r.param, 1/u.minute)
-   0.006
+   >>> from chempy.henry import Henry
+   >>> kH_O2 = Henry(1.2e-3, 1800, ref='carpenter_1966')
+   >>> print('%.1g' % kH_O2(298.15))
+   1.2e-3
+
+to get more information about e.g. this class, you may can look at the API
+`documentation <https://bjodah.github.io/chempy/latest/chempy.html#module-chempy.henry>`_ .
 
 
 Chemical kinetics (system of ordinary differential equations)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A common task when modelling problems in chemistry is to investigate the time dependence
+of a system. This branch of study is known as
+`chemical kinetics <https://en.wikipedia.org/wiki/Chemical_kinetics>`_, and ChemPy has
+some classes and functions for working with such problems:
+
 .. code:: python
 
    >>> from chempy import ReactionSystem  # The rate constants below are arbitrary
@@ -275,6 +302,10 @@ Chemical kinetics (system of ordinary differential equations)
 
 Properties
 ~~~~~~~~~~
+One of the fundamental tasks in science is the careful collection of data about the world
+around us. ChemPy contains a growing collection of parametrizations from the scientific
+litterature with relevance in chemistry. Here is how you use one of these formulations:
+
 .. code:: python
 
    >>> from chempy import Substance
