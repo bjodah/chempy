@@ -6,6 +6,7 @@
 VERSION=${1#v}
 SERVER=$2
 GITHUBUSER=$3
+./scripts/check_clean_repo_on_master.sh
 PKG=$(find . -maxdepth 2 -name __init__.py -print0 | xargs -0 -n1 dirname | xargs basename)
 PKG_UPPER=$(echo $PKG | tr '[:lower:]' '[:upper:]')
 SDIST_FILE=dist/${PKG}-$VERSION.tar.gz

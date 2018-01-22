@@ -1,3 +1,7 @@
+v0.6.1
+======
+- Extensive test suite in conda pacakge no longer require graphviz & latex
+
 v0.6.0
 ======
 - ``balance_stoichiometry`` now accepts either of ``True``, ``False``, ``None`` as ``underdetermined``.

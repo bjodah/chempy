@@ -13,6 +13,11 @@ from chempy import Reaction, ReactionSystem, Substance
 from ..graph import rsys2dot, rsys2graph
 from ..testing import requires
 
+try:
+    dot_missing = subprocess.call(['dot', '--version']) != 0
+except OSError:
+    dot_missing = True
+
 
 def _get_rsys():
     r1 = Reaction({'A': 2}, {'B': 1}, param=3.0)
@@ -23,6 +28,7 @@ def _get_rsys():
 
 
 @requires('numpy')
+@pytest.mark.skipif(dot_missing, reason='graphviz not installed? (dot command missing)')
 def test_rsys2dot():
     rsys = _get_rsys()
     assert list(map(str.strip, rsys2dot(rsys))) == [
