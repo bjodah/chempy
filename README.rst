@@ -239,7 +239,7 @@ Chemical equilibria
    1, 0.0013, 7.6e-12, 0.099, 0.0013
 
 
-Concepcts
+Concepts
 ~~~~~~~~~
 ChemPy collects equations and utility functions for working with
 concepts such as `ionic strength <https://en.wikipedia.org/wiki/Ionic_strength>`_:
@@ -257,7 +257,7 @@ also e.g. empirical equations and convenience classes for them available, e.g.:
 
    >>> from chempy.henry import Henry
    >>> kH_O2 = Henry(1.2e-3, 1800, ref='carpenter_1966')
-   >>> print('%.1g' % kH_O2(298.15))
+   >>> print('%.1e' % kH_O2(298.15))
    1.2e-3
 
 to get more information about e.g. this class, you may can look at the API
