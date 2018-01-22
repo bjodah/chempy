@@ -258,7 +258,7 @@ also e.g. empirical equations and convenience classes for them available, e.g.:
    >>> from chempy.henry import Henry
    >>> kH_O2 = Henry(1.2e-3, 1800, ref='carpenter_1966')
    >>> print('%.1e' % kH_O2(298.15))
-   1.2e-3
+   1.2e-03
 
 to get more information about e.g. this class, you may can look at the API
 `documentation <https://bjodah.github.io/chempy/latest/chempy.html#module-chempy.henry>`_ .
@@ -321,8 +321,18 @@ litterature with relevance in chemistry. Here is how you use one of these formul
    [H2O] = 55.18 M (at 35 °C)
 
 
-License
--------
+Run notebooks using binder
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using only a web-browser (and an internet connection) it is possible to explore the
+notebooks here: (by the courtesy of the people behind mybinder)
+
+.. image:: http://mybinder.org/badge.svg
+   :target: https://mybinder.org/v2/gh/bjodah/chempy/0bd22289c734ab7ae908d1b03bdcaaa9463f5677?filepath=index.ipynb
+   :alt: Binder
+
+
+Licensing
+---------
 The source code is Open Source and is released under the very permissive
 `"simplified (2-clause) BSD license" <https://opensource.org/licenses/BSD-2-Clause>`_.
 See `LICENSE <LICENSE>`_ for further details.
