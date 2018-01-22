@@ -18,5 +18,5 @@ RUN apt-get update && \
     curl -LOs http://dl.bintray.com/boostorg/release/1.65.0/source/boost_1_65_0.tar.bz2 && \
     tar xjf boost_*.tar.bz2 && cd boost* && ./bootstrap.sh && ./b2 -j 2 --prefix=/usr/local/ install && cd -
 
-# At this point the system should be able to pip-install the pakcage and all of its dependencies. We'll do so
+# At this point the system should be able to pip-install the package and all of its dependencies. We'll do so
 # when running the image using the ``host-jupyter-using-docker.sh`` script. Installed packages are cached.

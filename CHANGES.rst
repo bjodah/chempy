@@ -1,6 +1,14 @@
 v0.6.0
 ======
-- balance_stoichiometry now accepts either of True, False, None as ``underdetermined``.
+- ``balance_stoichiometry`` now accepts either of ``True``, ``False``, ``None`` as ``underdetermined``.
+- ``NameSpace`` and ``AttributeContainer`` are now public in ``.util.pyutil``.
+- New printers in ``chempy.printing``, allows user to subclass printers.
+- Jupyter Notebook representation of ``ReactionSystem`` is now interactive (JavaScript/CSS)
+- More data from the litterature: water viscosity (``chempy.properties.water_viscosity_korson_1969``).
+- New methods for ``ReactionSystem``:
+  - ``split``: splits reaction-system into disjoint parts
+  - ``categorize_substances``: e.g. "nonparticipating", "unaffected".
+- Better documentation throughout.
 
 v0.5.7
 ======

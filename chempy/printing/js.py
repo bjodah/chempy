@@ -28,7 +28,8 @@ function resetTab(tab){
     [].forEach.call(rows, function(row){
         row.style.display = "table-row";
     });
-    tab.getElementsByTagName('th')[0].innerHTML = tab.ori_header;
+    tab.getElementsByTagName('th')[0].innerHTML = tab.ori_header +
+        "<br>(click on species to show a subset of reactions)";
 };
 
 for(var k = 0; k < nsubstances; k++) {
@@ -62,6 +63,9 @@ var chempy_tabs = document.querySelectorAll('table.chempy_%(rsys_id)d');
     tab.ondblclick = function(){
         resetTab(this);
     };
+});
+[].forEach.call(chempy_tabs, function(tab){
+    resetTab(tab);
 });
 """
 
