@@ -103,7 +103,7 @@ def test_Reaction():
     assert r5 == r4
     assert r5 != r1
 
-    lhs5, rhs5 = {'H+': 1, 'OH-': 1}, {'H2O'}
+    lhs5, rhs5 = {'H+': 1, 'OH-': 1}, {'H2O': 1}
     r5 = Reaction(lhs5, rhs5)
     assert r5.reac == lhs5 and r5.prod == rhs5
 
@@ -292,6 +292,15 @@ def test_balance_stoichiometry__underdetermined():
     assert bal1 == ({'C21H27N7O14P2-2': 1, 'H+': 1, 'C7H5O3-': 1, 'O2': 1},
                     {'C21H26N7O14P2-': 1, 'H2O': 1, 'C7H5O4-': 1})
 
+
+@requires('sympy')
+@pytest.mark.xfail
+def test_balance_stoichiometry__underdetermined__canoncial():
+    # This tests for canoncial representation of the underdetermined system
+    # where all coefficients are integer and >= 1. It is however of limited
+    # practical use (and hence marked ``xfail``) since underdetermined systems
+    # have infinite number of solutions. It should however be possible to rewrite
+    # the logic so that such canoncial results are returned from balance_stoichiometry
     r2 = {'O2', 'O3', 'C', 'NO', 'N2O', 'NO2', 'N2O4'}
     p2 = {'CO', 'CO2', 'N2'}
     bal2 = balance_stoichiometry(r2, p2, underdetermined=None)
