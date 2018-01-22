@@ -1122,8 +1122,8 @@ def balance_stoichiometry(reactants, products, substances=None,
         ...
     ValueError: The system was under-determined
     >>> r, p = balance_stoichiometry({'Fe', 'O2'}, {'FeO', 'Fe2O3'})
-    >>> set.union(*[v.free_symbols for v in r.values()])
-    set([x1])
+    >>> list(set.union(*[v.free_symbols for v in r.values()]))
+    [x1]
     >>> b = balance_stoichiometry({'Fe', 'O2'}, {'FeO', 'Fe2O3'}, underdetermined=None)
     >>> b == ({'Fe': 3, 'O2': 2}, {'FeO': 1, 'Fe2O3': 1})
     True

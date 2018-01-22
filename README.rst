@@ -128,9 +128,9 @@ Balancing stoichiometry of a chemical reaction
    >>> from chempy import balance_stoichiometry  # Main reaction in NASA's booster rockets:
    >>> reac, prod = balance_stoichiometry({'NH4ClO4', 'Al'}, {'Al2O3', 'HCl', 'H2O', 'N2'})
    >>> from pprint import pprint
-   >>> pprint(reac)
+   >>> pprint(dict(reac))
    {'Al': 10, 'NH4ClO4': 6}
-   >>> pprint(prod)
+   >>> pprint(dict(prod))
    {'Al2O3': 5, 'H2O': 9, 'HCl': 6, 'N2': 3}
    >>> from chempy import mass_fractions
    >>> for fractions in map(mass_fractions, [reac, prod]):
@@ -143,16 +143,16 @@ ChemPy can even handle Reactions with linear dependencies (underdetermined syste
 
 .. code:: python
 
-   >>> pprint(balance_stoichiometry({'C', 'O2'}, {'CO2', 'CO'}))
-   ({'C': x1 + 2, 'O2': x1 + 1}, {'CO': 2, 'CO2': x1})
+   >>> pprint([dict(_) for _ in balance_stoichiometry({'C', 'O2'}, {'CO2', 'CO'})])
+   [{'C': x1 + 2, 'O2': x1 + 1}, {'CO': 2, 'CO2': x1}]
 
 that ``x1`` object is an instance of SymPy's Symbol_. If we prefer to get a solution
 with minimal (non-zero) integer coefficients we can pass ``underdetermined=None``:
 
 .. code:: python
 
-   >>> pprint(balance_stoichiometry({'C', 'O2'}, {'CO2', 'CO'}, underdetermined=None))
-   ({'C': 3, 'O2': 2}, {'CO': 2, 'CO2': 1})
+   >>> pprint([dict(_) for _ in balance_stoichiometry({'C', 'O2'}, {'CO2', 'CO'}, underdetermined=None)])
+   [{'C': 3, 'O2': 2}, {'CO': 2, 'CO2': 1}]
 
 note however that even though this solution is in some sense "canonical",
 it is merely one of an inifite number of solutions (any integer x1 is valid).
@@ -169,9 +169,9 @@ illustrative example would be how to make pancakes without any partially used pa
    ...     Substance('milk_carton', composition=dict(cups_of_milk=4)),
    ...     Substance('flour_bag', composition=dict(spoons_of_flour=60))
    ... ]}
-   >>> pprint(balance_stoichiometry({'eggs_6pack', 'milk_carton', 'flour_bag'}, {'pancake'},
-   ...                              substances=substances))
-   ({'eggs_6pack': 10, 'flour_bag': 2, 'milk_carton': 15}, {'pancake': 60})
+   >>> pprint([dict(_) for _ in balance_stoichiometry({'eggs_6pack', 'milk_carton', 'flour_bag'},
+   ...                                                {'pancake'}, substances=substances)])
+   [{'eggs_6pack': 10, 'flour_bag': 2, 'milk_carton': 15}, {'pancake': 60}]
 
 .. _Symbol: http://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol
 
@@ -190,14 +190,14 @@ Balancing reactions
    [4, -5]
    >>> redox = e1*coeff[0] + e2*coeff[1]
    >>> print(redox)
-   20 OH- + 32 H+ + 4 MnO4- = 26 H2O + 4 Mn+2 + 5 O2; K1**4/K2**5
+   32 H+ + 4 MnO4- + 20 OH- = 26 H2O + 4 Mn+2 + 5 O2; K1**4/K2**5
    >>> autoprot = Equilibrium({'H2O': 1}, {'H+': 1, 'OH-': 1}, Kw)
    >>> n = redox.cancel(autoprot)
    >>> n
    20
    >>> redox2 = redox + n*autoprot
    >>> print(redox2)
-   12 H+ + 4 MnO4- = 4 Mn+2 + 5 O2 + 6 H2O; K1**4*Kw**20/K2**5
+   12 H+ + 4 MnO4- = 6 H2O + 4 Mn+2 + 5 O2; K1**4*Kw**20/K2**5
 
 
 Chemical equilibria
@@ -229,6 +229,26 @@ Ionic strength
    >>> from chempy.electrolytes import ionic_strength
    >>> ionic_strength({'Fe+3': 0.050, 'ClO4-': 0.150}) == .3
    True
+
+Working with units
+~~~~~~~~~~~~~~~~~~
+ChemPy wraps the `quantities <>`_ package with some minor additions
+and work-arounds. Functions and objects useful for working with units
+are available from the ``chempy.units`` module. Here is an example
+of how ChemPy can check consistency of units:
+
+.. code:: python
+
+   >>> from chempy import Reaction
+   >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4/M/s")
+   Traceback (most recent call last):
+   ...
+   ValueError: Check failed: 'consistent_units'
+   >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4/s")
+   >>> from chempy.units import to_unitless, default_units as u
+   >>> to_unitless(r.param, 1/u.minute)
+   0.006
+
 
 Chemical kinetics (system of ordinary differential equations)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
