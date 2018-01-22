@@ -139,23 +139,15 @@ Balancing stoichiometry of a chemical reaction
    {'Al': '27.7 wt%', 'NH4ClO4': '72.3 wt%'}
    {'Al2O3': '52.3 wt%', 'H2O': '16.6 wt%', 'HCl': '22.4 wt%', 'N2': '8.62 wt%'}
 
-ChemPy can even handle Reactions with linear dependencies (underdetermined systems), e.g.:
+ChemPy can even handle reactions with linear dependencies (underdetermined systems), e.g.:
 
 .. code:: python
 
-   >>> pprint([dict(_) for _ in balance_stoichiometry({'C', 'O2'}, {'CO2', 'CO'})])
+   >>> pprint([dict(_) for _ in balance_stoichiometry({'C', 'O2'}, {'CO2', 'CO'})])  # doctest: +SKIP
    [{'C': x1 + 2, 'O2': x1 + 1}, {'CO': 2, 'CO2': x1}]
 
-that ``x1`` object is an instance of SymPy's Symbol_. If we prefer to get a solution
-with minimal (non-zero) integer coefficients we can pass ``underdetermined=None``:
+that ``x1`` object is an instance of SymPy's Symbol_.
 
-.. code:: python
-
-   >>> pprint([dict(_) for _ in balance_stoichiometry({'C', 'O2'}, {'CO2', 'CO'}, underdetermined=None)])
-   [{'C': 3, 'O2': 2}, {'CO': 2, 'CO2': 1}]
-
-note however that even though this solution is in some sense "canonical",
-it is merely one of an inifite number of solutions (any integer x1 is valid).
 
 ChemPy can also balance reactions where the reacting species are more complex and
 are better described in other terms than their molecular formula. A silly, yet

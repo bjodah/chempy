@@ -312,6 +312,7 @@ def test_balance_stoichiometry__underdetermined__canoncial():
     assert bal2 == ref2
 
 
+@requires('sympy')
 def test_balance_stoichiometry__substances__underdetermined():
     substances = {s.name: s for s in [
         Substance('eggs_6pack', composition=dict(eggs=6)),
