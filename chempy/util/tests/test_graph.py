@@ -47,6 +47,7 @@ def test_rsys2dot():
 
 @pytest.mark.slow
 @requires('numpy')
+@pytest.mark.skipif(dot_missing, reason='graphviz not installed? (dot command missing)')
 def test_rsys2graph():
     rsys = _get_rsys()
     tempdir = tempfile.mkdtemp()

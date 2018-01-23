@@ -1,3 +1,7 @@
+v0.6.2
+======
+- More relaxed tests with respect to 3rd party programs
+
 v0.6.1
 ======
 - Extensive test suite in conda pacakge no longer require graphviz & latex
