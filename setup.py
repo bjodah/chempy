@@ -101,7 +101,7 @@ extras_req = {
     'solvers': ['pykinsol'],
     'native': ['pycompilation>=0.4.3', 'pycodeexport>=0.1.1', 'appdirs'],
     'docs': ['Sphinx', 'sphinx_rtd_theme', 'numpydoc'],
-    'plotting': ['bokeh>=0.11.1'],
+    'plotting': ['bokeh>=0.11.1', 'ipywidgets'],
     'testing': ['pytest', 'pytest-cov', 'pytest-flakes', 'pytest-pep8']
 }
 extras_req['all'] = list(chain(extras_req.values())) + ['argh']
