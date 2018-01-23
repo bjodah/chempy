@@ -13,6 +13,8 @@ dependencies:
   - quantities >=0.12.1
   - pyneqsys >=0.4.4
   - pyodesys >=0.11.6
+  - pycompilation >=0.4.3
+  - pycodeexport >=0.1.1
   - pycvodes >=0.9.1
   - pygslodeiv2 >=0.8.0
   - pyodeint >=0.9.0
