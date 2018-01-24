@@ -7,7 +7,7 @@ ENV LANG C.UTF-8
 # This dockerfile is designed to run on binder (mybinder.org)
 RUN apt-get update && \
     apt-get --quiet --assume-yes install curl git g++-6 libgmp-dev binutils-dev bzip2 make cmake sudo \
-    python-dev python-pip libgsl-dev liblapack-dev && \
+    python-dev python-pip libgsl-dev liblapack-dev graphviz && \
     apt-get clean && \
     curl -LOs http://computation.llnl.gov/projects/sundials/download/sundials-2.7.0.tar.gz && \ 
     tar xzf sundials-2.7.0.tar.gz && mkdir build/ && cd build/ && \
