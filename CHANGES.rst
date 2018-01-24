@@ -1,3 +1,7 @@
+v0.6.3
+======
+- Fix bug in Reaction.check_consistent_units
+
 v0.6.2
 ======
 - More relaxed tests with respect to 3rd party programs
