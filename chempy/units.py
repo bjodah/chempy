@@ -387,13 +387,13 @@ def allclose(a, b, rtol=1e-8, atol=None):
     """ Analogous to ``numpy.allclose``. """
     try:
         d = abs(a - b)
-    except:
+    except Exception:
         try:
             if len(a) == len(b):
                 return all(allclose(_a, _b, rtol, atol) for _a, _b in zip(a, b))
             else:
                 return False
-        except:
+        except Exception:
             return False
     lim = abs(a)*rtol
     if atol is not None:
