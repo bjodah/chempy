@@ -47,7 +47,7 @@ def format_units_html(udict, font='%s', mult=r'&sdot;', paren=False):
 def _patch_pow0_py35(pq):
     try:
         pq.metre**0
-    except:
+    except Exception:
         pq.quantity.Quantity.__pow__ = pq.quantity.check_uniform(lambda self, other: np.power(self, other))
 
 

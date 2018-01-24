@@ -118,6 +118,13 @@ def test_Reaction_parsing():
     r6 = Reaction.from_string('->', checks=())
     assert r6.reac == {} and r6.prod == {}
 
+    r7 = Reaction.from_string('2 A -> B; 2e-3*metre**3/mol/hour', None)
+    assert r7.reac == {'A': 2} and r7.prod == {'B': 1}
+    assert r7.param == 2e-3*default_units.metre**3/default_units.mol/default_units.hour
+
+    with pytest.raises(ValueError):
+        Reaction.from_string('2 A -> B; 2e-3/hour', None)
+
 
 @requires(parsing_library, units_library)
 def test_Substance__molar_mass():

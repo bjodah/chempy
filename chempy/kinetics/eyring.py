@@ -147,7 +147,7 @@ class EyringParam(defaultnamedtuple('EyringParam', 'dH dS ref', [None])):
         try:
             str_A, str_A_unit = format_string(self.A, precision, tex)
             str_Ea, str_Ea_unit = format_string(self.Ea, precision, tex)
-        except:
+        except Exception:
             str_A, str_A_unit = precision.format(self.A), '-'
             str_Ea, str_Ea_unit = precision.format(self.Ea), '-'
         return (str_A, str_A_unit), (str_Ea, str_Ea_unit)
