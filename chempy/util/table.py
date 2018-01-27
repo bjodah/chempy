@@ -176,7 +176,7 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
                     k = k_fmt % to_unitless(rxn.param, kunit)
                     k_unit_str = (kunit.dimensionality.latex.strip('$') if tex
                                   else kunit.dimensionality)
-                except:
+                except Exception:
                     k, k_unit_str = rxn.param.equation_as_string(k_fmt, tex)
             else:
                 k_unit_str = '-'

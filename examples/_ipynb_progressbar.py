@@ -44,7 +44,7 @@ def log_progress(sequence, every=None, size=None, name='Items'):
                         size=size
                     )
             yield record
-    except:
+    except Exception:
         progress.bar_style = 'danger'
         raise
     else:

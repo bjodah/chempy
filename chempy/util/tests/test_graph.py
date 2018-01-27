@@ -56,7 +56,7 @@ def test_rsys2graph():
         rsys2graph(rsys, os.path.join(tempdir, 'out.ps'))
         try:
             subprocess.call(['dot2tex', '-v'])
-        except:
+        except Exception:
             pass
         else:
             rsys2graph(rsys, os.path.join(tempdir, 'out.tex'))

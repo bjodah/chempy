@@ -1,0 +1,23 @@
+{
+  "@context": "https://raw.githubusercontent.com/codemeta/codemeta/master/codemeta.jsonld",
+  "@type": "Code",
+  "author": [
+    {
+      "@id": "https://orcid.org/0000-0003-0596-0222",
+      "@type": "Person",
+      "email": "bjodah@gmail.com",
+      "name": "Björn Dahlgren",
+      "affiliation": "KTH Royal Institute of Technology"
+    }
+  ],
+  "identifier": "http://dx.doi.org/10.5281/zenodo.1158716",
+  "codeRepository": "https://github.com/bjodah/chempy",
+  "datePublished": "2018-01-26",
+  "dateModified": "2018-01-26",
+  "dateCreated": "2018-01-26",
+  "description": "A package useful for chemistry written in Python",
+  "keywords": "chemistry, physical chemistry",
+  "license": "BSD",
+  "title": "ChemPy",
+  "version": "v0.6.3"
+}

@@ -95,6 +95,23 @@ to have the following libraries installed (including their development headers):
 if you want to see what packages need to be installed on a Debian based system you may look at this
 `Dockerfile <scripts/environment/Dockerfile>`_.
 
+Using Docker
+~~~~~~~~~~~~
+If you have `Docker <https://www.docker.com>`_ installed, you may use it to host a jupyter
+notebook server::
+
+  $ ./scripts/host-jupyter-using-docker.sh . 8888
+
+the first time you run the command, some dependencies will be downloaded. When the installation
+is complete there will be a link visible which you can open in your browser. You can also run
+the test suite using the same docker-image::
+
+  $ ./scripts/host-jupyter-using-docker.sh . 0
+
+there will be one skipped test (due to symengine missing in this pip installed environment) and
+quite a few instances of RintimeWarning.
+
+
 Examples
 --------
 See demonstration scripts in `examples/ <https://github.com/bjodah/chempy/tree/master/examples>`_,
@@ -326,7 +343,7 @@ Using only a web-browser (and an internet connection) it is possible to explore 
 notebooks here: (by the courtesy of the people behind mybinder)
 
 .. image:: http://mybinder.org/badge.svg
-   :target: https://mybinder.org/v2/gh/bjodah/chempy/50e1e69b790fc69e5a945c2090de3d9dc636c728?filepath=index.ipynb
+   :target: https://mybinder.org/v2/gh/bjodah/chempy/181c41cec04bf2d41a64d2c2bb55b4ac112bf46f?filepath=index.ipynb
    :alt: Binder
 
 

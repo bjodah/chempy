@@ -3,7 +3,7 @@ from __future__ import (absolute_import, division, print_function)
 
 try:
     import numpy as np
-except:
+except ImportError:
     np = None
 
 from .chemistry import equilibrium_quotient

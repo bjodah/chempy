@@ -16,7 +16,7 @@ from .util.parsing import (
     formula_to_latex, formula_to_unicode, formula_to_html
 )
 
-from .units import default_units, is_quantity, unit_of
+from .units import default_units, is_quantity, unit_of, to_unitless
 from ._util import intdiv
 from .util.pyutil import deprecated, DeferredImport, ChemPyDeprecationWarning
 
@@ -515,8 +515,13 @@ class Reaction(object):
 
     def check_consistent_units(self):
         if is_quantity(self.param):  # This will assume mass action
-            return unit_of(self.param, simplified=True) == unit_of(
-                default_units.molar**(1-self.order())/default_units.s, simplified=True)
+            try:
+                to_unitless(self.param/(
+                    default_units.molar**(1-self.order())/default_units.s))
+            except Exception:
+                return False
+            else:
+                return True
         else:
             return True  # the user might not be using ``chempy.units``
 
