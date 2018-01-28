@@ -419,6 +419,23 @@ def test_Expr__no_args():
     assert abs(res - ref) < 1e-14
 
 
+@requires(units_library)
+def test_Expr__equality():
+    K1 = MyK(unique_keys=('H1', 'S1'))
+    K2 = MyK(unique_keys=('H2', 'S2'))
+    assert K1 != K2
+    assert K1 == K1
+    K3 = MyK([23e3*u.J/u.mol, 42*u.J/u.mol/u.K])
+    K4 = MyK([23e3, 42])
+    K5 = MyK([24e3*u.J/u.mol, 42*u.J/u.mol/u.K])
+    K6 = MyK([23e3, 43])
+    assert K3 == K3
+    assert K4 == K4
+    assert K5 != K3
+    assert K4 != K6
+    assert K3 != K4
+
+
 @requires('sympy')
 def test_Expr__no_args__symbolic():
     K1 = MyK(unique_keys=('H1', 'S1'))
