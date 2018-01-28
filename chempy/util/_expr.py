@@ -381,10 +381,18 @@ class Expr(object):
     def __eq__(self, other):
         if self.__class__ != other.__class__:
             return False
+        if self.args is None and other.args is None:
+            for uk1, uk2 in zip(self.unique_keys, other.unique_keys):
+                if uk1 != uk2:
+                    return False
+            return True
+        if self.args is None or other.args is None:
+            return False
         if len(self.args) != len(other.args):
             return False
+        from ..units import compare_equality
         for arg0, arg1 in zip(self.args, other.args):
-            if arg0 != arg1:
+            if not compare_equality(arg0, arg1):
                 return False
         return True
 

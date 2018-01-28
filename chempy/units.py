@@ -382,6 +382,26 @@ def unitless_in_registry(value, registry):
 
 # NumPy like functions for compatibility:
 
+def compare_equality(a, b):
+    # Work around for https://github.com/python-quantities/python-quantities/issues/146
+    try:
+        a + b
+    except TypeError:
+        # We might be dealing with e.g. None (None + None raises TypeError)
+        try:
+            len(a)
+        except TypeError:
+            # Assumed scalar
+            return a == b
+        else:
+            if len(a) != len(b):
+                return False
+            return all(compare_equality(_a, _b) for _a, _b in zip(a, b))
+    except ValueError:
+        return False
+    else:
+        return a == b
+
 
 def allclose(a, b, rtol=1e-8, atol=None):
     """ Analogous to ``numpy.allclose``. """

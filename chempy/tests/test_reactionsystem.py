@@ -178,6 +178,16 @@ def test_ReactionSystem__from_string():
     assert r2.reac == {'H2O': 2, 'H+': 1}
     assert r2.prod == {'H2O': 1, 'H3O+': 1}
 
+    r3, = ReactionSystem.from_string('(H2O) -> e-(aq) + H+ + OH; Radiolytic(2.1e-7*mol/J)').rxns
+    assert len(r3.reac) == 0 and r3.inact_reac == {'H2O': 1}
+    assert r3.prod == {'e-(aq)': 1, 'H+': 1, 'OH': 1}
+    from chempy.kinetics.rates import Radiolytic
+    mol, J = default_units.mol, default_units.J
+    assert r3.param == Radiolytic(2.1e-7*mol/J)
+    assert r3.param != Radiolytic(2.0e-7*mol/J)
+    assert r3.param != Radiolytic(2.1e-7)
+    assert r3.order() == 0
+
 
 @requires(parsing_library)
 def test_ReactionSystem__from_string__string_rate_const():

@@ -15,7 +15,7 @@ from ..units import (
     SI_base_registry, unitless_in_registry, format_string, get_physical_quantity,
     to_unitless, magnitude, default_unit_in_registry, Backend, latex_of_unit,
     unit_of, unit_registry_to_human_readable, units_library, simplified,
-    unit_registry_from_human_readable, _sum, UncertainQuantity,
+    unit_registry_from_human_readable, _sum, UncertainQuantity, compare_equality,
     default_units as u, patched_numpy as pnp, default_constants as dc
 )
 
@@ -299,6 +299,23 @@ def test_unitless_in_registry():
     mag = magnitude(unitless_in_registry(3*u.per100eV, SI_base_registry))
     ref = 3*1.0364268834527753e-07
     assert abs(mag - ref) < 1e-14
+
+
+@requires(units_library)
+def test_compare_equality():
+    assert compare_equality(3*u.m, 3*u.m)
+    assert compare_equality(3*u.m, 3e-3*u.km)
+    assert compare_equality(3e+3*u.mm, 3*u.m)
+    assert not compare_equality(3*u.m, 2*u.m)
+    assert not compare_equality(3*u.m, 3*u.s)
+    assert not compare_equality(3*u.m, 3*u.m**2)
+    assert not compare_equality(3*u.m, np.array(3))
+    assert not compare_equality(np.array(3), 3*u.m)
+    assert compare_equality([3, None], [3, None])
+    assert not compare_equality([3, None, 3], [3, None, None])
+    assert not compare_equality([None, None, 3], [None, None, 2])
+    assert compare_equality([3*u.m, None], [3, None])
+    assert not compare_equality([3*u.m, None], [3*u.km, None])
 
 
 @requires(units_library)
