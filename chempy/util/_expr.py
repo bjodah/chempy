@@ -523,7 +523,7 @@ class UnaryFunction(Function):
         return getattr(backend, self._func_name)(arg)
 
     def rate_coeff(self, *args, **kwargs):
-        return getattr(backend, self._func_name)(self.args[0].rate_coeff(*args, **kwargs))
+        return getattr(kwargs.get('backend', math), self._func_name)(self.args[0].rate_coeff(*args, **kwargs))
 
 
 class BinaryFunction(Function):
