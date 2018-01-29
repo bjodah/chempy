@@ -1,0 +1,331 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.printing.js &mdash; chempy 0.6.4 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="chempy 0.6.4 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.6.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">chempy</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>chempy.printing.js</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <a href="https://github.com/bjodah/chempy/blob/v0.6.4/doc/_modules/chempy/printing/js.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.printing.js</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">.web</span> <span class="k">import</span> <span class="n">CSSPrinter</span><span class="p">,</span> <span class="n">_html_clsname</span>
+
+<span class="n">_js_rsys_template</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">var cls_names_substances = </span><span class="si">%(cls_names_substances)s</span><span class="s2">;</span>
+<span class="s2">var substance_row_cls_irrel = </span><span class="si">%(substance_row_cls_irrel)s</span><span class="s2">;</span>
+<span class="s2">var elms = </span><span class="si">{}</span><span class="s2">;</span>
+<span class="s2">var n = </span><span class="si">{}</span><span class="s2">, nsubstances = cls_names_substances.length;</span>
+<span class="s2">var nirrel = </span><span class="si">{}</span><span class="s2">;</span>
+<span class="s2">function changeColor(classname, color) {</span>
+<span class="s2">    var curN = n[classname];</span>
+<span class="s2">    for(var i = 0; i &lt; curN; i++) {</span>
+<span class="s2">        elms[classname][i].style.backgroundColor = color;</span>
+<span class="s2">    }</span>
+<span class="s2">}</span>
+<span class="s2">function toggleVisibility(classname_substance) {</span>
+<span class="s2">    var curN = nirrel[classname_substance];</span>
+<span class="s2">    for (var i=0; i&lt;curN; i++) {</span>
+<span class="s2">        var objs = document.getElementsByClassName(substance_row_cls_irrel[classname_substance][i]);</span>
+<span class="s2">        for (var j=0; j&lt;objs.length; ++j){</span>
+<span class="s2">            objs[j].style.display = objs[j].style.display == &quot;none&quot; ? &quot;table-row&quot; : &quot;none&quot;;</span>
+<span class="s2">        }</span>
+<span class="s2">    }</span>
+<span class="s2">}</span>
+<span class="s2">function resetTab(tab){</span>
+<span class="s2">    tab.style.border = &quot;0px&quot;;</span>
+<span class="s2">    var rows = tab.getElementsByTagName(&#39;tr&#39;);</span>
+<span class="s2">    [].forEach.call(rows, function(row){</span>
+<span class="s2">        row.style.display = &quot;table-row&quot;;</span>
+<span class="s2">    });</span>
+<span class="s2">    tab.getElementsByTagName(&#39;th&#39;)[0].innerHTML = tab.ori_header +</span>
+<span class="s2">        &quot;&lt;br&gt;(click on species to show a subset of reactions)&quot;;</span>
+<span class="s2">};</span>
+
+<span class="s2">for(var k = 0; k &lt; nsubstances; k++) {</span>
+<span class="s2">    var curClass = cls_names_substances[k];</span>
+<span class="s2">    var curIrrel = substance_row_cls_irrel[k];</span>
+<span class="s2">    elms[curClass] = document.getElementsByClassName(curClass);</span>
+<span class="s2">    n[curClass] = elms[curClass].length;</span>
+<span class="s2">    nirrel[curClass] = substance_row_cls_irrel[curClass].length;</span>
+<span class="s2">    var curN = n[curClass];</span>
+<span class="s2">    for(var i = 0; i &lt; curN; i++) {</span>
+<span class="s2">        elms[curClass][i].onmouseover = function() {</span>
+<span class="s2">            changeColor(this.className, &quot;LightBlue&quot;);</span>
+<span class="s2">        };</span>
+<span class="s2">        elms[curClass][i].onmouseout = function() {</span>
+<span class="s2">            changeColor(this.className, &quot;inherit&quot;);</span>
+<span class="s2">        };</span>
+<span class="s2">        elms[curClass][i].onclick = function() {</span>
+<span class="s2">            var tab = this.closest(&quot;table&quot;);</span>
+<span class="s2">            resetTab(tab);</span>
+<span class="s2">            tab.style.border = &quot;1px dashed #000000&quot;;</span>
+<span class="s2">            toggleVisibility(this.className);</span>
+<span class="s2">            tab.getElementsByTagName(&#39;th&#39;)[0].innerHTML = tab.ori_header +</span>
+<span class="s2">                 &quot;&lt;br&gt;Only showing reactions involving: &quot; + this.innerHTML +</span>
+<span class="s2">                 &quot; (double-click to reset)&quot;;</span>
+<span class="s2">        };</span>
+<span class="s2">    }</span>
+<span class="s2">};</span>
+<span class="s2">var chempy_tabs = document.querySelectorAll(&#39;table.chempy_</span><span class="si">%(rsys_id)d</span><span class="s2">&#39;);</span>
+<span class="s2">[].forEach.call(chempy_tabs, function(tab){</span>
+<span class="s2">    tab.ori_header = tab.getElementsByTagName(&#39;th&#39;)[0].innerHTML;</span>
+<span class="s2">    tab.ondblclick = function(){</span>
+<span class="s2">        resetTab(this);</span>
+<span class="s2">    };</span>
+<span class="s2">});</span>
+<span class="s2">[].forEach.call(chempy_tabs, function(tab){</span>
+<span class="s2">    resetTab(tab);</span>
+<span class="s2">});</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">_js_rsys</span><span class="p">(</span><span class="n">cls_names_substances</span><span class="p">,</span> <span class="n">substance_row_cls_irrel</span><span class="p">,</span> <span class="n">rsys_id</span><span class="p">):</span>
+    <span class="c1"># from https://stackoverflow.com/a/12786869/790973</span>
+    <span class="k">if</span> <span class="n">cls_names_substances</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">_js_rsys_template</span> <span class="o">%</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">cls_names_substances</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">cls_names_substances</span><span class="p">),</span>
+        <span class="n">substance_row_cls_irrel</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">substance_row_cls_irrel</span><span class="p">),</span>
+        <span class="n">rsys_id</span><span class="o">=</span><span class="n">rsys_id</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="JSPrinter"><a class="viewcode-back" href="../../../chempy.printing.html#chempy.printing.js.JSPrinter">[docs]</a><span class="k">class</span> <span class="nc">JSPrinter</span><span class="p">(</span><span class="n">CSSPrinter</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Prints javascript-enabled HTML representaions &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_print_ReactionSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rsys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">tab</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">JSPrinter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_print_ReactionSystem</span><span class="p">(</span><span class="n">rsys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">_script_tag</span> <span class="o">=</span> <span class="s1">&#39;&lt;script type=&quot;text/javascript&quot;&gt;</span><span class="si">%s</span><span class="s1">&lt;/script&gt;&#39;</span>
+        <span class="n">substances</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="s1">&#39;substances&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">cls_names_substances</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">_html_clsname</span><span class="p">,</span> <span class="n">substances</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">tab</span> <span class="o">+</span> <span class="n">_script_tag</span> <span class="o">%</span> <span class="n">_js_rsys</span><span class="p">(</span>
+            <span class="n">cls_names_substances</span><span class="o">=</span><span class="n">cls_names_substances</span><span class="p">,</span>
+            <span class="n">substance_row_cls_irrel</span><span class="o">=</span><span class="p">{</span><span class="n">cns</span><span class="p">:</span> <span class="p">[</span>  <span class="c1"># reactions not involving sk</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_tr_id</span><span class="p">(</span><span class="n">rsys</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rsys</span><span class="o">.</span><span class="n">nr</span><span class="p">)</span> <span class="k">if</span>
+                <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">rsys</span><span class="o">.</span><span class="n">substance_participation</span><span class="p">(</span><span class="n">sk</span><span class="p">)</span>
+            <span class="p">]</span> <span class="k">for</span> <span class="n">cns</span><span class="p">,</span> <span class="n">sk</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cls_names_substances</span><span class="p">,</span> <span class="n">substances</span><span class="p">)},</span>
+            <span class="n">rsys_id</span><span class="o">=</span><span class="nb">id</span><span class="p">(</span><span class="n">rsys</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="javascript"><a class="viewcode-back" href="../../../chempy.printing.html#chempy.printing.js.javascript">[docs]</a><span class="k">def</span> <span class="nf">javascript</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="o">**</span><span class="n">settings</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">JSPrinter</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span><span class="o">.</span><span class="n">doprint</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.6.4',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

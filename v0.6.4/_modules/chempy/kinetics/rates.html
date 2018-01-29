@@ -1,0 +1,515 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.kinetics.rates &mdash; chempy 0.6.4 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="chempy 0.6.4 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.6.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">chempy</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>chempy.kinetics.rates</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <a href="https://github.com/bjodah/chempy/blob/v0.6.4/doc/_modules/chempy/kinetics/rates.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.kinetics.rates</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module collects object representing rate expressions. It is based</span>
+<span class="sd">on the ``chemp.util._expr`` module. The API is somewhat cumbersome since</span>
+<span class="sd">it tries to be compatible with pure python, SymPy and the underlying</span>
+<span class="sd">units library of ChemPy (``quantities``). Consider the API to be provisional.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">reduce</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">operator</span> <span class="k">import</span> <span class="n">add</span>
+
+<span class="kn">from</span> <span class="nn">..units</span> <span class="k">import</span> <span class="n">get_derived_unit</span><span class="p">,</span> <span class="n">default_units</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">concentration</span>
+<span class="kn">from</span> <span class="nn">..util._dimensionality</span> <span class="k">import</span> <span class="n">dimension_codes</span><span class="p">,</span> <span class="n">base_registry</span>
+<span class="kn">from</span> <span class="nn">..util.pyutil</span> <span class="k">import</span> <span class="n">memoize</span><span class="p">,</span> <span class="n">deprecated</span>
+<span class="kn">from</span> <span class="nn">..util._expr</span> <span class="k">import</span> <span class="n">Expr</span>
+
+
+<span class="n">_molar</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">default_units</span><span class="p">,</span> <span class="s1">&#39;molar&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># makes module importable.</span>
+
+
+<div class="viewcode-block" id="RateExpr"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.RateExpr">[docs]</a><span class="k">class</span> <span class="nc">RateExpr</span><span class="p">(</span><span class="n">Expr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Baseclass for rate expressions, see source code of e.g. MassAction &amp; Radiolytic. &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="RateExpr.subclass_from_callback"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.RateExpr.subclass_from_callback">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="nd">@deprecated</span><span class="p">(</span><span class="n">use_instead</span><span class="o">=</span><span class="n">Expr</span><span class="o">.</span><span class="n">from_callback</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">subclass_from_callback</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">cls_attrs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Override RateExpr.__call__</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cb : callback</span>
+<span class="sd">            With signature (variables, all_args, backend) -&gt; scalar</span>
+<span class="sd">            where `variables` is a dict, `all_args` a tuple and `backend` a module.</span>
+<span class="sd">        cls_attrs : dict, optional</span>
+<span class="sd">            Attributes to set in subclass, e.g. parameter_keys, nargs</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from chempy import Reaction</span>
+<span class="sd">        &gt;&gt;&gt; rxn = Reaction({&#39;O2&#39;: 1, &#39;H2&#39;: 1}, {&#39;H2O2&#39;: 1})  # d[H2O2]/dt = p0*exp(-p1/T)*sqrt([O2])</span>
+<span class="sd">        &gt;&gt;&gt; def cb(variables, all_args, backend):</span>
+<span class="sd">        ...     O2, T = variables[&#39;O2&#39;], variables[&#39;temperature&#39;]</span>
+<span class="sd">        ...     p0, p1 = all_args</span>
+<span class="sd">        ...     return p0*backend.sqrt(O2)*backend.exp(-p1/T)</span>
+<span class="sd">        &gt;&gt;&gt; MyRateExpr = RateExpr.subclass_from_callback(cb, dict(parameter_keys=(&#39;temperature&#39;,),nargs=2))</span>
+<span class="sd">        &gt;&gt;&gt; k = MyRateExpr([1.3e9, 4317.2])</span>
+<span class="sd">        &gt;&gt;&gt; print(&#39;%.5g&#39; % k({&#39;temperature&#39;: 298.15, &#39;O2&#39;: 1.1e-3, &#39;rxn&#39;: rxn}))</span>
+<span class="sd">        22.186</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">class</span> <span class="nc">_RateExpr</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+
+            <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">math</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">cb</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_args</span><span class="p">(</span><span class="n">variables</span><span class="p">),</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">(</span><span class="n">cls_attrs</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">_RateExpr</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_RateExpr</span></div></div>
+
+
+<div class="viewcode-block" id="RadiolyticBase"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.RadiolyticBase">[docs]</a><span class="k">class</span> <span class="nc">RadiolyticBase</span><span class="p">(</span><span class="n">RateExpr</span><span class="p">):</span>
+    <span class="k">pass</span>  <span class="c1"># for isinstance checks</span></div>
+
+
+<div class="viewcode-block" id="mk_Radiolytic"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.mk_Radiolytic">[docs]</a><span class="nd">@memoize</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">mk_Radiolytic</span><span class="p">(</span><span class="o">*</span><span class="n">doserate_names</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create a Radiolytic rate expression</span>
+
+<span class="sd">    Note that there is no mass-action dependence in the resulting</span>
+<span class="sd">    class, i.e. the rates does not depend on any concentrations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    \*doserate_names : str instances</span>
+<span class="sd">        Default: (&#39;&#39;,)</span>
+
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; RadiolyticAlpha = mk_Radiolytic(&#39;alpha&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; RadiolyticGamma = mk_Radiolytic(&#39;gamma&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; dihydrogen_alpha = RadiolyticAlpha([0.8e-7])</span>
+<span class="sd">    &gt;&gt;&gt; dihydrogen_gamma = RadiolyticGamma([0.45e-7])</span>
+<span class="sd">    &gt;&gt;&gt; RadiolyticAB = mk_Radiolytic(&#39;alpha&#39;, &#39;beta&#39;)</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The instance __call__ will require by default ``&#39;density&#39;`` and ``&#39;doserate&#39;``</span>
+<span class="sd">    in variables.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">doserate_names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">doserate_names</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,)</span>
+
+    <span class="k">class</span> <span class="nc">_Radiolytic</span><span class="p">(</span><span class="n">RadiolyticBase</span><span class="p">):</span>
+        <span class="n">argument_names</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="s1">&#39;radiolytic_yield</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;&#39;</span> <span class="k">if</span> <span class="n">drn</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span> <span class="k">else</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">drn</span><span class="p">)</span>
+                               <span class="k">for</span> <span class="n">drn</span> <span class="ow">in</span> <span class="n">doserate_names</span><span class="p">)</span>  <span class="c1"># [amount/energy]</span>
+        <span class="n">parameter_keys</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;density&#39;</span><span class="p">,)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="s1">&#39;doserate</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;&#39;</span> <span class="k">if</span> <span class="n">drn</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span> <span class="k">else</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">drn</span><span class="p">)</span>
+                                              <span class="k">for</span> <span class="n">drn</span> <span class="ow">in</span> <span class="n">doserate_names</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">args_dimensionality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reaction</span><span class="p">):</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="n">base_registry</span><span class="p">[</span><span class="s1">&#39;amount&#39;</span><span class="p">]</span>
+            <span class="n">E</span> <span class="o">=</span> <span class="n">get_derived_unit</span><span class="p">(</span><span class="n">base_registry</span><span class="p">,</span> <span class="s1">&#39;energy&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">dimension_codes</span><span class="p">,</span> <span class="n">N</span><span class="o">/</span><span class="n">E</span><span class="p">)),)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">nargs</span>
+
+        <span class="k">def</span> <span class="nf">g_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameter_keys</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_args</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)))</span>
+
+        <span class="nd">@deprecated</span><span class="p">(</span><span class="n">use_instead</span><span class="o">=</span><span class="s1">&#39;Radiolytic.all_args&#39;</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">g_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">math</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">g_val</span><span class="p">,</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_args</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">g_val</span>
+
+        <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">math</span><span class="p">,</span> <span class="n">reaction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">variables</span><span class="p">[</span><span class="s1">&#39;density&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">reduce</span><span class="p">(</span><span class="n">add</span><span class="p">,</span> <span class="p">[</span><span class="n">variables</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">*</span><span class="n">gval</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">gval</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parameter_keys</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_args</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))])</span>
+
+    <span class="n">_Radiolytic</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="s1">&#39;Radiolytic&#39;</span> <span class="k">if</span> <span class="n">doserate_names</span> <span class="o">==</span> <span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,)</span> <span class="k">else</span> <span class="p">(</span><span class="s1">&#39;Radiolytic_&#39;</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">doserate_names</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">_Radiolytic</span></div>
+
+
+<span class="n">Radiolytic</span> <span class="o">=</span> <span class="n">mk_Radiolytic</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="MassAction"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.MassAction">[docs]</a><span class="k">class</span> <span class="nc">MassAction</span><span class="p">(</span><span class="n">RateExpr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Rate-expression of mass-action type</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    :meth:`__call__` requires a :class:`Reaction` instance to be passed as ``reaction``</span>
+<span class="sd">    keyword argument.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; ma = MassAction([3.14])</span>
+<span class="sd">    &gt;&gt;&gt; from chempy import Reaction</span>
+<span class="sd">    &gt;&gt;&gt; r = Reaction.from_string(&#39;3 A -&gt; B&#39;, param=ma)</span>
+<span class="sd">    &gt;&gt;&gt; r.rate({&#39;A&#39;: 2}) == {&#39;A&#39;: -75.36, &#39;B&#39;: 25.12}</span>
+<span class="sd">    True</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">argument_names</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;rate_constant&#39;</span><span class="p">,)</span>
+
+<div class="viewcode-block" id="MassAction.args_dimensionality"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.MassAction.args_dimensionality">[docs]</a>    <span class="k">def</span> <span class="nf">args_dimensionality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reaction</span><span class="p">):</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="n">reaction</span><span class="o">.</span><span class="n">order</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">({</span><span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;amount&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="o">-</span><span class="n">order</span><span class="p">,</span> <span class="s1">&#39;length&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="o">*</span><span class="p">(</span><span class="n">order</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)},)</span></div>
+
+<div class="viewcode-block" id="MassAction.active_conc_prod"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.MassAction.active_conc_prod">[docs]</a>    <span class="k">def</span> <span class="nf">active_conc_prod</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">math</span><span class="p">,</span> <span class="n">reaction</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">reaction</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">result</span> <span class="o">*=</span> <span class="n">variables</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">**</span><span class="n">v</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="MassAction.rate_coeff"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.MassAction.rate_coeff">[docs]</a>    <span class="k">def</span> <span class="nf">rate_coeff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">math</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">rat_c</span><span class="p">,</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_args</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rat_c</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">math</span><span class="p">,</span> <span class="n">reaction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rate_coeff</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="n">reaction</span><span class="o">=</span><span class="n">reaction</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">active_conc_prod</span><span class="p">(</span>
+            <span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="n">reaction</span><span class="o">=</span><span class="n">reaction</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MassAction.from_callback"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.MassAction.from_callback">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_callback</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">attr</span><span class="o">=</span><span class="s1">&#39;rate_coeff&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">MassAction</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="n">from_callback</span><span class="p">(</span><span class="n">callback</span><span class="p">,</span> <span class="n">attr</span><span class="o">=</span><span class="n">attr</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MassAction.string"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.MassAction.string">[docs]</a>    <span class="k">def</span> <span class="nf">string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_keys</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_keys</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">MassAction</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">string</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MassAction.subclass_from_callback"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.MassAction.subclass_from_callback">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="nd">@deprecated</span><span class="p">(</span><span class="n">use_instead</span><span class="o">=</span><span class="s1">&#39;MassAction.from_callback&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">subclass_from_callback</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">cls_attrs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Override MassAction.__call__ &quot;&quot;&quot;</span>
+        <span class="n">_RateExpr</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">MassAction</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="n">subclass_from_callback</span><span class="p">(</span><span class="n">cb</span><span class="p">,</span> <span class="n">cls_attrs</span><span class="o">=</span><span class="n">cls_attrs</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">_RateExpr</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">wrapper</span></div></div>
+
+
+<div class="viewcode-block" id="Arrhenius"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.Arrhenius">[docs]</a><span class="k">class</span> <span class="nc">Arrhenius</span><span class="p">(</span><span class="n">Expr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Rate expression for a Arrhenius-type of rate: c0*exp(-c1/T)</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from math import exp</span>
+<span class="sd">    &gt;&gt;&gt; from chempy import Reaction</span>
+<span class="sd">    &gt;&gt;&gt; from chempy.units import allclose, default_units as u</span>
+<span class="sd">    &gt;&gt;&gt; A = 1e11 / u.second</span>
+<span class="sd">    &gt;&gt;&gt; Ea_over_R = 42e3/8.3145 * u.K**-1</span>
+<span class="sd">    &gt;&gt;&gt; ratex = MassAction(Arrhenius([A, Ea_over_R]))</span>
+<span class="sd">    &gt;&gt;&gt; rxn = Reaction({&#39;R&#39;}, {&#39;P&#39;}, ratex)</span>
+<span class="sd">    &gt;&gt;&gt; dRdt = rxn.rate({&#39;R&#39;: 3*u.M, &#39;temperature&#39;: 298.15*u.K})[&#39;R&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; allclose(dRdt, -3*1e11*exp(-42e3/8.3145/298.15)*u.M/u.s)</span>
+<span class="sd">    True</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">argument_names</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;Ea_over_R&#39;</span><span class="p">)</span>
+    <span class="n">parameter_keys</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;temperature&#39;</span><span class="p">,)</span>
+
+<div class="viewcode-block" id="Arrhenius.args_dimensionality"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.Arrhenius.args_dimensionality">[docs]</a>    <span class="k">def</span> <span class="nf">args_dimensionality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reaction</span><span class="p">):</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="n">reaction</span><span class="o">.</span><span class="n">order</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="p">{</span><span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+             <span class="s1">&#39;amount&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="o">-</span><span class="n">order</span><span class="p">,</span> <span class="s1">&#39;length&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="o">*</span><span class="p">(</span><span class="n">order</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)},</span>
+            <span class="p">{</span><span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+        <span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">math</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">A</span><span class="p">,</span> <span class="n">Ea_over_R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_args</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">A</span><span class="o">*</span><span class="n">backend</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">Ea_over_R</span><span class="o">/</span><span class="n">variables</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="Eyring"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.Eyring">[docs]</a><span class="k">class</span> <span class="nc">Eyring</span><span class="p">(</span><span class="n">Expr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Rate expression for Eyring eq: c0*T*exp(-c1/T)</span>
+
+<span class="sd">    Note that choice of standard state (c^0) will matter for order &gt; 1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">argument_names</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;kB_h_times_exp_dS_R&#39;</span><span class="p">,</span> <span class="s1">&#39;dH_over_R&#39;</span><span class="p">,</span> <span class="s1">&#39;conc0&#39;</span><span class="p">)</span>
+    <span class="n">argument_defaults</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">*</span><span class="n">_molar</span><span class="p">,)</span>
+    <span class="n">parameter_keys</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;temperature&#39;</span><span class="p">,)</span>
+
+<div class="viewcode-block" id="Eyring.args_dimensionality"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.Eyring.args_dimensionality">[docs]</a>    <span class="k">def</span> <span class="nf">args_dimensionality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reaction</span><span class="p">):</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="n">reaction</span><span class="o">.</span><span class="n">order</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="p">{</span><span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+             <span class="s1">&#39;amount&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="o">-</span><span class="n">order</span><span class="p">,</span> <span class="s1">&#39;length&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="o">*</span><span class="p">(</span><span class="n">order</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)},</span>
+            <span class="p">{</span><span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+            <span class="n">concentration</span>
+        <span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">math</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">c0</span><span class="p">,</span> <span class="n">c1</span><span class="p">,</span> <span class="n">conc0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_args</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">variables</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">c0</span><span class="o">*</span><span class="n">T</span><span class="o">*</span><span class="n">backend</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">c1</span><span class="o">/</span><span class="n">T</span><span class="p">)</span><span class="o">*</span><span class="n">conc0</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;reaction&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">order</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="EyringHS"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.EyringHS">[docs]</a><span class="k">class</span> <span class="nc">EyringHS</span><span class="p">(</span><span class="n">Expr</span><span class="p">):</span>
+    <span class="n">argument_names</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;dH&#39;</span><span class="p">,</span> <span class="s1">&#39;dS&#39;</span><span class="p">,</span> <span class="s1">&#39;c0&#39;</span><span class="p">)</span>
+    <span class="n">argument_defaults</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">*</span><span class="n">_molar</span><span class="p">,)</span>
+    <span class="n">parameter_keys</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;temperature&#39;</span><span class="p">,</span> <span class="s1">&#39;molar_gas_constant&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;Boltzmann_constant&#39;</span><span class="p">,</span> <span class="s1">&#39;Planck_constant&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="EyringHS.args_dimensionality"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.EyringHS.args_dimensionality">[docs]</a>    <span class="k">def</span> <span class="nf">args_dimensionality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">energy</span> <span class="o">+</span> <span class="p">{</span><span class="s1">&#39;amount&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">},</span>
+            <span class="n">energy</span> <span class="o">+</span> <span class="p">{</span><span class="s1">&#39;amount&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">},</span>
+            <span class="n">concentration</span>
+        <span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">math</span><span class="p">,</span> <span class="n">reaction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">dH</span><span class="p">,</span> <span class="n">dS</span><span class="p">,</span> <span class="n">c0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_args</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">T</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">kB</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="p">[</span><span class="n">variables</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter_keys</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">kB</span><span class="o">/</span><span class="n">h</span><span class="o">*</span><span class="n">T</span><span class="o">*</span><span class="n">backend</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">dH</span><span class="o">-</span><span class="n">T</span><span class="o">*</span><span class="n">dS</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">R</span><span class="o">*</span><span class="n">T</span><span class="p">))</span><span class="o">*</span><span class="n">c0</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">reaction</span><span class="o">.</span><span class="n">order</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="RampedTemp"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.RampedTemp">[docs]</a><span class="k">class</span> <span class="nc">RampedTemp</span><span class="p">(</span><span class="n">Expr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Ramped temperature, pass as substitution to e.g. ``get_odesys`` &quot;&quot;&quot;</span>
+    <span class="n">argument_names</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;T0&#39;</span><span class="p">,</span> <span class="s1">&#39;dTdt&#39;</span><span class="p">)</span>
+    <span class="n">parameter_keys</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">,)</span>  <span class="c1"># consider e.g. a parameter such as &#39;init_time&#39;</span>
+
+<div class="viewcode-block" id="RampedTemp.args_dimensionality"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.RampedTemp.args_dimensionality">[docs]</a>    <span class="k">def</span> <span class="nf">args_dimensionality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">({</span><span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">})</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">T0</span><span class="p">,</span> <span class="n">dTdt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_args</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">T0</span> <span class="o">+</span> <span class="n">dTdt</span><span class="o">*</span><span class="n">variables</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="SinTemp"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.SinTemp">[docs]</a><span class="k">class</span> <span class="nc">SinTemp</span><span class="p">(</span><span class="n">Expr</span><span class="p">):</span>
+    <span class="n">argument_names</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Tbase&#39;</span><span class="p">,</span> <span class="s1">&#39;Tamp&#39;</span><span class="p">,</span> <span class="s1">&#39;angvel&#39;</span><span class="p">,</span> <span class="s1">&#39;phase&#39;</span><span class="p">)</span>
+    <span class="n">parameter_keys</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">,)</span>
+
+<div class="viewcode-block" id="SinTemp.args_dimensionality"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.rates.SinTemp.args_dimensionality">[docs]</a>    <span class="k">def</span> <span class="nf">args_dimensionality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">({</span><span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">},</span> <span class="p">{})</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">math</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">Tbase</span><span class="p">,</span> <span class="n">Tamp</span><span class="p">,</span> <span class="n">angvel</span><span class="p">,</span> <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_args</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Tbase</span> <span class="o">+</span> <span class="n">Tamp</span><span class="o">*</span><span class="n">backend</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angvel</span><span class="o">*</span><span class="n">variables</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">phase</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.6.4',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
