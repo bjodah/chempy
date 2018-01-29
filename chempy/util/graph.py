@@ -37,7 +37,7 @@ def rsys2dot(rsys, tex=False, rprefix='r', rref0=1, nodeparams='[label="{}",shap
     if penwidths is None:
         penwidths = [1.0]*rsys.nr
 
-    categories = rsys.categorize_substances()
+    categories = rsys.categorize_substances(checks=())
 
     def add_substance(key):
         fc = 'black'
