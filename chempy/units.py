@@ -263,6 +263,8 @@ def is_unitless(expr):
         return expr.simplified.dimensionality == pq.dimensionless.dimensionality
     if isinstance(expr, dict):
         return all(is_unitless(_) for _ in expr.values())
+    elif isinstance(expr, (tuple, list)):
+        return all(is_unitless(_) for _ in expr)
     return True
 
 
@@ -348,6 +350,30 @@ def to_unitless(value, new_unit=None):
             return np.array([to_unitless(elem, new_unit) for elem in value])
 
 
+def uniform(container):
+    """ Turns a list, tuple or dict with mixed units into one with uniform units.
+
+    Parameters
+    ----------
+    container : tuple, list or dict
+
+    Examples
+    --------
+    >>> km, m = default_units.kilometre, default_units.metre
+    >>> uniform(dict(a=3*km, b=200*m))  # doctest: +SKIP
+    {'b': array(200.0) * m, 'a': array(3000.0) * m}
+
+    """
+    if isinstance(container, (tuple, list)):
+        unit = unit_of(container[0])
+    elif isinstance(container, dict):
+        unit = unit_of(list(container.values())[0])
+        return container.__class__([(k, to_unitless(v, unit)*unit) for k, v in container.items()])
+    else:
+        return container
+    return to_unitless(container, unit)*unit
+
+
 def get_physical_quantity(value):
     if is_unitless(value):
         return {}
@@ -361,7 +387,7 @@ def get_physical_quantity(value):
         pq.UnitSubstance: 'amount'
     }
     return {_quantities_mapping[k.__class__]: v for k, v
-            in value.simplified.dimensionality.items()}
+            in uniform(value).simplified.dimensionality.items()}
 
 
 def _get_unit_from_registry(dimensionality, registry):
