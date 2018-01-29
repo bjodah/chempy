@@ -449,6 +449,9 @@ class _NegExpr(Expr):
         arg0, = self.all_args(variables, backend=backend, **kwargs)
         return -arg0
 
+    def rate_coeff(self, *args, **kwargs):
+        return -self.args[0].rate_coeff(*args, **kwargs),
+
 
 class _BinaryExpr(Expr):
     _op = None
@@ -459,6 +462,10 @@ class _BinaryExpr(Expr):
     def __call__(self, variables, backend=math, **kwargs):
         arg0, arg1 = self.all_args(variables, backend=backend, **kwargs)
         return self._op(arg0, arg1)
+
+    def rate_coeff(self, *args, **kwargs):
+        return self._op(self.args[0].rate_coeff(*args, **kwargs),
+                        self.args[1].rate_coeff(*args, **kwargs))
 
 
 class _AddExpr(_BinaryExpr):
@@ -492,6 +499,9 @@ class Constant(Expr):
     def __call__(self, variables, backend=None, **kwargs):
         return self.args[0]
 
+    def rate_coeff(self, *args, **kwargs):
+        return self.args[0]
+
 
 class Symbol(Expr):
     nargs = 1
@@ -511,6 +521,9 @@ class UnaryFunction(Function):
     def __call__(self, variables, backend=math, **kwargs):
         arg, = self.all_args(variables, backend=backend, **kwargs)
         return getattr(backend, self._func_name)(arg)
+
+    def rate_coeff(self, *args, **kwargs):
+        return getattr(kwargs.get('backend', math), self._func_name)(self.args[0].rate_coeff(*args, **kwargs))
 
 
 class BinaryFunction(Function):
