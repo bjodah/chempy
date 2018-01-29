@@ -14,7 +14,7 @@ from ..units import (
     allclose, concatenate, get_derived_unit, is_unitless, linspace, logspace_from_lin,
     SI_base_registry, unitless_in_registry, format_string, get_physical_quantity,
     to_unitless, magnitude, default_unit_in_registry, Backend, latex_of_unit,
-    unit_of, unit_registry_to_human_readable, units_library, simplified,
+    unit_of, unit_registry_to_human_readable, units_library, simplified, uniform,
     unit_registry_from_human_readable, _sum, UncertainQuantity, compare_equality,
     default_units as u, patched_numpy as pnp, default_constants as dc
 )
@@ -91,6 +91,9 @@ def test_is_unitless():
     assert is_unitless({'a': 1, 'b': 2.0})
     assert not is_unitless({'a': 2, 'b': 5.0*u.second, 'c': 3})
     assert is_unitless(7*u.molar/u.mole*u.dm3)
+    assert is_unitless([2, 3, 4])
+    assert not is_unitless([2*u.m, 3*u.m])
+    assert not is_unitless([3, 4*u.m])
 
 
 @requires(units_library)
@@ -299,6 +302,8 @@ def test_unitless_in_registry():
     mag = magnitude(unitless_in_registry(3*u.per100eV, SI_base_registry))
     ref = 3*1.0364268834527753e-07
     assert abs(mag - ref) < 1e-14
+    ul = unitless_in_registry([3*u.per100eV, 5*u.mol/u.J], SI_base_registry)
+    assert allclose(ul, [ref, 5], rtol=1e-6)
 
 
 @requires(units_library)
@@ -321,6 +326,7 @@ def test_compare_equality():
 @requires(units_library)
 def test_get_physical_quantity():
     assert get_physical_quantity(3*u.mole) == {'amount': 1}
+    assert get_physical_quantity([3*u.mole]) == {'amount': 1}
     assert get_physical_quantity(42) == {}
 
 
@@ -427,3 +433,16 @@ def test_polyfit_polyval():
         assert allclose(_p, _r, atol=_a)
     assert allclose(pnp.polyval(p2, 3*u.s), 9*u.m)
     assert allclose(pnp.polyval(p2, [4, 5]*u.s), [16, 25]*u.m)
+
+
+@requires(units_library)
+def test_uniform():
+    base = [3*u.km, 200*u.m]
+    refs = [np.array([3000, 200]), np.array([3, 0.2])]
+
+    def _check(case, ref):
+        assert np.any(np.all(magnitude(uniform(case)) == ref, axis=1))
+    _check(base, refs)
+    _check(tuple(base), refs)
+    keys = 'foo bar'.split()
+    assert magnitude(uniform(dict(zip(keys, base)))) in [dict(zip(keys, r)) for r in refs]
