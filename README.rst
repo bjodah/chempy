@@ -108,8 +108,8 @@ the test suite using the same docker-image::
 
   $ ./scripts/host-jupyter-using-docker.sh . 0
 
-there will be one skipped test (due to symengine missing in this pip installed environment) and
-quite a few instances of RintimeWarning.
+there will be a few skipped test (due to some dependencies not being installed by default) and
+quite a few warnings.
 
 
 Examples

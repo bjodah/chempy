@@ -13,7 +13,7 @@
 MOUNT=${1:-.}
 PORT=${2:-8888}
 DOCKERIMAGE=${3:-./scripts/environment}
-PKG=pyneqsys
+PKG=$(find . -maxdepth 2 -name __init__.py -print0 | xargs -0 -n1 dirname | xargs basename)
 HOST_USER=${SUDO_USER:-${LOGNAME}}
 if [[ "${HOST_USER}" == root ]]; then
     >&2 echo "Need another user name than root (pip will fail)"
