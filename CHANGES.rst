@@ -1,3 +1,8 @@
+v0.6.4
+======
+- Enhancements for ``.units.is_unitless`` & ``.units.get_physical_quantity``
+- New functions in ``chempy.units``: ``compare_equality`` & ``uniform``.
+
 v0.6.3
 ======
 - Fix bug in Reaction.check_consistent_units

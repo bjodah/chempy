@@ -409,6 +409,24 @@ def unitless_in_registry(value, registry):
 # NumPy like functions for compatibility:
 
 def compare_equality(a, b):
+    """ Returns True if two arguments are equal.
+
+    Both arguments need to have the same dimensionality.
+
+    Parameters
+    ----------
+    a : quantity
+    b : quantity
+
+    Examples
+    --------
+    >>> km, m = default_units.kilometre, default_units.metre
+    >>> compare_equality(3*km, 3)
+    False
+    >>> compare_equality(3*km, 3000*m)
+    True
+
+    """
     # Work around for https://github.com/python-quantities/python-quantities/issues/146
     try:
         a + b
