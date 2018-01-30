@@ -62,6 +62,7 @@ var chempy_tabs = document.querySelectorAll('table.chempy_%(rsys_id)d');
     tab.ori_header = tab.getElementsByTagName('th')[0].innerHTML;
     tab.ondblclick = function(){
         resetTab(this);
+        this.scrollIntoView();
     };
 });
 [].forEach.call(chempy_tabs, function(tab){
