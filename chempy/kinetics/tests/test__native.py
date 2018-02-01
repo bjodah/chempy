@@ -96,13 +96,13 @@ def test_get_native__a_substance_no_composition(solve):
     if len(solve) > 0:
         from pyodesys.symbolic import PartiallySolvedSystem
         odesys = PartiallySolvedSystem(odesys, extra['linear_dependencies'](solve))
-    odesys = get_native(rsys, odesys, 'gsl')
-    xout, yout, info = odesys.integrate(1, c0, atol=1e-15, rtol=1e-15, integrator='gsl')
-    c_reac = c0['H2O+'], c0['e-(aq)']
-    H2O_ref = binary_rev(xout, 1e10, 1e-4, c0['H2O'], max(c_reac), min(c_reac))
-    assert np.allclose(yout[:, odesys.names.index('H2O')], H2O_ref)
-    assert np.allclose(yout[:, odesys.names.index('H2O+')], c0['H2O+'] + c0['H2O'] - H2O_ref)
-    assert np.allclose(yout[:, odesys.names.index('e-(aq)')], c0['e-(aq)'] + c0['H2O'] - H2O_ref)
+    for odesys in [get_native(rsys, odesys, 'gsl', clipping=clipping) for clipping in [True, False]]:
+        xout, yout, info = odesys.integrate(1, c0, atol=1e-15, rtol=1e-15, integrator='gsl')
+        c_reac = c0['H2O+'], c0['e-(aq)']
+        H2O_ref = binary_rev(xout, 1e10, 1e-4, c0['H2O'], max(c_reac), min(c_reac))
+        assert np.allclose(yout[:, odesys.names.index('H2O')], H2O_ref)
+        assert np.allclose(yout[:, odesys.names.index('H2O+')], c0['H2O+'] + c0['H2O'] - H2O_ref)
+        assert np.allclose(yout[:, odesys.names.index('e-(aq)')], c0['e-(aq)'] + c0['H2O'] - H2O_ref)
 
 
 @pytest.mark.veryslow
@@ -162,20 +162,21 @@ def test_get_native__conc_roots():
     odesys, extra = get_odesys(rsys, include_params=False, unit_registry=u_reg)
     c0 = {'O3': 4.2e-3*M, 'O2': 0*M}
     cr = ['O2']
-    native = get_native(rsys, odesys, 'cvode', conc_roots=cr)
-    tend = 1e5*u.s
-    params = {'k2': logspace_from_lin(1e-3/M/s, 1e3/M/s, 14)}
-    tgt_O2 = 1e-3*M
-    results = native.integrate(tend, c0, params, integrator='native', return_on_root=True,
-                               special_settings=[unitless_in_registry(tgt_O2, u_reg)])
-    assert len(results) == params['k2'].size
-    # dydt = -p*y**2
-    # 1/y0 - 1/y = -2*pt
-    # t = 1/2/p*(1/y - 1/y0)
-    tgt_O3 = c0['O3'] - 2/3 * tgt_O2
-    for r in results:
-        ref = rescale(1/2/r.named_param('k2')*(1/tgt_O3 - 1/c0['O3']), u.s)
-        assert allclose(r.xout[-1], ref, rtol=1e-6)
+
+    for native in [get_native(rsys, odesys, 'cvode', conc_roots=cr, clipping=clipping) for clipping in [True, False]]:
+        tend = 1e5*u.s
+        params = {'k2': logspace_from_lin(1e-3/M/s, 1e3/M/s, 14)}
+        tgt_O2 = 1e-3*M
+        results = native.integrate(tend, c0, params, integrator='native', return_on_root=True,
+                                   special_settings=[unitless_in_registry(tgt_O2, u_reg)])
+        assert len(results) == params['k2'].size
+        # dydt = -p*y**2
+        # 1/y0 - 1/y = -2*pt
+        # t = 1/2/p*(1/y - 1/y0)
+        tgt_O3 = c0['O3'] - 2/3 * tgt_O2
+        for r in results:
+            ref = rescale(1/2/r.named_param('k2')*(1/tgt_O3 - 1/c0['O3']), u.s)
+            assert allclose(r.xout[-1], ref, rtol=1e-6)
 
 
 @pytest.mark.veryslow

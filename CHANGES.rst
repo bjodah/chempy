@@ -1,3 +1,7 @@
+vX.Y.Z
+======
+- New option "clippin" in ``chempy.kinetics.ode._native.get_native``
+
 v0.6.4
 ======
 - Enhancements for ``.units.is_unitless`` & ``.units.get_physical_quantity``
