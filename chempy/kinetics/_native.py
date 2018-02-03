@@ -54,7 +54,7 @@ _anon = """
 
 _first_step = """
     m_upper_bounds = upper_conc_bounds(${init_conc});
-    m_lower_bounds.resize(${odesys.ny});
+    m_lower_bounds.resize(${odesys.ny}, 0);
     return m_rtol*std::min(get_dx_max(x, y), 1.0);
 """
 
@@ -133,6 +133,32 @@ def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False
             raise ValueError("integrator '%s' does not support roots." % integrator)
         if odesys.roots is not None:
             raise ValueError("roots already set")
+    if odesys.clip_to_bounds:
+        if 'p_constructor' not in ns_extend:
+            ns_extend['p_constructor'] = []
+        ns_extend['p_constructor'] += [
+            'this->user_data = malloc(sizeof(double)*%(ny)d);' % dict(ny=odesys.ny)
+        ]
+        if 'p_destructor' not in ns_extend:
+            ns_extend['p_destructor'] = []
+        ns_extend['p_destructor'] += [
+            'free(this->user_data);'
+        ]
+        if 'p_includes' not in ns_extend:
+            ns_extend['p_includes'] = set()
+        ns_extend['p_includes'] |= {"<stdlib.h>"}
+        kw['namespace_override']['p_y_preprocessing'] = """
+        double * y = (double*)(this->user_data);
+        for (int i=0; i<%(ny)d; ++i) y[i] = y_[i];
+        if (m_lower_bounds.size() > 0)
+            for (int i=0; i<%(ny)d; ++i)
+                if (y[i] < m_lower_bounds[i])
+                    y[i] = m_lower_bounds[i];
+        if (m_upper_bounds.size() > 0)
+            for (int i=0; i<%(ny)d; ++i)
+                if (y[i] > m_upper_bounds[i])
+                    y[i] = m_upper_bounds[i];
+        """ % dict(ny=odesys.ny)
     if steady_state_root:
         assert conc_roots is None
         kw['namespace_override']['p_nroots'] = ' return 1; '

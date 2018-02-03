@@ -1,3 +1,7 @@
+vX.Y.Z
+======
+- Support for new option "clip_to_bounds" in ``pyodesys``.
+
 v0.6.4
 ======
 - Enhancements for ``.units.is_unitless`` & ``.units.get_physical_quantity``

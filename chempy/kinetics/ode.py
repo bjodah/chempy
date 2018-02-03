@@ -105,7 +105,8 @@ def dCdt_list(rsys, rates):
 
 
 def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, unit_registry=None,
-               output_conc_unit=None, output_time_unit=None, cstr=False, constants=None, **kwargs):
+               output_conc_unit=None, output_time_unit=None, cstr=False, constants=None,
+               lower_bounds=False, upper_bounds=False, **kwargs):
     """ Creates a :class:`pyneqsys.SymbolicSys` from a :class:`ReactionSystem`
 
     The parameters passed to RateExpr will contain the key ``'time'`` corresponding to the
@@ -130,6 +131,10 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         See :func:`chempy.units.get_derived_units`.
     output_conc_unit : unit (Optional)
     output_time_unit : unit (Optional)
+    lower_bounds : bool
+        Generate expressions for lower bounds based on composition.
+    upper_bounds : bool
+        Generate expressions for upper bounds based on composition.
     cstr : bool
         Generate expressions for continuously stirred tank reactor.
     constants : module
@@ -324,6 +329,8 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         latex_names=latex_names, param_names=param_names_for_odesys,
         linear_invariants=None if len(compo_vecs) == 0 else compo_vecs,
         linear_invariant_names=None if len(compo_names) == 0 else list(map(str, compo_names)),
+        lower_bounds_cb=lambda t, y, p, be: [0]*odesys.ny if lower_bounds else None,
+        upper_bounds_cb=lambda t, y, p, be: rsys.upper_conc_bounds(y, min_=be.Min, dtype=object),
         **kwargs)
 
     symbolic_ratexs = reaction_rates(
