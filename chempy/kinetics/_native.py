@@ -54,7 +54,7 @@ _anon = """
 
 _first_step = """
     m_upper_bounds = upper_conc_bounds(${init_conc});
-    m_lower_bounds.resize(${odesys.ny});
+    m_lower_bounds.resize(${odesys.ny}, 0);
     return m_rtol*std::min(get_dx_max(x, y), 1.0);
 """
 
@@ -107,7 +107,7 @@ def _get_subst_comp(rsys, odesys, comp_keys, skip_keys):
     return subst_comp
 
 
-def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False, conc_roots=None, clipping=None):
+def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False, conc_roots=None):
     comp_keys = Substance.composition_keys(rsys.substances.values(), skip_keys=skip_keys)
     if isinstance(odesys, PartiallySolvedSystem):
         init_conc = '&m_p[%d]' % (len(odesys.params) - len(odesys.original_dep))
@@ -133,7 +133,7 @@ def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False
             raise ValueError("integrator '%s' does not support roots." % integrator)
         if odesys.roots is not None:
             raise ValueError("roots already set")
-    if clipping:
+    if odesys.clip_to_bounds:
         if 'p_constructor' not in ns_extend:
             ns_extend['p_constructor'] = []
         ns_extend['p_constructor'] += [
@@ -149,9 +149,15 @@ def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False
         ns_extend['p_includes'] |= {"<stdlib.h>"}
         kw['namespace_override']['p_y_preprocessing'] = """
         double * y = (double*)(this->user_data);
-        for (int i=0; i<%(ny)d; ++i){
-            y[i] = (y_[i] < 0) ? 0 : y_[i];
-        }
+        for (int i=0; i<%(ny)d; ++i) y[i] = y_[i];
+        if (m_lower_bounds.size() > 0)
+            for (int i=0; i<%(ny)d; ++i)
+                if (y[i] < m_lower_bounds[i])
+                    y[i] = m_lower_bounds[i];
+        if (m_upper_bounds.size() > 0)
+            for (int i=0; i<%(ny)d; ++i)
+                if (y[i] > m_upper_bounds[i])
+                    y[i] = m_upper_bounds[i];
         """ % dict(ny=odesys.ny)
     if steady_state_root:
         assert conc_roots is None

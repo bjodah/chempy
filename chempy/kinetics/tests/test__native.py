@@ -3,6 +3,7 @@ from __future__ import (absolute_import, division, print_function)
 
 from collections import defaultdict
 from functools import reduce
+from itertools import product
 from operator import mul
 
 try:
@@ -46,13 +47,7 @@ def decay_get_Cref(k, y0, tout):
             min(3, len(k)+1))])
 
 
-@pytest.mark.veryslow
-@requires('pycvodes', 'pyodesys')
-@pytest.mark.parametrize('solve', [(), ('CNO',)])
-def test_get_native__first_step(solve):
-    integrator = 'cvode'
-    forgive = 20
-
+def _mk_decay_rsys():
     def k(num):
         return "MassAction(unique_keys=('k%d',))" % num
 
@@ -61,7 +56,15 @@ def test_get_native__first_step(solve):
         "ONC -> NCO; %s" % k(2),
         "NCO -> CON; %s" % k(3)
     ]
-    rsys = ReactionSystem.from_string('\n'.join(lines), 'CNO ONC NCO CON')
+    return ReactionSystem.from_string('\n'.join(lines), 'CNO ONC NCO CON')
+
+@pytest.mark.veryslow
+@requires('pycvodes', 'pyodesys')
+@pytest.mark.parametrize('solve', [(), ('CNO',)])
+def test_get_native__first_step(solve):
+    integrator = 'cvode'
+    forgive = 20
+    rsys = _mk_decay_rsys()
     odesys, extra = get_odesys(rsys, include_params=False)
     if len(solve) > 0:
         from pyodesys.symbolic import PartiallySolvedSystem
@@ -88,21 +91,22 @@ def test_get_native__first_step(solve):
 
 @pytest.mark.veryslow
 @requires('pygslodeiv2', 'pyodesys')
-@pytest.mark.parametrize('solve', [(), ('H2O',)])
-def test_get_native__a_substance_no_composition(solve):
+@pytest.mark.parametrize('solve_clip', list(product([(), ('H2O',)], [True, False])))
+def test_get_native__a_substance_no_composition(solve_clip):
+    solve, clip = solve_clip
     rsys = ReactionSystem.from_string('\n'.join(['H2O -> H2O+ + e-(aq); 1e-8', 'e-(aq) + H2O+ -> H2O; 1e10']))
-    odesys, extra = get_odesys(rsys)
+    odesys, extra = get_odesys(rsys, clip_to_bounds=clip)
     c0 = {'H2O': 0, 'H2O+': 2e-9, 'e-(aq)': 3e-9}
     if len(solve) > 0:
         from pyodesys.symbolic import PartiallySolvedSystem
         odesys = PartiallySolvedSystem(odesys, extra['linear_dependencies'](solve))
-    for odesys in [get_native(rsys, odesys, 'gsl', clipping=clipping) for clipping in [True, False]]:
-        xout, yout, info = odesys.integrate(1, c0, atol=1e-15, rtol=1e-15, integrator='gsl')
+    for odes in [odesys, get_native(rsys, odesys, 'gsl')]:
+        xout, yout, info = odes.integrate(1, c0, atol=1e-15, rtol=1e-15, integrator='gsl')
         c_reac = c0['H2O+'], c0['e-(aq)']
         H2O_ref = binary_rev(xout, 1e10, 1e-4, c0['H2O'], max(c_reac), min(c_reac))
-        assert np.allclose(yout[:, odesys.names.index('H2O')], H2O_ref)
-        assert np.allclose(yout[:, odesys.names.index('H2O+')], c0['H2O+'] + c0['H2O'] - H2O_ref)
-        assert np.allclose(yout[:, odesys.names.index('e-(aq)')], c0['e-(aq)'] + c0['H2O'] - H2O_ref)
+        assert np.allclose(yout[:, odes.names.index('H2O')], H2O_ref)
+        assert np.allclose(yout[:, odes.names.index('H2O+')], c0['H2O+'] + c0['H2O'] - H2O_ref)
+        assert np.allclose(yout[:, odes.names.index('e-(aq)')], c0['e-(aq)'] + c0['H2O'] - H2O_ref)
 
 
 @pytest.mark.veryslow
@@ -228,3 +232,27 @@ def test_get_native__Radiolytic__named_parameter__units(scaling_density):
     ref_H2_uM = to_unitless(c0['H2'], u.micromolar) + to_unitless(c0['H'], u.micromolar)/2 + t_ul*p_ul/2 - ref_H_uM/2
     assert np.allclose(to_unitless(result.named_dep('H'), u.micromolar), ref_H_uM)
     assert np.allclose(to_unitless(result.named_dep('H2'), u.micromolar), ref_H2_uM)
+
+
+@pytest.mark.veryslow
+@requires('pyodeint', 'pygslodeiv2', 'pycvodes', 'pyodesys')
+@pytest.mark.parametrize('integrator', 'odeint gsl cvode'.split())
+def test_get_native_clipping(integrator):
+    forgive = 1.0
+    rsys = _mk_decay_rsys()
+    odesys, extra = get_odesys(rsys, include_params=False)
+    native = get_native(rsys, odesys, integrator, clipping=True)
+    c0 = dict(zip(rsys.substances, [-5, 42.0, 17.0, 0.0]))
+    rate_coeffs = 13, 17, 21
+    tend = 7
+    args = (tend, c0, dict(zip(native.param_names, rate_coeffs)))
+    kwargs = dict(integrator=integrator, atol=1e-9, rtol=1e-9)
+
+    for ode in [odesys, native]:
+        result = ode.integrate(*args, **kwargs)
+        ref = decay_get_Cref((0,) + rate_coeffs[1:], [c0[key] for key in ode.names], result.xout)
+        assert np.allclose(result.yout[:, :3], ref,
+                           atol=kwargs['atol']*forgive,
+                           rtol=kwargs['rtol']*forgive)
+        assert result.info['success']
+        assert result.info['nfev'] > 10 and result.info['njev'] > 1

@@ -1,6 +1,6 @@
 vX.Y.Z
 ======
-- New option "clippin" in ``chempy.kinetics.ode._native.get_native``
+- Support for new option "clip_to_bounds" in ``pyodesys``.
 
 v0.6.4
 ======
