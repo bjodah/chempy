@@ -1,3 +1,7 @@
+v0.6.5
+======
+- Fix assertion firing
+
 v0.6.4
 ======
 - Enhancements for ``.units.is_unitless`` & ``.units.get_physical_quantity``
