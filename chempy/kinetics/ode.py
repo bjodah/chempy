@@ -400,6 +400,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
         'linear_dependencies': linear_dependencies,
         'rate_exprs_cb': rate_exprs_cb,
         'cstr_fr_fc': cstr_fr_fc,
+        'unit_registry': unit_registry
     }
 
 
