@@ -1,0 +1,2157 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.kinetics package &mdash; chempy 0.6.5 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="chempy 0.6.5 documentation" href="index.html"/>
+        <link rel="up" title="chempy package" href="chempy.html"/>
+        <link rel="next" title="chempy.printing package" href="chempy.printing.html"/>
+        <link rel="prev" title="chempy.electrochemistry package" href="chempy.electrochemistry.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.6.5
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="chempy.html">chempy package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="chempy.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="chempy.electrochemistry.html">chempy.electrochemistry package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">chempy.kinetics package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.kinetics.analysis">chempy.kinetics.analysis module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.kinetics.arrhenius">chempy.kinetics.arrhenius module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.kinetics.eyring">chempy.kinetics.eyring module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.kinetics.integrated">chempy.kinetics.integrated module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.kinetics.ode">chempy.kinetics.ode module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.kinetics.rates">chempy.kinetics.rates module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.printing.html">chempy.printing package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.properties.html">chempy.properties package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.thermodynamics.html">chempy.thermodynamics package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.util.html">chempy.util package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.arrhenius">chempy.arrhenius module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.chemistry">chempy.chemistry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.debye_huckel">chempy.debye_huckel module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.einstein_smoluchowski">chempy.einstein_smoluchowski module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.electrolytes">chempy.electrolytes module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.equilibria">chempy.equilibria module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.eyring">chempy.eyring module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.henry">chempy.henry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.reactionsystem">chempy.reactionsystem module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.symbolic">chempy.symbolic module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.units">chempy.units module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">chempy</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="chempy.html">chempy package</a> &raquo;</li>
+        
+      <li>chempy.kinetics package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <a href="https://github.com/bjodah/chempy/blob/v0.6.5/doc/chempy.kinetics.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-chempy.kinetics">
+<span id="chempy-kinetics-package"></span><h1>chempy.kinetics package<a class="headerlink" href="#module-chempy.kinetics" title="Permalink to this headline">¶</a></h1>
+<p>This package collects functions useful for studying chemical kinetics problems.</p>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-chempy.kinetics.analysis">
+<span id="chempy-kinetics-analysis-module"></span><h2>chempy.kinetics.analysis module<a class="headerlink" href="#module-chempy.kinetics.analysis" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="chempy.kinetics.analysis.dominant_reactions_graph">
+<code class="descclassname">chempy.kinetics.analysis.</code><code class="descname">dominant_reactions_graph</code><span class="sig-paren">(</span><em>concs</em>, <em>rate_exprs_cb</em>, <em>rsys</em>, <em>substance_key</em>, <em>linthreshy=1e-09</em>, <em>fname='dominant_reactions_graph.png'</em>, <em>relative=False</em>, <em>combine_equilibria=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/analysis.html#dominant_reactions_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.analysis.dominant_reactions_graph" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.analysis.plot_reaction_contributions">
+<code class="descclassname">chempy.kinetics.analysis.</code><code class="descname">plot_reaction_contributions</code><span class="sig-paren">(</span><em>xyp</em>, <em>rsys</em>, <em>rate_exprs_cb</em>, <em>substance_keys=None</em>, <em>varied=None</em>, <em>axes=None</em>, <em>total=False</em>, <em>linthreshy=1e-09</em>, <em>relative=False</em>, <em>xscale='log'</em>, <em>yscale='symlog'</em>, <em>xlabel='Time'</em>, <em>ylabel=None</em>, <em>combine_equilibria=False</em>, <em>selection=slice(None</em>, <em>None</em>, <em>None)</em>, <em>unit_registry=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/analysis.html#plot_reaction_contributions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.analysis.plot_reaction_contributions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots per reaction contributions to concentration evolution of a substance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>xyp</strong> : <code class="docutils literal"><span class="pre">pyodesys.results.Result</span></code> instance or length 3 tuple or xout,yout,params</p>
+<p><strong>result</strong> : pyodesys.results.Result</p>
+<p class="last"><strong>substance_key</strong> : str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.kinetics.arrhenius">
+<span id="chempy-kinetics-arrhenius-module"></span><h2>chempy.kinetics.arrhenius module<a class="headerlink" href="#module-chempy.kinetics.arrhenius" title="Permalink to this headline">¶</a></h2>
+<p>Contains functions for the <a class="reference external" href="https://en.wikipedia.org/wiki/Arrhenius_equation">Arrhenius equation</a>
+(<a class="reference internal" href="#chempy.kinetics.arrhenius.arrhenius_equation" title="chempy.kinetics.arrhenius.arrhenius_equation"><code class="xref py py-func docutils literal"><span class="pre">arrhenius_equation()</span></code></a>) and a convenience fitting routine
+(<a class="reference internal" href="#chempy.kinetics.arrhenius.fit_arrhenius_equation" title="chempy.kinetics.arrhenius.fit_arrhenius_equation"><code class="xref py py-func docutils literal"><span class="pre">fit_arrhenius_equation()</span></code></a>).</p>
+<dl class="class">
+<dt id="chempy.kinetics.arrhenius.ArrheniusParam">
+<em class="property">class </em><code class="descclassname">chempy.kinetics.arrhenius.</code><code class="descname">ArrheniusParam</code><a class="reference internal" href="_modules/chempy/kinetics/arrhenius.html#ArrheniusParam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.arrhenius.ArrheniusParam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">chempy.util.pyutil.ArrheniusParam</span></code></p>
+<p>Kinetic data in the form of an Arrhenius parameterisation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>Ea: float</strong></p>
+<blockquote>
+<div><p>activation energy</p>
+</div></blockquote>
+<p><strong>A: float</strong></p>
+<blockquote>
+<div><p>preexponential prefactor (Arrhenius type eq.)</p>
+</div></blockquote>
+<p><strong>ref: object (default: None)</strong></p>
+<blockquote class="last">
+<div><p>arbitrary reference (e.g. string representing citation key)</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">k</span> <span class="o">=</span> <span class="n">ArrheniusParam</span><span class="p">(</span><span class="mf">1e13</span><span class="p">,</span> <span class="mf">40e3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s1">&#39;</span><span class="si">%.5g</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">k</span><span class="p">(</span><span class="mf">298.15</span><span class="p">)</span>
+<span class="go">&#39;9.8245e+05&#39;</span>
+</pre></div>
+</div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">A</span></code></td>
+<td>Alias for field number 0</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">Ea</span></code></td>
+<td>Alias for field number 1</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">ref</span></code></td>
+<td>Alias for field number 2</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.kinetics.arrhenius.ArrheniusParam.Ea_over_R" title="chempy.kinetics.arrhenius.ArrheniusParam.Ea_over_R"><code class="xref py py-obj docutils literal"><span class="pre">Ea_over_R</span></code></a>(constants,&nbsp;units[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(T[,&nbsp;constants,&nbsp;units,&nbsp;backend])</td>
+<td>Evaluates the arrhenius equation for a specified state</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.kinetics.arrhenius.ArrheniusParam.as_RateExpr" title="chempy.kinetics.arrhenius.ArrheniusParam.as_RateExpr"><code class="xref py py-obj docutils literal"><span class="pre">as_RateExpr</span></code></a>([unique_keys,&nbsp;constants,&nbsp;units,&nbsp;…])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">count</span></code>(…)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.kinetics.arrhenius.ArrheniusParam.equation_as_string" title="chempy.kinetics.arrhenius.ArrheniusParam.equation_as_string"><code class="xref py py-obj docutils literal"><span class="pre">equation_as_string</span></code></a>(precision[,&nbsp;tex])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#chempy.kinetics.arrhenius.ArrheniusParam.format" title="chempy.kinetics.arrhenius.ArrheniusParam.format"><code class="xref py py-obj docutils literal"><span class="pre">format</span></code></a>(precision[,&nbsp;tex])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.kinetics.arrhenius.ArrheniusParam.from_fit_of_data" title="chempy.kinetics.arrhenius.ArrheniusParam.from_fit_of_data"><code class="xref py py-obj docutils literal"><span class="pre">from_fit_of_data</span></code></a>(T,&nbsp;k[,&nbsp;kerr])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">index</span></code>((value,&nbsp;[start,&nbsp;…)</td>
+<td>Raises ValueError if the value is not present.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="chempy.kinetics.arrhenius.ArrheniusParam.Ea_over_R">
+<code class="descname">Ea_over_R</code><span class="sig-paren">(</span><em>constants</em>, <em>units</em>, <em>backend=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/arrhenius.html#ArrheniusParam.Ea_over_R"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.arrhenius.ArrheniusParam.Ea_over_R" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="chempy.kinetics.arrhenius.ArrheniusParam.as_RateExpr">
+<code class="descname">as_RateExpr</code><span class="sig-paren">(</span><em>unique_keys=None</em>, <em>constants=None</em>, <em>units=None</em>, <em>backend=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/arrhenius.html#ArrheniusParam.as_RateExpr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.arrhenius.ArrheniusParam.as_RateExpr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="chempy.kinetics.arrhenius.ArrheniusParam.equation_as_string">
+<code class="descname">equation_as_string</code><span class="sig-paren">(</span><em>precision</em>, <em>tex=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/arrhenius.html#ArrheniusParam.equation_as_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.arrhenius.ArrheniusParam.equation_as_string" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="chempy.kinetics.arrhenius.ArrheniusParam.format">
+<code class="descname">format</code><span class="sig-paren">(</span><em>precision</em>, <em>tex=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/arrhenius.html#ArrheniusParam.format"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.arrhenius.ArrheniusParam.format" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="chempy.kinetics.arrhenius.ArrheniusParam.from_fit_of_data">
+<em class="property">classmethod </em><code class="descname">from_fit_of_data</code><span class="sig-paren">(</span><em>T</em>, <em>k</em>, <em>kerr=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/arrhenius.html#ArrheniusParam.from_fit_of_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.arrhenius.ArrheniusParam.from_fit_of_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="chempy.kinetics.arrhenius.ArrheniusParamWithUnits">
+<em class="property">class </em><code class="descclassname">chempy.kinetics.arrhenius.</code><code class="descname">ArrheniusParamWithUnits</code><a class="reference internal" href="_modules/chempy/kinetics/arrhenius.html#ArrheniusParamWithUnits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.arrhenius.ArrheniusParamWithUnits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#chempy.kinetics.arrhenius.ArrheniusParam" title="chempy.kinetics.arrhenius.ArrheniusParam"><code class="xref py py-class docutils literal"><span class="pre">chempy.kinetics.arrhenius.ArrheniusParam</span></code></a></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">A</span></code></td>
+<td>Alias for field number 0</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">Ea</span></code></td>
+<td>Alias for field number 1</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">ref</span></code></td>
+<td>Alias for field number 2</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">Ea_over_R</span></code>(constants,&nbsp;units[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(state[,&nbsp;constants,&nbsp;units,&nbsp;backend])</td>
+<td>See <code class="xref py py-func docutils literal"><span class="pre">chempy.arrhenius.arrhenius_equation()</span></code>.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.kinetics.arrhenius.ArrheniusParamWithUnits.as_RateExpr" title="chempy.kinetics.arrhenius.ArrheniusParamWithUnits.as_RateExpr"><code class="xref py py-obj docutils literal"><span class="pre">as_RateExpr</span></code></a>([unique_keys,&nbsp;constants,&nbsp;units])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">count</span></code>(…)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">equation_as_string</span></code>(precision[,&nbsp;tex])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">format</span></code>(precision[,&nbsp;tex])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">from_fit_of_data</span></code>(T,&nbsp;k[,&nbsp;kerr])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">index</span></code>((value,&nbsp;[start,&nbsp;…)</td>
+<td>Raises ValueError if the value is not present.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="chempy.kinetics.arrhenius.ArrheniusParamWithUnits.as_RateExpr">
+<code class="descname">as_RateExpr</code><span class="sig-paren">(</span><em>unique_keys=None</em>, <em>constants=&lt;module 'quantities.constants' from '/home/bjorn/.local/lib/python2.7/site-packages/quantities/constants/__init__.pyc'&gt;</em>, <em>units=&lt;module 'quantities' from '/home/bjorn/.local/lib/python2.7/site-packages/quantities/__init__.pyc'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/arrhenius.html#ArrheniusParamWithUnits.as_RateExpr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.arrhenius.ArrheniusParamWithUnits.as_RateExpr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.arrhenius.arrhenius_equation">
+<code class="descclassname">chempy.kinetics.arrhenius.</code><code class="descname">arrhenius_equation</code><span class="sig-paren">(</span><em>A</em>, <em>Ea</em>, <em>T</em>, <em>constants=None</em>, <em>units=None</em>, <em>backend=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/arrhenius.html#arrhenius_equation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.arrhenius.arrhenius_equation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the rate coefficient according to the Arrhenius equation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>A: float with unit</strong></p>
+<blockquote>
+<div><p>frequency factor</p>
+</div></blockquote>
+<p><strong>Ea: float with unit</strong></p>
+<blockquote>
+<div><p>activation energy</p>
+</div></blockquote>
+<p><strong>T: float with unit</strong></p>
+<blockquote>
+<div><p>temperature</p>
+</div></blockquote>
+<p><strong>constants: object (optional, default: None)</strong></p>
+<blockquote>
+<div><dl class="docutils">
+<dt>if None:</dt>
+<dd><p class="first last">T assumed to be in Kelvin, Ea in J/(K mol)</p>
+</dd>
+<dt>else:</dt>
+<dd><p class="first last">attributes accessed: molar_gas_constant
+Tip: pass quantities.constants</p>
+</dd>
+</dl>
+</div></blockquote>
+<p><strong>units: object (optional, default: None)</strong></p>
+<blockquote>
+<div><p>attributes accessed: Joule, Kelvin and mol</p>
+</div></blockquote>
+<p><strong>backend: module (optional)</strong></p>
+<blockquote class="last">
+<div><p>module with “exp”, default: numpy, math</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.arrhenius.fit_arrhenius_equation">
+<code class="descclassname">chempy.kinetics.arrhenius.</code><code class="descname">fit_arrhenius_equation</code><span class="sig-paren">(</span><em>T</em>, <em>k</em>, <em>kerr=None</em>, <em>linearized=False</em>, <em>constants=None</em>, <em>units=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/arrhenius.html#fit_arrhenius_equation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.arrhenius.fit_arrhenius_equation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Curve fitting of the Arrhenius equation to data points</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>T</strong> : float</p>
+<p><strong>k</strong> : array_like</p>
+<p><strong>kerr</strong> : array_like (optional)</p>
+<p class="last"><strong>linearized</strong> : bool</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.kinetics.eyring">
+<span id="chempy-kinetics-eyring-module"></span><h2>chempy.kinetics.eyring module<a class="headerlink" href="#module-chempy.kinetics.eyring" title="Permalink to this headline">¶</a></h2>
+<p>Contains functions for the <a class="reference external" href="https://en.wikipedia.org/wiki/Eyring_equation">Eyring equation</a>.</p>
+<dl class="class">
+<dt id="chempy.kinetics.eyring.EyringParam">
+<em class="property">class </em><code class="descclassname">chempy.kinetics.eyring.</code><code class="descname">EyringParam</code><a class="reference internal" href="_modules/chempy/kinetics/eyring.html#EyringParam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.eyring.EyringParam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">chempy.util.pyutil.EyringParam</span></code></p>
+<p>Kinetic data in the form of an Eyring parameterisation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>dH</strong> : float</p>
+<blockquote>
+<div><p>Enthalpy of activation.</p>
+</div></blockquote>
+<p><strong>dS</strong> : float</p>
+<blockquote>
+<div><p>Entropy of activation.</p>
+</div></blockquote>
+<p><strong>ref: object (default: None)</strong></p>
+<blockquote class="last">
+<div><p>arbitrary reference (e.g. citation key or dict with bibtex entries)</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">k</span> <span class="o">=</span> <span class="n">EyringParam</span><span class="p">(</span><span class="mf">72e3</span><span class="p">,</span> <span class="mf">61.4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s1">&#39;</span><span class="si">%.5g</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">k</span><span class="p">(</span><span class="mf">298.15</span><span class="p">)</span>
+<span class="go">&#39;2435.4&#39;</span>
+</pre></div>
+</div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">dH</span></code></td>
+<td>Alias for field number 0</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">dS</span></code></td>
+<td>Alias for field number 1</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">ref</span></code></td>
+<td>Alias for field number 2</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(T[,&nbsp;constants,&nbsp;units,&nbsp;backend])</td>
+<td>Evaluates the Eyring equation for a specified state</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#chempy.kinetics.eyring.EyringParam.as_RateExpr" title="chempy.kinetics.eyring.EyringParam.as_RateExpr"><code class="xref py py-obj docutils literal"><span class="pre">as_RateExpr</span></code></a>([unique_keys,&nbsp;constants,&nbsp;units,&nbsp;…])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">count</span></code>(…)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#chempy.kinetics.eyring.EyringParam.dH_over_R" title="chempy.kinetics.eyring.EyringParam.dH_over_R"><code class="xref py py-obj docutils literal"><span class="pre">dH_over_R</span></code></a>([constants,&nbsp;units,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.kinetics.eyring.EyringParam.equation_as_string" title="chempy.kinetics.eyring.EyringParam.equation_as_string"><code class="xref py py-obj docutils literal"><span class="pre">equation_as_string</span></code></a>(precision[,&nbsp;tex])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#chempy.kinetics.eyring.EyringParam.format" title="chempy.kinetics.eyring.EyringParam.format"><code class="xref py py-obj docutils literal"><span class="pre">format</span></code></a>(precision[,&nbsp;tex])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">index</span></code>((value,&nbsp;[start,&nbsp;…)</td>
+<td>Raises ValueError if the value is not present.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#chempy.kinetics.eyring.EyringParam.kB_h_times_exp_dS_R" title="chempy.kinetics.eyring.EyringParam.kB_h_times_exp_dS_R"><code class="xref py py-obj docutils literal"><span class="pre">kB_h_times_exp_dS_R</span></code></a>([constants,&nbsp;units,&nbsp;backend])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="chempy.kinetics.eyring.EyringParam.as_RateExpr">
+<code class="descname">as_RateExpr</code><span class="sig-paren">(</span><em>unique_keys=None</em>, <em>constants=None</em>, <em>units=None</em>, <em>backend=&lt;module 'math' (built-in)&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/eyring.html#EyringParam.as_RateExpr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.eyring.EyringParam.as_RateExpr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="chempy.kinetics.eyring.EyringParam.dH_over_R">
+<code class="descname">dH_over_R</code><span class="sig-paren">(</span><em>constants=None</em>, <em>units=None</em>, <em>backend=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/eyring.html#EyringParam.dH_over_R"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.eyring.EyringParam.dH_over_R" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="chempy.kinetics.eyring.EyringParam.equation_as_string">
+<code class="descname">equation_as_string</code><span class="sig-paren">(</span><em>precision</em>, <em>tex=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/eyring.html#EyringParam.equation_as_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.eyring.EyringParam.equation_as_string" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="chempy.kinetics.eyring.EyringParam.format">
+<code class="descname">format</code><span class="sig-paren">(</span><em>precision</em>, <em>tex=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/eyring.html#EyringParam.format"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.eyring.EyringParam.format" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="chempy.kinetics.eyring.EyringParam.kB_h_times_exp_dS_R">
+<code class="descname">kB_h_times_exp_dS_R</code><span class="sig-paren">(</span><em>constants=None</em>, <em>units=None</em>, <em>backend=&lt;module 'math' (built-in)&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/eyring.html#EyringParam.kB_h_times_exp_dS_R"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.eyring.EyringParam.kB_h_times_exp_dS_R" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="chempy.kinetics.eyring.EyringParamWithUnits">
+<em class="property">class </em><code class="descclassname">chempy.kinetics.eyring.</code><code class="descname">EyringParamWithUnits</code><a class="reference internal" href="_modules/chempy/kinetics/eyring.html#EyringParamWithUnits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.eyring.EyringParamWithUnits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#chempy.kinetics.eyring.EyringParam" title="chempy.kinetics.eyring.EyringParam"><code class="xref py py-class docutils literal"><span class="pre">chempy.kinetics.eyring.EyringParam</span></code></a></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">dH</span></code></td>
+<td>Alias for field number 0</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">dS</span></code></td>
+<td>Alias for field number 1</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">ref</span></code></td>
+<td>Alias for field number 2</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(state[,&nbsp;constants,&nbsp;units,&nbsp;backend])</td>
+<td>See <code class="xref py py-func docutils literal"><span class="pre">chempy.eyring.eyring_equation()</span></code>.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#chempy.kinetics.eyring.EyringParamWithUnits.as_RateExpr" title="chempy.kinetics.eyring.EyringParamWithUnits.as_RateExpr"><code class="xref py py-obj docutils literal"><span class="pre">as_RateExpr</span></code></a>([unique_keys,&nbsp;constants,&nbsp;units,&nbsp;…])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">count</span></code>(…)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">dH_over_R</span></code>([constants,&nbsp;units,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">equation_as_string</span></code>(precision[,&nbsp;tex])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">format</span></code>(precision[,&nbsp;tex])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">index</span></code>((value,&nbsp;[start,&nbsp;…)</td>
+<td>Raises ValueError if the value is not present.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">kB_h_times_exp_dS_R</span></code>([constants,&nbsp;units,&nbsp;backend])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="chempy.kinetics.eyring.EyringParamWithUnits.as_RateExpr">
+<code class="descname">as_RateExpr</code><span class="sig-paren">(</span><em>unique_keys=None</em>, <em>constants=&lt;module 'quantities.constants' from '/home/bjorn/.local/lib/python2.7/site-packages/quantities/constants/__init__.pyc'&gt;</em>, <em>units=&lt;module 'quantities' from '/home/bjorn/.local/lib/python2.7/site-packages/quantities/__init__.pyc'&gt;</em>, <em>backend=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/eyring.html#EyringParamWithUnits.as_RateExpr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.eyring.EyringParamWithUnits.as_RateExpr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.eyring.eyring_equation">
+<code class="descclassname">chempy.kinetics.eyring.</code><code class="descname">eyring_equation</code><span class="sig-paren">(</span><em>dH</em>, <em>dS</em>, <em>T</em>, <em>constants=None</em>, <em>units=None</em>, <em>backend=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/eyring.html#eyring_equation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.eyring.eyring_equation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the rate coefficient according to the Eyring equation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>dH: float with unit</strong></p>
+<blockquote>
+<div><p>Enthalpy of activation.</p>
+</div></blockquote>
+<p><strong>dS: float with unit</strong></p>
+<blockquote>
+<div><p>Entropy of activation.</p>
+</div></blockquote>
+<p><strong>T: float with unit</strong></p>
+<blockquote>
+<div><p>temperature</p>
+</div></blockquote>
+<p><strong>constants: object (optional, default: None)</strong></p>
+<blockquote>
+<div><dl class="docutils">
+<dt>if None:</dt>
+<dd><p class="first last">T assumed to be in Kelvin, Ea in J/(K mol)</p>
+</dd>
+<dt>else:</dt>
+<dd><p class="first last">attributes accessed: molar_gas_constant
+Tip: pass quantities.constants</p>
+</dd>
+</dl>
+</div></blockquote>
+<p><strong>units: object (optional, default: None)</strong></p>
+<blockquote>
+<div><p>attributes accessed: Joule, Kelvin and mol</p>
+</div></blockquote>
+<p><strong>backend: module (optional)</strong></p>
+<blockquote class="last">
+<div><p>module with “exp”, default: numpy, math</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.eyring.fit_eyring_equation">
+<code class="descclassname">chempy.kinetics.eyring.</code><code class="descname">fit_eyring_equation</code><span class="sig-paren">(</span><em>T</em>, <em>k</em>, <em>kerr=None</em>, <em>linearized=False</em>, <em>constants=None</em>, <em>units=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/eyring.html#fit_eyring_equation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.eyring.fit_eyring_equation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Curve fitting of the Eyring equation to data points</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>T</strong> : float</p>
+<p><strong>k</strong> : array_like</p>
+<p><strong>kerr</strong> : array_like (optional)</p>
+<p class="last"><strong>linearized</strong> : bool</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.kinetics.integrated">
+<span id="chempy-kinetics-integrated-module"></span><h2>chempy.kinetics.integrated module<a class="headerlink" href="#module-chempy.kinetics.integrated" title="Permalink to this headline">¶</a></h2>
+<p>This module collects special cases of systems for which analytic solutions
+are available.</p>
+<dl class="function">
+<dt id="chempy.kinetics.integrated.binary_irrev">
+<code class="descclassname">chempy.kinetics.integrated.</code><code class="descname">binary_irrev</code><span class="sig-paren">(</span><em>t</em>, <em>kf</em>, <em>P0</em>, <em>t0</em>, <em>excess_C</em>, <em>limiting_C</em>, <em>eps_l</em>, <em>backend=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/integrated.html#binary_irrev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.integrated.binary_irrev" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.integrated.binary_irrev_cstr">
+<code class="descclassname">chempy.kinetics.integrated.</code><code class="descname">binary_irrev_cstr</code><span class="sig-paren">(</span><em>t</em>, <em>k</em>, <em>r</em>, <em>p</em>, <em>fr</em>, <em>fp</em>, <em>fv</em>, <em>n=1</em>, <em>backend=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/integrated.html#binary_irrev_cstr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.integrated.binary_irrev_cstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Analytic solution for <code class="docutils literal"><span class="pre">2</span> <span class="pre">A</span> <span class="pre">-&gt;</span> <span class="pre">n</span> <span class="pre">B</span></code> in a CSTR.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>t</strong> : array_like</p>
+<p><strong>k</strong> : float_like</p>
+<blockquote>
+<div><p>Rate constant</p>
+</div></blockquote>
+<p><strong>r</strong> : float_like</p>
+<blockquote>
+<div><p>Initial concentration of reactant.</p>
+</div></blockquote>
+<p><strong>p</strong> : float_like</p>
+<blockquote>
+<div><p>Initial concentration of product.</p>
+</div></blockquote>
+<p><strong>fr</strong> : float_like</p>
+<blockquote>
+<div><p>Concentration of reactant in feed.</p>
+</div></blockquote>
+<p><strong>fp</strong> : float_like</p>
+<blockquote>
+<div><p>Concentration of product in feed.</p>
+</div></blockquote>
+<p><strong>fv</strong> : float_like</p>
+<blockquote>
+<div><p>Feed rate / tank volume ratio.</p>
+</div></blockquote>
+<p><strong>n</strong> : int</p>
+<p><strong>backend</strong> : module or str</p>
+<blockquote>
+<div><p>Default is ‘numpy’, can also be e.g. <code class="docutils literal"><span class="pre">sympy</span></code>.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">length-2 tuple</p>
+<blockquote class="last">
+<div><p>concentrations of reactant and product</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.integrated.binary_rev">
+<code class="descclassname">chempy.kinetics.integrated.</code><code class="descname">binary_rev</code><span class="sig-paren">(</span><em>t</em>, <em>kf</em>, <em>kb</em>, <em>prod</em>, <em>major</em>, <em>minor</em>, <em>backend=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/integrated.html#binary_rev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.integrated.binary_rev" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the analytic transient concentration of a complex.</p>
+<p>From second order reversible kinetics.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>t</strong> : float, Symbol or array_like</p>
+<blockquote>
+<div><p>Time.</p>
+</div></blockquote>
+<p><strong>kf</strong> : number or Symbol</p>
+<blockquote>
+<div><p>Forward (bimolecular) rate constant.</p>
+</div></blockquote>
+<p><strong>kb</strong> : number or Symbol</p>
+<blockquote>
+<div><p>Backward (unimolecular) rate constant.</p>
+</div></blockquote>
+<p><strong>prod</strong> : number or Symbol</p>
+<blockquote>
+<div><p>Initial concentration of the complex.</p>
+</div></blockquote>
+<p><strong>major</strong> : number or Symbol</p>
+<blockquote>
+<div><p>Initial concentration of the more abundant reactant.</p>
+</div></blockquote>
+<p><strong>minor</strong> : number or Symbol</p>
+<blockquote>
+<div><p>Initial concentration of the less abundant reactant.</p>
+</div></blockquote>
+<p><strong>backend</strong> : module or str</p>
+<blockquote class="last">
+<div><p>Default is ‘numpy’, can also be e.g. <code class="docutils literal"><span class="pre">sympy</span></code>.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.integrated.dimerization_irrev">
+<code class="descclassname">chempy.kinetics.integrated.</code><code class="descname">dimerization_irrev</code><span class="sig-paren">(</span><em>t</em>, <em>kf</em>, <em>initial_C</em>, <em>P0=1</em>, <em>t0=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/integrated.html#dimerization_irrev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.integrated.dimerization_irrev" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.integrated.pseudo_irrev">
+<code class="descclassname">chempy.kinetics.integrated.</code><code class="descname">pseudo_irrev</code><span class="sig-paren">(</span><em>t</em>, <em>kf</em>, <em>P0</em>, <em>t0</em>, <em>excess_C</em>, <em>limiting_C</em>, <em>eps_l</em>, <em>backend=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/integrated.html#pseudo_irrev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.integrated.pseudo_irrev" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.integrated.pseudo_rev">
+<code class="descclassname">chempy.kinetics.integrated.</code><code class="descname">pseudo_rev</code><span class="sig-paren">(</span><em>t</em>, <em>kf</em>, <em>P0</em>, <em>t0</em>, <em>excess_C</em>, <em>limiting_C</em>, <em>eps_l</em>, <em>beta</em>, <em>backend=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/integrated.html#pseudo_rev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.integrated.pseudo_rev" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.integrated.unary_irrev_cstr">
+<code class="descclassname">chempy.kinetics.integrated.</code><code class="descname">unary_irrev_cstr</code><span class="sig-paren">(</span><em>t</em>, <em>k</em>, <em>r</em>, <em>p</em>, <em>fr</em>, <em>fp</em>, <em>fv</em>, <em>backend=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/integrated.html#unary_irrev_cstr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.integrated.unary_irrev_cstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Analytic solution for <code class="docutils literal"><span class="pre">A</span> <span class="pre">-&gt;</span> <span class="pre">B</span></code> in a CSTR.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>t</strong> : array_like</p>
+<p><strong>k</strong> : float_like</p>
+<blockquote>
+<div><p>Rate constant</p>
+</div></blockquote>
+<p><strong>r</strong> : float_like</p>
+<blockquote>
+<div><p>Initial concentration of reactant.</p>
+</div></blockquote>
+<p><strong>p</strong> : float_like</p>
+<blockquote>
+<div><p>Initial concentration of product.</p>
+</div></blockquote>
+<p><strong>fr</strong> : float_like</p>
+<blockquote>
+<div><p>Concentration of reactant in feed.</p>
+</div></blockquote>
+<p><strong>fp</strong> : float_like</p>
+<blockquote>
+<div><p>Concentration of product in feed.</p>
+</div></blockquote>
+<p><strong>fv</strong> : float_like</p>
+<blockquote>
+<div><p>Feed rate / tank volume ratio.</p>
+</div></blockquote>
+<p><strong>backend</strong> : module or str</p>
+<blockquote>
+<div><p>Default is ‘numpy’, can also be e.g. <code class="docutils literal"><span class="pre">sympy</span></code>.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">length-2 tuple</p>
+<blockquote class="last">
+<div><p>concentrations of reactant and product</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.kinetics.ode">
+<span id="chempy-kinetics-ode-module"></span><h2>chempy.kinetics.ode module<a class="headerlink" href="#module-chempy.kinetics.ode" title="Permalink to this headline">¶</a></h2>
+<p>This module contains functions for formulating systems of Ordinary Differential
+Equations (ODE-systems) which may be integrated numerically to model temporal
+evolution of concentrations in reaction systems.</p>
+<dl class="function">
+<dt id="chempy.kinetics.ode.chained_parameter_variation">
+<code class="descclassname">chempy.kinetics.ode.</code><code class="descname">chained_parameter_variation</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/ode.html#chained_parameter_variation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.ode.chained_parameter_variation" title="Permalink to this definition">¶</a></dt>
+<dd><p>chained_parameter_variation is deprecated since (not including) 0.5.3, it will be missing in 0.8.0. Use pyodesys.chained_parameter_variation instead.</p>
+<p>Integrate an ODE-system for a serie of durations with some parameters changed in-between</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>odesys</strong> : <code class="xref py py-class docutils literal"><span class="pre">pyodesys.ODESys</span></code> instance</p>
+<blockquote class="last">
+<div><p>durations : iterable of floats
+init_conc : dict or array_like
+varied_params : dict mapping parameter name to array_like</p>
+<blockquote>
+<div><p>Each array_like need to be of same length as durations.</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>default_params <span class="classifier-delimiter">:</span> <span class="classifier">dict or array_like</span></dt>
+<dd><p class="first last">Default values for the parameters of the ODE system.</p>
+</dd>
+<dt>integrate_kwargs <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd><p class="first last">Keyword arguments passed on to <code class="xref py py-meth docutils literal"><span class="pre">pyodesys.ODESys.integrate()</span></code>.</p>
+</dd>
+</dl>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.ode.dCdt_list">
+<code class="descclassname">chempy.kinetics.ode.</code><code class="descname">dCdt_list</code><span class="sig-paren">(</span><em>rsys</em>, <em>rates</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/ode.html#dCdt_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.ode.dCdt_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of the time derivatives of the concentrations</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>rsys: ReactionSystem instance</strong></p>
+<p><strong>rates: array_like</strong></p>
+<blockquote class="last">
+<div><p>rates (to be weighted by stoichiometries) of the reactions
+in <code class="docutils literal"><span class="pre">rsys</span></code></p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">chempy</span> <span class="k">import</span> <span class="n">ReactionSystem</span><span class="p">,</span> <span class="n">Reaction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">line</span><span class="p">,</span> <span class="n">keys</span> <span class="o">=</span> <span class="s1">&#39;H2O -&gt; H+ + OH- ; 1e-4&#39;</span><span class="p">,</span> <span class="s1">&#39;H2O H+ OH-&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rsys</span> <span class="o">=</span> <span class="n">ReactionSystem</span><span class="p">([</span><span class="n">Reaction</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">keys</span><span class="p">)],</span> <span class="n">keys</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dCdt_list</span><span class="p">(</span><span class="n">rsys</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.0054</span><span class="p">])</span>
+<span class="go">[-0.0054, 0.0054, 0.0054]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.ode.get_odesys">
+<code class="descclassname">chempy.kinetics.ode.</code><code class="descname">get_odesys</code><span class="sig-paren">(</span><em>rsys</em>, <em>include_params=True</em>, <em>substitutions=None</em>, <em>SymbolicSys=None</em>, <em>unit_registry=None</em>, <em>output_conc_unit=None</em>, <em>output_time_unit=None</em>, <em>cstr=False</em>, <em>constants=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/ode.html#get_odesys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.ode.get_odesys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a <code class="xref py py-class docutils literal"><span class="pre">pyneqsys.SymbolicSys</span></code> from a <code class="xref py py-class docutils literal"><span class="pre">ReactionSystem</span></code></p>
+<p>The parameters passed to RateExpr will contain the key <code class="docutils literal"><span class="pre">'time'</span></code> corresponding to the
+independent variable of the IVP.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>rsys</strong> : ReactionSystem</p>
+<blockquote>
+<div><p>Each reaction of <code class="docutils literal"><span class="pre">rsys</span></code> will have their <code class="xref py py-meth docutils literal"><span class="pre">Reaction.rate_expr()</span></code> invoked.
+Note that if <code class="xref py py-attr docutils literal"><span class="pre">Reaction.param</span></code> is not a <code class="xref py py-class docutils literal"><span class="pre">RateExpr</span></code> (or convertible to
+one through <code class="xref py py-meth docutils literal"><span class="pre">as_RateExpr()</span></code>) it will be used to construct a <code class="xref py py-class docutils literal"><span class="pre">MassAction</span></code>
+instance.</p>
+</div></blockquote>
+<p><strong>include_params</strong> : bool (default: True)</p>
+<blockquote>
+<div><p>Whether rate constants should be included into the rate expressions or
+left as free parameters in the <code class="xref py py-class docutils literal"><span class="pre">pyneqsys.SymbolicSys</span></code> instance.</p>
+</div></blockquote>
+<p><strong>substitutions</strong> : dict, optional</p>
+<blockquote>
+<div><p>Variable substitutions used by rate expressions (in respective Reaction.param).
+values are allowed to be values of instances of <code class="xref py py-class docutils literal"><span class="pre">Expr</span></code>.</p>
+</div></blockquote>
+<p><strong>SymbolicSys</strong> : class (optional)</p>
+<blockquote>
+<div><p>Default : <code class="xref py py-class docutils literal"><span class="pre">pyneqsys.SymbolicSys</span></code>.</p>
+</div></blockquote>
+<p><strong>unit_registry: dict (optional)</strong></p>
+<blockquote>
+<div><p>See <code class="xref py py-func docutils literal"><span class="pre">chempy.units.get_derived_units()</span></code>.</p>
+</div></blockquote>
+<p><strong>output_conc_unit</strong> : unit (Optional)</p>
+<p><strong>output_time_unit</strong> : unit (Optional)</p>
+<p><strong>cstr</strong> : bool</p>
+<blockquote>
+<div><p>Generate expressions for continuously stirred tank reactor.</p>
+</div></blockquote>
+<p><strong>constants</strong> : module</p>
+<blockquote>
+<div><p>e.g. <code class="docutils literal"><span class="pre">chempy.units.default_constants</span></code>, parameter keys not found in
+substitutions will be looked for as an attribute of <code class="docutils literal"><span class="pre">constants</span></code> when provided.</p>
+</div></blockquote>
+<p><strong>**kwargs :</strong></p>
+<blockquote>
+<div><p>Keyword arguemnts passed on to <cite>SymbolicSys</cite>.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">pyodesys.symbolic.SymbolicSys</p>
+<p><strong>extra</strong> : dict, with keys:</p>
+<blockquote class="last">
+<div><ul class="simple">
+<li>param_keys : list of str instances</li>
+<li>unique : OrderedDict mapping str to value (possibly None)</li>
+<li>p_units : list of units</li>
+<li>max_euler_step_cb : callable or None</li>
+<li>linear_dependencies : None or factory of solver callback</li>
+<li>rate_exprs_cb : callable</li>
+<li>cstr_fr_fc : None or (feed-ratio-key, subtance-key-to-feed-conc-key-map)</li>
+</ul>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">chempy</span> <span class="k">import</span> <span class="n">Equilibrium</span><span class="p">,</span> <span class="n">ReactionSystem</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">eq</span> <span class="o">=</span> <span class="n">Equilibrium</span><span class="p">({</span><span class="s1">&#39;Fe+3&#39;</span><span class="p">,</span> <span class="s1">&#39;SCN-&#39;</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;FeSCN+2&#39;</span><span class="p">},</span> <span class="mi">10</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">substances</span> <span class="o">=</span> <span class="s1">&#39;Fe+3 SCN- FeSCN+2&#39;</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rsys</span> <span class="o">=</span> <span class="n">ReactionSystem</span><span class="p">(</span><span class="n">eq</span><span class="o">.</span><span class="n">as_reactions</span><span class="p">(</span><span class="n">kf</span><span class="o">=</span><span class="mf">3.0</span><span class="p">),</span> <span class="n">substances</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">odesys</span><span class="p">,</span> <span class="n">extra</span> <span class="o">=</span> <span class="n">get_odesys</span><span class="p">(</span><span class="n">rsys</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">init_conc</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Fe+3&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s1">&#39;SCN-&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;FeSCN+2&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tout</span><span class="p">,</span> <span class="n">Cout</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">odesys</span><span class="o">.</span><span class="n">integrate</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">init_conc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Cout</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">array([ 0.7042,  0.0042,  0.2958])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.ode.law_of_mass_action_rates">
+<code class="descclassname">chempy.kinetics.ode.</code><code class="descname">law_of_mass_action_rates</code><span class="sig-paren">(</span><em>conc</em>, <em>rsys</em>, <em>variables=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/ode.html#law_of_mass_action_rates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.ode.law_of_mass_action_rates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a generator of reaction rate expressions</p>
+<p>Rates from the law of mass action (<code class="xref py py-attr docutils literal"><span class="pre">Reaction.inact_reac</span></code> ignored)
+from a <code class="xref py py-class docutils literal"><span class="pre">ReactionSystem</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>conc</strong> : array_like</p>
+<blockquote>
+<div><p>concentrations (floats or symbolic objects)</p>
+</div></blockquote>
+<p><strong>rsys</strong> : ReactionSystem instance</p>
+<blockquote>
+<div><p>See <code class="xref py py-class docutils literal"><span class="pre">ReactionSystem</span></code></p>
+</div></blockquote>
+<p><strong>variables</strong> : dict (optional)</p>
+<blockquote class="last">
+<div><p>to override parameters in the rate expressions of the reactions</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">chempy</span> <span class="k">import</span> <span class="n">ReactionSystem</span><span class="p">,</span> <span class="n">Reaction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">line</span><span class="p">,</span> <span class="n">keys</span> <span class="o">=</span> <span class="s1">&#39;H2O -&gt; H+ + OH- ; 1e-4&#39;</span><span class="p">,</span> <span class="s1">&#39;H2O H+ OH-&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rxn</span> <span class="o">=</span> <span class="n">Reaction</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rsys</span> <span class="o">=</span> <span class="n">ReactionSystem</span><span class="p">([</span><span class="n">rxn</span><span class="p">],</span> <span class="n">keys</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">next</span><span class="p">(</span><span class="n">law_of_mass_action_rates</span><span class="p">([</span><span class="mf">55.4</span><span class="p">,</span> <span class="mf">1e-7</span><span class="p">,</span> <span class="mf">1e-7</span><span class="p">],</span> <span class="n">rsys</span><span class="p">))</span>
+<span class="go">0.00554</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">chempy.kinetics.rates</span> <span class="k">import</span> <span class="n">Arrhenius</span><span class="p">,</span> <span class="n">MassAction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rxn</span><span class="o">.</span><span class="n">param</span> <span class="o">=</span> <span class="n">MassAction</span><span class="p">(</span><span class="n">Arrhenius</span><span class="p">({</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="mf">1e10</span><span class="p">,</span> <span class="s1">&#39;Ea_over_R&#39;</span><span class="p">:</span> <span class="mi">9314</span><span class="p">}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%.5g</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">next</span><span class="p">(</span><span class="n">law_of_mass_action_rates</span><span class="p">([</span><span class="mf">55.4</span><span class="p">,</span> <span class="mf">1e-7</span><span class="p">,</span> <span class="mf">1e-7</span><span class="p">],</span> <span class="n">rsys</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="mi">293</span><span class="p">})))</span>
+<span class="go">0.0086693</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.kinetics.rates">
+<span id="chempy-kinetics-rates-module"></span><h2>chempy.kinetics.rates module<a class="headerlink" href="#module-chempy.kinetics.rates" title="Permalink to this headline">¶</a></h2>
+<p>This module collects object representing rate expressions. It is based
+on the <code class="docutils literal"><span class="pre">chemp.util._expr</span></code> module. The API is somewhat cumbersome since
+it tries to be compatible with pure python, SymPy and the underlying
+units library of ChemPy (<code class="docutils literal"><span class="pre">quantities</span></code>). Consider the API to be provisional.</p>
+<dl class="class">
+<dt id="chempy.kinetics.rates.Arrhenius">
+<em class="property">class </em><code class="descclassname">chempy.kinetics.rates.</code><code class="descname">Arrhenius</code><span class="sig-paren">(</span><em>args=None</em>, <em>unique_keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#Arrhenius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.Arrhenius" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">chempy.util._expr.Expr</span></code></p>
+<p>Rate expression for a Arrhenius-type of rate: c0*exp(-c1/T)</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">math</span> <span class="k">import</span> <span class="n">exp</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">chempy</span> <span class="k">import</span> <span class="n">Reaction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">chempy.units</span> <span class="k">import</span> <span class="n">allclose</span><span class="p">,</span> <span class="n">default_units</span> <span class="k">as</span> <span class="n">u</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">A</span> <span class="o">=</span> <span class="mf">1e11</span> <span class="o">/</span> <span class="n">u</span><span class="o">.</span><span class="n">second</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Ea_over_R</span> <span class="o">=</span> <span class="mf">42e3</span><span class="o">/</span><span class="mf">8.3145</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">K</span><span class="o">**-</span><span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ratex</span> <span class="o">=</span> <span class="n">MassAction</span><span class="p">(</span><span class="n">Arrhenius</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">Ea_over_R</span><span class="p">]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rxn</span> <span class="o">=</span> <span class="n">Reaction</span><span class="p">({</span><span class="s1">&#39;R&#39;</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;P&#39;</span><span class="p">},</span> <span class="n">ratex</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dRdt</span> <span class="o">=</span> <span class="n">rxn</span><span class="o">.</span><span class="n">rate</span><span class="p">({</span><span class="s1">&#39;R&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">M</span><span class="p">,</span> <span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="mf">298.15</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">K</span><span class="p">})[</span><span class="s1">&#39;R&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">allclose</span><span class="p">(</span><span class="n">dRdt</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="o">*</span><span class="mf">1e11</span><span class="o">*</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">42e3</span><span class="o">/</span><span class="mf">8.3145</span><span class="o">/</span><span class="mf">298.15</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">M</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="68%" />
+<col width="32%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>argument_defaults</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>nargs</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_args</span></code>(variables[,&nbsp;backend,&nbsp;evaluate])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_parameter_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_params</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_unique_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">arg</span></code>(variables,&nbsp;index[,&nbsp;backend,&nbsp;evaluate])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.kinetics.rates.Arrhenius.args_dimensionality" title="chempy.kinetics.rates.Arrhenius.args_dimensionality"><code class="xref py py-obj docutils literal"><span class="pre">args_dimensionality</span></code></a>(reaction)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">dedimensionalisation</span></code>(unit_registry[,&nbsp;…])</td>
+<td>Create an instance with consistent units from a unit_registry</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">fk</span></code>(*args)</td>
+<td>Alternative constructor “from keys”, *args is used as <code class="docutils literal"><span class="pre">unique_keys</span></code>.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">from_callback</span></code>(callback[,&nbsp;attr])</td>
+<td>Factory of subclasses</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">latex</span></code>([variables,&nbsp;backend,&nbsp;default])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">string</span></code>([arg_fmt])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="chempy.kinetics.rates.Arrhenius.args_dimensionality">
+<code class="descname">args_dimensionality</code><span class="sig-paren">(</span><em>reaction</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#Arrhenius.args_dimensionality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.Arrhenius.args_dimensionality" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.kinetics.rates.Arrhenius.argument_names">
+<code class="descname">argument_names</code><em class="property"> = ('A', 'Ea_over_R')</em><a class="headerlink" href="#chempy.kinetics.rates.Arrhenius.argument_names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.kinetics.rates.Arrhenius.parameter_keys">
+<code class="descname">parameter_keys</code><em class="property"> = ('temperature',)</em><a class="headerlink" href="#chempy.kinetics.rates.Arrhenius.parameter_keys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="chempy.kinetics.rates.Eyring">
+<em class="property">class </em><code class="descclassname">chempy.kinetics.rates.</code><code class="descname">Eyring</code><span class="sig-paren">(</span><em>args=None</em>, <em>unique_keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#Eyring"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.Eyring" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">chempy.util._expr.Expr</span></code></p>
+<p>Rate expression for Eyring eq: c0*T*exp(-c1/T)</p>
+<p>Note that choice of standard state (c^0) will matter for order &gt; 1.</p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="47%" />
+<col width="53%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>nargs</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_args</span></code>(variables[,&nbsp;backend,&nbsp;evaluate])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_parameter_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_params</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_unique_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">arg</span></code>(variables,&nbsp;index[,&nbsp;backend,&nbsp;evaluate])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.kinetics.rates.Eyring.args_dimensionality" title="chempy.kinetics.rates.Eyring.args_dimensionality"><code class="xref py py-obj docutils literal"><span class="pre">args_dimensionality</span></code></a>(reaction)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">dedimensionalisation</span></code>(unit_registry[,&nbsp;…])</td>
+<td>Create an instance with consistent units from a unit_registry</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">fk</span></code>(*args)</td>
+<td>Alternative constructor “from keys”, *args is used as <code class="docutils literal"><span class="pre">unique_keys</span></code>.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">from_callback</span></code>(callback[,&nbsp;attr])</td>
+<td>Factory of subclasses</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">latex</span></code>([variables,&nbsp;backend,&nbsp;default])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">string</span></code>([arg_fmt])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="chempy.kinetics.rates.Eyring.args_dimensionality">
+<code class="descname">args_dimensionality</code><span class="sig-paren">(</span><em>reaction</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#Eyring.args_dimensionality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.Eyring.args_dimensionality" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.kinetics.rates.Eyring.argument_defaults">
+<code class="descname">argument_defaults</code><em class="property"> = (array(1.0) * M,)</em><a class="headerlink" href="#chempy.kinetics.rates.Eyring.argument_defaults" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.kinetics.rates.Eyring.argument_names">
+<code class="descname">argument_names</code><em class="property"> = ('kB_h_times_exp_dS_R', 'dH_over_R', 'conc0')</em><a class="headerlink" href="#chempy.kinetics.rates.Eyring.argument_names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.kinetics.rates.Eyring.parameter_keys">
+<code class="descname">parameter_keys</code><em class="property"> = ('temperature',)</em><a class="headerlink" href="#chempy.kinetics.rates.Eyring.parameter_keys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="chempy.kinetics.rates.EyringHS">
+<em class="property">class </em><code class="descclassname">chempy.kinetics.rates.</code><code class="descname">EyringHS</code><span class="sig-paren">(</span><em>args=None</em>, <em>unique_keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#EyringHS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.EyringHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">chempy.util._expr.Expr</span></code></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="47%" />
+<col width="53%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>nargs</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(variables[,&nbsp;backend,&nbsp;reaction])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_args</span></code>(variables[,&nbsp;backend,&nbsp;evaluate])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_parameter_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_params</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_unique_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">arg</span></code>(variables,&nbsp;index[,&nbsp;backend,&nbsp;evaluate])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.kinetics.rates.EyringHS.args_dimensionality" title="chempy.kinetics.rates.EyringHS.args_dimensionality"><code class="xref py py-obj docutils literal"><span class="pre">args_dimensionality</span></code></a>(**kwargs)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">dedimensionalisation</span></code>(unit_registry[,&nbsp;…])</td>
+<td>Create an instance with consistent units from a unit_registry</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">fk</span></code>(*args)</td>
+<td>Alternative constructor “from keys”, *args is used as <code class="docutils literal"><span class="pre">unique_keys</span></code>.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">from_callback</span></code>(callback[,&nbsp;attr])</td>
+<td>Factory of subclasses</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">latex</span></code>([variables,&nbsp;backend,&nbsp;default])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">string</span></code>([arg_fmt])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="chempy.kinetics.rates.EyringHS.args_dimensionality">
+<code class="descname">args_dimensionality</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#EyringHS.args_dimensionality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.EyringHS.args_dimensionality" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.kinetics.rates.EyringHS.argument_defaults">
+<code class="descname">argument_defaults</code><em class="property"> = (array(1.0) * M,)</em><a class="headerlink" href="#chempy.kinetics.rates.EyringHS.argument_defaults" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.kinetics.rates.EyringHS.argument_names">
+<code class="descname">argument_names</code><em class="property"> = ('dH', 'dS', 'c0')</em><a class="headerlink" href="#chempy.kinetics.rates.EyringHS.argument_names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.kinetics.rates.EyringHS.parameter_keys">
+<code class="descname">parameter_keys</code><em class="property"> = ('temperature', 'molar_gas_constant', 'Boltzmann_constant', 'Planck_constant')</em><a class="headerlink" href="#chempy.kinetics.rates.EyringHS.parameter_keys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="chempy.kinetics.rates.MassAction">
+<em class="property">class </em><code class="descclassname">chempy.kinetics.rates.</code><code class="descname">MassAction</code><span class="sig-paren">(</span><em>args=None</em>, <em>unique_keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#MassAction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.MassAction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#chempy.kinetics.rates.RateExpr" title="chempy.kinetics.rates.RateExpr"><code class="xref py py-class docutils literal"><span class="pre">chempy.kinetics.rates.RateExpr</span></code></a></p>
+<p>Rate-expression of mass-action type</p>
+<p class="rubric">Notes</p>
+<p><code class="xref py py-meth docutils literal"><span class="pre">__call__()</span></code> requires a <code class="xref py py-class docutils literal"><span class="pre">Reaction</span></code> instance to be passed as <code class="docutils literal"><span class="pre">reaction</span></code>
+keyword argument.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ma</span> <span class="o">=</span> <span class="n">MassAction</span><span class="p">([</span><span class="mf">3.14</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">chempy</span> <span class="k">import</span> <span class="n">Reaction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">Reaction</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="s1">&#39;3 A -&gt; B&#39;</span><span class="p">,</span> <span class="n">param</span><span class="o">=</span><span class="n">ma</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="o">.</span><span class="n">rate</span><span class="p">({</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">75.36</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">:</span> <span class="mf">25.12</span><span class="p">}</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="68%" />
+<col width="32%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>argument_defaults</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>nargs</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(variables[,&nbsp;backend,&nbsp;reaction])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#chempy.kinetics.rates.MassAction.active_conc_prod" title="chempy.kinetics.rates.MassAction.active_conc_prod"><code class="xref py py-obj docutils literal"><span class="pre">active_conc_prod</span></code></a>(variables[,&nbsp;backend,&nbsp;reaction])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_args</span></code>(variables[,&nbsp;backend,&nbsp;evaluate])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_parameter_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_params</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_unique_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">arg</span></code>(variables,&nbsp;index[,&nbsp;backend,&nbsp;evaluate])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#chempy.kinetics.rates.MassAction.args_dimensionality" title="chempy.kinetics.rates.MassAction.args_dimensionality"><code class="xref py py-obj docutils literal"><span class="pre">args_dimensionality</span></code></a>(reaction)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">dedimensionalisation</span></code>(unit_registry[,&nbsp;…])</td>
+<td>Create an instance with consistent units from a unit_registry</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">fk</span></code>(*args)</td>
+<td>Alternative constructor “from keys”, *args is used as <code class="docutils literal"><span class="pre">unique_keys</span></code>.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.kinetics.rates.MassAction.from_callback" title="chempy.kinetics.rates.MassAction.from_callback"><code class="xref py py-obj docutils literal"><span class="pre">from_callback</span></code></a>(callback[,&nbsp;attr])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">latex</span></code>([variables,&nbsp;backend,&nbsp;default])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.kinetics.rates.MassAction.rate_coeff" title="chempy.kinetics.rates.MassAction.rate_coeff"><code class="xref py py-obj docutils literal"><span class="pre">rate_coeff</span></code></a>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#chempy.kinetics.rates.MassAction.string" title="chempy.kinetics.rates.MassAction.string"><code class="xref py py-obj docutils literal"><span class="pre">string</span></code></a>(*args,&nbsp;**kwargs)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.kinetics.rates.MassAction.subclass_from_callback" title="chempy.kinetics.rates.MassAction.subclass_from_callback"><code class="xref py py-obj docutils literal"><span class="pre">subclass_from_callback</span></code></a>(*args,&nbsp;**kwargs)</td>
+<td>subclass_from_callback is deprecated. Use MassAction.from_callback instead.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="chempy.kinetics.rates.MassAction.active_conc_prod">
+<code class="descname">active_conc_prod</code><span class="sig-paren">(</span><em>variables</em>, <em>backend=&lt;module 'math' (built-in)&gt;</em>, <em>reaction=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#MassAction.active_conc_prod"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.MassAction.active_conc_prod" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="chempy.kinetics.rates.MassAction.args_dimensionality">
+<code class="descname">args_dimensionality</code><span class="sig-paren">(</span><em>reaction</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#MassAction.args_dimensionality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.MassAction.args_dimensionality" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.kinetics.rates.MassAction.argument_names">
+<code class="descname">argument_names</code><em class="property"> = ('rate_constant',)</em><a class="headerlink" href="#chempy.kinetics.rates.MassAction.argument_names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="chempy.kinetics.rates.MassAction.from_callback">
+<em class="property">classmethod </em><code class="descname">from_callback</code><span class="sig-paren">(</span><em>callback</em>, <em>attr='rate_coeff'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#MassAction.from_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.MassAction.from_callback" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="chempy.kinetics.rates.MassAction.rate_coeff">
+<code class="descname">rate_coeff</code><span class="sig-paren">(</span><em>variables</em>, <em>backend=&lt;module 'math' (built-in)&gt;</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#MassAction.rate_coeff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.MassAction.rate_coeff" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="chempy.kinetics.rates.MassAction.string">
+<code class="descname">string</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#MassAction.string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.MassAction.string" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="chempy.kinetics.rates.MassAction.subclass_from_callback">
+<em class="property">classmethod </em><code class="descname">subclass_from_callback</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#MassAction.subclass_from_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.MassAction.subclass_from_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>subclass_from_callback is deprecated. Use MassAction.from_callback instead.</p>
+<p>Override MassAction.__call__</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="chempy.kinetics.rates.Radiolytic">
+<em class="property">class </em><code class="descclassname">chempy.kinetics.rates.</code><code class="descname">Radiolytic</code><span class="sig-paren">(</span><em>args=None</em>, <em>unique_keys=None</em><span class="sig-paren">)</span><a class="headerlink" href="#chempy.kinetics.rates.Radiolytic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#chempy.kinetics.rates.RadiolyticBase" title="chempy.kinetics.rates.RadiolyticBase"><code class="xref py py-class docutils literal"><span class="pre">chempy.kinetics.rates.RadiolyticBase</span></code></a></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="68%" />
+<col width="32%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>argument_defaults</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>nargs</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(variables[,&nbsp;backend,&nbsp;reaction])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_args</span></code>(variables[,&nbsp;backend,&nbsp;evaluate])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_parameter_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_params</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_unique_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">arg</span></code>(variables,&nbsp;index[,&nbsp;backend,&nbsp;evaluate])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.kinetics.rates.Radiolytic.args_dimensionality" title="chempy.kinetics.rates.Radiolytic.args_dimensionality"><code class="xref py py-obj docutils literal"><span class="pre">args_dimensionality</span></code></a>(reaction)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">dedimensionalisation</span></code>(unit_registry[,&nbsp;…])</td>
+<td>Create an instance with consistent units from a unit_registry</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">fk</span></code>(*args)</td>
+<td>Alternative constructor “from keys”, *args is used as <code class="docutils literal"><span class="pre">unique_keys</span></code>.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">from_callback</span></code>(callback[,&nbsp;attr])</td>
+<td>Factory of subclasses</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.kinetics.rates.Radiolytic.g_value" title="chempy.kinetics.rates.Radiolytic.g_value"><code class="xref py py-obj docutils literal"><span class="pre">g_value</span></code></a>(*args,&nbsp;**kwargs)</td>
+<td>g_value is deprecated. Use Radiolytic.all_args instead.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#chempy.kinetics.rates.Radiolytic.g_values" title="chempy.kinetics.rates.Radiolytic.g_values"><code class="xref py py-obj docutils literal"><span class="pre">g_values</span></code></a>(*args,&nbsp;**kwargs)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">latex</span></code>([variables,&nbsp;backend,&nbsp;default])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">string</span></code>([arg_fmt])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">subclass_from_callback</span></code>(*args,&nbsp;**kwargs)</td>
+<td>subclass_from_callback is deprecated. Use from_callback instead.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="chempy.kinetics.rates.Radiolytic.args_dimensionality">
+<code class="descname">args_dimensionality</code><span class="sig-paren">(</span><em>reaction</em><span class="sig-paren">)</span><a class="headerlink" href="#chempy.kinetics.rates.Radiolytic.args_dimensionality" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.kinetics.rates.Radiolytic.argument_names">
+<code class="descname">argument_names</code><em class="property"> = ('radiolytic_yield',)</em><a class="headerlink" href="#chempy.kinetics.rates.Radiolytic.argument_names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="chempy.kinetics.rates.Radiolytic.g_value">
+<code class="descname">g_value</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#chempy.kinetics.rates.Radiolytic.g_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>g_value is deprecated. Use Radiolytic.all_args instead.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="chempy.kinetics.rates.Radiolytic.g_values">
+<code class="descname">g_values</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#chempy.kinetics.rates.Radiolytic.g_values" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.kinetics.rates.Radiolytic.parameter_keys">
+<code class="descname">parameter_keys</code><em class="property"> = ('density', 'doserate')</em><a class="headerlink" href="#chempy.kinetics.rates.Radiolytic.parameter_keys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="chempy.kinetics.rates.RadiolyticBase">
+<em class="property">class </em><code class="descclassname">chempy.kinetics.rates.</code><code class="descname">RadiolyticBase</code><span class="sig-paren">(</span><em>args=None</em>, <em>unique_keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#RadiolyticBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.RadiolyticBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#chempy.kinetics.rates.RateExpr" title="chempy.kinetics.rates.RateExpr"><code class="xref py py-class docutils literal"><span class="pre">chempy.kinetics.rates.RateExpr</span></code></a></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="68%" />
+<col width="32%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>argument_defaults</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>argument_names</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>nargs</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_args</span></code>(variables[,&nbsp;backend,&nbsp;evaluate])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_parameter_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_params</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_unique_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">arg</span></code>(variables,&nbsp;index[,&nbsp;backend,&nbsp;evaluate])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">args_dimensionality</span></code>(**kwargs)</td>
+<td>return tuple of dicts mapping str to int (‘length’, ‘mass’, ‘time’, ‘current’,</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">dedimensionalisation</span></code>(unit_registry[,&nbsp;…])</td>
+<td>Create an instance with consistent units from a unit_registry</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">fk</span></code>(*args)</td>
+<td>Alternative constructor “from keys”, *args is used as <code class="docutils literal"><span class="pre">unique_keys</span></code>.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">from_callback</span></code>(callback[,&nbsp;attr])</td>
+<td>Factory of subclasses</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">latex</span></code>([variables,&nbsp;backend,&nbsp;default])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">string</span></code>([arg_fmt])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">subclass_from_callback</span></code>(*args,&nbsp;**kwargs)</td>
+<td>subclass_from_callback is deprecated. Use from_callback instead.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="chempy.kinetics.rates.RampedTemp">
+<em class="property">class </em><code class="descclassname">chempy.kinetics.rates.</code><code class="descname">RampedTemp</code><span class="sig-paren">(</span><em>args=None</em>, <em>unique_keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#RampedTemp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.RampedTemp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">chempy.util._expr.Expr</span></code></p>
+<p>Ramped temperature, pass as substitution to e.g. <code class="docutils literal"><span class="pre">get_odesys</span></code></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="68%" />
+<col width="32%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>argument_defaults</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>nargs</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_args</span></code>(variables[,&nbsp;backend,&nbsp;evaluate])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_parameter_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_params</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_unique_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">arg</span></code>(variables,&nbsp;index[,&nbsp;backend,&nbsp;evaluate])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.kinetics.rates.RampedTemp.args_dimensionality" title="chempy.kinetics.rates.RampedTemp.args_dimensionality"><code class="xref py py-obj docutils literal"><span class="pre">args_dimensionality</span></code></a>(**kwargs)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">dedimensionalisation</span></code>(unit_registry[,&nbsp;…])</td>
+<td>Create an instance with consistent units from a unit_registry</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">fk</span></code>(*args)</td>
+<td>Alternative constructor “from keys”, *args is used as <code class="docutils literal"><span class="pre">unique_keys</span></code>.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">from_callback</span></code>(callback[,&nbsp;attr])</td>
+<td>Factory of subclasses</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">latex</span></code>([variables,&nbsp;backend,&nbsp;default])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">string</span></code>([arg_fmt])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="chempy.kinetics.rates.RampedTemp.args_dimensionality">
+<code class="descname">args_dimensionality</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#RampedTemp.args_dimensionality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.RampedTemp.args_dimensionality" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.kinetics.rates.RampedTemp.argument_names">
+<code class="descname">argument_names</code><em class="property"> = ('T0', 'dTdt')</em><a class="headerlink" href="#chempy.kinetics.rates.RampedTemp.argument_names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.kinetics.rates.RampedTemp.parameter_keys">
+<code class="descname">parameter_keys</code><em class="property"> = ('time',)</em><a class="headerlink" href="#chempy.kinetics.rates.RampedTemp.parameter_keys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="chempy.kinetics.rates.RateExpr">
+<em class="property">class </em><code class="descclassname">chempy.kinetics.rates.</code><code class="descname">RateExpr</code><span class="sig-paren">(</span><em>args=None</em>, <em>unique_keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#RateExpr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.RateExpr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">chempy.util._expr.Expr</span></code></p>
+<p>Baseclass for rate expressions, see source code of e.g. MassAction &amp; Radiolytic.</p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="68%" />
+<col width="32%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>argument_defaults</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>argument_names</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>nargs</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_args</span></code>(variables[,&nbsp;backend,&nbsp;evaluate])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_parameter_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_params</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_unique_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">arg</span></code>(variables,&nbsp;index[,&nbsp;backend,&nbsp;evaluate])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">args_dimensionality</span></code>(**kwargs)</td>
+<td>return tuple of dicts mapping str to int (‘length’, ‘mass’, ‘time’, ‘current’,</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">dedimensionalisation</span></code>(unit_registry[,&nbsp;…])</td>
+<td>Create an instance with consistent units from a unit_registry</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">fk</span></code>(*args)</td>
+<td>Alternative constructor “from keys”, *args is used as <code class="docutils literal"><span class="pre">unique_keys</span></code>.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">from_callback</span></code>(callback[,&nbsp;attr])</td>
+<td>Factory of subclasses</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">latex</span></code>([variables,&nbsp;backend,&nbsp;default])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">string</span></code>([arg_fmt])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.kinetics.rates.RateExpr.subclass_from_callback" title="chempy.kinetics.rates.RateExpr.subclass_from_callback"><code class="xref py py-obj docutils literal"><span class="pre">subclass_from_callback</span></code></a>(*args,&nbsp;**kwargs)</td>
+<td>subclass_from_callback is deprecated. Use from_callback instead.</td>
+</tr>
+</tbody>
+</table>
+<dl class="classmethod">
+<dt id="chempy.kinetics.rates.RateExpr.subclass_from_callback">
+<em class="property">classmethod </em><code class="descname">subclass_from_callback</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#RateExpr.subclass_from_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.RateExpr.subclass_from_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>subclass_from_callback is deprecated. Use from_callback instead.</p>
+<p>Override RateExpr.__call__</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cb</strong> : callback</p>
+<blockquote class="last">
+<div><blockquote>
+<div><p>With signature (variables, all_args, backend) -&gt; scalar
+where <cite>variables</cite> is a dict, <cite>all_args</cite> a tuple and <cite>backend</cite> a module.</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>cls_attrs <span class="classifier-delimiter">:</span> <span class="classifier">dict, optional</span></dt>
+<dd><p class="first last">Attributes to set in subclass, e.g. parameter_keys, nargs</p>
+</dd>
+</dl>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">chempy</span> <span class="k">import</span> <span class="n">Reaction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rxn</span> <span class="o">=</span> <span class="n">Reaction</span><span class="p">({</span><span class="s1">&#39;O2&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;H2&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;H2O2&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>  <span class="c1"># d[H2O2]/dt = p0*exp(-p1/T)*sqrt([O2])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">cb</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">all_args</span><span class="p">,</span> <span class="n">backend</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">O2</span><span class="p">,</span> <span class="n">T</span> <span class="o">=</span> <span class="n">variables</span><span class="p">[</span><span class="s1">&#39;O2&#39;</span><span class="p">],</span> <span class="n">variables</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">]</span>
+<span class="gp">... </span>    <span class="n">p0</span><span class="p">,</span> <span class="n">p1</span> <span class="o">=</span> <span class="n">all_args</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">p0</span><span class="o">*</span><span class="n">backend</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">O2</span><span class="p">)</span><span class="o">*</span><span class="n">backend</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">p1</span><span class="o">/</span><span class="n">T</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">MyRateExpr</span> <span class="o">=</span> <span class="n">RateExpr</span><span class="o">.</span><span class="n">subclass_from_callback</span><span class="p">(</span><span class="n">cb</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">parameter_keys</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;temperature&#39;</span><span class="p">,),</span><span class="n">nargs</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">k</span> <span class="o">=</span> <span class="n">MyRateExpr</span><span class="p">([</span><span class="mf">1.3e9</span><span class="p">,</span> <span class="mf">4317.2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%.5g</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">k</span><span class="p">({</span><span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="mf">298.15</span><span class="p">,</span> <span class="s1">&#39;O2&#39;</span><span class="p">:</span> <span class="mf">1.1e-3</span><span class="p">,</span> <span class="s1">&#39;rxn&#39;</span><span class="p">:</span> <span class="n">rxn</span><span class="p">}))</span>
+<span class="go">22.186</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="chempy.kinetics.rates.SinTemp">
+<em class="property">class </em><code class="descclassname">chempy.kinetics.rates.</code><code class="descname">SinTemp</code><span class="sig-paren">(</span><em>args=None</em>, <em>unique_keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#SinTemp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.SinTemp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">chempy.util._expr.Expr</span></code></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="68%" />
+<col width="32%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>argument_defaults</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>nargs</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_args</span></code>(variables[,&nbsp;backend,&nbsp;evaluate])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_parameter_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">all_params</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">all_unique_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">arg</span></code>(variables,&nbsp;index[,&nbsp;backend,&nbsp;evaluate])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.kinetics.rates.SinTemp.args_dimensionality" title="chempy.kinetics.rates.SinTemp.args_dimensionality"><code class="xref py py-obj docutils literal"><span class="pre">args_dimensionality</span></code></a>(**kwargs)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">dedimensionalisation</span></code>(unit_registry[,&nbsp;…])</td>
+<td>Create an instance with consistent units from a unit_registry</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">fk</span></code>(*args)</td>
+<td>Alternative constructor “from keys”, *args is used as <code class="docutils literal"><span class="pre">unique_keys</span></code>.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">from_callback</span></code>(callback[,&nbsp;attr])</td>
+<td>Factory of subclasses</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">latex</span></code>([variables,&nbsp;backend,&nbsp;default])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">string</span></code>([arg_fmt])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="chempy.kinetics.rates.SinTemp.args_dimensionality">
+<code class="descname">args_dimensionality</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#SinTemp.args_dimensionality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.SinTemp.args_dimensionality" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.kinetics.rates.SinTemp.argument_names">
+<code class="descname">argument_names</code><em class="property"> = ('Tbase', 'Tamp', 'angvel', 'phase')</em><a class="headerlink" href="#chempy.kinetics.rates.SinTemp.argument_names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.kinetics.rates.SinTemp.parameter_keys">
+<code class="descname">parameter_keys</code><em class="property"> = ('time',)</em><a class="headerlink" href="#chempy.kinetics.rates.SinTemp.parameter_keys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.kinetics.rates.mk_Radiolytic">
+<code class="descclassname">chempy.kinetics.rates.</code><code class="descname">mk_Radiolytic</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/kinetics/rates.html#mk_Radiolytic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.kinetics.rates.mk_Radiolytic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a Radiolytic rate expression</p>
+<p>Note that there is no mass-action dependence in the resulting
+class, i.e. the rates does not depend on any concentrations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>*doserate_names</strong> : str instances</p>
+<blockquote class="last">
+<div><p>Default: (‘’,)</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>The instance __call__ will require by default <code class="docutils literal"><span class="pre">'density'</span></code> and <code class="docutils literal"><span class="pre">'doserate'</span></code>
+in variables.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">RadiolyticAlpha</span> <span class="o">=</span> <span class="n">mk_Radiolytic</span><span class="p">(</span><span class="s1">&#39;alpha&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">RadiolyticGamma</span> <span class="o">=</span> <span class="n">mk_Radiolytic</span><span class="p">(</span><span class="s1">&#39;gamma&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dihydrogen_alpha</span> <span class="o">=</span> <span class="n">RadiolyticAlpha</span><span class="p">([</span><span class="mf">0.8e-7</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dihydrogen_gamma</span> <span class="o">=</span> <span class="n">RadiolyticGamma</span><span class="p">([</span><span class="mf">0.45e-7</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">RadiolyticAB</span> <span class="o">=</span> <span class="n">mk_Radiolytic</span><span class="p">(</span><span class="s1">&#39;alpha&#39;</span><span class="p">,</span> <span class="s1">&#39;beta&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="chempy.printing.html" class="btn btn-neutral float-right" title="chempy.printing package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="chempy.electrochemistry.html" class="btn btn-neutral" title="chempy.electrochemistry package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.6.5',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

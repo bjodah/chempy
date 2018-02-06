@@ -1,0 +1,1722 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.util package &mdash; chempy 0.6.5 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="chempy 0.6.5 documentation" href="index.html"/>
+        <link rel="up" title="chempy package" href="chempy.html"/>
+        <link rel="prev" title="chempy.thermodynamics package" href="chempy.thermodynamics.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.6.5
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="chempy.html">chempy package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="chempy.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="chempy.electrochemistry.html">chempy.electrochemistry package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.kinetics.html">chempy.kinetics package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.printing.html">chempy.printing package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.properties.html">chempy.properties package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.thermodynamics.html">chempy.thermodynamics package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">chempy.util package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.util.arithmeticdict">chempy.util.arithmeticdict module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.util.bkh">chempy.util.bkh module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.util.deprecation">chempy.util.deprecation module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.util.graph">chempy.util.graph module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.util.numutil">chempy.util.numutil module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.util.parsing">chempy.util.parsing module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.util.periodic">chempy.util.periodic module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.util.pyutil">chempy.util.pyutil module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.util.regression">chempy.util.regression module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.util.stoich">chempy.util.stoich module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.util.table">chempy.util.table module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.util.testing">chempy.util.testing module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.arrhenius">chempy.arrhenius module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.chemistry">chempy.chemistry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.debye_huckel">chempy.debye_huckel module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.einstein_smoluchowski">chempy.einstein_smoluchowski module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.electrolytes">chempy.electrolytes module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.equilibria">chempy.equilibria module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.eyring">chempy.eyring module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.henry">chempy.henry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.reactionsystem">chempy.reactionsystem module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.symbolic">chempy.symbolic module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.units">chempy.units module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">chempy</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="chempy.html">chempy package</a> &raquo;</li>
+        
+      <li>chempy.util package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <a href="https://github.com/bjodah/chempy/blob/v0.6.5/doc/chempy.util.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-chempy.util">
+<span id="chempy-util-package"></span><h1>chempy.util package<a class="headerlink" href="#module-chempy.util" title="Permalink to this headline">¶</a></h1>
+<p>This package collects utility functions used throughout the <code class="docutils literal"><span class="pre">ChemPy</span></code> package.</p>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-chempy.util.arithmeticdict">
+<span id="chempy-util-arithmeticdict-module"></span><h2>chempy.util.arithmeticdict module<a class="headerlink" href="#module-chempy.util.arithmeticdict" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="chempy.util.arithmeticdict.ArithmeticDict">
+<em class="property">class </em><code class="descclassname">chempy.util.arithmeticdict.</code><code class="descname">ArithmeticDict</code><a class="reference internal" href="_modules/chempy/util/arithmeticdict.html#ArithmeticDict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.arithmeticdict.ArithmeticDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">collections.defaultdict</span></code></p>
+<p>A dictionary which supports arithmetics</p>
+<p>Subclassed from defaultdict, with support for addition, subtraction,
+multiplication and division. If other term/factor has a <code class="xref py py-meth docutils literal"><span class="pre">keys()</span></code> method
+the arithmetics are performed on a key per key basis. If <code class="xref py py-meth docutils literal"><span class="pre">keys()</span></code> is
+missing, the operation is broadcasted onto all values.
+Nonexisting keys are interpreted to signal a zero.</p>
+<p class="rubric">Notes</p>
+<p><code class="docutils literal"><span class="pre">__eq__</span></code> ignores values equal to <code class="docutils literal"><span class="pre">self.default_factory()</span></code></p>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">d1</span> <span class="o">=</span> <span class="n">ArithmeticDict</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d2</span> <span class="o">=</span> <span class="n">ArithmeticDict</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mf">7.0</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">d1</span> <span class="o">+</span> <span class="n">d2</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mf">2.</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mf">8.</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mf">7.</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="mf">0.</span><span class="p">}</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">d1</span> <span class="o">*</span> <span class="n">d1</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mf">4.0</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mf">9.0</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">d1</span> <span class="o">*</span> <span class="n">d2</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">15</span><span class="p">}</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d1</span><span class="o">*</span><span class="mi">2</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">}</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">d1</span> <span class="o">/</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">11</span><span class="p">})[</span><span class="s1">&#39;b&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mf">3.</span><span class="o">/</span><span class="mi">11</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d2</span><span class="o">/</span><span class="mi">3</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mf">5.</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mf">7.</span><span class="o">/</span><span class="mi">3</span><span class="p">}</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.util.arithmeticdict.ArithmeticDict.all_non_negative" title="chempy.util.arithmeticdict.ArithmeticDict.all_non_negative"><code class="xref py py-obj docutils literal"><span class="pre">all_non_negative</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">clear</span></code>(()&nbsp;-&gt;&nbsp;None.&nbsp;&nbsp;Remove&nbsp;all&nbsp;items&nbsp;from&nbsp;D.)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.util.arithmeticdict.ArithmeticDict.copy" title="chempy.util.arithmeticdict.ArithmeticDict.copy"><code class="xref py py-obj docutils literal"><span class="pre">copy</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">fromkeys</span></code>(…)</td>
+<td>v defaults to None.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">get</span></code>((k[,d])&nbsp;-&gt;&nbsp;D[k]&nbsp;if&nbsp;k&nbsp;in&nbsp;D,&nbsp;…)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">has_key</span></code>((k)&nbsp;-&gt;&nbsp;True&nbsp;if&nbsp;D&nbsp;has&nbsp;a&nbsp;key&nbsp;k,&nbsp;else&nbsp;False)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.util.arithmeticdict.ArithmeticDict.isclose" title="chempy.util.arithmeticdict.ArithmeticDict.isclose"><code class="xref py py-obj docutils literal"><span class="pre">isclose</span></code></a>(other[,&nbsp;rtol,&nbsp;atol])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">items</span></code>(()&nbsp;-&gt;&nbsp;list&nbsp;of&nbsp;D’s&nbsp;(key,&nbsp;value)&nbsp;pairs,&nbsp;…)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">iteritems</span></code>(()&nbsp;-&gt;&nbsp;an&nbsp;iterator&nbsp;over&nbsp;the&nbsp;(key,&nbsp;…)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">iterkeys</span></code>(()&nbsp;-&gt;&nbsp;an&nbsp;iterator&nbsp;over&nbsp;the&nbsp;keys&nbsp;of&nbsp;D)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">itervalues</span></code>(…)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">keys</span></code>(()&nbsp;-&gt;&nbsp;list&nbsp;of&nbsp;D’s&nbsp;keys)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">pop</span></code>((k[,d])&nbsp;-&gt;&nbsp;v,&nbsp;…)</td>
+<td>If key is not found, d is returned if given, otherwise KeyError is raised</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">popitem</span></code>(()&nbsp;-&gt;&nbsp;(k,&nbsp;v),&nbsp;…)</td>
+<td>2-tuple; but raise KeyError if D is empty.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">setdefault</span></code>((k[,d])&nbsp;-&gt;&nbsp;D.get(k,d),&nbsp;…)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">update</span></code>(([E,&nbsp;…)</td>
+<td>If E present and has a .keys() method, does:     for k in E: D[k] = E[k]</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">values</span></code>(()&nbsp;-&gt;&nbsp;list&nbsp;of&nbsp;D’s&nbsp;values)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">viewitems</span></code>(…)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">viewkeys</span></code>(…)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">viewvalues</span></code>(…)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="chempy.util.arithmeticdict.ArithmeticDict.all_non_negative">
+<code class="descname">all_non_negative</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/arithmeticdict.html#ArithmeticDict.all_non_negative"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.arithmeticdict.ArithmeticDict.all_non_negative" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="chempy.util.arithmeticdict.ArithmeticDict.copy">
+<code class="descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/arithmeticdict.html#ArithmeticDict.copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.arithmeticdict.ArithmeticDict.copy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="chempy.util.arithmeticdict.ArithmeticDict.isclose">
+<code class="descname">isclose</code><span class="sig-paren">(</span><em>other</em>, <em>rtol=1e-12</em>, <em>atol=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/arithmeticdict.html#ArithmeticDict.isclose"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.arithmeticdict.ArithmeticDict.isclose" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.util.bkh">
+<span id="chempy-util-bkh-module"></span><h2>chempy.util.bkh module<a class="headerlink" href="#module-chempy.util.bkh" title="Permalink to this headline">¶</a></h2>
+<p>Utilities for plotting with <a class="reference external" href="https://bokeh.pydata.org">bokeh</a>.</p>
+<dl class="function">
+<dt id="chempy.util.bkh.integration_with_sliders">
+<code class="descclassname">chempy.util.bkh.</code><code class="descname">integration_with_sliders</code><span class="sig-paren">(</span><em>rsys</em>, <em>tend</em>, <em>c0</em>, <em>parameters</em>, <em>fig_kwargs=None</em>, <em>slider_kwargs=None</em>, <em>conc_bounds=None</em>, <em>x_axis_type='linear'</em>, <em>y_axis_type='linear'</em>, <em>integrate_kwargs=None</em>, <em>odesys_extra=None</em>, <em>get_odesys_kw=None</em>, <em>integrate=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/bkh.html#integration_with_sliders"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.bkh.integration_with_sliders" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>rsys</strong> : ReactionSystem</p>
+<p><strong>tend</strong> : float like</p>
+<p><strong>c0</strong> : dict</p>
+<blockquote>
+<div><p>Initial concentrations.</p>
+</div></blockquote>
+<p><strong>parameters</strong> : dict</p>
+<blockquote>
+<div><p>Parameter values.</p>
+</div></blockquote>
+<p><strong>fig_kwargs</strong> : dict</p>
+<blockquote>
+<div><p>Keyword-arguments passed to bokeh’s <code class="docutils literal"><span class="pre">Figure</span></code>.</p>
+</div></blockquote>
+<p><strong>slider_kwargs</strong> : dict</p>
+<blockquote>
+<div><p>Keyword-arguments passed to bokeh’s <code class="docutils literal"><span class="pre">Slider</span></code>.</p>
+</div></blockquote>
+<p><strong>conc_bounds</strong> : dict of dicts</p>
+<blockquote>
+<div><p>Mapping substance key to dict of bounds (‘start’, ‘end’, ‘step’).</p>
+</div></blockquote>
+<p><strong>x_axis_type</strong> : str</p>
+<p><strong>y_axis_type</strong> : str</p>
+<p><strong>integrate_kwargs</strong> : dict</p>
+<blockquote>
+<div><p>Keyword-arguments passed to integrate.</p>
+</div></blockquote>
+<p><strong>odesys_extra</strong> : tuple</p>
+<blockquote>
+<div><p>If odesys &amp; extra have already been generated (avoids call to <code class="docutils literal"><span class="pre">get_odesys</span></code>).</p>
+</div></blockquote>
+<p><strong>get_odesys_kw</strong> : dict</p>
+<blockquote>
+<div><p>Keyword-arguments passed to <code class="docutils literal"><span class="pre">get_odesys</span></code>.</p>
+</div></blockquote>
+<p><strong>integrate</strong> : callback</p>
+<blockquote class="last">
+<div><p>Defaults to <code class="docutils literal"><span class="pre">odesys.integrate</span></code>.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.util.deprecation">
+<span id="chempy-util-deprecation-module"></span><h2>chempy.util.deprecation module<a class="headerlink" href="#module-chempy.util.deprecation" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="chempy.util.deprecation.Deprecation">
+<em class="property">class </em><code class="descclassname">chempy.util.deprecation.</code><code class="descname">Deprecation</code><span class="sig-paren">(</span><em>last_supported_version=None</em>, <em>will_be_missing_in=None</em>, <em>use_instead=None</em>, <em>issue=None</em>, <em>issues_url=None</em>, <em>warning=&lt;type 'exceptions.DeprecationWarning'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/deprecation.html#Deprecation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.deprecation.Deprecation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Decorator factory for deprecating functions or classes.</p>
+<p>This class represent deprecations of functions or classes and is designed
+to be used with the <code class="docutils literal"><span class="pre">warnings</span></code> library.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>last_supported_version</strong> : str, optional</p>
+<blockquote>
+<div><p>Version string, e.g. <code class="docutils literal"><span class="pre">'0.2.1'</span></code>.</p>
+</div></blockquote>
+<p><strong>will_be_missing_in</strong> : str, optional</p>
+<blockquote>
+<div><p>Version string, e.g. <code class="docutils literal"><span class="pre">'0.3.0'</span></code>.</p>
+</div></blockquote>
+<p><strong>use_instead</strong> : object or str, optional</p>
+<blockquote>
+<div><p>Function or class to use instead or descriptive string.</p>
+</div></blockquote>
+<p><strong>issue</strong> : str, optional</p>
+<p><strong>issues_url</strong> : callback, optional</p>
+<blockquote>
+<div><p>Converts issue to url, e.g. <code class="docutils literal"><span class="pre">lambda</span> <span class="pre">s:</span> <span class="pre">'https://github.com/user/repo/issues/%s/'</span> <span class="pre">%</span> <span class="pre">s.lstrip('gh-')</span></code>.</p>
+</div></blockquote>
+<p><strong>warning: DeprecationWarning, optional</strong></p>
+<blockquote class="last">
+<div><p>Any subclass of DeprecationWarning, tip: you may invoke:
+<code class="docutils literal"><span class="pre">warnings.simplefilter('once',</span> <span class="pre">MyWarning)</span></code> at module init.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p><code class="xref py py-class docutils literal"><span class="pre">DeprecationWarning</span></code> is ignored by default. Use custom warning
+and filter appropriately. Alternatively, run python with <code class="docutils literal"><span class="pre">-W</span></code> flag or set
+the appropriate environment variable:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ python -c &#39;import warnings as w; w.warn(&quot;X&quot;, DeprecationWarning)&#39;
+$ python -Wd -c &#39;import warnings as w; w.warn(&quot;X&quot;, DeprecationWarning)&#39;
+-c:1: DeprecationWarning: X
+$ export PYTHONWARNINGS=d
+$ python -c &#39;import warnings as w; w.warn(&quot;X&quot;, DeprecationWarning)&#39;
+-c:1: DeprecationWarning: X
+</pre></div>
+</div>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">warnings</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nd">@Deprecation</span><span class="p">()</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">f</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="mi">1</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">()</span>  
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">DeprecationWarning</span>: <span class="n">f is deprecated.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nd">@Deprecation</span><span class="p">(</span><span class="n">last_supported_version</span><span class="o">=</span><span class="s1">&#39;0.4.0&#39;</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">some_old_function</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">x</span><span class="o">*</span><span class="n">x</span> <span class="o">-</span> <span class="n">x</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Deprecation</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">some_old_function</span><span class="p">)</span><span class="o">.</span><span class="n">last_supported_version</span>
+<span class="go">&#39;0.4.0&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nd">@Deprecation</span><span class="p">(</span><span class="n">will_be_missing_in</span><span class="o">=</span><span class="s1">&#39;1.0&#39;</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">class</span> <span class="nc">ClumsyClass</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">pass</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Deprecation</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">ClumsyClass</span><span class="p">)</span><span class="o">.</span><span class="n">will_be_missing_in</span>
+<span class="go">&#39;1.0&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">warnings</span><span class="o">.</span><span class="n">resetwarnings</span><span class="p">()</span>
+</pre></div>
+</div>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(wrapped)</td>
+<td>Decorates function to be deprecated</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#chempy.util.deprecation.Deprecation.inspect" title="chempy.util.deprecation.Deprecation.inspect"><code class="xref py py-obj docutils literal"><span class="pre">inspect</span></code></a>(obj)</td>
+<td>Get the <a class="reference internal" href="#chempy.util.deprecation.Deprecation" title="chempy.util.deprecation.Deprecation"><code class="xref py py-class docutils literal"><span class="pre">Deprecation</span></code></a> instance of a deprecated function.</td>
+</tr>
+</tbody>
+</table>
+<dl class="classmethod">
+<dt id="chempy.util.deprecation.Deprecation.inspect">
+<em class="property">classmethod </em><code class="descname">inspect</code><span class="sig-paren">(</span><em>obj</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/deprecation.html#Deprecation.inspect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.deprecation.Deprecation.inspect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the <a class="reference internal" href="#chempy.util.deprecation.Deprecation" title="chempy.util.deprecation.Deprecation"><code class="xref py py-class docutils literal"><span class="pre">Deprecation</span></code></a> instance of a deprecated function.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.util.graph">
+<span id="chempy-util-graph-module"></span><h2>chempy.util.graph module<a class="headerlink" href="#module-chempy.util.graph" title="Permalink to this headline">¶</a></h2>
+<p>Convenince functions for representing reaction systems as graphs.</p>
+<dl class="function">
+<dt id="chempy.util.graph.rsys2dot">
+<code class="descclassname">chempy.util.graph.</code><code class="descname">rsys2dot</code><span class="sig-paren">(</span><em>rsys</em>, <em>tex=False</em>, <em>rprefix='r'</em>, <em>rref0=1</em>, <em>nodeparams='[label=&quot;{}&quot;</em>, <em>shape=diamond]'</em>, <em>colors=('maroon'</em>, <em>'darkgreen')</em>, <em>penwidths=None</em>, <em>include_inactive=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/graph.html#rsys2dot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.graph.rsys2dot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of lines of DOT (graph description language)
+formated graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>rsys: ReactionSystem</strong></p>
+<p><strong>tex: bool (default False)</strong></p>
+<blockquote>
+<div><p>If set True, output will be LaTeX formated</p>
+</div></blockquote>
+<p><strong>(Substance need to have latex_name attribute set)</strong></p>
+<p><strong>rprefix: string</strong></p>
+<blockquote>
+<div><p>Reaction enumeration prefix, default: r</p>
+</div></blockquote>
+<p><strong>rref0: integer</strong></p>
+<blockquote>
+<div><p>Reaction enumeration inital counter value, default: 1</p>
+</div></blockquote>
+<p><strong>nodeparams: string</strong></p>
+<blockquote>
+<div><p>DOT formated param list, default: [label={} shape=diamond]</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">list of lines of DOT representation of the graph representation.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.graph.rsys2graph">
+<code class="descclassname">chempy.util.graph.</code><code class="descname">rsys2graph</code><span class="sig-paren">(</span><em>rsys</em>, <em>fname</em>, <em>output_dir=None</em>, <em>prog=None</em>, <em>save=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/graph.html#rsys2graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.graph.rsys2graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to call <cite>rsys2dot</cite> and write output to file
+and render the graph</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>rsys</strong> : ReactionSystem</p>
+<p><strong>fname</strong> : str</p>
+<blockquote>
+<div><p>filename</p>
+</div></blockquote>
+<p><strong>output_dir</strong> : str (optional)</p>
+<blockquote>
+<div><p>path to directory (default: temporary directory)</p>
+</div></blockquote>
+<p><strong>prog</strong> : str (optional)</p>
+<blockquote>
+<div><p>default: ‘dot’</p>
+</div></blockquote>
+<p><strong>save</strong> : bool</p>
+<blockquote>
+<div><p>removes temporary directory if False, default: False</p>
+</div></blockquote>
+<p><strong>**kwargs :</strong></p>
+<blockquote>
+<div><p>Keyword arguments passed along to py:func:<cite>rsys2dot</cite>.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">str</p>
+<blockquote class="last">
+<div><p>Outpath</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rsys2graph</span><span class="p">(</span><span class="n">rsys</span><span class="p">,</span> <span class="n">sbstncs</span><span class="p">,</span> <span class="s1">&#39;/tmp/out.png&#39;</span><span class="p">)</span>  
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.util.numutil">
+<span id="chempy-util-numutil-module"></span><h2>chempy.util.numutil module<a class="headerlink" href="#module-chempy.util.numutil" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="chempy.util.numutil.broadcast_stack">
+<code class="descclassname">chempy.util.numutil.</code><code class="descname">broadcast_stack</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/numutil.html#broadcast_stack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.numutil.broadcast_stack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-chempy.util.parsing">
+<span id="chempy-util-parsing-module"></span><h2>chempy.util.parsing module<a class="headerlink" href="#module-chempy.util.parsing" title="Permalink to this headline">¶</a></h2>
+<p>Functions for chemical formulae and reactions</p>
+<dl class="function">
+<dt id="chempy.util.parsing.formula_to_composition">
+<code class="descclassname">chempy.util.parsing.</code><code class="descname">formula_to_composition</code><span class="sig-paren">(</span><em>formula</em>, <em>prefixes=None</em>, <em>suffixes=('(s)'</em>, <em>'(l)'</em>, <em>'(g)'</em>, <em>'(aq)')</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/parsing.html#formula_to_composition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.parsing.formula_to_composition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse composition of formula representing a chemical formula</p>
+<p>Composition is represented as a dict mapping int -&gt; int (atomic
+number -&gt; multiplicity). “Atomic number” 0 represents net charge.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>formula: str</strong></p>
+<blockquote>
+<div><p>Chemical formula, e.g. ‘H2O’, ‘Fe+3’, ‘Cl-‘</p>
+</div></blockquote>
+<p><strong>prefixes: iterable strings</strong></p>
+<blockquote>
+<div><p>Prefixes to ignore, e.g. (‘.’, ‘alpha-‘)</p>
+</div></blockquote>
+<p><strong>suffixes: tuple of strings</strong></p>
+<blockquote class="last">
+<div><p>Suffixes to ignore, e.g. (‘(g)’, ‘(s)’)</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_composition</span><span class="p">(</span><span class="s1">&#39;NH4+&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_composition</span><span class="p">(</span><span class="s1">&#39;.NHO-(aq)&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_composition</span><span class="p">(</span><span class="s1">&#39;Na2CO3.7H2O&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="mi">11</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">14</span><span class="p">}</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.parsing.formula_to_html">
+<code class="descclassname">chempy.util.parsing.</code><code class="descname">formula_to_html</code><span class="sig-paren">(</span><em>formula</em>, <em>prefixes=None</em>, <em>infixes=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/parsing.html#formula_to_html"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.parsing.formula_to_html" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert formula string to html string representation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>formula</strong> : str</p>
+<blockquote>
+<div><p>Chemical formula, e.g. ‘H2O’, ‘Fe+3’, ‘Cl-‘</p>
+</div></blockquote>
+<p><strong>prefixes</strong> : dict</p>
+<blockquote>
+<div><p>Prefix transformations, default: greek letters and .</p>
+</div></blockquote>
+<p><strong>infixes</strong> : dict</p>
+<blockquote>
+<div><p>Infix transformations, default: .</p>
+</div></blockquote>
+<p><strong>suffixes</strong> : tuple of strings</p>
+<blockquote class="last">
+<div><p>Suffixes to keep, e.g. (‘(g)’, ‘(s)’)</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_html</span><span class="p">(</span><span class="s1">&#39;NH4+&#39;</span><span class="p">)</span>
+<span class="go">&#39;NH&lt;sub&gt;4&lt;/sub&gt;&lt;sup&gt;+&lt;/sup&gt;&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_html</span><span class="p">(</span><span class="s1">&#39;Fe(CN)6+2&#39;</span><span class="p">)</span>
+<span class="go">&#39;Fe(CN)&lt;sub&gt;6&lt;/sub&gt;&lt;sup&gt;2+&lt;/sup&gt;&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_html</span><span class="p">(</span><span class="s1">&#39;Fe(CN)6+2(aq)&#39;</span><span class="p">)</span>
+<span class="go">&#39;Fe(CN)&lt;sub&gt;6&lt;/sub&gt;&lt;sup&gt;2+&lt;/sup&gt;(aq)&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_html</span><span class="p">(</span><span class="s1">&#39;.NHO-(aq)&#39;</span><span class="p">)</span>
+<span class="go">&#39;&amp;sdot;NHO&lt;sup&gt;-&lt;/sup&gt;(aq)&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_html</span><span class="p">(</span><span class="s1">&#39;alpha-FeOOH(s)&#39;</span><span class="p">)</span>
+<span class="go">&#39;&amp;alpha;-FeOOH(s)&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.parsing.formula_to_latex">
+<code class="descclassname">chempy.util.parsing.</code><code class="descname">formula_to_latex</code><span class="sig-paren">(</span><em>formula</em>, <em>prefixes=None</em>, <em>infixes=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/parsing.html#formula_to_latex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.parsing.formula_to_latex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert formula string to latex representation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>formula: str</strong></p>
+<blockquote>
+<div><p>Chemical formula, e.g. ‘H2O’, ‘Fe+3’, ‘Cl-‘</p>
+</div></blockquote>
+<p><strong>prefixes: dict</strong></p>
+<blockquote>
+<div><p>Prefix transofmrations, default: greek letters and .</p>
+</div></blockquote>
+<p><strong>infixes: dict</strong></p>
+<blockquote>
+<div><p>Infix transformations, default: .</p>
+</div></blockquote>
+<p><strong>suffixes: iterable of str</strong></p>
+<blockquote class="last">
+<div><p>What suffixes not to interpret, default: (s), (l), (g), (aq)</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_latex</span><span class="p">(</span><span class="s1">&#39;NH4+&#39;</span><span class="p">)</span>
+<span class="go">&#39;NH_{4}^{+}&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_latex</span><span class="p">(</span><span class="s1">&#39;Fe(CN)6+2&#39;</span><span class="p">)</span>
+<span class="go">&#39;Fe(CN)_{6}^{2+}&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_latex</span><span class="p">(</span><span class="s1">&#39;Fe(CN)6+2(aq)&#39;</span><span class="p">)</span>
+<span class="go">&#39;Fe(CN)_{6}^{2+}(aq)&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_latex</span><span class="p">(</span><span class="s1">&#39;.NHO-(aq)&#39;</span><span class="p">)</span>
+<span class="go">&#39;^\\bullet NHO^{-}(aq)&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_latex</span><span class="p">(</span><span class="s1">&#39;alpha-FeOOH(s)&#39;</span><span class="p">)</span>
+<span class="go">&#39;\\alpha-FeOOH(s)&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.parsing.formula_to_unicode">
+<code class="descclassname">chempy.util.parsing.</code><code class="descname">formula_to_unicode</code><span class="sig-paren">(</span><em>formula</em>, <em>prefixes=None</em>, <em>infixes=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/parsing.html#formula_to_unicode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.parsing.formula_to_unicode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert formula string to unicode string representation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>formula</strong> : str</p>
+<blockquote>
+<div><p>Chemical formula, e.g. ‘H2O’, ‘Fe+3’, ‘Cl-‘</p>
+</div></blockquote>
+<p><strong>prefixes</strong> : dict</p>
+<blockquote>
+<div><p>Prefix transofmrations, default: greek letters and .</p>
+</div></blockquote>
+<p><strong>infixes</strong> : dict</p>
+<blockquote>
+<div><p>Infix transofmrations, default: .</p>
+</div></blockquote>
+<p><strong>suffixes</strong> : tuple of strings</p>
+<blockquote class="last">
+<div><p>Suffixes to keep, e.g. (‘(g)’, ‘(s)’)</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_unicode</span><span class="p">(</span><span class="s1">&#39;NH4+&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="sa">u</span><span class="s1">&#39;NH₄⁺&#39;</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_unicode</span><span class="p">(</span><span class="s1">&#39;Fe(CN)6+2&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="sa">u</span><span class="s1">&#39;Fe(CN)₆²⁺&#39;</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_unicode</span><span class="p">(</span><span class="s1">&#39;Fe(CN)6+2(aq)&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="sa">u</span><span class="s1">&#39;Fe(CN)₆²⁺(aq)&#39;</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_unicode</span><span class="p">(</span><span class="s1">&#39;.NHO-(aq)&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="sa">u</span><span class="s1">&#39;⋅NHO⁻(aq)&#39;</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">formula_to_unicode</span><span class="p">(</span><span class="s1">&#39;alpha-FeOOH(s)&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="sa">u</span><span class="s1">&#39;α-FeOOH(s)&#39;</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.parsing.to_reaction">
+<code class="descclassname">chempy.util.parsing.</code><code class="descname">to_reaction</code><span class="sig-paren">(</span><em>line</em>, <em>substance_keys</em>, <em>token</em>, <em>Cls</em>, <em>globals_=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/parsing.html#to_reaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.parsing.to_reaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses a string into a Reaction object and substances</p>
+<p>Reac1 + 2 Reac2 + (2 Reac1) -&gt; Prod1 + Prod2; 10**3.7; ref=’doi:12/ab’
+Reac1 = Prod1; 2.1;</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>line: str</strong></p>
+<blockquote>
+<div><p>string representation to be parsed</p>
+</div></blockquote>
+<p><strong>substance_keys: iterable of strings</strong></p>
+<blockquote>
+<div><p>Allowed names, e.g. (‘H2O’, ‘H+’, ‘OH-‘)</p>
+</div></blockquote>
+<p><strong>token</strong> : str</p>
+<blockquote>
+<div><p>delimiter token between reactant and product side</p>
+</div></blockquote>
+<p><strong>Cls</strong> : class</p>
+<blockquote>
+<div><p>e.g. subclass of Reaction</p>
+</div></blockquote>
+<p><strong>globals_: dict (optional)</strong></p>
+<blockquote class="last">
+<div><p>Globals passed on to <code class="xref py py-func docutils literal"><span class="pre">eval()</span></code>, when <code class="docutils literal"><span class="pre">None</span></code>:
+<cite>chempy.units.default_units</cite> is used with ‘chempy’
+and ‘default_units’ extra entries.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>This function calls <code class="xref py py-func docutils literal"><span class="pre">eval()</span></code>, hence there are severe security concerns
+with running this on untrusted data.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.util.periodic">
+<span id="chempy-util-periodic-module"></span><h2>chempy.util.periodic module<a class="headerlink" href="#module-chempy.util.periodic" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="chempy.util.periodic.atomic_number">
+<code class="descclassname">chempy.util.periodic.</code><code class="descname">atomic_number</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/periodic.html#atomic_number"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.periodic.atomic_number" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.periodic.mass_from_composition">
+<code class="descclassname">chempy.util.periodic.</code><code class="descname">mass_from_composition</code><span class="sig-paren">(</span><em>composition</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/periodic.html#mass_from_composition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.periodic.mass_from_composition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates molecular mass from atomic weights</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>composition: dict</strong></p>
+<blockquote>
+<div><p>Dictionary mapping int (atomic number) to int (coefficient)</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">float</p>
+<blockquote class="last">
+<div><p>molecular weight in atomic mass units</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>Atomic number 0 denotes charge or “net electron defficiency”</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="s1">&#39;</span><span class="si">%.2f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">mass_from_composition</span><span class="p">({</span><span class="mi">0</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<span class="go">&#39;17.01&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.util.pyutil">
+<span id="chempy-util-pyutil-module"></span><h2>chempy.util.pyutil module<a class="headerlink" href="#module-chempy.util.pyutil" title="Permalink to this headline">¶</a></h2>
+<p>General utilities and exceptions.</p>
+<dl class="class">
+<dt id="chempy.util.pyutil.AttributeContainer">
+<em class="property">class </em><code class="descclassname">chempy.util.pyutil.</code><code class="descname">AttributeContainer</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/pyutil.html#AttributeContainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.pyutil.AttributeContainer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Used to turn e.g. a dictionary to a module-like object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>d</strong> : dict</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">RT</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">const</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">T</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">molar_gas_constant</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantities</span> <span class="k">import</span> <span class="n">constants</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">RT</span><span class="p">(</span><span class="mf">273.15</span><span class="p">,</span> <span class="n">constants</span><span class="p">)</span>
+<span class="go">array(273.15) * R</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_constants</span> <span class="o">=</span> <span class="n">AttributeContainer</span><span class="p">(</span><span class="n">molar_gas_constant</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">RT</span><span class="p">(</span><span class="mf">273.15</span><span class="p">,</span> <span class="n">my_constants</span><span class="p">)</span>
+<span class="go">11472.3</span>
+</pre></div>
+</div>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.util.pyutil.AttributeContainer.as_dict" title="chempy.util.pyutil.AttributeContainer.as_dict"><code class="xref py py-obj docutils literal"><span class="pre">as_dict</span></code></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="chempy.util.pyutil.AttributeContainer.as_dict">
+<code class="descname">as_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/pyutil.html#AttributeContainer.as_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.pyutil.AttributeContainer.as_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="chempy.util.pyutil.ChemPyDeprecationWarning">
+<em class="property">exception </em><code class="descclassname">chempy.util.pyutil.</code><code class="descname">ChemPyDeprecationWarning</code><a class="reference internal" href="_modules/chempy/util/pyutil.html#ChemPyDeprecationWarning"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.pyutil.ChemPyDeprecationWarning" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.DeprecationWarning</span></code></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="chempy.util.pyutil.DeferredImport">
+<em class="property">class </em><code class="descclassname">chempy.util.pyutil.</code><code class="descname">DeferredImport</code><span class="sig-paren">(</span><em>modname</em>, <em>arg=None</em>, <em>decorators=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/pyutil.html#DeferredImport"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.pyutil.DeferredImport" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.util.pyutil.DeferredImport.cache" title="chempy.util.pyutil.DeferredImport.cache"><code class="xref py py-obj docutils literal"><span class="pre">cache</span></code></a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(*args,&nbsp;**kwargs)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="chempy.util.pyutil.DeferredImport.cache">
+<code class="descname">cache</code><a class="headerlink" href="#chempy.util.pyutil.DeferredImport.cache" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="chempy.util.pyutil.NameSpace">
+<em class="property">class </em><code class="descclassname">chempy.util.pyutil.</code><code class="descname">NameSpace</code><span class="sig-paren">(</span><em>default</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/pyutil.html#NameSpace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.pyutil.NameSpace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to wrap, e.g. modules.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>default</strong> : module</p>
+<blockquote class="last">
+<div><p>The underlying module. Acts as a fallback for attribute access.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_numpy</span> <span class="o">=</span> <span class="n">NameSpace</span><span class="p">(</span><span class="n">numpy</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_numpy</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">my_numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]),</span> <span class="nb">list</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]),</span> <span class="nb">list</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.util.pyutil.NameSpace.as_dict" title="chempy.util.pyutil.NameSpace.as_dict"><code class="xref py py-obj docutils literal"><span class="pre">as_dict</span></code></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="chempy.util.pyutil.NameSpace.as_dict">
+<code class="descname">as_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/pyutil.html#NameSpace.as_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.pyutil.NameSpace.as_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="chempy.util.pyutil.NoConvergence">
+<em class="property">exception </em><code class="descclassname">chempy.util.pyutil.</code><code class="descname">NoConvergence</code><a class="reference internal" href="_modules/chempy/util/pyutil.html#NoConvergence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.pyutil.NoConvergence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="chempy.util.pyutil.defaultkeydict">
+<em class="property">class </em><code class="descclassname">chempy.util.pyutil.</code><code class="descname">defaultkeydict</code><a class="reference internal" href="_modules/chempy/util/pyutil.html#defaultkeydict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.pyutil.defaultkeydict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">collections.defaultdict</span></code></p>
+<p>defaultdict where default_factory should have the signature key -&gt; value</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="n">defaultkeydict</span><span class="p">(</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="s1">&#39;[</span><span class="si">%s</span><span class="s1">]&#39;</span> <span class="o">%</span> <span class="n">k</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;[a]&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="s1">&#39;[B]&#39;</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span>
+<span class="go">&#39;[a]&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">]</span>
+<span class="go">&#39;[B]&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">]</span>
+<span class="go">&#39;[c]&#39;</span>
+</pre></div>
+</div>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">clear</span></code>(()&nbsp;-&gt;&nbsp;None.&nbsp;&nbsp;Remove&nbsp;all&nbsp;items&nbsp;from&nbsp;D.)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">copy</span></code>(()&nbsp;-&gt;&nbsp;a&nbsp;shallow&nbsp;copy&nbsp;of&nbsp;D.)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">fromkeys</span></code>(…)</td>
+<td>v defaults to None.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">get</span></code>((k[,d])&nbsp;-&gt;&nbsp;D[k]&nbsp;if&nbsp;k&nbsp;in&nbsp;D,&nbsp;…)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">has_key</span></code>((k)&nbsp;-&gt;&nbsp;True&nbsp;if&nbsp;D&nbsp;has&nbsp;a&nbsp;key&nbsp;k,&nbsp;else&nbsp;False)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">items</span></code>(()&nbsp;-&gt;&nbsp;list&nbsp;of&nbsp;D’s&nbsp;(key,&nbsp;value)&nbsp;pairs,&nbsp;…)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">iteritems</span></code>(()&nbsp;-&gt;&nbsp;an&nbsp;iterator&nbsp;over&nbsp;the&nbsp;(key,&nbsp;…)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">iterkeys</span></code>(()&nbsp;-&gt;&nbsp;an&nbsp;iterator&nbsp;over&nbsp;the&nbsp;keys&nbsp;of&nbsp;D)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">itervalues</span></code>(…)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">keys</span></code>(()&nbsp;-&gt;&nbsp;list&nbsp;of&nbsp;D’s&nbsp;keys)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">pop</span></code>((k[,d])&nbsp;-&gt;&nbsp;v,&nbsp;…)</td>
+<td>If key is not found, d is returned if given, otherwise KeyError is raised</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">popitem</span></code>(()&nbsp;-&gt;&nbsp;(k,&nbsp;v),&nbsp;…)</td>
+<td>2-tuple; but raise KeyError if D is empty.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">setdefault</span></code>((k[,d])&nbsp;-&gt;&nbsp;D.get(k,d),&nbsp;…)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">update</span></code>(([E,&nbsp;…)</td>
+<td>If E present and has a .keys() method, does:     for k in E: D[k] = E[k]</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">values</span></code>(()&nbsp;-&gt;&nbsp;list&nbsp;of&nbsp;D’s&nbsp;values)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">viewitems</span></code>(…)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">viewkeys</span></code>(…)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">viewvalues</span></code>(…)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.pyutil.defaultnamedtuple">
+<code class="descclassname">chempy.util.pyutil.</code><code class="descname">defaultnamedtuple</code><span class="sig-paren">(</span><em>typename</em>, <em>field_names</em>, <em>defaults=()</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/pyutil.html#defaultnamedtuple"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.pyutil.defaultnamedtuple" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a new subclass of tuple with default values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>typename</strong> : string</p>
+<blockquote>
+<div><p>The name of the class.</p>
+</div></blockquote>
+<p><strong>field_names</strong> : str or iterable</p>
+<blockquote>
+<div><p>An iterable of splitable string.</p>
+</div></blockquote>
+<p><strong>defaults</strong> : iterable</p>
+<blockquote>
+<div><p>Default values for <code class="docutils literal"><span class="pre">field_names</span></code>, counting <code class="docutils literal"><span class="pre">[-len(defaults):]</span></code>.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A new tuple subclass named <code class="docutils literal"><span class="pre">typename</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Body</span> <span class="o">=</span> <span class="n">defaultnamedtuple</span><span class="p">(</span><span class="s1">&#39;Body&#39;</span><span class="p">,</span> <span class="s1">&#39;x y z density&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Body</span><span class="o">.</span><span class="vm">__doc__</span>
+<span class="go">&#39;Body(x, y, z, density)&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">Body</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span>
+<span class="go">OrderedDict([(&#39;x&#39;, 10), (&#39;y&#39;, 5), (&#39;z&#39;, 3), (&#39;density&#39;, 1.0)])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.pyutil.deprecated">
+<code class="descclassname">chempy.util.pyutil.</code><code class="descname">deprecated</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/pyutil.html#deprecated"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.pyutil.deprecated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper to <code class="xref py py-class docutils literal"><span class="pre">Deprecation</span></code> for using ChemPyDeprecationWarning.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.pyutil.memoize">
+<code class="descclassname">chempy.util.pyutil.</code><code class="descname">memoize</code><span class="sig-paren">(</span><em>max_nargs=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/pyutil.html#memoize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.pyutil.memoize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-chempy.util.regression">
+<span id="chempy-util-regression-module"></span><h2>chempy.util.regression module<a class="headerlink" href="#module-chempy.util.regression" title="Permalink to this headline">¶</a></h2>
+<p>Contains rudimentary tools for regression: (iteratively) (weighted) least squares
+and functions for plotting the fit from the regression analysis.</p>
+<dl class="function">
+<dt id="chempy.util.regression.avg_params">
+<code class="descclassname">chempy.util.regression.</code><code class="descname">avg_params</code><span class="sig-paren">(</span><em>opt_params</em>, <em>cov_params</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/regression.html#avg_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.regression.avg_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the average parameters from a set of regression parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>opt_params</strong> : array_like</p>
+<blockquote>
+<div><p>of shape (nfits, nparams)</p>
+</div></blockquote>
+<p><strong>cov_params</strong> : array_like</p>
+<blockquote>
+<div><p>of shape (nfits, nparams, nparams)</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">avg_beta: weighted average of parameters</p>
+<p class="last">var_avg_beta: variance-covariance matrix</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.regression.irls">
+<code class="descclassname">chempy.util.regression.</code><code class="descname">irls</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>w_cb=&lt;function &lt;lambda&gt;&gt;</em>, <em>itermax=16</em>, <em>rmsdwtol=1e-08</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/regression.html#irls"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.regression.irls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iteratively reweighted least squares</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>x</strong> : array_like</p>
+<p><strong>y</strong> : array_like</p>
+<p><strong>w_cb</strong> : callbable</p>
+<blockquote>
+<div><p>Weight callback, signature <code class="docutils literal"><span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">beta,</span> <span class="pre">cov)</span> <span class="pre">-&gt;</span> <span class="pre">weight</span></code>.
+Predefined:</p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">irls.ones</span></code>: unit weights (default)</li>
+<li><code class="docutils literal"><span class="pre">irls.exp</span></code>: <span class="math">\(\mathrm{e}^{-\beta_2 x}\)</span></li>
+<li><code class="docutils literal"><span class="pre">irls.gaussian</span></code>: <span class="math">\(\mathrm{e}^{-\beta_2 x^2}\)</span></li>
+<li><code class="docutils literal"><span class="pre">irls.abs_residuals</span></code>: <span class="math">\(\lvert \beta_1 + \beta_2 x - y \rvert\)</span></li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+<p><strong>itermax</strong> : int</p>
+<p><strong>rmsdwtol</strong> : float</p>
+<p><strong>plot_cb</strong> : callble</p>
+<blockquote>
+<div><p>See <a class="reference internal" href="#chempy.util.regression.least_squares" title="chempy.util.regression.least_squares"><code class="xref py py-func docutils literal"><span class="pre">least_squares()</span></code></a></p>
+</div></blockquote>
+<p><strong>plot_cb_kwargs</strong> : dict</p>
+<blockquote>
+<div><p>See <a class="reference internal" href="#chempy.util.regression.least_squares" title="chempy.util.regression.least_squares"><code class="xref py py-func docutils literal"><span class="pre">least_squares()</span></code></a></p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>beta</strong> : length-2 array</p>
+<blockquote>
+<div><p>parameters</p>
+</div></blockquote>
+<p><strong>cov</strong> : 2x2 array</p>
+<blockquote>
+<div><p>variance-covariance matrix</p>
+</div></blockquote>
+<p><strong>info</strong> : dict</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Contains</dt>
+<dd><ul class="first last simple">
+<li>success : bool</li>
+<li>niter : int</li>
+<li>weights : list of weighting arrays</li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<p># Examples</p>
+<p># ——–</p>
+<p class="last"># beta, cov, info = irls([1, 2, 3], [3, 2.5, 2.1], irls.abs_residuals)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.regression.irls_units">
+<code class="descclassname">chempy.util.regression.</code><code class="descname">irls_units</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/regression.html#irls_units"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.regression.irls_units" title="Permalink to this definition">¶</a></dt>
+<dd><p>Units aware version of <a class="reference internal" href="#chempy.util.regression.irls" title="chempy.util.regression.irls"><code class="xref py py-func docutils literal"><span class="pre">irls()</span></code></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>x</strong> : array_like</p>
+<p><strong>y</strong> : array_like</p>
+<p><strong>**kwargs</strong></p>
+<blockquote class="last">
+<div><p>Keyword arguments passed on to <a class="reference internal" href="#chempy.util.regression.irls" title="chempy.util.regression.irls"><code class="xref py py-func docutils literal"><span class="pre">irls()</span></code></a></p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<dl class="last docutils">
+<dt><code class="xref py py-obj docutils literal"><span class="pre">-</span></code></dt>
+<dd>func:<cite>irls</cite></dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.regression.least_squares">
+<code class="descclassname">chempy.util.regression.</code><code class="descname">least_squares</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>w=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/regression.html#least_squares"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.regression.least_squares" title="Permalink to this definition">¶</a></dt>
+<dd><p>Least-squares (w or w/o weights) fit to data series.</p>
+<p>Linear regression (unweighted or weighted).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>x</strong> : array_like</p>
+<p><strong>y</strong> : array_like</p>
+<p><strong>w</strong> : array_like, optional</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>length 2 tuple</strong> : pair of parameter estimates (intercept and slope)</p>
+<p><strong>2x2 array</strong> : variance-covariance matrix</p>
+<p class="last"><strong>float</strong> : R-squared (goodness of fit)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">References</p>
+<p>Wikipedia &amp; standard texts on least sqaures method.
+Comment regarding R2 in WLS:</p>
+<blockquote>
+<div>Willett, John B., and Judith D. Singer. “Another cautionary note about R 2:
+Its use in weighted least-squares regression analysis.”
+The American Statistician 42.3 (1988): 236-238.</div></blockquote>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">beta</span><span class="p">,</span> <span class="n">vcv</span><span class="p">,</span> <span class="n">R2</span> <span class="o">=</span> <span class="n">least_squares</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">all</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">beta</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))</span> <span class="o">&lt;</span> <span class="mf">1e-14</span><span class="p">),</span> <span class="n">R2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">vcv</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-14</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+<span class="go">(True, True, True)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b1</span><span class="p">,</span> <span class="n">v1</span><span class="p">,</span> <span class="n">r2_1</span> <span class="o">=</span> <span class="n">least_squares</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b2</span><span class="p">,</span> <span class="n">v2</span><span class="p">,</span> <span class="n">r2_2</span> <span class="o">=</span> <span class="n">least_squares</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">b2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">abs</span><span class="p">(</span><span class="n">b1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.regression.least_squares_units">
+<code class="descclassname">chempy.util.regression.</code><code class="descname">least_squares_units</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>w=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/regression.html#least_squares_units"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.regression.least_squares_units" title="Permalink to this definition">¶</a></dt>
+<dd><p>Units-aware least-squares (w or w/o weights) fit to data series.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>x</strong> : array_like</p>
+<p><strong>y</strong> : array_like</p>
+<p class="last"><strong>w</strong> : array_like, optional</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<dl class="last docutils">
+<dt><code class="xref py py-obj docutils literal"><span class="pre">-</span></code></dt>
+<dd>func:<cite>least_squares</cite></dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.regression.plot_avg_params">
+<code class="descclassname">chempy.util.regression.</code><code class="descname">plot_avg_params</code><span class="sig-paren">(</span><em>opt_params</em>, <em>cov_params</em>, <em>avg_params_result</em>, <em>label_cb=None</em>, <em>ax=None</em>, <em>title=False</em>, <em>xlabel=False</em>, <em>ylabel=False</em>, <em>flip=False</em>, <em>nsigma=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/regression.html#plot_avg_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.regression.plot_avg_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the average parameters from a set of regression parameters</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>opt_params</strong> : array_like</p>
+<blockquote>
+<div><p>Of shape <code class="docutils literal"><span class="pre">(nfits,</span> <span class="pre">nparams)</span></code>.</p>
+</div></blockquote>
+<p><strong>cov_params</strong> : array_like</p>
+<blockquote>
+<div><p>of shape (nfits, nparams, nparams)</p>
+</div></blockquote>
+<p><strong>avg_params_result</strong> : length-2 tuple</p>
+<blockquote>
+<div><p>Result from <code class="xref py py-func docutils literal"><span class="pre">avg_parrams()</span></code>.</p>
+</div></blockquote>
+<p><strong>label_cb</strong> : callable</p>
+<blockquote>
+<div><p>signature (beta, variance_beta) -&gt; str</p>
+</div></blockquote>
+<p><strong>ax</strong> : matplotlib.axes.Axes</p>
+<p><strong>title</strong> : bool or str</p>
+<p><strong>xlabel</strong> : bool or str</p>
+<p><strong>ylabel</strong> : bool or str</p>
+<p><strong>flip</strong> : bool</p>
+<blockquote>
+<div><p>for plotting: (x, y) -&gt; beta1, beta0</p>
+</div></blockquote>
+<p><strong>nsigma</strong> : int</p>
+<blockquote>
+<div><p>Multiplier for error bars</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">avg_beta: weighted average of parameters</p>
+<p class="last">var_avg_beta: variance-covariance matrix</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.regression.plot_fit">
+<code class="descclassname">chempy.util.regression.</code><code class="descname">plot_fit</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>beta</em>, <em>yerr=None</em>, <em>vcv_beta=None</em>, <em>r2=None</em>, <em>kw_data=None</em>, <em>kw_fit=None</em>, <em>fit_label_cb=None</em>, <em>ax=True</em>, <em>x_unit=1</em>, <em>y_unit=1</em>, <em>nsigma=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/regression.html#plot_fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.regression.plot_fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the result of a fit</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>x</strong> : array_like</p>
+<p><strong>y</strong> : array_like</p>
+<p><strong>beta</strong> : array_like</p>
+<p><strong>yerr</strong> : array_like</p>
+<p><strong>vcv_beta</strong> : array_like</p>
+<p><strong>kw_data</strong> : dict</p>
+<blockquote>
+<div><p>Keyword arguments to <code class="docutils literal"><span class="pre">plot</span></code> for x, y data</p>
+</div></blockquote>
+<p><strong>kw_fit</strong> : dict</p>
+<blockquote>
+<div><p>Keyword arguments to <code class="docutils literal"><span class="pre">plot</span></code> for fitted data</p>
+</div></blockquote>
+<p><strong>fit_label_cb: callable:</strong></p>
+<blockquote>
+<div><p>signature (beta, variance_beta, r2) -&gt; str</p>
+</div></blockquote>
+<p><strong>ax</strong> : matplotlib.axes.Axes</p>
+<blockquote>
+<div><p>Alternatively <code class="docutils literal"><span class="pre">True</span></code> or <code class="docutils literal"><span class="pre">None</span></code></p>
+</div></blockquote>
+<p><strong>x_unit</strong> : unit</p>
+<p><strong>y_unit</strong> : unit</p>
+<p><strong>nsigma</strong> : int</p>
+<blockquote class="last">
+<div><p>Multiplier for errorbars when plotting.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.regression.plot_least_squares_fit">
+<code class="descclassname">chempy.util.regression.</code><code class="descname">plot_least_squares_fit</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>beta_vcv_r2</em>, <em>yerr=None</em>, <em>plot_cb=None</em>, <em>plot_cb_kwargs=None</em>, <em>x_unit=1</em>, <em>y_unit=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/regression.html#plot_least_squares_fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.regression.plot_least_squares_fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs Least-squares fit and plots data and fitted line</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>x</strong> : array_like</p>
+<p><strong>y</strong> : array_like</p>
+<p><strong>beta_vcv_r2</strong> : tuple</p>
+<blockquote>
+<div><p>Result from <code class="xref py py-func docutils literal"><span class="pre">least_squares_fit()</span></code>.</p>
+</div></blockquote>
+<p><strong>plot_cb</strong> : callable</p>
+<blockquote>
+<div><p>When <code class="docutils literal"><span class="pre">None</span></code>: uses <a class="reference internal" href="#chempy.util.regression.plot_fit" title="chempy.util.regression.plot_fit"><code class="xref py py-func docutils literal"><span class="pre">plot_fit()</span></code></a>, when callable:
+signature <code class="docutils literal"><span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">beta,</span> <span class="pre">yerr=None,</span> <span class="pre">fit_label_cb=lambda</span> <span class="pre">beta,</span> <span class="pre">vcv,</span> <span class="pre">r2:</span> <span class="pre">'None')</span> <span class="pre">-&gt;</span> <span class="pre">str</span></code>.</p>
+</div></blockquote>
+<p><strong>plot_cb_kwargs: dict, optional</strong></p>
+<blockquote class="last">
+<div><p>Keyword arguments passed on to <code class="docutils literal"><span class="pre">plot_cb</span></code> (see <a class="reference internal" href="#chempy.util.regression.plot_fit" title="chempy.util.regression.plot_fit"><code class="xref py py-func docutils literal"><span class="pre">plot_fit()</span></code></a> for list of
+expected kwargs). If <code class="docutils literal"><span class="pre">plot_cb</span></code> is <code class="docutils literal"><span class="pre">True</span></code> it will be populated with defaults
+(kw_data, fit_label_cb, x_unit, y_unit).</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.util.stoich">
+<span id="chempy-util-stoich-module"></span><h2>chempy.util.stoich module<a class="headerlink" href="#module-chempy.util.stoich" title="Permalink to this headline">¶</a></h2>
+<p>Utility functions related to stoichiometry.</p>
+<dl class="function">
+<dt id="chempy.util.stoich.decompose_yields">
+<code class="descclassname">chempy.util.stoich.</code><code class="descname">decompose_yields</code><span class="sig-paren">(</span><em>yields</em>, <em>rxns</em>, <em>atol=1e-10</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/stoich.html#decompose_yields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.stoich.decompose_yields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decomposes yields into mass-action reactions</p>
+<p>This function offers a way to express a reaction with non-integer
+stoichiometric coefficients as a linear combination of production reactions
+with integer coefficients.</p>
+<p>Ak = y</p>
+<p>A is (n_species x n_reactions) matrix, k is “rate coefficient”, y is yields</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>yields</strong> : OrderedDict</p>
+<blockquote>
+<div><p>Specie names as keys and yields as values.</p>
+</div></blockquote>
+<p><strong>rxns</strong> : iterable <code class="xref py py-class docutils literal"><span class="pre">Reaction</span></code> instances</p>
+<blockquote>
+<div><p>Dict keys must match those of <code class="docutils literal"><span class="pre">yields</span></code> each pair
+of dictionaries gives stoichiometry
+(1st is reactant, 2nd is products).</p>
+</div></blockquote>
+<p><strong>atol</strong> : float</p>
+<blockquote>
+<div><p>Absolute tolerance for residuals.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">1-dimensional array of effective rate coefficients.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>ValueError</strong></p>
+<blockquote>
+<div><p>When atol is exceeded</p>
+</div></blockquote>
+<p><strong>numpy.LinAlgError</strong></p>
+<blockquote class="last">
+<div><p>When numpy.linalg.lstsq fails to converge</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">chempy</span> <span class="k">import</span> <span class="n">Reaction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h2a</span> <span class="o">=</span> <span class="n">Reaction</span><span class="p">({</span><span class="s1">&#39;H2O&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;H2&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h2b</span> <span class="o">=</span> <span class="n">Reaction</span><span class="p">({</span><span class="s1">&#39;H2O&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;H2&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;H2O2&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="n">inact_reac</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;H2O&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">decompose_yields</span><span class="p">({</span><span class="s1">&#39;H2&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;H2O2&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="p">[</span><span class="n">h2a</span><span class="p">,</span> <span class="n">h2b</span><span class="p">])</span>
+<span class="go">array([ 2.,  1.])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.stoich.get_coeff_mtx">
+<code class="descclassname">chempy.util.stoich.</code><code class="descname">get_coeff_mtx</code><span class="sig-paren">(</span><em>substances</em>, <em>stoichs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/stoich.html#get_coeff_mtx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.stoich.get_coeff_mtx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a net stoichiometry matrix from reactions
+described by pairs of dictionaries.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>substances</strong> : sequence of keys in stoichs dict pairs</p>
+<p><strong>stoichs</strong> : sequence of pairs of dicts</p>
+<blockquote>
+<div><p>Pairs of reactant and product dicts mapping substance keys
+to stoichiometric coefficients (integers).</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">2 dimensional array of shape (len(substances), len(stoichs))</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.util.table">
+<span id="chempy-util-table-module"></span><h2>chempy.util.table module<a class="headerlink" href="#module-chempy.util.table" title="Permalink to this headline">¶</a></h2>
+<p>Convenience functions for presenting reaction systems in tables.</p>
+<dl class="function">
+<dt id="chempy.util.table.render_tex_to_pdf">
+<code class="descclassname">chempy.util.table.</code><code class="descname">render_tex_to_pdf</code><span class="sig-paren">(</span><em>contents</em>, <em>texfname</em>, <em>pdffname</em>, <em>output_dir</em>, <em>save</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/table.html#render_tex_to_pdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.table.render_tex_to_pdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a pdf from a tex file by calling pdflatex</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>contents</strong> : str</p>
+<p><strong>texfname</strong> : path</p>
+<p><strong>pdffname</strong> : path</p>
+<p><strong>output_dir</strong> : path</p>
+<p class="last"><strong>save</strong> : path or bool or str(bool)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.table.rsys2pdf_table">
+<code class="descclassname">chempy.util.table.</code><code class="descname">rsys2pdf_table</code><span class="sig-paren">(</span><em>rsys</em>, <em>output_dir=None</em>, <em>doc_template=None</em>, <em>doc_template_dict=None</em>, <em>save=True</em>, <em>landscape=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/table.html#rsys2pdf_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.table.rsys2pdf_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to render a ReactionSystem as
+e.g. a pdf using e.g. pdflatex.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>rsys</strong> : ReactionSystem</p>
+<p><strong>output_dir</strong> : path to output directory</p>
+<blockquote>
+<div><p>(default: system’s temporary folder)</p>
+</div></blockquote>
+<p><strong>doc_template</strong> : string</p>
+<blockquote>
+<div><p>LaTeX boiler plate temlpate including preamble,
+document environment etc.</p>
+</div></blockquote>
+<p><strong>doc_template_dict</strong> : dict (string -&gt; string)</p>
+<blockquote>
+<div><p>dict used to render temlpate (excl. ‘table’)</p>
+</div></blockquote>
+<p><strong>longtable</strong> : bool</p>
+<blockquote>
+<div><p>use longtable in defaults. (default: False)</p>
+</div></blockquote>
+<p><strong>**kwargs :</strong></p>
+<blockquote class="last">
+<div><p>passed on to <cite>rsys2table</cite></p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.table.rsys2table">
+<code class="descclassname">chempy.util.table.</code><code class="descname">rsys2table</code><span class="sig-paren">(</span><em>rsys</em>, <em>table_template=None</em>, <em>table_template_dict=None</em>, <em>param_name='Rate constant'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/table.html#rsys2table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.table.rsys2table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Renders user provided table_template with table_template_dict which
+also has ‘body’ entry generated from <cite>rsys2tablines</cite>.</p>
+<p>Defaults is LaTeX table requiring booktabs package to be used
+(add usepackage{booktabs} to preamble).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>rsys</strong> : ReactionSystem</p>
+<p><strong>table_template</strong> : string</p>
+<p><strong>table_tempalte_dict</strong> : dict used to render table_template (excl. “body”)</p>
+<p><strong>param_name</strong> : str</p>
+<blockquote>
+<div><p>Column header for parameter column</p>
+</div></blockquote>
+<p><strong>longtable</strong> : bool</p>
+<blockquote>
+<div><p>use longtable in defaults. (default: False)</p>
+</div></blockquote>
+<p><strong>**kwargs :</strong></p>
+<blockquote class="last">
+<div><p>passed onto rsys2tablines</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.util.table.rsys2tablines">
+<code class="descclassname">chempy.util.table.</code><code class="descname">rsys2tablines</code><span class="sig-paren">(</span><em>rsys</em>, <em>rref0=1</em>, <em>coldelim=' &amp; '</em>, <em>tex=True</em>, <em>ref_fmt=None</em>, <em>unit_registry=None</em>, <em>unit_fmt='{}'</em>, <em>k_fmt='%.4g'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/table.html#rsys2tablines"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.table.rsys2tablines" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a table representation of a ReactionSystem.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>rsys</strong> : ReactionSystem</p>
+<p><strong>rref0</strong> : integer</p>
+<blockquote>
+<div><p>default start of index counter (default: 1)</p>
+</div></blockquote>
+<p><strong>coldelim</strong> : string</p>
+<blockquote>
+<div><p>column delimiter (default: ‘ &amp; ‘)</p>
+</div></blockquote>
+<p><strong>tex</strong> : bool</p>
+<blockquote>
+<div><p>use latex formated output (default: True)</p>
+</div></blockquote>
+<p><strong>ref_fmt</strong> : string or callable</p>
+<blockquote>
+<div><p>format string of <code class="docutils literal"><span class="pre">ref</span></code> attribute of reactions</p>
+</div></blockquote>
+<p><strong>unit_registry</strong> : unit registry</p>
+<blockquote class="last">
+<div><p>optional (default: None)</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.util.testing">
+<span id="chempy-util-testing-module"></span><h2>chempy.util.testing module<a class="headerlink" href="#module-chempy.util.testing" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="chempy.util.testing.requires">
+<em class="property">class </em><code class="descclassname">chempy.util.testing.</code><code class="descname">requires</code><span class="sig-paren">(</span><em>*reqs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/util/testing.html#requires"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.util.testing.requires" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Conditional skipping (on requirements) of tests in pytest</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@requires</span><span class="p">(</span><span class="s1">&#39;numpy&#39;</span><span class="p">,</span> <span class="s1">&#39;scipy&#39;</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">test_sqrt</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">... </span>    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+<span class="gp">... </span>    <span class="kn">from</span> <span class="nn">scipy.special</span> <span class="k">import</span> <span class="n">zeta</span>
+<span class="gp">... </span>    <span class="k">assert</span> <span class="n">zeta</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nd">@requires</span><span class="p">(</span><span class="s1">&#39;numpy&gt;=1.9.0&#39;</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">test_nanmedian</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">... </span>    <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">10.0</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+<span class="gp">... </span>    <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+<span class="gp">... </span>    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(cb)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="chempy.thermodynamics.html" class="btn btn-neutral" title="chempy.thermodynamics package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.6.5',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
