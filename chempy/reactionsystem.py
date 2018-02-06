@@ -188,7 +188,7 @@ class ReactionSystem(object):
                 accumulated.add(sk)
             else:
                 if np.any(all_p[:, i] > 0):
-                    assert all_p[:, i] == all_r[:, i], "Open issue at github.com/bjodah/chempy"
+                    assert np.all(all_p[:, i] == all_r[:, i]), "Open issue at github.com/bjodah/chempy"
                     unaffected.add(sk)
                 else:
                     nonparticipating.add(sk)
