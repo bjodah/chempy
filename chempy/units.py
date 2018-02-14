@@ -279,6 +279,11 @@ def unit_of(expr, simplified=False):
     1
 
     """
+    if isinstance(expr, (tuple, list)):
+        return unit_of(uniform(expr)[0], simplified)
+    elif isinstance(expr, dict):
+        return unit_of(list(uniform(expr).values())[0], simplified)
+
     try:
         if simplified:
             return expr.units.simplified
