@@ -67,8 +67,15 @@ Simplest way to install ChemPy and its (optional) dependencies is to use the
    $ conda install -c bjodah chempy pytest
    $ pytest -rs --pyargs chempy
 
-currently conda packages are only provided for Linux (which is the primary
-platform on which ``ChemPy`` has been tested).
+currently conda packages are only provided for Linux. On Windows and OS X
+you will need to use ``pip`` instead::
+
+   $ pip install chempy pytest
+   $ pytest -rs --pyargs chempy
+
+there will a few tests which will be skipped due to some missing optional
+backends in addition to those in SciPy (used for solving systems of non-linear
+equations and ordinary differential equations).
 
 Optional dependencies
 ~~~~~~~~~~~~~~~~~~~~~
