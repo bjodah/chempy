@@ -24,6 +24,11 @@ in chemical kinetics. Last, but not the least, it collects
 parametrizations of chemical properties of substances from the
 literature.
 
+Its intended audience is primarily researchers and engineers who need
+to perform modelling work. But since the intermediate representations
+of e.g. ODE systems and systems of non-linear equations are available
+symbolically, ChemPy may also be used in an educational setting.
+
 Substances are represented by a class that holds their names and, optionally,
 information on their composition, weight, charge etc., as
 well as how to pretty print them using LaTeX, HTML and unicode. Both the composition
