@@ -67,6 +67,9 @@ Simplest way to install ChemPy and its (optional) dependencies is to use the
    $ conda install -c bjodah chempy pytest
    $ pytest -rs --pyargs chempy
 
+currently conda packages are only provided for Linux (which is the primary
+platform on which ``ChemPy`` has been tested).
+
 Optional dependencies
 ~~~~~~~~~~~~~~~~~~~~~
 If you used ``conda`` to install ChemPy you can skip this section.
@@ -81,12 +84,15 @@ for solving ODE-systems and non-linear optimization problems::
 
    $ pip install chempy[all]
 
-(see `setup.py <setup.py>`_ for optional requirements.). Note that this option requires you
-to have the following libraries installed (including their development headers):
+Note that this option will install the following libraries
+(some of which require additional libraries to be present on your system):
 
-- `pygslodeiv2 <https://github.com/bjodah/pygslodeiv2>`_ (requires GSL_ >=1.16)
-- `pyodeint <https://github.com/bjodah/pyodeint>`_ (requires boost_ >=1.65.0)
-- `pycvodes <https://github.com/bjodah/pycvodes>`_ (requires SUNDIALS_ >=2.7.0)
+- `pygslodeiv2 <https://github.com/bjodah/pygslodeiv2>`_: solving initial value problems, requires GSL_. (>=1.16).
+- `pyodeint <https://github.com/bjodah/pyodeint>`_: solving initial value problems, requires boost_ (>=1.65.0).
+- `pycvodes <https://github.com/bjodah/pycvodes>`_: solving initial value problems, requires SUNDIALS_ (>=2.7.0).
+- `pykinsol <https://github.com/bjodah/pykinsol>`_: solving non-linear root-finding, requires SUNDIALS_ (>=2.7.0).
+- `pycompilation <https://github.com/bjodah/pycompilation>`_: python front-end for calling compilers, requires gcc/clang/icpc.
+- `pycodeexport <https://github.com/bjodah/pycodeexport>`_: package for code-generation, used when generating C++ code.
 
 .. _GSL: https://www.gnu.org/software/gsl/
 .. _boost: http://www.boost.org/
