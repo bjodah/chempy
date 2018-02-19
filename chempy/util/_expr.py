@@ -335,18 +335,18 @@ class Expr(object):
 
         return new_units, instance
 
-    def _sympy_format(self, method, variables, backend, default):
+    def _sympy_format(self, method, variables, backend, default, **kwargs):
         variables = variables or {}
         if backend in (None, math):
             import sympy as backend
         variables = defaultkeydict(
             None if default is None else (lambda k: backend.Symbol(default(k))),
             {k: v if isinstance(v, Expr) else backend.Symbol(v) for k, v in variables.items()})
-        expr = self(variables, backend=backend).simplify()
+        expr = self(variables, backend=backend, **kwargs).simplify()
         if method == 'latex':
             return backend.latex(expr)
-        elif method == 'unicode':
-            return backend.pprint(expr, use_unicode=True)
+        elif method in ('str', 'unicode'):
+            return backend.pretty(expr, use_unicode=(method == 'unicode'))
         elif method == 'mathml':
             from sympy.printing.mathml import print_mathml
             return print_mathml(expr)

@@ -333,6 +333,8 @@ class ReactionSystem(object):
         substances : convertible to iterable of str
         rxn_parse_kwargs : dict
             Keyword arguments passed on to the Reaction baseclass' method ``from_string``.
+        substance_factory : callable
+            Defaults to ``cls._BaseSubstance.from_formula``. Can be set to e.g. ``Substance``.
         \\*\\*kwargs:
             Keyword arguments passed to the constructor of the class
 
