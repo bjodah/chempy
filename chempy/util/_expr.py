@@ -345,11 +345,13 @@ class Expr(object):
         expr = self(variables, backend=backend, **kwargs).simplify()
         if method == 'latex':
             return backend.latex(expr)
-        elif method in ('str', 'unicode'):
-            return backend.pretty(expr, use_unicode=(method == 'unicode'))
+        elif method == 'str':
+            return str(expr)
+        elif method == 'unicode':
+            return backend.pretty(expr, use_unicode=True)
         elif method == 'mathml':
-            from sympy.printing.mathml import print_mathml
-            return print_mathml(expr)
+            from sympy.printing.mathml import mathml
+            return mathml(expr)
         else:
             raise NotImplementedError("Unknown method: %s" % method)
 
