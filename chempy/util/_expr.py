@@ -16,6 +16,11 @@ from itertools import chain
 from operator import add, mul, truediv, sub, pow
 from .pyutil import defaultkeydict, deprecated
 
+try:
+    import sympy
+except ImportError:
+    sympy = None
+
 
 def _implicit_conversion(obj):
     if isinstance(obj, (int, float)):
@@ -24,9 +29,25 @@ def _implicit_conversion(obj):
         return obj
     elif isinstance(obj, str):
         return Symbol(obj)
-    else:
-        raise NotImplementedError(
-            "Don't know how to convert %s (of type %s)" % (obj, type(obj)))
+
+    if sympy is not None:
+        if isinstance(obj, sympy.Mul):
+            if len(obj.args) != 2:
+                raise NotImplementedError("Did you use evaluate=False?")
+            return _MulExpr([_implicit_conversion(obj.args[0]), _implicit_conversion(obj.args[1])])
+        elif isinstance(obj, sympy.Add):
+            if len(obj.args) != 2:
+                raise NotImplementedError("Did you use evaluate=False?")
+            return _AddExpr([_implicit_conversion(obj.args[0]), _implicit_conversion(obj.args[1])])
+        elif isinstance(obj, sympy.Pow):
+            return _PowExpr(_implicit_conversion(obj.base), _implicit_conversion(obj.exp))
+        elif isinstance(obj, sympy.Float):
+            return Constant(float(obj))
+        elif isinstance(obj, sympy.Symbol):
+            return Symbol(obj.name)
+
+    raise NotImplementedError(
+        "Don't know how to convert %s (of type %s)" % (obj, type(obj)))
 
 
 class Expr(object):
@@ -338,10 +359,11 @@ class Expr(object):
     def _sympy_format(self, method, variables, backend, default, **kwargs):
         variables = variables or {}
         if backend in (None, math):
-            import sympy as backend
+            backend = sympy
         variables = defaultkeydict(
             None if default is None else (lambda k: backend.Symbol(default(k))),
-            {k: v if isinstance(v, Expr) else backend.Symbol(v) for k, v in variables.items()})
+            {k: v if isinstance(v, Expr) else (backend.Symbol(v) if isinstance(v, str) else backend.Float(v))
+             for k, v in variables.items()})
         expr = self(variables, backend=backend, **kwargs).simplify()
         if method == 'latex':
             return backend.latex(expr)
