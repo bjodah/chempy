@@ -1,0 +1,31 @@
+environment:
+
+  matrix:
+    - TARGET_ARCH: x86
+      CONDA_PY: 35
+      CONDA_INSTALL_LOCN: C:\\Miniconda35
+
+    - TARGET_ARCH: x64
+      CONDA_PY: 35
+      CONDA_INSTALL_LOCN: C:\\Miniconda35-x64
+
+platform:
+    - x64
+
+install:
+    # Cywing's git breaks conda-build. (See https://github.com/conda-forge/conda-smithy-feedstock/pull/2.)
+    - cmd: rmdir C:\cygwin /s /q
+
+    # Add path, activate `conda` and update conda.
+    - cmd: call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
+    - cmd: conda update --yes --quiet conda
+
+    - cmd: set PYTHONUNBUFFERED=1
+
+# Skip .NET project specific build phase.
+build: off
+
+test_script:
+    - "conda install --yes --quiet python pip numpy scipy matplotlib"
+    - "pip install ."
+    - "pytest --pyargs chempy -ra"
