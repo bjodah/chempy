@@ -4,7 +4,7 @@ from __future__ import (absolute_import, division, print_function)
 from collections import OrderedDict, defaultdict
 from functools import reduce
 from itertools import chain
-from operator import mul
+from operator import mul, add
 import math
 import warnings
 
@@ -1089,24 +1089,15 @@ class Equilibrium(Reaction):
         return candidate
 
 
-def _solve_balancing_ilp(A):
-    from cvxopt import matrix
-    from cvxopt.glpk import ilp
-
-    def as_matrix(mtx):
-        return matrix([[float(elem) for elem in row] for row in mtx.T.tolist()])
-
-    c_ = matrix([1]*A.shape[1])
-    A_ = as_matrix(A)
-    b_ = matrix([0.0]*A.shape[0])
-    G_ = matrix([[-1.0 if ri == ci else 0 for ci in range(A.shape[1])] for ri in range(A.shape[1])])
-    h_ = matrix([-1.0]*A.shape[1])
-
-    print("\n"+str(A)+"\n calling glpk.ilp") # DO-NOT-MERGE!
-    status, isol = ilp(c_, G_, h_, A_, b_, I=set(range(A.shape[1])))
-    if status not in 'optimal feasible'.split():
-        raise RuntimeError("cvxopt.glpk.ilp returned with status %s" % status)
-    return isol
+def _solve_balancing_ilp_pulp(A):
+    import pulp
+    x = [pulp.LpVariable('x%d' % i, lowBound=1, cat='Integer') for i in range(A.shape[1])]
+    prob = pulp.LpProblem("chempy balancing problem", pulp.LpMinimize)
+    prob += reduce(add, x)
+    for expr in [pulp.lpSum([x[i]*e for i, e in enumerate(row)]) for row in A.tolist()]:
+        prob += expr == 0
+    prob.solve()
+    return [pulp.value(_) for _ in x]
 
 
 def balance_stoichiometry(reactants, products, substances=None,
@@ -1243,14 +1234,7 @@ def balance_stoichiometry(reactants, products, substances=None,
                  " will_be_missing_in='0.9.0')"), ChemPyDeprecationWarning)
         underdetermined = None
     if underdetermined is None:
-        # sol = Tuple(*[Integer(x) for x in _solve_balancing_ilp(A)]) # DO-NOT-MERGE!
-        subsd = {}
-        for symb in symbs:
-            if not sol.has(symb):
-                continue
-            subsd[symb] = 1/reduce(gcd, [1] + [1/m[wi] for m in map(
-                lambda n: n.match(symb/wi), pre(sol)) if m is not None])
-        sol = sol.func(*[arg.subs(subsd) for arg in sol.args])
+        sol = Tuple(*[Integer(x) for x in _solve_balancing_ilp_pulp(A)])
 
     fact = gcd(sol)
     sol = MutableDenseMatrix([e/fact for e in sol])
@@ -1261,9 +1245,6 @@ def balance_stoichiometry(reactants, products, substances=None,
         for x in sol:
             if len(x.free_symbols) != 0:
                 raise ValueError("The system was under-determined")
-    if underdetermined is None:
-        if not all(x > 0 and x.is_integer for x in sol):
-            sol = Tuple(*[Integer(x) for x in _solve_balancing_ilp(A)])
 
     def _x(k):
         coeff = sol[subst_keys.index(k)]

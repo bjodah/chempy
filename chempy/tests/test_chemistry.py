@@ -287,7 +287,7 @@ def test_balance_stoichiometry__simple():
     assert p2 == {'Na2O': 1, 'CO2': 1}
 
 
-@requires('sympy')
+@requires('sympy', 'pulp')
 def test_balance_stoichiometry__underdetermined():
     with pytest.raises(ValueError):
         balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'}, underdetermined=False)
@@ -300,7 +300,7 @@ def test_balance_stoichiometry__underdetermined():
                     {'C21H26N7O14P2-': 1, 'H2O': 1, 'C7H5O4-': 1})
 
 
-@requires('cvxopt')
+@requires('sympy', 'pulp')
 def test_balance_stoichiometry__very_underdetermined():
     r3 = set('O2 Fe Al Cr'.split())
     p3 = set('FeO Fe2O3 Fe3O4 Al2O3 Cr2O3 CrO3'.split())
@@ -312,7 +312,7 @@ def test_balance_stoichiometry__very_underdetermined():
     assert bal3 == ref3
 
 
-@requires('cvxopt')
+@requires('sympy', 'pulp')
 def test_balance_stoichiometry__underdetermined__canoncial():
     # This tests for canoncial representation of the underdetermined system
     # where all coefficients are integer and >= 1. It is however of limited
@@ -330,7 +330,7 @@ def test_balance_stoichiometry__underdetermined__canoncial():
     assert bal2 == ref2
 
 
-@requires('sympy')
+@requires('sympy', 'pulp')
 def test_balance_stoichiometry__substances__underdetermined():
     substances = {s.name: s for s in [
         Substance('eggs_6pack', composition=dict(eggs=6)),
