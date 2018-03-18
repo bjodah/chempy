@@ -300,8 +300,19 @@ def test_balance_stoichiometry__underdetermined():
                     {'C21H26N7O14P2-': 1, 'H2O': 1, 'C7H5O4-': 1})
 
 
-@requires('sympy')
-@pytest.mark.xfail
+@requires('cvxopt')
+def test_balance_stoichiometry__very_underdetermined():
+    r3 = set('O2 Fe Al Cr'.split())
+    p3 = set('FeO Fe2O3 Fe3O4 Al2O3 Cr2O3 CrO3'.split())
+    bal3 = balance_stoichiometry(r3, p3, underdetermined=None)
+    ref3 = {'Fe': 7, 'Al': 2, 'Cr': 3, 'O2': 9}, {k: 2 if k == 'FeO' else 1 for k in p3}
+    substances = {k: Substance.from_formula(k) for k in r3 | p3}
+    assert all(viol == 0 for viol in Reaction(*ref3).composition_violation(substances))
+    assert sum(bal3[0].values()) + sum(bal3[1].values()) <= sum(ref3[0].values()) + sum(ref3[1].values())
+    assert bal3 == ref3
+
+
+@requires('cvxopt')
 def test_balance_stoichiometry__underdetermined__canoncial():
     # This tests for canoncial representation of the underdetermined system
     # where all coefficients are integer and >= 1. It is however of limited

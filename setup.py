@@ -98,7 +98,7 @@ _author, _author_email = open(_path_under_setup('AUTHORS'), 'rt').readline().spl
 
 extras_req = {
     'integrators': ['scipy>=0.16.1', 'pyodeint>=0.7.0', 'pycvodes>=0.8.3', 'pygslodeiv2>=0.6.1'],
-    'solvers': ['pykinsol'],
+    'solvers': ['pykinsol', 'cvxopt'],
     'native': ['pycompilation>=0.4.3', 'pycodeexport>=0.1.1', 'appdirs'],
     'docs': ['Sphinx', 'sphinx_rtd_theme', 'numpydoc'],
     'plotting': ['bokeh>=0.11.1', 'ipywidgets'],

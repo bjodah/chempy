@@ -1089,6 +1089,26 @@ class Equilibrium(Reaction):
         return candidate
 
 
+def _solve_balancing_ilp(A):
+    from cvxopt import matrix
+    from cvxopt.glpk import ilp
+
+    def as_matrix(mtx):
+        return matrix([[float(elem) for elem in row] for row in mtx.T.tolist()])
+
+    c_ = matrix([1]*A.shape[1])
+    A_ = as_matrix(A)
+    b_ = matrix([0.0]*A.shape[0])
+    G_ = matrix([[-1.0 if ri == ci else 0 for ci in range(A.shape[1])] for ri in range(A.shape[1])])
+    h_ = matrix([-1.0]*A.shape[1])
+
+    print("\n"+str(A)+"\n calling glpk.ilp") # DO-NOT-MERGE!
+    status, isol = ilp(c_, G_, h_, A_, b_, I=set(range(A.shape[1])))
+    if status not in 'optimal feasible'.split():
+        raise RuntimeError("cvxopt.glpk.ilp returned with status %s" % status)
+    return isol
+
+
 def balance_stoichiometry(reactants, products, substances=None,
                           substance_factory=Substance.from_formula,
                           parametric_symbols=None, underdetermined=True):
@@ -1140,8 +1160,8 @@ def balance_stoichiometry(reactants, products, substances=None,
 
     """
     from sympy import (
-        Matrix, gcd, zeros, linsolve, numbered_symbols, Wild, Symbol,
-        preorder_traversal as pre
+        MutableDenseMatrix, gcd, zeros, linsolve, numbered_symbols, Wild, Symbol,
+        Integer, Tuple, preorder_traversal as pre
     )
 
     _intersect = set.intersection(*map(set, (reactants, products)))
@@ -1175,7 +1195,7 @@ def balance_stoichiometry(reactants, products, substances=None,
     def _get(sk, ck):
         return substances[sk].composition.get(ck, 0) * (-1 if sk in reactants else 1)
 
-    A = Matrix([[_get(sk, ck) for sk in subst_keys] for ck in cks])
+    A = MutableDenseMatrix([[_get(sk, ck) for sk in subst_keys] for ck in cks])
     symbs = list(reversed([next(parametric_symbols) for _ in range(len(subst_keys))]))
     sol, = linsolve((A, zeros(len(cks), 1)), symbs)
     wi = Wild('wi', properties=[lambda k: not k.has(Symbol)])
@@ -1183,12 +1203,12 @@ def balance_stoichiometry(reactants, products, substances=None,
         lambda n: n.match(symbs[-1]/wi), pre(sol)) if m is not None])
     sol = sol.func(*[arg/cd for arg in sol.args])
 
-    def remove(sol, symb, remaining):
+    def remove(cont, symb, remaining):
         subsd = dict(zip(remaining/symb, remaining))
-        sol = sol.func(*[(arg/symb).expand().subs(subsd) for arg in sol.args])
-        if sol.has(symb):
+        cont = cont.func(*[(arg/symb).expand().subs(subsd) for arg in cont.args])
+        if cont.has(symb):
             raise ValueError("Bug, please report an issue at https://github.com/bjodah/chempy")
-        return sol
+        return cont
 
     done = False
     for idx, symb in enumerate(symbs):
@@ -1204,7 +1224,7 @@ def balance_stoichiometry(reactants, products, substances=None,
             break
         for expr in sol:
             if (expr/symb).is_number:
-                sol = remove(sol, symb, Matrix(symbs[idx+1:]))
+                sol = remove(sol, symb, MutableDenseMatrix(symbs[idx+1:]))
                 break
     for symb in symbs:
         cd = 1
@@ -1223,6 +1243,7 @@ def balance_stoichiometry(reactants, products, substances=None,
                  " will_be_missing_in='0.9.0')"), ChemPyDeprecationWarning)
         underdetermined = None
     if underdetermined is None:
+        # sol = Tuple(*[Integer(x) for x in _solve_balancing_ilp(A)]) # DO-NOT-MERGE!
         subsd = {}
         for symb in symbs:
             if not sol.has(symb):
@@ -1230,8 +1251,9 @@ def balance_stoichiometry(reactants, products, substances=None,
             subsd[symb] = 1/reduce(gcd, [1] + [1/m[wi] for m in map(
                 lambda n: n.match(symb/wi), pre(sol)) if m is not None])
         sol = sol.func(*[arg.subs(subsd) for arg in sol.args])
+
     fact = gcd(sol)
-    sol = Matrix([e/fact for e in sol])
+    sol = MutableDenseMatrix([e/fact for e in sol])
     sol /= reduce(gcd, sol)
     if 0 in sol:
         raise ValueError("Superfluous species given.")
@@ -1239,6 +1261,9 @@ def balance_stoichiometry(reactants, products, substances=None,
         for x in sol:
             if len(x.free_symbols) != 0:
                 raise ValueError("The system was under-determined")
+    if underdetermined is None:
+        if not all(x > 0 and x.is_integer for x in sol):
+            sol = Tuple(*[Integer(x) for x in _solve_balancing_ilp(A)])
 
     def _x(k):
         coeff = sol[subst_keys.index(k)]
