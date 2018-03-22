@@ -1150,6 +1150,7 @@ def balance_stoichiometry(reactants, products, substances=None,
     balanced products : dict
 
     """
+    import sympy
     from sympy import (
         MutableDenseMatrix, gcd, zeros, linsolve, numbered_symbols, Wild, Symbol,
         Integer, Tuple, preorder_traversal as pre
@@ -1253,10 +1254,15 @@ def balance_stoichiometry(reactants, products, substances=None,
     sol /= reduce(gcd, sol)
     if 0 in sol:
         raise ValueError("Superfluous species given.")
-    if not underdetermined:
+    if underdetermined:
+        if any(x == sympy.nan for x in sol):
+            raise ValueError("Failed to balance reaction")
+    else:
         for x in sol:
             if len(x.free_symbols) != 0:
                 raise ValueError("The system was under-determined")
+        if not all(residual == 0 for residual in A.dot(sol)):
+            raise ValueError("Failed to balance reaction")
 
     def _x(k):
         coeff = sol[subst_keys.index(k)]

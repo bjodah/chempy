@@ -287,6 +287,13 @@ def test_balance_stoichiometry__simple():
     assert p2 == {'Na2O': 1, 'CO2': 1}
 
 
+@requires('sympy')
+@pytest.mark.parametrize('underdet', [False, None, True])
+def test_balance_stoichiometry__impossible(underdet):
+    with pytest.raises(ValueError):
+        r1, p1 = balance_stoichiometry({'CO'}, {'CO2'}, underdetermined=underdet)
+
+
 @requires('sympy', 'pulp')
 def test_balance_stoichiometry__underdetermined():
     with pytest.raises(ValueError):
@@ -301,6 +308,13 @@ def test_balance_stoichiometry__underdetermined():
 
     with pytest.raises(ValueError):
         balance_stoichiometry({'C3H4O3', 'H3PO4'}, {'C3H6O3'}, underdetermined=None)
+
+    for underdet in [False, True, None]:
+        with pytest.raises(ValueError):
+            balance_stoichiometry({'C3H6O3'}, {'C3H4O3'}, underdetermined=underdet)
+
+    with pytest.raises(ValueError):  # https://github.com/bjodah/chempy/pull/86#issuecomment-375421609
+        balance_stoichiometry({'C21H36N7O16P3S', 'C3H4O3'}, {'H2O', 'C5H8O3', 'C24H38N7O18P3S'})
 
 
 @requires('sympy', 'pulp')
