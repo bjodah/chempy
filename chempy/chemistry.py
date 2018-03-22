@@ -1183,10 +1183,22 @@ def balance_stoichiometry(reactants, products, substances=None,
     # O  0    -2    1   1      x2        0
     #                          x3
 
-    def _get(sk, ck):
+    def _get(ck, sk):
         return substances[sk].composition.get(ck, 0) * (-1 if sk in reactants else 1)
 
-    A = MutableDenseMatrix([[_get(sk, ck) for sk in subst_keys] for ck in cks])
+    for ck in cks:  # check that all components are present on reactant & product sides
+        for rk in reactants:
+            if substances[rk].composition.get(ck, 0) != 0:
+                break
+        else:
+            raise ValueError("Component '%s' not among reactants" % ck)
+        for pk in products:
+            if substances[pk].composition.get(ck, 0) != 0:
+                break
+        else:
+            raise ValueError("Component '%s' not among products" % ck)
+
+    A = MutableDenseMatrix([[_get(ck, sk) for sk in subst_keys] for ck in cks])
     symbs = list(reversed([next(parametric_symbols) for _ in range(len(subst_keys))]))
     sol, = linsolve((A, zeros(len(cks), 1)), symbs)
     wi = Wild('wi', properties=[lambda k: not k.has(Symbol)])

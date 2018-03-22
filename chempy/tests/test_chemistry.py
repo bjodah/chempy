@@ -299,6 +299,9 @@ def test_balance_stoichiometry__underdetermined():
     assert bal1 == ({'C21H27N7O14P2-2': 1, 'H+': 1, 'C7H5O3-': 1, 'O2': 1},
                     {'C21H26N7O14P2-': 1, 'H2O': 1, 'C7H5O4-': 1})
 
+    with pytest.raises(ValueError):
+        balance_stoichiometry({'C3H4O3', 'H3PO4'}, {'C3H6O3'}, underdetermined=None)
+
 
 @requires('sympy', 'pulp')
 def test_balance_stoichiometry__very_underdetermined():
