@@ -4,7 +4,7 @@ from __future__ import (absolute_import, division, print_function)
 from collections import OrderedDict, defaultdict
 from functools import reduce
 from itertools import chain
-from operator import mul
+from operator import mul, add
 import math
 import warnings
 
@@ -1089,6 +1089,17 @@ class Equilibrium(Reaction):
         return candidate
 
 
+def _solve_balancing_ilp_pulp(A):
+    import pulp
+    x = [pulp.LpVariable('x%d' % i, lowBound=1, cat='Integer') for i in range(A.shape[1])]
+    prob = pulp.LpProblem("chempy balancing problem", pulp.LpMinimize)
+    prob += reduce(add, x)
+    for expr in [pulp.lpSum([x[i]*e for i, e in enumerate(row)]) for row in A.tolist()]:
+        prob += expr == 0
+    prob.solve()
+    return [pulp.value(_) for _ in x]
+
+
 def balance_stoichiometry(reactants, products, substances=None,
                           substance_factory=Substance.from_formula,
                           parametric_symbols=None, underdetermined=True):
@@ -1139,9 +1150,10 @@ def balance_stoichiometry(reactants, products, substances=None,
     balanced products : dict
 
     """
+    import sympy
     from sympy import (
-        Matrix, gcd, zeros, linsolve, numbered_symbols, Wild, Symbol,
-        preorder_traversal as pre
+        MutableDenseMatrix, gcd, zeros, linsolve, numbered_symbols, Wild, Symbol,
+        Integer, Tuple, preorder_traversal as pre
     )
 
     _intersect = set.intersection(*map(set, (reactants, products)))
@@ -1172,10 +1184,22 @@ def balance_stoichiometry(reactants, products, substances=None,
     # O  0    -2    1   1      x2        0
     #                          x3
 
-    def _get(sk, ck):
+    def _get(ck, sk):
         return substances[sk].composition.get(ck, 0) * (-1 if sk in reactants else 1)
 
-    A = Matrix([[_get(sk, ck) for sk in subst_keys] for ck in cks])
+    for ck in cks:  # check that all components are present on reactant & product sides
+        for rk in reactants:
+            if substances[rk].composition.get(ck, 0) != 0:
+                break
+        else:
+            raise ValueError("Component '%s' not among reactants" % ck)
+        for pk in products:
+            if substances[pk].composition.get(ck, 0) != 0:
+                break
+        else:
+            raise ValueError("Component '%s' not among products" % ck)
+
+    A = MutableDenseMatrix([[_get(ck, sk) for sk in subst_keys] for ck in cks])
     symbs = list(reversed([next(parametric_symbols) for _ in range(len(subst_keys))]))
     sol, = linsolve((A, zeros(len(cks), 1)), symbs)
     wi = Wild('wi', properties=[lambda k: not k.has(Symbol)])
@@ -1183,12 +1207,12 @@ def balance_stoichiometry(reactants, products, substances=None,
         lambda n: n.match(symbs[-1]/wi), pre(sol)) if m is not None])
     sol = sol.func(*[arg/cd for arg in sol.args])
 
-    def remove(sol, symb, remaining):
+    def remove(cont, symb, remaining):
         subsd = dict(zip(remaining/symb, remaining))
-        sol = sol.func(*[(arg/symb).expand().subs(subsd) for arg in sol.args])
-        if sol.has(symb):
+        cont = cont.func(*[(arg/symb).expand().subs(subsd) for arg in cont.args])
+        if cont.has(symb):
             raise ValueError("Bug, please report an issue at https://github.com/bjodah/chempy")
-        return sol
+        return cont
 
     done = False
     for idx, symb in enumerate(symbs):
@@ -1204,7 +1228,7 @@ def balance_stoichiometry(reactants, products, substances=None,
             break
         for expr in sol:
             if (expr/symb).is_number:
-                sol = remove(sol, symb, Matrix(symbs[idx+1:]))
+                sol = remove(sol, symb, MutableDenseMatrix(symbs[idx+1:]))
                 break
     for symb in symbs:
         cd = 1
@@ -1223,22 +1247,22 @@ def balance_stoichiometry(reactants, products, substances=None,
                  " will_be_missing_in='0.9.0')"), ChemPyDeprecationWarning)
         underdetermined = None
     if underdetermined is None:
-        subsd = {}
-        for symb in symbs:
-            if not sol.has(symb):
-                continue
-            subsd[symb] = 1/reduce(gcd, [1] + [1/m[wi] for m in map(
-                lambda n: n.match(symb/wi), pre(sol)) if m is not None])
-        sol = sol.func(*[arg.subs(subsd) for arg in sol.args])
+        sol = Tuple(*[Integer(x) for x in _solve_balancing_ilp_pulp(A)])
+
     fact = gcd(sol)
-    sol = Matrix([e/fact for e in sol])
+    sol = MutableDenseMatrix([e/fact for e in sol])
     sol /= reduce(gcd, sol)
     if 0 in sol:
         raise ValueError("Superfluous species given.")
-    if not underdetermined:
+    if underdetermined:
+        if any(x == sympy.nan for x in sol):
+            raise ValueError("Failed to balance reaction")
+    else:
         for x in sol:
             if len(x.free_symbols) != 0:
                 raise ValueError("The system was under-determined")
+        if not all(residual == 0 for residual in A.dot(sol)):
+            raise ValueError("Failed to balance reaction")
 
     def _x(k):
         coeff = sol[subst_keys.index(k)]
