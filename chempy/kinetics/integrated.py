@@ -11,7 +11,7 @@ from .._util import get_backend
 #
 # - Add documentation
 # - Rename esoteric parameter names
-# - Derive more general expressions (e.g. which allows finite initial dimer concentration)
+
 
 
 def dimerization_irrev(t, kf, initial_C, P0=1, t0=0):
@@ -81,6 +81,9 @@ binary_rev.name = 'Second order reversible'
 
 def unary_irrev_cstr(t, k, r, p, fr, fp, fv, backend=None):
     """ Analytic solution for ``A -> B`` in a CSTR.
+
+    Analytic solution for a first order process in a continuously
+    stirred tank reactor (CSTR).
 
     Parameters
     ----------

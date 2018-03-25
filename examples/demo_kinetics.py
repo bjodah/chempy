@@ -17,12 +17,9 @@ def main():
         't k_f P0 t0 Y Z epsilon beta', negative=False)
     for f in funcs:
         args = t, kf, P0, t0, excess_C, limiting_C, eps_l
-        kwargs = {'exp': sympy.exp}
         if f in (pseudo_rev, binary_rev):
             args += (beta,)
-        if f is binary_rev:
-            kwargs['one'] = sympy.S(1)
-        expr = f(*args, **kwargs)
+        expr = f(*args, backend='sympy')
         with open(f.__name__ + '.png', 'wb') as ofh:
             sympy.printing.preview(expr, output='png', filename='out.png',
                                    viewer='BytesIO', outputbuffer=ofh)
