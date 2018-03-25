@@ -27,7 +27,7 @@ class ReactionSystem(object):
          Name of ReactionSystem (e.g. model name / citation key).
     checks : iterable of str, optional
         Raises ``ValueError`` if any method ``check_%s`` returns False
-        for all ``%s`` in ``checks``.
+        for all ``%s`` in ``checks``. Default: ``ReactionSystem.default_checks``.
     substance_factory : callback
         Could also be e.g. :meth:`Substance.from_formula`.
     sort_substances : bool
@@ -62,13 +62,12 @@ class ReactionSystem(object):
 
     _BaseReaction = Reaction
     _BaseSubstance = Substance
+    default_checks = ('balance', 'substance_keys', 'duplicate', 'duplicate_names')
 
-    def __init__(self, rxns, substances=None, name=None,
-                 checks=('balance', 'substance_keys', 'duplicate', 'duplicate_names'),
+    def __init__(self, rxns, substances=None, name=None, checks=None,
                  substance_factory=Substance, missing_substances_from_keys=False,
                  sort_substances=None):
         self.rxns = list(rxns)
-
         if substances is None:
             substances = set.union(*[set(rxn.keys()) for rxn in self.rxns])
 
@@ -98,7 +97,7 @@ class ReactionSystem(object):
 
         self.name = name
 
-        for check in checks:
+        for check in (self.default_checks if checks is None else checks):
             getattr(self, 'check_'+check)(throw=True)
 
         if sort_substances:

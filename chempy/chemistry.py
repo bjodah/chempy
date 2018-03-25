@@ -381,7 +381,7 @@ class Reaction(object):
     data : dict (optional)
     checks : iterable of str
         Raises ``ValueError`` if any method ``check_%s`` returns False
-        for all ``%s`` in ``checks``.
+        for all ``%s`` in ``checks``. Default: ``Reaction.default_checks``.
 
     Attributes
     ----------
@@ -413,6 +413,7 @@ class Reaction(object):
     _str_arrow = '->'
 
     param_char = 'k'  # convention
+    default_checks = ('any_effect', 'all_positive', 'all_integral', 'consistent_units')
 
     @staticmethod
     def _init_stoich(container):
@@ -425,8 +426,7 @@ class Reaction(object):
 
     def __init__(
             self, reac, prod, param=None, inact_reac=None, inact_prod=None,
-            name=None, ref=None, data=None,
-            checks=('any_effect', 'all_positive', 'all_integral', 'consistent_units')):
+            name=None, ref=None, data=None, checks=None):
         self.reac = self._init_stoich(reac)
         self.inact_reac = self._init_stoich(inact_reac)
         self.prod = self._init_stoich(prod)
@@ -435,7 +435,7 @@ class Reaction(object):
         self.name = name
         self.ref = ref
         self.data = data or {}
-        for check in checks:
+        for check in (self.default_checks if checks is None else checks):
             if not getattr(self, 'check_'+check)():
                 raise ValueError("Check failed: '%s'" % check)
 

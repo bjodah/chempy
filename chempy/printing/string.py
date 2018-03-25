@@ -18,7 +18,7 @@ class StrPrinter(Printer):
         nullstr, space = str_(''), str_(' ')
         reac, prod, i_reac, i_prod = [[
             (
-                ((coeff_fmt(v)+space) if v > 1 else nullstr) +
+                ((coeff_fmt(v)+space) if v != 1 else nullstr) +
                 formula_fmt(self._print(substances.get(k, k)))
             ) for k, v in filter(itemgetter(1), d.items())
         ] for d in (rxn.reac, rxn.prod, rxn.inact_reac, rxn.inact_prod)]
