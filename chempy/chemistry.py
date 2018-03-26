@@ -503,7 +503,7 @@ class Reaction(object):
             for v in cont.values():
                 if v < 0:
                     return False
-            return True
+        return True
 
     def check_all_integral(self):
         """ Checks if all stoichiometric coefficents are integers """

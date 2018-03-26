@@ -164,6 +164,9 @@ def test_Reaction__from_string():
     with pytest.raises(ValueError):
         Reaction.from_string("H2O -> H+ + OH-; 1e-4/M/s", 'H2O H+ OH-'.split())
 
+    with pytest.raises(ValueError):
+        Reaction({'H2O': 2}, {'H2O2': 2, 'O2': -2})
+
 
 @requires(parsing_library)
 def test_ReactioN__latex():
