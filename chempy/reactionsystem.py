@@ -248,7 +248,8 @@ class ReactionSystem(object):
             for i2, rxn2 in enumerate(self.rxns[i1+1:], i1+1):
                 if rxn1 == rxn2:
                     if throw:
-                        raise ValueError("Duplicate reactions %d & %d" % (i1, i2))
+                        raise ValueError("Duplicate reactions %d & %d: %s" %
+                                         (i1, i2, rxn1.string(with_param=False)))
                     else:
                         return False
         return True
