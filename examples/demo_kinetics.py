@@ -30,9 +30,4 @@ def main():
 
 
 if __name__ == '__main__':
-    try:
-        import argh
-    except ImportError:
-        main()
-    else:
-        argh.dispatch_command(main)
+    main()
