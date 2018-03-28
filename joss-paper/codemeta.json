@@ -10,14 +10,14 @@
       "affiliation": "KTH Royal Institute of Technology"
     }
   ],
-  "identifier": "http://dx.doi.org/10.5281/zenodo.1158716",
+  "identifier": "http://dx.doi.org/10.5281/zenodo.1209326",
   "codeRepository": "https://github.com/bjodah/chempy",
-  "datePublished": "2018-01-26",
-  "dateModified": "2018-01-26",
+  "datePublished": "2018-03-28",
+  "dateModified": "2018-03-28",
   "dateCreated": "2018-01-26",
   "description": "A package useful for chemistry written in Python",
   "keywords": "chemistry, physical chemistry",
   "license": "BSD",
   "title": "ChemPy",
-  "version": "v0.6.3"
+  "version": "v0.6.6"
 }
