@@ -1,0 +1,84 @@
+chempy\.printing package
+========================
+
+.. automodule:: chempy.printing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Submodules
+----------
+
+chempy\.printing\.js module
+---------------------------
+
+.. automodule:: chempy.printing.js
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy\.printing\.numbers module
+--------------------------------
+
+.. automodule:: chempy.printing.numbers
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy\.printing\.pretty module
+-------------------------------
+
+.. automodule:: chempy.printing.pretty
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy\.printing\.printer module
+--------------------------------
+
+.. automodule:: chempy.printing.printer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy\.printing\.string module
+-------------------------------
+
+.. automodule:: chempy.printing.string
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy\.printing\.table module
+------------------------------
+
+.. automodule:: chempy.printing.table
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy\.printing\.tables module
+-------------------------------
+
+.. automodule:: chempy.printing.tables
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy\.printing\.tex module
+----------------------------
+
+.. automodule:: chempy.printing.tex
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy\.printing\.web module
+----------------------------
+
+.. automodule:: chempy.printing.web
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
