@@ -62,7 +62,7 @@ class StrPrinter(Printer):
 
     def _print_ReactionSystem(self, rsys, **kwargs):
         header = (rsys.name + '\n') if rsys.name else ''
-        return header + '\n'.join(map(self._print, rsys.rxns))
+        return header + '\n'.join(map(self._print, rsys.rxns)) + '\n'
 
 
 def str_(obj, **settings):  # Python keyword, hence the trailing '_'
