@@ -356,7 +356,7 @@ Using only a web-browser (and an internet connection) it is possible to explore 
 notebooks here: (by the courtesy of the people behind mybinder)
 
 .. image:: http://mybinder.org/badge.svg
-   :target: https://mybinder.org/v2/gh/bjodah/chempy/181c41cec04bf2d41a64d2c2bb55b4ac112bf46f?filepath=index.ipynb
+   :target: https://mybinder.org/v2/gh/bjodah/chempy/v0.6.6?filepath=index.ipynb
    :alt: Binder
 
 
