@@ -1,48 +1,107 @@
 """
-This module collects special cases of systems for which analytic solutions
-are available.
+This module collects a few analytic solutions of initial value problems (IVPs) in
+chemical kinetics (i.e. integrated rate expressions in closed form).
+The expressions are useful in e.g. regression or for comparison with numerical
+solution of the corresponding ODE system.
 """
 from __future__ import (absolute_import, division, print_function)
 
 from .._util import get_backend
-
-# TODO
-# ----
-#
-# - Add documentation
-# - Rename esoteric parameter names
-
 
 
 def dimerization_irrev(t, kf, initial_C, P0=1, t0=0):
     return 1/(1/initial_C + 2*kf*(t-t0))
 
 
-def pseudo_irrev(t, kf, P0, t0, excess_C, limiting_C, eps_l, backend=None):
+def pseudo_irrev(t, kf, prod, major, minor, backend=None):
+    """ Analytic product transient of a irreversible pseudo first order reaction.
+
+    Product concentration vs time from pseudo-first order irreversible kinetics.
+
+    Parameters
+    ----------
+    t : float, Symbol or array_like
+        Time.
+    kf : number or Symbol
+        Forward (bimolecular) rate constant.
+    kb : number or Symbol
+        Backward (unimolecular) rate constant.
+    prod : number or Symbol
+        Initial concentration of the complex.
+    major : number or Symbol
+        Initial concentration of the more abundant reactant.
+    minor : number or Symbol
+        Initial concentration of the less abundant reactant.
+    backend : module or str
+        Default is 'numpy', can also be e.g. ``sympy``.
+
+    """
     be = get_backend(backend)
-    return P0*eps_l*limiting_C*(1 - be.exp(-excess_C*kf*(t-t0)))
+    return prod + minor*(1 - be.exp(-major*kf*t))
 pseudo_irrev.name = 'Pseudo first order irreversible'
 
 
-def pseudo_rev(t, kf, P0, t0, excess_C, limiting_C, eps_l, beta, backend=None):
+def pseudo_rev(t, kf, kb, prod, major, minor, backend=None):
+    """ Analytic product transient of a reversible pseudo first order reaction.
+
+    Product concentration vs time from pseudo-first order reversible kinetics.
+
+    Parameters
+    ----------
+    t : float, Symbol or array_like
+        Time.
+    kf : number or Symbol
+        Forward (bimolecular) rate constant.
+    kb : number or Symbol
+        Backward (unimolecular) rate constant.
+    prod : number or Symbol
+        Initial concentration of the complex.
+    major : number or Symbol
+        Initial concentration of the more abundant reactant.
+    minor : number or Symbol
+        Initial concentration of the less abundant reactant.
+    backend : module or str
+        Default is 'numpy', can also be e.g. ``sympy``.
+
+    """
     be = get_backend(backend)
-    kb = kf/beta
-    return P0*eps_l*limiting_C*excess_C*kf/(excess_C*kf + kb)*(
-        1 - be.exp(-(excess_C*kf+kb)*(t-t0)))
+    return (
+        -kb*prod + kf*major*minor + (kb*prod - kf*major*minor) *
+        be.exp(-t*(kb + kf*major))
+    )/(kb + kf*major)
 pseudo_rev.name = 'Pseudo first order reversible'
 
 
-def binary_irrev(t, kf, P0, t0, excess_C, limiting_C, eps_l, backend=None):
+def binary_irrev(t, kf, prod, major, minor, backend=None):
+    """ Analytic product transient of a irreversible 2-to-1 reaction.
+
+    Product concentration vs time from second order irreversible kinetics.
+
+    Parameters
+    ----------
+    t : float, Symbol or array_like
+    kf : number or Symbol
+        Forward (bimolecular) rate constant.
+    prod : number or Symbol
+        Initial concentration of the complex.
+    major : number or Symbol
+        Initial concentration of the more abundant reactant.
+    minor : number or Symbol
+        Initial concentration of the less abundant reactant.
+    backend : module or str
+        Default is 'numpy', can also be e.g. ``sympy``.
+
+    """
     be = get_backend(backend)
-    return P0*eps_l*excess_C*(1 - be.exp(-kf*(excess_C-limiting_C)*(t-t0)))/(
-        excess_C/limiting_C - be.exp(-kf*(t-t0)*(excess_C-limiting_C)))
+    return prod + major*(1 - be.exp(-kf*(major-minor)*t))/(
+        major/minor - be.exp(-kf*t*(major-minor)))
 binary_irrev.name = 'Second order irreversible'
 
 
 def binary_rev(t, kf, kb, prod, major, minor, backend=None):
-    """ Calculates the analytic transient concentration of a complex.
+    """ Analytic product transient of a reversible 2-to-1 reaction.
 
-    From second order reversible kinetics.
+    Product concentration vs time from second order reversible kinetics.
 
     Parameters
     ----------
@@ -177,7 +236,8 @@ def binary_irrev_cstr(t, k, r, p, fr, fp, fv, n=1, backend=None):
     x12 = be.exp(x8)
     x13 = n*x12
     return (
-        x0*(-fv + x5*be.tanh
-            (t*x6 - x7))/4, x0*(fv*x13 + 8*k*p + r*x10 - x1*x13*x4*be.tanh
-                                (x6*(t - 2*x7/(x1*x4))) + x11*x12 - x11 + x12*x9 - x9)*be.exp(-x8)/8
+        x0*(-fv + x5*be.tanh(t*x6 - x7))/4,
+        x0*(fv*x13 + 8*k*p + r*x10 - x1*x13*x4*be.tanh(
+            x6*(t - 2*x7/(x1*x4))
+        ) + x11*x12 - x11 + x12*x9 - x9)*be.exp(-x8)/8
     )

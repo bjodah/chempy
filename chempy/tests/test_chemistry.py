@@ -126,11 +126,11 @@ def test_Reaction_parsing():
         Reaction.from_string('2 A -> B; 2e-3/hour', None)
 
     r8 = Reaction.from_string('A -> B; "k"')
-    assert r8.rate_expr().args == None
+    assert r8.rate_expr().args is None
     assert r8.rate_expr().unique_keys == ('k',)
     r9 = Reaction.from_string('A -> B; 42.0')
     assert r9.rate_expr().args == [42.0]
-    assert r9.rate_expr().unique_keys == None
+    assert r9.rate_expr().unique_keys is None
 
 
 @requires(parsing_library, units_library)
