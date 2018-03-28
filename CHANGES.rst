@@ -1,6 +1,8 @@
 v0.6.6
 ======
 - Support for containers in ``chempy.units.unit_of``.
+- ``balance_stoichiometry`` now correctly find the canoncial solution when ``underdetermined=None`` is passed.
+- ``chempy.kinetics.integrated`` was refactored to have more approachable API.
 
 v0.6.5
 ======

@@ -48,13 +48,15 @@ equations (chemical equilibria). The latter two forms can be solved
 numerically using pyodesys [@dahlgren_pyodesys_2018] and pyneqsys
 [@dahlgren_pyneqsys_2018] respectively.
 
-Thanks to the use of SymPy [@Meurer2017], a user can not only solve
-stoichiometry problems with a single unique solution, but also
+Thanks to the use of SymPy [@Meurer2017], stoichiometry problems with
+a single unique solution can be solved analytically, as well as
 under-determined systems, where the answer then contains a free parameter.
+The under-determined formulation can also be expressed in a canoncial form
+with coefficients minimzed using PuLP [@mitchell2011pulp,@lougee2003common].
 In fact, most equations and parametrizations in ChemPy support---in addition to
-NumPy [@vanderWalt2011] arrays---also symbolic input, as well as arrays
+NumPy arrays [@vanderWalt2011]---also symbolic input, as well as arrays
 with explicit units. The latter allows ChemPy to check that e.g. the correct
-dimensionality is of a rate coefficient is used with respect to reaction order.
+dimensionality with respect to reaction order is used for rate constants.
 
 # Features
 - Pretty printing of chemical formulae and reaction sets.

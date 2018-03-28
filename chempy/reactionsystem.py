@@ -248,7 +248,8 @@ class ReactionSystem(object):
             for i2, rxn2 in enumerate(self.rxns[i1+1:], i1+1):
                 if rxn1 == rxn2:
                     if throw:
-                        raise ValueError("Duplicate reactions %d & %d" % (i1, i2))
+                        raise ValueError("Duplicate reactions %d & %d: %s" %
+                                         (i1, i2, rxn1.string(with_param=False)))
                     else:
                         return False
         return True
@@ -299,10 +300,11 @@ class ReactionSystem(object):
                 else:
                     return True
         for rxn in self.rxns:
-            for net in rxn.composition_violation(self.substances):
+            for net, k in zip(*rxn.composition_violation(self.substances, composition_keys=True)):
                 if net != 0:
                     if throw:
-                        raise ValueError("Composition violation in %s" % str(rxn))
+                        raise ValueError("Composition violation (%s: %s) in %s" %
+                                         (k, net, rxn.string(with_param=False)))
                     else:
                         return False
         return True

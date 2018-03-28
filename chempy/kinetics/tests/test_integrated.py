@@ -12,54 +12,46 @@ except ImportError:
 else:
     one = sympy.S(1)
 
-    t, kf, P0, t0, excess_C, limiting_C, eps_l, beta = sympy.symbols(
-        't k_f P0 t0 Y Z epsilon beta', negative=False)  # t0 => -t0
+    t, kf, kb, prod, major, minor = sympy.symbols(
+        't kf kb prod major minor', negative=False, nonnegative=True, real=True)
 
-    subsd = {t: one*2, kf: one*3, P0: one*5, t0: one*7, excess_C: one*11,
-             limiting_C: one*13, eps_l: one*17, beta: one*23}
-    excl_params = {t0: one*0, P0: one, eps_l: one}
+    subsd = {t: one*2, kf: one*3, kb: one*7, major: one*11,
+             minor: one*13, prod: one*0}
 
 
 @requires('sympy')
 def test_pseudo_irrev():
-    f = pseudo_irrev(t, kf, P0, -t0, excess_C, limiting_C, eps_l,
-                     backend=sympy).subs(excl_params)
+    f = pseudo_irrev(t, kf, prod, major, minor, backend=sympy)
     dfdt = f.diff(t)
     num_dfdt = dfdt.subs(subsd)
     assert (num_dfdt - (
-        excess_C*kf*(limiting_C - f)
+        major*kf*(minor - f)
     ).subs(subsd)).simplify() == 0
 
 
 @requires('sympy')
 def test_pseudo_rev():
-    f = pseudo_rev(t, kf, P0, -t0, excess_C, limiting_C, eps_l,
-                   beta, backend=sympy).subs(excl_params)
+    f = pseudo_rev(t, kf, kb, prod, major, minor, backend=sympy)
     dfdt = f.diff(t)
     num_dfdt = dfdt.subs(subsd)
-    assert (num_dfdt - (
-        excess_C*kf*(limiting_C - f) - kf/beta*f
-    ).subs(subsd)).simplify() == 0
+    assert (num_dfdt - (major*kf*(minor - f) - kb*f).subs(subsd)).simplify() == 0
 
 
 @pytest.mark.slow
 @requires('sympy')
 def test_binary_irrev():
-    f = binary_irrev(t, kf, P0, -t0, excess_C, limiting_C, eps_l,
-                     backend=sympy).subs(excl_params)
+    f = binary_irrev(t, kf, prod, major, minor, backend=sympy)
     dfdt = f.diff(t)
     num_dfdt = dfdt.subs(subsd)
-    assert (num_dfdt - (
-        kf*(limiting_C - f)*(excess_C - f)
-    ).subs(subsd)).simplify() == 0
+    assert (num_dfdt - (kf*(minor - f)*(major - f)).subs(subsd)).simplify() == 0
 
 
 @pytest.mark.slow
 @requires('sympy')
 def test_binary_rev():
-    f = binary_rev(t-t0, kf, kf/beta, 0, excess_C, limiting_C, backend=sympy).subs(excl_params)
+    f = binary_rev(t, kf, kb, prod, major, minor, backend=sympy)
     dfdt = f.diff(t)
     num_dfdt = dfdt.subs(subsd)
-    ans = kf*(limiting_C - f)*(excess_C - f) - kf/beta*f
+    ans = kf*(minor - f)*(major - f) - kb*f
     # symbolic susbsitution fails:
     assert abs(float(num_dfdt) - float(ans.subs(subsd))) < 2e-14

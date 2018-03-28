@@ -13,16 +13,17 @@ funcs = (pseudo_irrev, pseudo_rev, binary_irrev, binary_rev)
 
 
 def main():
-    t, kf, P0, t0, excess_C, limiting_C, eps_l, beta = sympy.symbols(
-        't k_f P0 t0 Y Z epsilon beta', negative=False)
+    """
+    This example demonstrates how to generate pretty equations from the analytic
+    expressions found in ``chempy.kinetics.integrated``.
+    """
+    t, kf, t0, major, minor, prod, beta = sympy.symbols(
+        't k_f t0 Y Z X beta', negative=False)
     for f in funcs:
-        args = t, kf, P0, t0, excess_C, limiting_C, eps_l
-        kwargs = {'exp': sympy.exp}
+        args = [t, kf, prod, major, minor]
         if f in (pseudo_rev, binary_rev):
-            args += (beta,)
-        if f is binary_rev:
-            kwargs['one'] = sympy.S(1)
-        expr = f(*args, **kwargs)
+            args.insert(2, kf/beta)
+        expr = f(*args, backend='sympy')
         with open(f.__name__ + '.png', 'wb') as ofh:
             sympy.printing.preview(expr, output='png', filename='out.png',
                                    viewer='BytesIO', outputbuffer=ofh)
@@ -33,9 +34,4 @@ def main():
 
 
 if __name__ == '__main__':
-    try:
-        import argh
-    except ImportError:
-        main()
-    else:
-        argh.dispatch_command(main)
+    main()

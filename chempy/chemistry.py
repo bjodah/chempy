@@ -503,7 +503,7 @@ class Reaction(object):
             for v in cont.values():
                 if v < 0:
                     return False
-            return True
+        return True
 
     def check_all_integral(self):
         """ Checks if all stoichiometric coefficents are integers """
@@ -756,6 +756,10 @@ class Reaction(object):
     def rate_expr(self):
         """ Turns self.param into a RateExpr instance (if not already)
 
+        Default is to create a ``MassAction`` instance. The parameter will
+        be used as single instance in ``unique_keys`` if it is a string,
+        otherwise it will be used as ``args``.
+
         Examples
         --------
         >>> r = Reaction.from_string('2 A + B -> 3 C; 7')
@@ -772,7 +776,10 @@ class Reaction(object):
             try:
                 convertible = self.param.as_RateExpr
             except AttributeError:
-                return MassAction([self.param])
+                if isinstance(self.param, str):
+                    return MassAction.fk(self.param)
+                else:
+                    return MassAction([self.param])
             else:
                 return convertible()
 
