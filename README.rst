@@ -10,8 +10,6 @@ ChemPy
 .. image:: https://img.shields.io/badge/python-2.7,3.5,3.6-blue.svg
    :target: https://www.python.org/
    :alt: Python version
-.. image:: https://zenodo.org/badge/8840/bjodah/chempy.svg
-   :target: https://zenodo.org/badge/latestdoi/8840/bjodah/chempy
 .. image:: https://img.shields.io/pypi/l/chempy.svg
    :target: https://github.com/bjodah/chempy/blob/master/LICENSE
    :alt: License
@@ -21,7 +19,9 @@ ChemPy
 .. image:: http://hera.physchem.kth.se/~chempy/branches/master/htmlcov/coverage.svg
    :target: http://hera.physchem.kth.se/~chempy/branches/master/htmlcov
    :alt: coverage
-
+.. image:: http://joss.theoj.org/papers/10.21105/joss.00565/status.svg
+   :target: https://doi.org/10.21105/joss.00565
+   :alt: Journal of Open Source Software DOI
 
 .. contents::
 
@@ -359,6 +359,23 @@ notebooks here: (by the courtesy of the people behind mybinder)
    :target: https://mybinder.org/v2/gh/bjodah/chempy/v0.6.6?filepath=index.ipynb
    :alt: Binder
 
+
+Citing
+------
+If you make use of ChemPy in e.g. academic work you may cite the following peer-reviewed publication:
+
+.. image:: http://joss.theoj.org/papers/10.21105/joss.00565/status.svg
+   :target: https://doi.org/10.21105/joss.00565
+   :alt: Journal of Open Source Software DOI
+
+Depending on what underlying solver you are using you should also cite the appropriate paper
+(you can look at the list of references in the JOSS article). If you need to reference,
+in addition to the paper, a specific point version of ChemPy (for e.g. reproducibility)
+you can get per-version DOIs from the zendodo archive:
+
+.. image:: https://zenodo.org/badge/8840/bjodah/chempy.svg
+   :target: https://zenodo.org/badge/latestdoi/8840/bjodah/chempy
+   :alt: Zenodo DOI
 
 Licensing
 ---------
