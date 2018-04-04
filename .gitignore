@@ -1,5 +1,5 @@
 .config/
-.cache/
+.*cache/
 **/.ipython/
 **/.ipynb_checkpoints/
 **.cache/
@@ -25,4 +25,3 @@ build/
 .ipython/
 .jupyter/*
 !.jupyter/jupyter_notebook_config.py
-.*cache/

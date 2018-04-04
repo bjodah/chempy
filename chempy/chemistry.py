@@ -125,7 +125,7 @@ class Substance(object):
         --------
         >>> nh4p = Substance.from_formula('NH4+')  # simpler
         >>> from chempy.units import default_units as u
-        >>> nh4p.molar_mass(u)  # doctest: +ELLIPSIS
+        >>> nh4p.molar_mass(u)
         array(18.0384511...) * g/mol
 
         """

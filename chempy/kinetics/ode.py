@@ -159,8 +159,8 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     >>> odesys, extra = get_odesys(rsys)
     >>> init_conc = {'Fe+3': 1.0, 'SCN-': .3, 'FeSCN+2': 0}
     >>> tout, Cout, info = odesys.integrate(5, init_conc)
-    >>> Cout[-1, :].round(4)  # doctest: +NORMALIZE_WHITESPACE
-    array([0.7042, 0.0042, 0.2958])
+    >>> Cout[-1, :].round(4)
+    array([ 0.7042,  0.0042,  0.2958])
 
     """
     if SymbolicSys is None:
