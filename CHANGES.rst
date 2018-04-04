@@ -1,3 +1,7 @@
+v0.6.7
+======
+- Updated manuscript for JOSS.
+
 v0.6.6
 ======
 - Support for containers in ``chempy.units.unit_of``.
