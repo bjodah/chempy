@@ -8,7 +8,7 @@ authors:
    orcid: 0000-0003-0596-0222
    affiliation: 1
 affiliations:
- - name: KTH Royal Institute of Technology
+ - name: KTH Royal Institute of Technology, Stockholm, Sweden
    index: 1
 date: 26 January 2018
 bibliography: paper.bib
@@ -26,7 +26,7 @@ literature.
 
 Its intended audience is primarily researchers and engineers who need
 to perform modelling work. But since the intermediate representations
-of e.g., ODE systems and systems of non-linear equations are available
+of, e.g., ODE systems and systems of non-linear equations are available
 symbolically, ChemPy may also be used in an educational setting.
 
 Substances are represented by a class that holds their names and, optionally,
@@ -37,7 +37,7 @@ parser. Reactions are represented through their stoichiometry and
 thermodynamic/kinetic parameters. If the stoichiometry of a reaction
 is unknown, ChemPy can balance it based on the composition of the
 substances. The classes for representing systems of reactions provide
-methods to analyze e.g., if there are disjoint sets of reactions, or if all
+methods to analyze, e.g., if there are disjoint sets of reactions, or if all
 are connected in the same network. The classes also offer
 a series of checks performed at initialization, ensuring balanced
 reactions with sane coefficients and consistent units.
@@ -55,7 +55,7 @@ The under-determined formulation can also be expressed in a canoncial form
 with coefficients minimzed using PuLP [@mitchell2011pulp;@lougee2003common].
 In fact, most equations and parametrizations in ChemPy support---in addition to
 NumPy arrays [@vanderWalt2011]---also symbolic input, as well as arrays
-with explicit units. The latter allows ChemPy to check that e.g., the correct
+with explicit units. The latter allows ChemPy to check that, e.g., the correct
 dimensionality with respect to reaction order is used for rate constants.
 
 # Features
