@@ -1,0 +1,619 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.thermodynamics package &mdash; chempy 0.6.7 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="chempy 0.6.7 documentation" href="index.html"/>
+        <link rel="up" title="chempy package" href="chempy.html"/>
+        <link rel="next" title="chempy.util package" href="chempy.util.html"/>
+        <link rel="prev" title="chempy.properties package" href="chempy.properties.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.6.7
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="chempy.html">chempy package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="chempy.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="chempy.electrochemistry.html">chempy.electrochemistry package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.kinetics.html">chempy.kinetics package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.printing.html">chempy.printing package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.properties.html">chempy.properties package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">chempy.thermodynamics package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.thermodynamics.expressions">chempy.thermodynamics.expressions module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.util.html">chempy.util package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.arrhenius">chempy.arrhenius module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.chemistry">chempy.chemistry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.debye_huckel">chempy.debye_huckel module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.einstein_smoluchowski">chempy.einstein_smoluchowski module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.electrolytes">chempy.electrolytes module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.equilibria">chempy.equilibria module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.eyring">chempy.eyring module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.henry">chempy.henry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.reactionsystem">chempy.reactionsystem module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.symbolic">chempy.symbolic module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.units">chempy.units module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">chempy</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="chempy.html">chempy package</a> &raquo;</li>
+        
+      <li>chempy.thermodynamics package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <a href="https://github.com/bjodah/chempy/blob/v0.6.7/doc/chempy.thermodynamics.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-chempy.thermodynamics">
+<span id="chempy-thermodynamics-package"></span><h1>chempy.thermodynamics package<a class="headerlink" href="#module-chempy.thermodynamics" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-chempy.thermodynamics.expressions">
+<span id="chempy-thermodynamics-expressions-module"></span><h2>chempy.thermodynamics.expressions module<a class="headerlink" href="#module-chempy.thermodynamics.expressions" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="chempy.thermodynamics.expressions.EqExpr">
+<em class="property">class </em><code class="descclassname">chempy.thermodynamics.expressions.</code><code class="descname">EqExpr</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/thermodynamics/expressions.html#EqExpr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.thermodynamics.expressions.EqExpr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#chempy.thermodynamics.expressions.EqExpr" title="chempy.thermodynamics.expressions.EqExpr"><code class="xref py py-class docutils literal notranslate"><span class="pre">chempy.thermodynamics.expressions.EqExpr</span></code></a></p>
+<p>EqExpr is deprecated. Use MassActionEq instead.</p>
+<p>Baseclass for equilibrium expressions</p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="68%" />
+<col width="32%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>argument_defaults</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>argument_names</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>nargs</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code>(…)&nbsp;&lt;==&gt;&nbsp;x(…)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_args</span></code>(variables[,&nbsp;backend,&nbsp;evaluate])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_parameter_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_params</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_unique_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">arg</span></code>(variables,&nbsp;index[,&nbsp;backend,&nbsp;evaluate])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">args_dimensionality</span></code>(**kwargs)</td>
+<td>return tuple of dicts mapping str to int (‘length’, ‘mass’, ‘time’, ‘current’, ‘temperature’, ‘luminous_intensity’, ‘amount’)</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">dedimensionalisation</span></code>(unit_registry[,&nbsp;…])</td>
+<td>Create an instance with consistent units from a unit_registry</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">fk</span></code>(*args)</td>
+<td>Alternative constructor “from keys”, *args is used as <code class="docutils literal notranslate"><span class="pre">unique_keys</span></code>.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_callback</span></code>(callback[,&nbsp;attr])</td>
+<td>Factory of subclasses</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">latex</span></code>([variables,&nbsp;backend,&nbsp;default])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">string</span></code>([arg_fmt])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="chempy.thermodynamics.expressions.GibbsEqConst">
+<em class="property">class </em><code class="descclassname">chempy.thermodynamics.expressions.</code><code class="descname">GibbsEqConst</code><span class="sig-paren">(</span><em>args=None</em>, <em>unique_keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/thermodynamics/expressions.html#GibbsEqConst"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.thermodynamics.expressions.GibbsEqConst" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#chempy.thermodynamics.expressions.MassActionEq" title="chempy.thermodynamics.expressions.MassActionEq"><code class="xref py py-class docutils literal notranslate"><span class="pre">chempy.thermodynamics.expressions.MassActionEq</span></code></a></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="68%" />
+<col width="32%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>argument_defaults</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>nargs</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code>(…)&nbsp;&lt;==&gt;&nbsp;x(…)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">active_conc_prod</span></code>(variables[,&nbsp;backend,&nbsp;…])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_args</span></code>(variables[,&nbsp;backend,&nbsp;evaluate])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_parameter_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_params</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_unique_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">arg</span></code>(variables,&nbsp;index[,&nbsp;backend,&nbsp;evaluate])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">args_dimensionality</span></code>(**kwargs)</td>
+<td>return tuple of dicts mapping str to int (‘length’, ‘mass’, ‘time’, ‘current’, ‘temperature’, ‘luminous_intensity’, ‘amount’)</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">dedimensionalisation</span></code>(unit_registry[,&nbsp;…])</td>
+<td>Create an instance with consistent units from a unit_registry</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#chempy.thermodynamics.expressions.GibbsEqConst.eq_const" title="chempy.thermodynamics.expressions.GibbsEqConst.eq_const"><code class="xref py py-obj docutils literal notranslate"><span class="pre">eq_const</span></code></a>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">equilibrium_equation</span></code>(variables[,&nbsp;backend,&nbsp;…])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">fk</span></code>(*args)</td>
+<td>Alternative constructor “from keys”, *args is used as <code class="docutils literal notranslate"><span class="pre">unique_keys</span></code>.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_callback</span></code>(callback[,&nbsp;attr])</td>
+<td>Factory of subclasses</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">latex</span></code>([variables,&nbsp;backend,&nbsp;default])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">string</span></code>([arg_fmt])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="chempy.thermodynamics.expressions.GibbsEqConst.argument_names">
+<code class="descname">argument_names</code><em class="property"> = ('dH_over_R', 'dS_over_R')</em><a class="headerlink" href="#chempy.thermodynamics.expressions.GibbsEqConst.argument_names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="chempy.thermodynamics.expressions.GibbsEqConst.eq_const">
+<code class="descname">eq_const</code><span class="sig-paren">(</span><em>variables</em>, <em>backend=&lt;module 'math' (built-in)&gt;</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/thermodynamics/expressions.html#GibbsEqConst.eq_const"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.thermodynamics.expressions.GibbsEqConst.eq_const" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.thermodynamics.expressions.GibbsEqConst.parameter_keys">
+<code class="descname">parameter_keys</code><em class="property"> = ('temperature',)</em><a class="headerlink" href="#chempy.thermodynamics.expressions.GibbsEqConst.parameter_keys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="chempy.thermodynamics.expressions.MassActionEq">
+<em class="property">class </em><code class="descclassname">chempy.thermodynamics.expressions.</code><code class="descname">MassActionEq</code><span class="sig-paren">(</span><em>args=None</em>, <em>unique_keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/thermodynamics/expressions.html#MassActionEq"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.thermodynamics.expressions.MassActionEq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">chempy.util._expr.Expr</span></code></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="68%" />
+<col width="32%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>argument_defaults</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>nargs</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code>(…)&nbsp;&lt;==&gt;&nbsp;x(…)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#chempy.thermodynamics.expressions.MassActionEq.active_conc_prod" title="chempy.thermodynamics.expressions.MassActionEq.active_conc_prod"><code class="xref py py-obj docutils literal notranslate"><span class="pre">active_conc_prod</span></code></a>(variables[,&nbsp;backend,&nbsp;…])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_args</span></code>(variables[,&nbsp;backend,&nbsp;evaluate])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_parameter_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_params</span></code>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_unique_keys</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">arg</span></code>(variables,&nbsp;index[,&nbsp;backend,&nbsp;evaluate])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">args_dimensionality</span></code>(**kwargs)</td>
+<td>return tuple of dicts mapping str to int (‘length’, ‘mass’, ‘time’, ‘current’, ‘temperature’, ‘luminous_intensity’, ‘amount’)</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">dedimensionalisation</span></code>(unit_registry[,&nbsp;…])</td>
+<td>Create an instance with consistent units from a unit_registry</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#chempy.thermodynamics.expressions.MassActionEq.eq_const" title="chempy.thermodynamics.expressions.MassActionEq.eq_const"><code class="xref py py-obj docutils literal notranslate"><span class="pre">eq_const</span></code></a>(variables[,&nbsp;backend])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.thermodynamics.expressions.MassActionEq.equilibrium_equation" title="chempy.thermodynamics.expressions.MassActionEq.equilibrium_equation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">equilibrium_equation</span></code></a>(variables[,&nbsp;backend,&nbsp;…])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">fk</span></code>(*args)</td>
+<td>Alternative constructor “from keys”, *args is used as <code class="docutils literal notranslate"><span class="pre">unique_keys</span></code>.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.thermodynamics.expressions.MassActionEq.from_callback" title="chempy.thermodynamics.expressions.MassActionEq.from_callback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_callback</span></code></a>(callback[,&nbsp;attr])</td>
+<td>Factory of subclasses</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">latex</span></code>([variables,&nbsp;backend,&nbsp;default])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">string</span></code>([arg_fmt])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="chempy.thermodynamics.expressions.MassActionEq.active_conc_prod">
+<code class="descname">active_conc_prod</code><span class="sig-paren">(</span><em>variables</em>, <em>backend=&lt;module 'math' (built-in)&gt;</em>, <em>equilibrium=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/thermodynamics/expressions.html#MassActionEq.active_conc_prod"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.thermodynamics.expressions.MassActionEq.active_conc_prod" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.thermodynamics.expressions.MassActionEq.argument_names">
+<code class="descname">argument_names</code><em class="property"> = ('equilibrium_constant',)</em><a class="headerlink" href="#chempy.thermodynamics.expressions.MassActionEq.argument_names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="chempy.thermodynamics.expressions.MassActionEq.eq_const">
+<code class="descname">eq_const</code><span class="sig-paren">(</span><em>variables</em>, <em>backend=&lt;module 'math' (built-in)&gt;</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/thermodynamics/expressions.html#MassActionEq.eq_const"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.thermodynamics.expressions.MassActionEq.eq_const" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="chempy.thermodynamics.expressions.MassActionEq.equilibrium_equation">
+<code class="descname">equilibrium_equation</code><span class="sig-paren">(</span><em>variables</em>, <em>backend=&lt;module 'math' (built-in)&gt;</em>, <em>equilibrium=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/thermodynamics/expressions.html#MassActionEq.equilibrium_equation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.thermodynamics.expressions.MassActionEq.equilibrium_equation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="chempy.thermodynamics.expressions.MassActionEq.from_callback">
+<em class="property">classmethod </em><code class="descname">from_callback</code><span class="sig-paren">(</span><em>callback</em>, <em>attr='eq_const'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/thermodynamics/expressions.html#MassActionEq.from_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.thermodynamics.expressions.MassActionEq.from_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Factory of subclasses</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>callback</strong> : callable</p>
+<blockquote>
+<div><p>signature: <a href="#id1"><span class="problematic" id="id2">*</span></a>args, backend=math</p>
+</div></blockquote>
+<p><strong>attr</strong> : str</p>
+<blockquote>
+<div><p>What attribute to override</p>
+</div></blockquote>
+<p><strong>argument_names</strong> : tuple of str, optional</p>
+<p><strong>argument_defaults</strong> : tuple of floats, optional</p>
+<p><strong>parameter_keys</strong> : tuple of str, optional,</p>
+<p class="last"><strong>nargs</strong> : int, optional</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">operator</span> <span class="k">import</span> <span class="n">add</span><span class="p">;</span> <span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">reduce</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">poly</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">math</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">x0</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">reduce</span><span class="p">(</span><span class="n">add</span><span class="p">,</span> <span class="p">[</span><span class="n">c</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">x0</span><span class="p">)</span><span class="o">**</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:])])</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Poly</span> <span class="o">=</span> <span class="n">Expr</span><span class="o">.</span><span class="n">from_callback</span><span class="p">(</span><span class="n">poly</span><span class="p">,</span> <span class="n">parameter_keys</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,),</span> <span class="n">argument_names</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;x0&#39;</span><span class="p">,</span> <span class="bp">Ellipsis</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">Poly</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">7</span><span class="p">})</span> <span class="o">==</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">7</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">5</span><span class="o">*</span><span class="p">(</span><span class="mi">7</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">Poly</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="n">unique_keys</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;x0_q&#39;</span><span class="p">,))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span> <span class="s1">&#39;x0_q&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span> <span class="o">==</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="mi">7</span> <span class="o">+</span> <span class="mi">5</span><span class="o">*</span><span class="mi">7</span><span class="o">**</span><span class="mi">2</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="chempy.util.html" class="btn btn-neutral float-right" title="chempy.util package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="chempy.properties.html" class="btn btn-neutral" title="chempy.properties package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.6.7',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
