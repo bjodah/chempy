@@ -10,7 +10,7 @@
       "affiliation": "KTH Royal Institute of Technology, Stockholm, Sweden"
     }
   ],
-  "identifier": "http://dx.doi.org/10.5281/zenodo.1209326",
+  "identifier": "http://dx.doi.org/10.5281/zenodo.1212469",
   "codeRepository": "https://github.com/bjodah/chempy",
   "datePublished": "2018-03-28",
   "dateModified": "2018-03-28",
@@ -19,5 +19,5 @@
   "keywords": "chemistry, physical chemistry",
   "license": "BSD",
   "title": "ChemPy",
-  "version": "v0.6.6"
+  "version": "v0.6.7"
 }
