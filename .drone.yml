@@ -5,6 +5,7 @@ build:
     - LIBRARY_PATH=/opt/boost_1_65_0/lib
     - LD_LIBRARY_PATH=/opt/boost_1_65_0/lib
   commands:
+    - git fetch -t >/dev/null
     - python2 -m pip install --ignore-installed --no-deps quantities==0.12.1  # https://github.com/python-quantities/python-quantities/issues/122
     - python3 -m pip install --ignore-installed --no-deps quantities==0.12.1
     - PYCVODES_LAPACK=lapack,blas ./scripts/ci.sh chempy

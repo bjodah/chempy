@@ -1,6 +1,7 @@
 #!/bin/bash
 cp LICENSE doc/_build/html/
 mkdir -p deploy/public_html/branches/"${CI_BRANCH}" deploy/script_queue
+mv index.html index.ipynb.html
 cp -r index.* dist/* htmlcov/ examples/ doc/_build/html/ deploy/public_html/branches/"${CI_BRANCH}"/
 if bash -c '[[ "$CI_BRANCH" == "master" ]]'; then
     if [ -e benchmarks/ ]; then
