@@ -21,3 +21,4 @@ set +u
 
 ./scripts/render_notebooks.sh
 ./scripts/generate_docs.sh
+(cd examples/; for f in bokeh_*.py; do python3 -m bokeh html $f; done)
