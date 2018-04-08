@@ -1,21 +1,27 @@
+cache:
+  mount:
+    - /drone/sundials-3.1
+    - /drone/pybase
+
 build:
-  image: bjodah/bjodahimg16dev:v1.3
+  image: bjodah/bjodahimg18dev:v1.0
   environment:
-    - CPLUS_INCLUDE_PATH=/opt/boost_1_65_0/include
-    - LIBRARY_PATH=/opt/boost_1_65_0/lib
-    - LD_LIBRARY_PATH=/opt/boost_1_65_0/lib
+    - SUN3BASE=/drone/sundials-3.1
+    - PYTHONUSERBASE=/drone/pybase
+    - PYCVODES_LAPACK=lapack,blas
+    - PYCVODES_SUNDIALS_LIBS=sundials_cvodes,sundials_nvecserial,sundials_sunlinsollapackdense,sundials_sunlinsollapackband
   commands:
-    - git fetch -t >/dev/null
-    - python2 -m pip install --ignore-installed --no-deps quantities==0.12.1  # https://github.com/python-quantities/python-quantities/issues/122
-    - python3 -m pip install --ignore-installed --no-deps quantities==0.12.1
-    - PYCVODES_LAPACK=lapack,blas ./scripts/ci.sh chempy
-    - (cd examples/; for f in bokeh_*.py; do python -m bokeh html $f; done)
+    - git fetch -tq
+    - if [ ! -d $SUN3BASE ]; then mkdir $SUN3BASE && .ci/install_sundials-3.1.sh $SUN3BASE; fi
+    - if [ ! -d $PYTHONUSERBASE ]; then mkdir $PYTHONUSERBASE; fi
+    - CPATH=$SUN3BASE/include LIBRARY_PATH=$SUN3BASE/lib LD_LIBRARY_PATH=$SUN3BASE/lib ./scripts/ci.sh chempy
     - ./scripts/prepare_deploy.sh
     - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
-    - PATH=/opt/miniconda3/bin:$PATH conda build conda-recipe
-    - bash -c '[[ $(python setup.py --version) =~ ^[0-9]+.* ]]'
+    - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${CI_BRANCH}" conda-recipe
+    - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
     - ./scripts/grep-for-merge-blocking-token.sh
     - ./scripts/grep-for-binary-data.sh
+
 
 deploy:
 

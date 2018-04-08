@@ -25,7 +25,7 @@ for f in $@; do
         continue  # don't include bokeh apps
     fi
     img=$(basename $f .html).png
-    phantomjs $SCRIPTS_PATH/rasterize.js $f $tmpdir/$img 1200px*900px
+    QT_QPA_PLATFORM=offscreen phantomjs $SCRIPTS_PATH/rasterize.js $f $tmpdir/$img 1200px*900px
     convert $tmpdir/$img -resize 400x300 thumbs/$img
     cat <<EOF>>index.html
 <p style='text-align: center'>

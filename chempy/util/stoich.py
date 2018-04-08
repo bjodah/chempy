@@ -63,7 +63,7 @@ def decompose_yields(yields, rxns, atol=1e-10):
     >>> h2a = Reaction({'H2O': 1}, {'H2': 1, 'O': 1})
     >>> h2b = Reaction({'H2O': 1}, {'H2': 1, 'H2O2': 1}, inact_reac={'H2O': 1})
     >>> decompose_yields({'H2': 3, 'O': 2, 'H2O2': 1}, [h2a, h2b])
-    array([ 2.,  1.])
+    array([2., 1.])
 
     Raises
     ------
