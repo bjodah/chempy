@@ -160,7 +160,7 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     >>> init_conc = {'Fe+3': 1.0, 'SCN-': .3, 'FeSCN+2': 0}
     >>> tout, Cout, info = odesys.integrate(5, init_conc)
     >>> Cout[-1, :].round(4)
-    array([ 0.7042,  0.0042,  0.2958])
+    array([0.7042, 0.0042, 0.2958])
 
     """
     if SymbolicSys is None:

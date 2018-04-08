@@ -559,7 +559,7 @@ class Backend(object):
     1001.0
     >>> be_np = Backend(np)
     >>> be_np.sum([[1000*pq.metre/pq.kilometre, 1], [3, 4]], axis=1)
-    array([ 2.,  7.])
+    array([2., 7.])
 
     """
 

@@ -51,7 +51,7 @@ class ReactionSystem(object):
     >>> r1 = Reaction({'R1': 1}, {'P1': 1}, 42.0)
     >>> rsys = ReactionSystem([r1], 'R1 P1')
     >>> rsys.as_per_substance_array({'R1': 2, 'P1': 3})
-    array([ 2.,  3.])
+    array([2., 3.])
 
     Raises
     ------
