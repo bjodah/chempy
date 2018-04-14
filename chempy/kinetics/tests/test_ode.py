@@ -589,17 +589,17 @@ def test_chained_parameter_variation():
     tout2 = tout23[tout23 <= times[0] + times[1]]
     tout3 = tout23[tout23 > times[0] + times[1]]
 
-    def _ref(y0, x, T):
+    def _ref(y0, x, T, x0):
         k = 1e10*np.exp(-63e3/8.3145/T)
-        return y0*np.exp(-k*(x-x[0]))
+        return y0*np.exp(-k*(x-x0))
 
-    Aref1 = _ref(conc['A'], tout1, Ts[0])
+    Aref1 = _ref(conc['A'], tout1, Ts[0], tout1[0])
     Bref1 = conc['B'] + conc['A'] - Aref1
 
-    Aref2 = _ref(Aref1[-1], tout2, Ts[1])
+    Aref2 = _ref(Aref1[-1], tout2, Ts[1], tout1[-1])
     Bref2 = Bref1[-1] + Aref1[-1] - Aref2
 
-    Aref3 = _ref(Aref2[-1], tout3, Ts[2])
+    Aref3 = _ref(Aref2[-1], tout3, Ts[2], tout2[-1])
     Bref3 = Bref2[-1] + Aref2[-1] - Aref3
 
     cref = np.concatenate([np.vstack((a, b)).T for a, b in [(Aref1, Bref1), (Aref2, Bref2), (Aref3, Bref3)]])
