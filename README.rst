@@ -193,7 +193,8 @@ ChemPy can even handle reactions with linear dependencies (underdetermined syste
    >>> pprint([dict(_) for _ in balance_stoichiometry({'C', 'O2'}, {'CO2', 'CO'})])  # doctest: +SKIP
    [{'C': x1 + 2, 'O2': x1 + 1}, {'CO': 2, 'CO2': x1}]
 
-that ``x1`` object is an instance of SymPy's Symbol_. If we prefer to get a solution
+
+the ``x1`` object above is an instance of SymPy's Symbol_. If we prefer to get a solution
  with minimal (non-zero) integer coefficients we can pass ``underdetermined=None``:
 
 .. code:: python
@@ -201,8 +202,9 @@ that ``x1`` object is an instance of SymPy's Symbol_. If we prefer to get a solu
    >>> pprint([dict(_) for _ in balance_stoichiometry({'C', 'O2'}, {'CO2', 'CO'}, underdetermined=None)])
    [{'C': 3, 'O2': 2}, {'CO': 2, 'CO2': 1}]
 
+
 note however that even though this solution is in some sense "canonical",
-it is merely one of an inifite number of solutions (``x1`` may be any integer).
+it is merely one of an inifite number of solutions (``x1`` from earlier may be any integer).
 
 
 .. _Symbol: http://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol
