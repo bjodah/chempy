@@ -195,7 +195,7 @@ ChemPy can even handle reactions with linear dependencies (underdetermined syste
 
 
 the ``x1`` object above is an instance of SymPy's Symbol_. If we prefer to get a solution
- with minimal (non-zero) integer coefficients we can pass ``underdetermined=None``:
+with minimal (non-zero) integer coefficients we can pass ``underdetermined=None``:
 
 .. code:: python
 
