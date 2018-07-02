@@ -87,7 +87,7 @@ def decompose_yields(yields, rxns, atol=1e-10):
     A = rsys.net_stoichs(yields.keys())
     b = list(yields.values())
     unit = unit_of(b[0])
-    x, residuals, rank, s = np.linalg.lstsq(np.asarray(A.T, dtype=np.float64), to_unitless(b, unit))
+    x, residuals, rank, s = np.linalg.lstsq(np.asarray(A.T, dtype=np.float64), to_unitless(b, unit), rcond=None)
     if len(residuals) > 0:
         if np.any(residuals > atol):
             raise ValueError("atol not satisfied")
