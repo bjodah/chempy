@@ -486,6 +486,12 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
 
     if substance_symbols is None:
         substance_symbols = OrderedDict([(key, backend.Symbol(key)) for key in rsys.substances])
+    if isinstance(substance_symbols, OrderedDict):
+        if list(substance_symbols) != list(rsys.substances):
+            raise ValueError("substance_symbols needs to have same (oredered) keys as rsys.substances")
+
+    if not isinstance(parameter_symbols, OrderedDict):
+        raise ValueError("parameter_symbols needs to be an OrderedDict")
 
     symbols = OrderedDict(chain(substance_symbols.items(), parameter_symbols.items()))
     symbols['time'] = time_symbol or backend.Symbol('t')
@@ -495,7 +501,7 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
     compo_vecs, compo_names = rsys.composition_balance_vectors()
 
     odesys = SymbolicSys(
-        zip(substance_symbols.values(), [rates[key] for key in rsys.substances]),
+        zip([substance_symbols[key] for key in rsys.substances], [rates[key] for key in rsys.substances]),
         symbols['time'],
         parameter_symbols.values(),
         names=rsys.substances.keys(),

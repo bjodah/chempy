@@ -1,5 +1,6 @@
 from .numbers import number_to_scientific_latex
 from .string import StrPrinter
+from ..units import _latex_from_dimensionality
 
 
 class LatexPrinter(StrPrinter):
@@ -10,7 +11,7 @@ class LatexPrinter(StrPrinter):
         Equilibrium_arrow=r'\rightleftharpoons',
         Reaction_arrow=r'\rightarrow',
         magnitude_fmt=number_to_scientific_latex,
-        unit_fmt=lambda dim: dim.latex
+        unit_fmt=_latex_from_dimensionality
     )
 
     def _print_Substance(self, substance, **kwargs):

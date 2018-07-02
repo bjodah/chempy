@@ -191,6 +191,12 @@ def unit_registry_to_human_readable(unit_registry):
     return new_registry
 
 
+def _latex_from_dimensionality(dim):
+    # see https://github.com/python-quantities/python-quantities/issues/148
+    from quantities.markup import format_units_latex
+    return format_units_latex(dim, mult=r'\\cdot')
+
+
 def latex_of_unit(quant):
     """ Returns LaTeX reperesentation of the unit of a quantity
 
@@ -200,7 +206,7 @@ def latex_of_unit(quant):
     \\mathrm{\\frac{1}{K}}
 
     """
-    return quant.dimensionality.latex.strip('$')
+    return _latex_from_dimensionality(quant.dimensionality).strip('$')
 
 
 def unicode_of_unit(quant):
@@ -608,7 +614,7 @@ def format_string(value, precision='%.5g', tex=False):
 
     """
     if tex:
-        unit_str = value.dimensionality.latex.strip('$')
+        unit_str = latex_of_unit(value)
     else:
         from quantities.markup import config
         attr = 'unicode' if config.use_unicode else 'string'

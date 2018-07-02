@@ -201,7 +201,7 @@ def least_squares(x, y, w=1):  # w == 1 => OLS, w != 1 => WLS
         sqrtw = sqrtw.reshape((sqrtw.size, 1))
     X *= sqrtw
 
-    beta = np.linalg.lstsq(X, Y)[0]
+    beta = np.linalg.lstsq(X, Y, rcond=None)[0]
     eps = X.dot(beta) - Y
     SSR = eps.T.dot(eps)  # sum of squared residuals
     vcv = SSR/(_x.size - 2)*np.linalg.inv(X.T.dot(X))
