@@ -200,7 +200,8 @@ def latex_of_unit(quant):
     \\mathrm{\\frac{1}{K}}
 
     """
-    return quant.dimensionality.latex.strip('$')
+    from quantities.markup import format_units_latex  # see https://github.com/python-quantities/python-quantities/issues/148
+    return format_units_latex(quant.dimensionality, mult=r'\\cdot').strip('$')
 
 
 def unicode_of_unit(quant):
@@ -608,7 +609,7 @@ def format_string(value, precision='%.5g', tex=False):
 
     """
     if tex:
-        unit_str = value.dimensionality.latex.strip('$')
+        unit_str = latex_of_unit(value)
     else:
         from quantities.markup import config
         attr = 'unicode' if config.use_unicode else 'string'
