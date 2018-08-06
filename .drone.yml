@@ -10,7 +10,7 @@ build:
     - PYTHONUSERBASE=/drone/pyuserb
   commands:
     - git fetch -tq
-    - if [ ! -d $SUN3BASE ]; then .ci/get_sundials.sh 3.1.2 -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t" $SUN3BASE; fi
+    - if [ ! -d $SUN3BASE ]; then .ci/get_sundials.sh 3.1.2 $SUN3BASE -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t" $SUN3BASE; fi
     - if [ ! -d $PYTHONUSERBASE ]; then mkdir $PYTHONUSERBASE; fi
     - CPATH=$SUN3BASE/include LIBRARY_PATH=$SUN3BASE/lib LD_LIBRARY_PATH=$SUN3BASE/lib ./.ci/run_ci.sh chempy
     - ./.ci/prepare_deploy.sh
