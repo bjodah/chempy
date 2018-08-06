@@ -1,11 +1,11 @@
 #!/bin/bash -xeu
 # Usage:
 #
-#    $ ./scripts/post_release.sh v1.2.3 myserver githubuser
+#    $ ANFILTE_CHANNELS="defaults conda-forge bjodah" ./scripts/post_release.sh v1.2.3 githubuser server.uni.edu
 #
 VERSION=${1#v}
-SERVER=$2
-GITHUBUSER=$3
+GITHUBUSER=$2
+SERVER=$3
 ./scripts/check_clean_repo_on_master.sh
 PKG=$(find . -maxdepth 2 -name __init__.py -print0 | xargs -0 -n1 dirname | xargs basename)
 PKG_UPPER=$(echo $PKG | tr '[:lower:]' '[:upper:]')
@@ -24,11 +24,12 @@ sed -i -E \
     -e "s/git_url:(.+)/fn: \{\{ name \}\}-\{\{ version \}\}.tar.gz\n  url: https:\/\/pypi.io\/packages\/source\/\{\{ name\[0\] \}\}\/\{\{ name \}\}\/\{\{ name \}\}-\{\{ version \}\}.tar.gz\n  sha256: \{\{ sha256 \}\}/" \
     dist/conda-recipe-$VERSION/meta.yaml
 
-./scripts/update-gh-pages.sh v$VERSION
+ssh $PKG@$SERVER 'mkdir -p ~/public_html/conda-packages'
 
-# Specific for this project:
+# https://github.com/bjodah/anfilte
+anfilte-build . dist/conda-recipe-$VERSION dist/
+scp dist/noarch/${PKG}-${VERSION}*.bz2 $PKG@$SERVER:~/public_html/conda-packages/
+ssh $PKG@$SERVER 'mkdir -p ~/public_html/conda-recipes'
 scp -r dist/conda-recipe-$VERSION/ $PKG@$SERVER:~/public_html/conda-recipes/
 scp "$SDIST_FILE" "$PKG@$SERVER:~/public_html/releases/"
-for CONDA_PY in 2.7 3.5 3.6; do
-        ssh $PKG@$SERVER "source /etc/profile; conda-build --python $CONDA_PY ~/public_html/conda-recipes/conda-recipe-$VERSION/"
-done
+./scripts/update-gh-pages.sh v$VERSION

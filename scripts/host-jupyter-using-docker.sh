@@ -34,8 +34,8 @@ else
 fi
 MYCMD="groupadd -f --gid \$HOST_GID \$HOST_WHOAMI; \
 useradd --uid \$HOST_UID --gid \$HOST_GID --home /mount \$HOST_WHOAMI; \
-sudo --preserve-env --login -u \$HOST_WHOAMI python -m pip install symcxx quantities; \
-sudo --preserve-env --login -u \$HOST_WHOAMI LLAPACK=lapack python -m pip install --user -e .[all]; \
+sudo --preserve-env --login -u \$HOST_WHOAMI python3 -m pip install --user symcxx quantities; \
+sudo --preserve-env --login -u \$HOST_WHOAMI python3 -m pip install --user -e .[all]; \
 sudo --preserve-env --login -u \$HOST_WHOAMI /mount/.local/bin/jupyter-nbextension enable --user --py widgetsnbextension; \
 sudo --preserve-env --login -u \$HOST_WHOAMI LD_LIBRARY_PATH=/usr/local/lib MPLBACKEND=Agg /mount/.local/bin/$LOCALCMD"
 set -x

@@ -392,8 +392,8 @@ class Expr(object):
         ...     return args[0]*params[0]*params[1]/params[2]
         >>> Pressure = Expr.from_callback(pressure, parameter_keys='R temp vol'.split(), nargs=1)
         >>> p = Pressure([7])
-        >>> p.latex({'R': 'R', 'temp': 'T', 'vol': 'V'})
-        '\\frac{7 R}{V} T'
+        >>> p.latex({'R': 'R', 'temp': 'T', 'vol': 'V'})  # doctest: +SKIP
+        '\\frac{7 R T}{V}'
 
         Notes
         -----

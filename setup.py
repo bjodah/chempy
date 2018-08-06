@@ -74,17 +74,16 @@ tests = [
 ]
 
 classifiers = [
-    'Development Status :: 3 - Alpha',
+    'Development Status :: 4 - Beta',
     'License :: OSI Approved :: BSD License',
     'Operating System :: OS Independent',
     'Topic :: Scientific/Engineering',
     'Topic :: Scientific/Engineering :: Chemistry',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 2',
-    'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
 ]
 
 with io.open(_path_under_setup(pkg_name, '__init__.py'), 'rt', encoding='utf-8') as f:
@@ -97,11 +96,11 @@ if not len(long_descr) > 100:
 _author, _author_email = open(_path_under_setup('AUTHORS'), 'rt').readline().split('<')
 
 extras_req = {
-    'integrators': ['scipy>=0.16.1', 'pyodeint>=0.7.0', 'pycvodes>=0.8.3', 'pygslodeiv2>=0.6.1'],
-    'solvers': ['pykinsol'],
-    'native': ['pycompilation>=0.4.3', 'pycodeexport>=0.1.1', 'appdirs'],
+    'integrators': ['pyodeint>=0.9.8', 'pycvodes>=0.10.7', 'pygslodeiv2>=0.8.4'],
+    'solvers': ['pykinsol>=0.1.3'],
+    'native': ['pycompilation>=0.4.3', 'pycodeexport>=0.1.2', 'appdirs'],
     'docs': ['Sphinx', 'sphinx_rtd_theme', 'numpydoc'],
-    'plotting': ['bokeh>=0.11.1', 'ipywidgets'],
+    'plotting': ['bokeh>=0.13.0', 'ipywidgets'],
     'testing': ['pytest', 'pytest-cov', 'pytest-flakes', 'pytest-pep8']
 }
 extras_req['all'] = list(chain(extras_req.values()))
@@ -119,9 +118,9 @@ setup_kwargs = dict(
     packages=[pkg_name] + submodules + tests,
     classifiers=classifiers,
     install_requires=[
-        'numpy>1.8', 'scipy>=0.16.1', 'matplotlib>=1.5.3',
-        'sympy>=1.1.1', 'quantities>=0.12.1', 'pyneqsys>=0.5.1',
-        'pyodesys>=0.11.6', 'pyparsing>=2.0.3', 'sym>=0.3.1', 'jupyter',
+        'numpy>1.11.3', 'scipy>=1.0.1', 'matplotlib>=2.2.2',
+        'sympy>=1.1.1,!=1.2', 'quantities>=0.12.1', 'pyneqsys>=0.5.4',
+        'pyodesys>=0.11.16,!=0.12.0', 'pyparsing>=2.0.3', 'sym>=0.3.3', 'jupyter',
         'pulp>=1.6.8',
         # 'dot2tex>=2.9.0'
     ],

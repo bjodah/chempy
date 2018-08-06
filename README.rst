@@ -7,7 +7,7 @@ ChemPy
 .. image:: https://img.shields.io/pypi/v/chempy.svg
    :target: https://pypi.python.org/pypi/chempy
    :alt: PyPI version
-.. image:: https://img.shields.io/badge/python-2.7,3.5,3.6-blue.svg
+.. image:: https://img.shields.io/badge/python-2.7,3.5,3.6,3.7-blue.svg
    :target: https://www.python.org/
    :alt: Python version
 .. image:: https://img.shields.io/pypi/l/chempy.svg
