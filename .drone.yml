@@ -1,13 +1,13 @@
 cache:
   mount:
     - /drone/sundials-3.1.2
-    - /drone/pybase
+    - /drone/pyuserb
 
 build:
   image: bjodah/bjodahimg18dev:v1.3
   environment:
     - SUN3BASE=/drone/sundials-3.1.2
-    - PYTHONUSERBASE=/drone/pybase
+    - PYTHONUSERBASE=/drone/pyuserb
   commands:
     - git fetch -tq
     - if [ ! -d $SUN3BASE ]; then .ci/get_sundials.sh 3.1.2 $SUN3BASE; fi
