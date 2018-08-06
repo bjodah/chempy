@@ -31,7 +31,7 @@ install:
       conda config --set show_channel_urls true
 
 script:
-    - conda install --quiet pip pytest numpy scipy matplotlib sympy quantities pyparsing
+    - conda install --quiet pip pytest numpy scipy matplotlib sympy==1.1.1 quantities pyparsing
     - pip install .
     - pytest -ra
 
