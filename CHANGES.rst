@@ -1,3 +1,7 @@
+v0.7.x (unreleased)
+===================
+- Drop official support for Python 2.7
+
 v0.6.7
 ======
 - Updated manuscript for JOSS.
