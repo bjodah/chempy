@@ -61,6 +61,9 @@ if [[ -d $tmpdir/.gh-pages-skeleton ]]; then
     cp -r $tmpdir/.gh-pages-skeleton/. .
 fi
 if [[ "$tag" == v* ]]; then
+    if [[ -L latest ]]; then
+        rm latest
+    fi
     ln -s $tag latest
     commit_msg="Release docs for $tag"
 else
