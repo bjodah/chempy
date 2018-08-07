@@ -20,7 +20,7 @@ except ImportError:
 
 from ..units import (
     to_unitless, get_derived_unit, rescale, magnitude, unitless_in_registry,
-    default_units as u
+    default_unit_in_registry, default_units as u
 )
 from ..util.pyutil import deprecated
 from ..util._expr import Expr
@@ -451,7 +451,7 @@ def chained_parameter_variation(odesys, durations, init_conc, varied_params, def
 
 
 def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_replace=lambda x: x,
-                   backend=None, SymbolicSys=None, time_symbol=None):
+                   backend=None, SymbolicSys=None, time_symbol=None, unit_registry=None):
     """ This will be a simpler version of get_odesys without the unit handling code.
     The motivation is to reduce complexity (the code of get_odesys is long with multiple closures).
 
@@ -490,6 +490,13 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
         if list(substance_symbols) != list(rsys.substances):
             raise ValueError("substance_symbols needs to have same (oredered) keys as rsys.substances")
 
+    if parameter_symbols is None:
+        keys = []
+        for rxn in rsys.rxns:
+            key, = rxn.param.unique_keys
+            keys.append(key)
+        parameter_symbols = OrderedDict([(key, backend.Symbol(key)) for key in keys])
+
     if not isinstance(parameter_symbols, OrderedDict):
         raise ValueError("parameter_symbols needs to be an OrderedDict")
 
@@ -515,11 +522,42 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
         par_by_name=True
     )
 
+    validate = partial(_validate, rsys=rsys, symbols=symbols, odesys=odesys, backend=backend)
     return odesys, {
         'symbols': symbols,
-        'validate': partial(_validate, rsys=rsys, symbols=symbols,
-                            odesys=odesys, backend=backend),
+        'validate': validate,
+        'unit_aware_solve': _mk_unit_aware_solve(odesys, unit_registry, validate=validate) if unit_registry else None
     }
+
+
+def _mk_dedim(unit_registry):
+    unit_time = get_derived_unit(unit_registry, 'time')
+    unit_conc = get_derived_unit(unit_registry, 'concentration')
+
+    def dedim_tcp(t, c, p, param_unit=lambda k, v: default_unit_in_registry(v, unit_registry)):
+        _t = to_unitless(t, unit_time)
+        _c = to_unitless(c, unit_conc)
+        _p, pu = {}, {}
+        for k, v in p.items():
+            pu[k] = param_unit(k, v)
+            _p[k] = to_unitless(v, pu[k])
+        return (_t, _c, _p), dict(unit_time=unit_time, unit_conc=unit_conc, param_units=pu)
+
+    return locals()
+
+
+def _mk_unit_aware_solve(odesys, unit_registry, validate):
+
+    dedim_ctx = _mk_dedim(unit_registry)
+
+    def solve(t, c, p, **kwargs):
+        validate(dict(time=t, **c, **p))
+        tcp, dedim_extra = dedim_ctx['dedim_tcp'](t, c, p)
+        result = odesys.integrate(*tcp, **kwargs)
+        result.xout *= dedim_extra['unit_time']
+        result.yout *= dedim_extra['unit_conc']
+        return result, dedim_extra
+    return solve
 
 
 def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None):

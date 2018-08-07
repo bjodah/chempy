@@ -24,7 +24,7 @@ from .test_rates import _get_SpecialFraction_rsys
 from ..arrhenius import ArrheniusParam
 from ..rates import Arrhenius, MassAction, Radiolytic, RampedTemp
 from .._rates import ShiftedTPoly
-from ..ode import get_odesys, chained_parameter_variation
+from ..ode import get_odesys, chained_parameter_variation, _create_odesys as create_odesys
 from ..integrated import dimerization_irrev, binary_rev
 
 
@@ -910,3 +910,31 @@ def test_get_odesys__Eyring_2nd_order_reversible():
     check(rsys3, dict(temperature=T_K*u.K,
                       dHf=dHf*u.J/u.mol, dSf=dSf*u.J/u.mol/u.K,
                       dHb=dHb*u.J/u.mol, dSb=dSb*u.J/u.mol/u.K))
+
+
+@requires('numpy', 'pyodesys', 'sympy', 'pycvodes')
+def test_create_odesys():
+    rsys = ReactionSystem.from_string("""
+    A -> B; 'k1'
+    B + C -> P; 'k2'
+    """, substance_factory=Substance)
+
+    odesys, extra = create_odesys(rsys)
+
+    tend = 10
+    tend_units = tend*u.s
+    c0 = {'A': 1e-6, 'B': 0, 'C': 1, 'P': 0}
+    p_units = {'k1': 3/u.s, 'k2': 4/u.M/u.s}
+    c0_units = {k: v*u.molar for k, v in c0.items()}
+    validation = extra['validate'](dict(**c0_units, **p_units))
+    assert not validation['not_seen']
+    ref_rates = {'A': -p_units['k1']*c0_units['A'], 'P': p_units['k2']*c0_units['B']*c0_units['C']}
+    ref_rates['B'] = -ref_rates['A'] - ref_rates['P']
+    ref_rates['C'] = -ref_rates['P']
+    assert validation['rates'] == ref_rates
+
+    result1 = odesys.integrate(tend_units, c0_units, p_units, integrator='cvodes')
+    assert result1.info['success']
+
+    with pytest.raises(Exception):
+        odesys.integrate(tend, c0, p, integrator='odeint')

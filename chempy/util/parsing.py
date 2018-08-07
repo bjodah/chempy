@@ -326,13 +326,12 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
     with running this on untrusted data.
 
     """
-    # TODO: add handling of units.
     if globals_ is None:
         import chempy
         from chempy.kinetics import rates
         from chempy.units import default_units
         globals_ = {k: getattr(rates, k) for k in dir(rates)}
-        globals_.update({'chempy': chempy, 'default_units': default_units})
+        globals_.update({'chempy': chempy})
         if default_units is not None:
             globals_.update({k: v for k, v in chempy.__dict__.items()
                              if not k.startswith('_')})
