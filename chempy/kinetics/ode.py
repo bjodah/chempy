@@ -551,7 +551,9 @@ def _mk_unit_aware_solve(odesys, unit_registry, validate):
     dedim_ctx = _mk_dedim(unit_registry)
 
     def solve(t, c, p, **kwargs):
-        validate(dict(time=t, **c, **p))
+        for name in odesys.names:
+            c[name]  # to e.g. populate defaultdict
+        validate(dict(**c, **p))
         tcp, dedim_extra = dedim_ctx['dedim_tcp'](t, c, p)
         result = odesys.integrate(*tcp, **kwargs)
         result.xout *= dedim_extra['unit_time']
@@ -560,7 +562,7 @@ def _mk_unit_aware_solve(odesys, unit_registry, validate):
     return solve
 
 
-def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None):
+def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None, ignore=('time',)):
     """ For use with create_odesys
 
     Parameters
@@ -585,7 +587,7 @@ def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None):
 
     if transform is None:
         if backend.__name__ != 'sympy':
-            warnings.warn("Backend does not seem to be SymPy, please provide your own transform function.")
+            warnings.warn("Backend != SymPy, provide your own transform function.")
 
         def transform(arg):
             expr = backend.logcombine(arg, force=True)
@@ -604,6 +606,6 @@ def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None):
         seen = [b or a in expr.free_symbols for b, a in zip(seen, args)]
     not_seen = [a for s, a in zip(seen, args) if not s]
     for k in conditions:
-        if k not in odesys.param_names and k not in odesys.names:
+        if k not in odesys.param_names and k not in odesys.names and k not in ignore:
             raise KeyError("Unknown param: %s" % k)
     return {'not_seen': not_seen, 'rates': rates}
