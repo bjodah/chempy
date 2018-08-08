@@ -927,13 +927,14 @@ def test_create_odesys():
     p_units = {'k1': 3/u.s, 'k2': 4/u.M/u.s}
     c0_units = {k: v*u.molar for k, v in c0.items()}
     validation = extra['validate'](dict(**c0_units, **p_units))
-    assert not validation['not_seen']
+    P, = validation['not_seen']
+    assert P.name == 'P'
     ref_rates = {'A': -p_units['k1']*c0_units['A'], 'P': p_units['k2']*c0_units['B']*c0_units['C']}
     ref_rates['B'] = -ref_rates['A'] - ref_rates['P']
     ref_rates['C'] = -ref_rates['P']
     assert validation['rates'] == ref_rates
 
-    result1 = odesys.integrate(tend_units, c0_units, p_units, integrator='cvodes')
+    result1 = odesys.integrate(tend_units, c0_units, p_units, integrator='cvode')
     assert result1.info['success']
 
     with pytest.raises(Exception):
