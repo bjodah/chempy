@@ -919,14 +919,15 @@ def test_create_odesys():
     B + C -> P; 'k2'
     """, substance_factory=Substance)
 
-    odesys, extra = create_odesys(rsys)
+    odesys, odesys_extra = create_odesys(rsys, unit_registry=SI_base_registry)
 
     tend = 10
     tend_units = tend*u.s
     c0 = {'A': 1e-6, 'B': 0, 'C': 1, 'P': 0}
-    p_units = {'k1': 3/u.s, 'k2': 4/u.M/u.s}
+    p = dict(k1=3, k2=4)
+    p_units = {'k1': p['k1']/u.s, 'k2': p['k2']/u.M/u.s}
     c0_units = {k: v*u.molar for k, v in c0.items()}
-    validation = extra['validate'](dict(**c0_units, **p_units))
+    validation = odesys_extra['validate'](dict(**c0_units, **p_units))
     P, = validation['not_seen']
     assert P.name == 'P'
     ref_rates = {'A': -p_units['k1']*c0_units['A'], 'P': p_units['k2']*c0_units['B']*c0_units['C']}
@@ -934,8 +935,9 @@ def test_create_odesys():
     ref_rates['C'] = -ref_rates['P']
     assert validation['rates'] == ref_rates
 
-    result1 = odesys.integrate(tend_units, c0_units, p_units, integrator='cvode')
+    result1, result1_extra = odesys_extra['unit_aware_solve'](
+        tend_units, c0_units, p_units, integrator='cvode')
     assert result1.info['success']
 
-    with pytest.raises(Exception):
-        odesys.integrate(tend, c0, p, integrator='odeint')
+    result2 = odesys.integrate(tend, c0, p, integrator='cvode')
+    assert np.allclose(result2.yout[-1, :], to_unitless(result1.yout[-1, :], u.molar))

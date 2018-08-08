@@ -556,8 +556,8 @@ def _mk_unit_aware_solve(odesys, unit_registry, validate):
         validate(dict(**c, **p))
         tcp, dedim_extra = dedim_ctx['dedim_tcp'](t, c, p)
         result = odesys.integrate(*tcp, **kwargs)
-        result.xout *= dedim_extra['unit_time']
-        result.yout *= dedim_extra['unit_conc']
+        result.xout = result.xout * dedim_extra['unit_time']
+        result.yout = result.yout * dedim_extra['unit_conc']  # assumes only concentrations in y
         return result, dedim_extra
     return solve
 
