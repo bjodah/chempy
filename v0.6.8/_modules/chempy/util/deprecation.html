@@ -1,0 +1,346 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.util.deprecation &mdash; chempy 0.6.8 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.6.8
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">chempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>chempy.util.deprecation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.util.deprecation</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+
+<div class="viewcode-block" id="Deprecation"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.deprecation.Deprecation">[docs]</a><span class="k">class</span> <span class="nc">Deprecation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Decorator factory for deprecating functions or classes.</span>
+
+<span class="sd">    This class represent deprecations of functions or classes and is designed</span>
+<span class="sd">    to be used with the ``warnings`` library.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    last_supported_version : str, optional</span>
+<span class="sd">        Version string, e.g. ``&#39;0.2.1&#39;``.</span>
+<span class="sd">    will_be_missing_in : str, optional</span>
+<span class="sd">        Version string, e.g. ``&#39;0.3.0&#39;``.</span>
+<span class="sd">    use_instead : object or str, optional</span>
+<span class="sd">        Function or class to use instead or descriptive string.</span>
+<span class="sd">    issue : str, optional</span>
+<span class="sd">    issues_url : callback, optional</span>
+<span class="sd">        Converts issue to url, e.g. ``lambda s: &#39;https://github.com/user/repo/issues/%s/&#39; % s.lstrip(&#39;gh-&#39;)``.</span>
+<span class="sd">    warning: DeprecationWarning, optional</span>
+<span class="sd">        Any subclass of DeprecationWarning, tip: you may invoke:</span>
+<span class="sd">        ``warnings.simplefilter(&#39;once&#39;, MyWarning)`` at module init.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import warnings</span>
+<span class="sd">    &gt;&gt;&gt; warnings.simplefilter(&quot;error&quot;, DeprecationWarning)</span>
+<span class="sd">    &gt;&gt;&gt; @Deprecation()</span>
+<span class="sd">    ... def f():</span>
+<span class="sd">    ...     return 1</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; f()  # doctest: +IGNORE_EXCEPTION_DETAIL</span>
+<span class="sd">    Traceback (most recent call last):</span>
+<span class="sd">    ...</span>
+<span class="sd">    DeprecationWarning: f is deprecated.</span>
+<span class="sd">    &gt;&gt;&gt; @Deprecation(last_supported_version=&#39;0.4.0&#39;)</span>
+<span class="sd">    ... def some_old_function(x):</span>
+<span class="sd">    ...     return x*x - x</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; Deprecation.inspect(some_old_function).last_supported_version</span>
+<span class="sd">    &#39;0.4.0&#39;</span>
+<span class="sd">    &gt;&gt;&gt; @Deprecation(will_be_missing_in=&#39;1.0&#39;)</span>
+<span class="sd">    ... class ClumsyClass(object):</span>
+<span class="sd">    ...     pass</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; Deprecation.inspect(ClumsyClass).will_be_missing_in</span>
+<span class="sd">    &#39;1.0&#39;</span>
+<span class="sd">    &gt;&gt;&gt; warnings.resetwarnings()</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    :class:`DeprecationWarning` is ignored by default. Use custom warning</span>
+<span class="sd">    and filter appropriately. Alternatively, run python with ``-W`` flag or set</span>
+<span class="sd">    the appropriate environment variable:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        $ python -c &#39;import warnings as w; w.warn(&quot;X&quot;, DeprecationWarning)&#39;</span>
+<span class="sd">        $ python -Wd -c &#39;import warnings as w; w.warn(&quot;X&quot;, DeprecationWarning)&#39;</span>
+<span class="sd">        -c:1: DeprecationWarning: X</span>
+<span class="sd">        $ export PYTHONWARNINGS=d</span>
+<span class="sd">        $ python -c &#39;import warnings as w; w.warn(&quot;X&quot;, DeprecationWarning)&#39;</span>
+<span class="sd">        -c:1: DeprecationWarning: X</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_deprecations</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">last_supported_version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">will_be_missing_in</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">use_instead</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">issue</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">issues_url</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">warning</span><span class="o">=</span><span class="ne">DeprecationWarning</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">last_supported_version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span>\
+           <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">last_supported_version</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">))</span> <span class="ow">and</span>\
+           <span class="n">callable</span><span class="p">(</span><span class="n">last_supported_version</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;last_supported_version not str, tuple or list&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_supported_version</span> <span class="o">=</span> <span class="n">last_supported_version</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">will_be_missing_in</span> <span class="o">=</span> <span class="n">will_be_missing_in</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_instead</span> <span class="o">=</span> <span class="n">use_instead</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">issue</span> <span class="o">=</span> <span class="n">issue</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">issues_url</span> <span class="o">=</span> <span class="n">issues_url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">warning</span> <span class="o">=</span> <span class="n">warning</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">warning_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_warning_message_template</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Deprecation.inspect"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.deprecation.Deprecation.inspect">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">inspect</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get the :class:`Deprecation` instance of a deprecated function. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_deprecations</span><span class="p">[</span><span class="n">obj</span><span class="p">]</span></div>
+
+    <span class="k">def</span> <span class="nf">_warning_message_template</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%(func_name)s</span><span class="s1"> is deprecated&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_supported_version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39; since (not including) </span><span class="si">% s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_supported_version</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">will_be_missing_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;, it will be missing in </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">will_be_missing_in</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">issue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">issues_url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">issues_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">issue</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39; (see issue </span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">issue</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_instead</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;. Use </span><span class="si">%s</span><span class="s1"> instead&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_instead</span><span class="o">.</span><span class="vm">__name__</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;. Use </span><span class="si">%s</span><span class="s1"> instead&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_instead</span>
+        <span class="k">return</span> <span class="n">msg</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wrapped</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Decorates function to be deprecated &quot;&quot;&quot;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">warning_message</span> <span class="o">%</span> <span class="p">{</span><span class="s1">&#39;func_name&#39;</span><span class="p">:</span> <span class="n">wrapped</span><span class="o">.</span><span class="vm">__name__</span><span class="p">}</span>
+        <span class="n">wrapped_doc</span> <span class="o">=</span> <span class="n">wrapped</span><span class="o">.</span><span class="vm">__doc__</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">wrapped</span><span class="p">,</span> <span class="s1">&#39;__mro__&#39;</span><span class="p">):</span>  <span class="c1"># wrapped is a class</span>
+            <span class="k">class</span> <span class="nc">_Wrapper</span><span class="p">(</span><span class="n">wrapped</span><span class="p">):</span>
+                <span class="vm">__doc__</span> <span class="o">=</span> <span class="n">msg</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">wrapped_doc</span>
+
+                <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">_self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">warning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                    <span class="n">wrapped</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">_self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># wrapped is a function</span>
+            <span class="k">def</span> <span class="nf">_Wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">warning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">wrapped</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">_Wrapper</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">msg</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">wrapped_doc</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_deprecations</span><span class="p">[</span><span class="n">_Wrapper</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="n">_Wrapper</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="n">wrapped</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">_Wrapper</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">=</span> <span class="n">wrapped</span><span class="o">.</span><span class="vm">__module__</span>
+        <span class="k">return</span> <span class="n">_Wrapper</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.6.8',
+            LANGUAGE:'en',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>
