@@ -2,8 +2,9 @@ v0.7.x (unreleased)
 ===================
 - Drop official support for Python 2.7
 
-v0.6.x (unreleased)
-===================
+v0.6.8
+======
+- Fix use of numpy.linalg.lstsq
 - Upper limit on pyodesys (<0.12), chempy 0.7.x will use pyodesys>=0.12
 
 v0.6.7
