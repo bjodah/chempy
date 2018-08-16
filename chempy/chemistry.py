@@ -173,7 +173,6 @@ class Substance(object):
         'NH_{3}'
 
         """
-
         return cls(formula, latex_name=formula_to_latex(formula),
                    unicode_name=formula_to_unicode(formula),
                    html_name=formula_to_html(formula),
@@ -307,8 +306,14 @@ class Species(Substance):
                     raise ValueError("Could not determine phase_idx")
                 else:
                     p_i = default_phase_idx
-        return super(Species, cls).from_formula(
-            formula, phase_idx=p_i, **kwargs)
+        return cls(
+            formula,
+            latex_name=formula_to_latex(formula, suffixes=phases),
+            unicode_name=formula_to_unicode(formula, suffixes=phases),
+            html_name=formula_to_html(formula, suffixes=phases),
+            composition=formula_to_composition(formula, suffixes=phases),
+            phase_idx=p_i, **kwargs
+        )
 
 
 @deprecated(last_supported_version='0.3.0',
