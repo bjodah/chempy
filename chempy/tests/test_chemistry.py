@@ -58,6 +58,10 @@ def test_Species():
     assert Species.from_formula('NaCl(s)', phase_idx=7).phase_idx == 7
     assert Species.from_formula('CO2(aq)', mapping, phase_idx=7).phase_idx == 7
 
+    uranyl_ads = Species.from_formula('UO2+2(ads)', phases={'(aq)': 0, '(ads)': 1})
+    assert uranyl_ads.composition == {0: 2, 92: 1, 8: 2}
+    assert uranyl_ads.phase_idx == 1
+
 
 def test_Solute():
     from ..chemistry import Solute
@@ -108,11 +112,31 @@ def test_Reaction():
     assert r5.reac == lhs5 and r5.prod == rhs5
 
 
-@requires(parsing_library, units_library)
-def test_Reaction_parsing():
+@requires(parsing_library)
+def test_Reaction__from_string():
+    r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H+ OH-'.split())
+    assert r.reac == {'H2O': 1} and r.prod == {'H+': 1, 'OH-': 1}
+
+    with pytest.raises(ValueError):
+        Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H OH-'.split())
+
+    r2 = Reaction.from_string("H2O -> H+ + OH-; 1e-4; ref='important_paper'")
+    assert r2.ref == 'important_paper'
+
+    with pytest.raises(ValueError):
+        Reaction.from_string("H2O -> H2O")
+    Reaction.from_string("H2O -> H2O; None; checks=()")
+
+    with pytest.raises(ValueError):
+        Reaction({'H2O': 2}, {'H2O2': 2, 'O2': -2})
+
     r4 = Reaction({'H+': 2, 'OH-': 1}, {'H2O': 2}, 42.0)
     assert Reaction.from_string(str(r4), 'H+ OH- H2O') == r4
     assert Reaction.from_string(str(r4), None) == r4
+
+
+@requires(parsing_library, units_library)
+def test_Reaction_from_string__units():
     r5 = Reaction.from_string('2 H2O2 -> O2 + 2 H2O; 1e-7/molar/second', 'H2O O2 H2O2')
     assert to_unitless(r5.param, 1/default_units.molar/default_units.second) == 1e-7
     r6 = Reaction.from_string('->', checks=())
@@ -132,6 +156,10 @@ def test_Reaction_parsing():
     assert r9.rate_expr().args == [42.0]
     assert r9.rate_expr().unique_keys is None
 
+    Reaction.from_string("H+ + OH- -> H2O; 1e10/M/s", 'H2O H+ OH-'.split())
+    with pytest.raises(ValueError):
+        Reaction.from_string("H2O -> H+ + OH-; 1e-4/M/s", 'H2O H+ OH-'.split())
+
 
 @requires(parsing_library, units_library)
 def test_Substance__molar_mass():
@@ -150,29 +178,6 @@ def test_Equilibrium__as_reactions():
     fw, bw = eq.as_reactions(kb=rate, units=default_units)
     assert abs((bw.param - rate)/rate) < 1e-15
     assert abs((fw.param / M)/bw.param - 1e-14)/1e-14 < 1e-15
-
-
-@requires(parsing_library)
-def test_Reaction__from_string():
-    r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H+ OH-'.split())
-    assert r.reac == {'H2O': 1} and r.prod == {'H+': 1, 'OH-': 1}
-
-    with pytest.raises(ValueError):
-        Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H OH-'.split())
-
-    r2 = Reaction.from_string("H2O -> H+ + OH-; 1e-4; ref='important_paper'")
-    assert r2.ref == 'important_paper'
-
-    with pytest.raises(ValueError):
-        Reaction.from_string("H2O -> H2O")
-    Reaction.from_string("H2O -> H2O; None; checks=()")
-
-    Reaction.from_string("H+ + OH- -> H2O; 1e10/M/s", 'H2O H+ OH-'.split())
-    with pytest.raises(ValueError):
-        Reaction.from_string("H2O -> H+ + OH-; 1e-4/M/s", 'H2O H+ OH-'.split())
-
-    with pytest.raises(ValueError):
-        Reaction({'H2O': 2}, {'H2O2': 2, 'O2': -2})
 
 
 @requires(parsing_library)

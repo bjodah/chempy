@@ -34,6 +34,7 @@ def test_formula_to_composition():
     assert formula_to_composition('e-') == {0: -1}
     assert formula_to_composition('e-1') == {0: -1}
     assert formula_to_composition('e-(aq)') == {0: -1}
+    assert formula_to_composition('SO4-2(aq)') == {0: -2, 8: 4, 16: 1}
 
     # prefixes and suffixes
     assert formula_to_composition('.NO2(g)') == {7: 1, 8: 2}
@@ -121,6 +122,7 @@ def test_formula_to_latex():
     assert formula_to_latex('NaCl') == 'NaCl'
     assert formula_to_latex('NaCl(s)') == 'NaCl(s)'
     assert formula_to_latex('e-(aq)') == 'e^{-}(aq)'
+    assert formula_to_latex('Ca+2(aq)') == 'Ca^{2+}(aq)'
     assert formula_to_latex('.NO2(g)') == r'^\bullet NO_{2}(g)'
     assert formula_to_latex('.NH2') == r'^\bullet NH_{2}'
     assert formula_to_latex('ONOOH') == 'ONOOH'
@@ -148,6 +150,7 @@ def test_formula_to_unicoce():
     assert formula_to_unicode('NaCl') == u'NaCl'
     assert formula_to_unicode('NaCl(s)') == u'NaCl(s)'
     assert formula_to_unicode('e-(aq)') == u'e⁻(aq)'
+    assert formula_to_unicode('Ca+2(aq)') == u'Ca²⁺(aq)'
     assert formula_to_unicode('.NO2(g)') == u'⋅NO₂(g)'
     assert formula_to_unicode('.NH2') == u'⋅NH₂'
     assert formula_to_unicode('ONOOH') == u'ONOOH'
@@ -173,6 +176,7 @@ def test_formula_to_html():
     assert formula_to_html('NaCl') == 'NaCl'
     assert formula_to_html('NaCl(s)') == 'NaCl(s)'
     assert formula_to_html('e-(aq)') == 'e<sup>-</sup>(aq)'
+    assert formula_to_html('Ca+2(aq)') == 'Ca<sup>2+</sup>(aq)'
     assert formula_to_html('.NO2(g)') == r'&sdot;NO<sub>2</sub>(g)'
     assert formula_to_html('.NH2') == r'&sdot;NH<sub>2</sub>'
     assert formula_to_html('ONOOH') == 'ONOOH'
