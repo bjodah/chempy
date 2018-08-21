@@ -309,8 +309,9 @@ def test_ReactionSystem__split():
 
 
 def test_ReactionSystem__subset():
-    rxns_strs = ['2 NH3 -> N2 + 3 H2', 'N2H4 -> N2 + 2 H2']
-    rs1 = ReactionSystem.from_string('\n'.join(rxns_strs))
+    r1 = Reaction({'NH3': 2}, {'N2': 1, 'H2': 3})
+    r2 = Reaction({'N2H4': 1}, {'N2': 1, 'H2': 2})
+    rs1 = ReactionSystem([r1, r2])
     rs2 = rs1.subset(lambda r: 'N2H4' in r.keys())
     assert len(rs1.rxns) == 2 and len(rs2.rxns) == 1
-    assert rs2 == ReactionSystem.from_string(rxns_strs[1])
+    assert rs2 == ReactionSystem([r2])
