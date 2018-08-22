@@ -12,7 +12,7 @@ import pytest
 from ..util.testing import requires
 from ..units import (
     allclose, concatenate, get_derived_unit, is_unitless, linspace, logspace_from_lin,
-    SI_base_registry, unitless_in_registry, format_string, get_physical_quantity,
+    SI_base_registry, unitless_in_registry, format_string, get_physical_dimensionality,
     to_unitless, magnitude, default_unit_in_registry, Backend, latex_of_unit,
     unit_of, unit_registry_to_human_readable, units_library, simplified, uniform,
     unit_registry_from_human_readable, _sum, UncertainQuantity, compare_equality,
@@ -331,10 +331,10 @@ def test_compare_equality():
 
 
 @requires(units_library)
-def test_get_physical_quantity():
-    assert get_physical_quantity(3*u.mole) == {'amount': 1}
-    assert get_physical_quantity([3*u.mole]) == {'amount': 1}
-    assert get_physical_quantity(42) == {}
+def test_get_physical_dimensionality():
+    assert get_physical_dimensionality(3*u.mole) == {'amount': 1}
+    assert get_physical_dimensionality([3*u.mole]) == {'amount': 1}
+    assert get_physical_dimensionality(42) == {}
 
 
 @requires(units_library)

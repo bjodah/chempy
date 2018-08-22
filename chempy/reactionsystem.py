@@ -366,6 +366,22 @@ class ReactionSystem(object):
             raise KeyError("No reaction with name %s found" % key)
         return candidate
 
+    def subset(self, pred, checks=()):
+        """ Creates a new ReactionSystem with a subset of reactions.
+
+        Parameters
+        ----------
+        pred : callable
+            Signature: ``pred(Reaction) -> bool``.
+        checks : tuple
+            See ``ReactionSystem``.
+
+        """
+        new_rxns = [r for r in self.rxns if pred(r)]
+        new_substances = OrderedDict([(k, v) for k, v in self.substances.items() if
+                                      any([k in r.keys() for r in new_rxns])])
+        return self.__class__(new_rxns, substances=new_substances, checks=checks)
+
     def __iadd__(self, other):
         try:
             self.substances.update(other.substances)

@@ -306,3 +306,12 @@ def test_ReactionSystem__split():
     assert rsys1.categorize_substances() == dict(
         accumulated={'N2', 'Cl2', 'Br2'}, depleted={'N', 'ClBr'},
         unaffected=set(), nonparticipating=set())
+
+
+def test_ReactionSystem__subset():
+    r1 = Reaction({'NH3': 2}, {'N2': 1, 'H2': 3})
+    r2 = Reaction({'N2H4': 1}, {'N2': 1, 'H2': 2})
+    rs1 = ReactionSystem([r1, r2])
+    rs2 = rs1.subset(lambda r: 'N2H4' in r.keys())
+    assert len(rs1.rxns) == 2 and len(rs2.rxns) == 1
+    assert rs2 == ReactionSystem([r2])

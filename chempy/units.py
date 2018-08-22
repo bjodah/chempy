@@ -21,7 +21,7 @@ from functools import reduce
 from operator import mul
 
 from .util.arithmeticdict import ArithmeticDict
-from .util.pyutil import NameSpace
+from .util.pyutil import NameSpace, deprecated
 
 units_library = 'quantities'  # info used for selective testing.
 
@@ -385,7 +385,7 @@ def uniform(container):
     return to_unitless(container, unit)*unit
 
 
-def get_physical_quantity(value):
+def get_physical_dimensionality(value):
     if is_unitless(value):
         return {}
     _quantities_mapping = {
@@ -399,6 +399,11 @@ def get_physical_quantity(value):
     }
     return {_quantities_mapping[k.__class__]: v for k, v
             in uniform(value).simplified.dimensionality.items()}
+
+get_physical_quantity = deprecated(
+    use_instead=get_physical_dimensionality,
+    will_be_missing_in='0.8.0'
+)(get_physical_dimensionality)
 
 
 def _get_unit_from_registry(dimensionality, registry):
