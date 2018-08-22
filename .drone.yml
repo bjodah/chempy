@@ -20,6 +20,7 @@ pipeline:
       - export CPATH=$SUN3BASE/include
       - export LIBRARY_PATH=$SUN3BASE/lib
       - export LD_LIBRARY_PATH=$SUN3BASE/lib
+      - ls $CPATH  # debug
       - python3 -m pip install --user -e .[all]
       - git fetch -tq
       - python3 setup.py sdist                    # test pip installable sdist (checks MANIFEST.in)
