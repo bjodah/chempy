@@ -101,7 +101,7 @@ reference = {
 
 def density_from_concentration(conc, T=None, molar_mass=None,
                                rho_cb=sulfuric_acid_density,
-                               units=None, atol=None, maxiter=10, **kwargs):
+                               units=None, atol=None, maxiter=10, warn=False, **kwargs):
     """ Calculates the density of a solution from its concentration
 
     Given a function which calculates the density of a solution from the mass
@@ -169,7 +169,7 @@ def density_from_concentration(conc, T=None, molar_mass=None,
     iter_idx = 0
     while atol < abs(delta_rho):
         # fixed point iteration
-        new_rho = rho_cb(conc*molar_mass/rho, T, units=units, **kwargs)
+        new_rho = rho_cb(conc*molar_mass/rho, T, units=units, warn=warn, **kwargs)
         delta_rho = new_rho - rho
         rho = new_rho
         iter_idx += 1
