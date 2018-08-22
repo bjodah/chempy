@@ -17,7 +17,7 @@ pipeline:
     commands:
       - if [ ! -d $SUN3BASE ]; then .ci/get_sundials.sh 3.1.2 $SUN3BASE -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t" $SUN3BASE; fi
       - if [ ! -d $PYTHONUSERBASE ]; then mkdir $PYTHONUSERBASE; fi
-      - CPATH=$SUN3BASE/include LIBRARY_PATH=$SUN3BASE/lib LD_LIBRARY_PATH=$SUN3BASE/lib python3 -m pip install -e .[all]
+      - CPATH=$SUN3BASE/include LIBRARY_PATH=$SUN3BASE/lib LD_LIBRARY_PATH=$SUN3BASE/lib python3 -m pip install --user -e .[all]
       - git fetch -tq
       - python3 setup.py sdist  # test pip installable sdist (checks MANIFEST.in)
       - mkdir -p deploy/public_html/branches/"${DRONE_BRANCH}"
@@ -44,38 +44,23 @@ pipeline:
     image: bjodah/bjodahimg18dev:v1.3
     group: testing
     environment:
-      - PYTHONUSERBASE=/opt/pyusrb
       - CHEMPY_DEPRECATION_FILTER=ignore
-      - CPATH=/opt/sundials-3.1.2/include
-      - LIBRARY_PATH=/opt/sundials-3.1.2/lib
-      - LD_LIBRARY_PATH=/opt/sundials-3.1.2/lib
     commands:
       - git fetch -tq
       - VERSION=$(python3 setup.py --version)
       - cd deploy/public_html/branches/"${DRONE_BRANCH}"
-      - python3 -m pip install --user --force-reinstall chempy-$VERSION.tar.gz
+      - python3 -m pip install chempy-$VERSION.tar.gz
       - python3 -m pytest --pyargs chempy
 
   test_git_archive:
     image: bjodah/bjodahimg18dev:v1.3
     group: testing
     environment:
-      - PYTHONUSERBASE=/opt/pyusrb
-      - CHEMPY_DEPRECATION_FILTER=ignore
-      - CPATH=/opt/sundials-3.1.2/include
-      - LIBRARY_PATH=/opt/sundials-3.1.2/lib
-      - LD_LIBRARY_PATH=/opt/sundials-3.1.2/lib
-    commands:
-      - (cd dist/; python3 -m pip install --user --force-reinstall chempy-head.zip; python3 -m pytest --pyargs chempy)
-
-  test_py_venv:
-    image: bjodah/bjodahimg18dev:v1.3
-    group: testing
-    environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
     commands:
-      - python3 -m virtualenv vnv
-      - bash -c "source ./vnv/bin/activate && python3 -m pip install pytest && python3 -m pytest chempy"
+      - cd deploy/public_html/branches/"${DRONE_BRANCH}"
+      - python3 -m pip install chempy-head.zip
+      - python3 -m pytest --pyargs chempy
 
   bldconda:
     image: bjodah/bjodahimg18dev:v1.3
