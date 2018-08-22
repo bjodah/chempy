@@ -208,9 +208,8 @@ def multi_indexed_cases(od):
 
     Examples
     --------
-    >>> from collections import OrderedDict
-    >>> od = OrderedDict([('a', [1, 2, 3]), ('b', [False, True])])
-    >>> cases = multi_indiexed_cases(od)
+    >>> from chempy.util.pyutil import multi_indiexed_cases
+    >>> cases = multi_indiexed_cases([('a', [1, 2, 3]), ('b', [False, True])])
     >>> len(cases)
     6
     >>> midxs, case_kws = zip(*cases)
