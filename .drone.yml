@@ -1,33 +1,106 @@
-cache:
-  mount:
-    - /drone/sundials-3.1.2
-    - /drone/pyuserb
+pipeline:
+  restore-cache:
+    image: drillster/drone-volume-cache
+    restore: true
+    mount:
+      - /opt/sundials-3.1.2
+      - /opt/pyusrb
+    volumes:
+      - /tmp/cache:/cache
 
-build:
-  image: bjodah/bjodahimg18dev:v1.3
-  environment:
-    - SUN3BASE=/drone/sundials-3.1.2
-    - PYTHONUSERBASE=/drone/pyuserb
-  commands:
-    - git fetch -tq
-    - if [ ! -d $SUN3BASE ]; then .ci/get_sundials.sh 3.1.2 $SUN3BASE -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t" $SUN3BASE; fi
-    - if [ ! -d $PYTHONUSERBASE ]; then mkdir $PYTHONUSERBASE; fi
-    - CPATH=$SUN3BASE/include LIBRARY_PATH=$SUN3BASE/lib LD_LIBRARY_PATH=$SUN3BASE/lib ./.ci/run_ci.sh chempy
-    - ./.ci/prepare_deploy.sh
-    - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
-    - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${CI_BRANCH}" conda-recipe
-    - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
-    - ./.ci/grep-for-merge-blocking-token.sh
-    - ./.ci/grep-for-binary-data.sh
+  install:
+    image: bjodah/bjodahimg18dev:v1.3
+    environment:
+      - SUN3BASE=/opt/sundials-3.1.2
+      - PYTHONUSERBASE=/opt/pyusrb
+    commands:
+      - if [ ! -d $SUN3BASE ]; then .ci/get_sundials.sh 3.1.2 $SUN3BASE -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t" $SUN3BASE; fi
+      - if [ ! -d $PYTHONUSERBASE ]; then mkdir $PYTHONUSERBASE; fi
+      - CPATH=$SUN3BASE/include LIBRARY_PATH=$SUN3BASE/lib LD_LIBRARY_PATH=$SUN3BASE/lib python3 -m pip install -e .
+      - python3 setup.py sdist  # test pip installable sdist (checks MANIFEST.in)
+      - mkdir -p deploy/public_html/branches/"${CI_BRANCH}"
+      - cp dist/chempy*.tar.gz deploy/public_html/branches/"${CI_BRANCH}"/
+      - git archive -o deploy/public_html/branches/"${CI_BRANCH}"/chempy-head.zip HEAD  # test pip installable zip (symlinks break)
+
+  test_py:
+    image: bjodah/bjodahimg18dev:v1.3
+    group: testing
+    commands:
+      - CPATH=$SUN3BASE/include LIBRARY_PATH=$SUN3BASE/lib LD_LIBRARY_PATH=$SUN3BASE/lib ./scripts/run_tests.sh --cov chempy --cov-report html --slow --veryslow
+      - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
+      - cp -r htmlcov/ deploy/public_html/branches/"${CI_BRANCH}"/
+      - ./.ci/grep-for-merge-blocking-token.sh
+      - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
+
+  test_sdist:
+    image: bjodah/bjodahimg18dev:v1.3
+    group: testing
+    environment:
+      - CHEMPY_DEPRECATION_FILTER='ignore'    
+    commands:
+      - (cd dist/; python3 -m pip install --user chempy-$(python3 ../setup.py --version).tar.gz; python3 -m pytest --pyargs chempy)
+
+  test_git_archive:
+    image: bjodah/bjodahimg18dev:v1.3
+    group: testing
+    environment:
+      - CHEMPY_DEPRECATION_FILTER='ignore'    
+    commands:
+      - (cd dist/; python3 -m pip install --user chempy-head.zip; python3 -m pytest --pyargs chempy)
+
+  test_py_venv:
+    image: bjodah/bjodahimg18dev:v1.3
+    group: testing
+    environment:
+      - CHEMPY_DEPRECATION_FILTER='ignore'    
+    commands:
+      - python3 -m virtualenv vnv
+      - bash -c "source ./vnv/bin/activate && python3 -m pip install pytest && python3 -m pytest chempy"
+
+  bldconda:
+    image: bjodah/bjodahimg18dev:v1.3
+    group: testing
+    commands:
+      - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
+      - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${CI_BRANCH}" conda-recipe
+
+  rendernb:
+    image: bjodah/bjodahimg18dev:v1.3
+    group: testing
+    environment:
+      - CHEMPY_DEPRECATION_FILTER='ignore'    
+    commands:
+      - PYTHONPATH=$(pwd) ./scripts/render_notebooks.sh
+      - ./.ci/grep-for-binary-data.sh
+      - mv index.html index.ipynb.html
+      - (cd examples/; for f in bokeh_*.py; do python3 -m bokeh html $f; done)
+      - cp -r index.* examples/ "deploy/public_html/branches/${CI_BRANCH}"
+
+  gendocs:
+    image: bjodah/bjodahimg18dev:v1.3
+    group: testing
+    commands:
+      - ./scripts/generate_docs.sh
+      - cp LICENSE doc/_build/html/
+      - cp -r doc/_build/html/ "deploy/public_html/branches/${CI_BRANCH}"
 
 
-deploy:
 
-  rsync:
-    host: hera.physchem.kth.se
-    user: chempy
+
+  rebuild-cache:
+    image: drillster/drone-volume-cache
+    rebuild: true
+    mount:
+      - /opt/sundials-3.1.2
+      - /opt/pyusrb
+    volumes:
+      - /tmp/cache:/cache
+
+  deploy:
+    image: drillster/drone-rsync
+    hosts: [ "192.168.1.99" ]  # davycrockett.mooo.com
     port: 22
-    source: deploy/
-    target: ~
-    recursive: true
-    delete: false
+    user: chempy
+    secrets: [ rsync_key ]
+    source: ./deploy
+    target: ~/public_html
