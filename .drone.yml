@@ -5,6 +5,7 @@ pipeline:
     mount:
       - /opt/sundials-3.1.2
       - /opt/pyusrb
+      - /opt/conda_packages
     volumes:
       - /tmp/cache:/cache
 
@@ -17,16 +18,23 @@ pipeline:
       - if [ ! -d $SUN3BASE ]; then .ci/get_sundials.sh 3.1.2 $SUN3BASE -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t" $SUN3BASE; fi
       - if [ ! -d $PYTHONUSERBASE ]; then mkdir $PYTHONUSERBASE; fi
       - CPATH=$SUN3BASE/include LIBRARY_PATH=$SUN3BASE/lib LD_LIBRARY_PATH=$SUN3BASE/lib python3 -m pip install -e .
+      - git fetch -tq
       - python3 setup.py sdist  # test pip installable sdist (checks MANIFEST.in)
       - mkdir -p deploy/public_html/branches/"${CI_BRANCH}"
       - cp dist/chempy*.tar.gz deploy/public_html/branches/"${CI_BRANCH}"/
       - git archive -o deploy/public_html/branches/"${CI_BRANCH}"/chempy-head.zip HEAD  # test pip installable zip (symlinks break)
 
+
   test_py:
     image: bjodah/bjodahimg18dev:v1.3
     group: testing
+    environment:
+      - PYTHONUSERBASE=/opt/pyusrb
+      - CPATH=/opt/sundials-3.1.2/include
+      - LIBRARY_PATH=/opt/sundials-3.1.2/lib
+      - LD_LIBRARY_PATH=/opt/sundials-3.1.2/lib
     commands:
-      - CPATH=$SUN3BASE/include LIBRARY_PATH=$SUN3BASE/lib LD_LIBRARY_PATH=$SUN3BASE/lib ./scripts/run_tests.sh --cov chempy --cov-report html --slow --veryslow
+      - ./scripts/run_tests.sh --cov chempy --cov-report html --slow --veryslow
       - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
       - cp -r htmlcov/ deploy/public_html/branches/"${CI_BRANCH}"/
       - ./.ci/grep-for-merge-blocking-token.sh
@@ -36,23 +44,34 @@ pipeline:
     image: bjodah/bjodahimg18dev:v1.3
     group: testing
     environment:
-      - CHEMPY_DEPRECATION_FILTER='ignore'    
+      - PYTHONUSERBASE=/opt/pyusrb
+      - CHEMPY_DEPRECATION_FILTER=ignore
+      - CPATH=/opt/sundials-3.1.2/include
+      - LIBRARY_PATH=/opt/sundials-3.1.2/lib
+      - LD_LIBRARY_PATH=/opt/sundials-3.1.2/lib
     commands:
-      - (cd dist/; python3 -m pip install --user chempy-$(python3 ../setup.py --version).tar.gz; python3 -m pytest --pyargs chempy)
+      - git fetch -tq
+      - cd deploy/public_html/branches/"${CI_BRANCH}"
+      - python3 -m pip install --user --force-reinstall chempy-$(python3 ../setup.py --version).tar.gz
+      - python3 -m pytest --pyargs chempy
 
   test_git_archive:
     image: bjodah/bjodahimg18dev:v1.3
     group: testing
     environment:
-      - CHEMPY_DEPRECATION_FILTER='ignore'    
+      - PYTHONUSERBASE=/opt/pyusrb
+      - CHEMPY_DEPRECATION_FILTER=ignore
+      - CPATH=/opt/sundials-3.1.2/include
+      - LIBRARY_PATH=/opt/sundials-3.1.2/lib
+      - LD_LIBRARY_PATH=/opt/sundials-3.1.2/lib
     commands:
-      - (cd dist/; python3 -m pip install --user chempy-head.zip; python3 -m pytest --pyargs chempy)
+      - (cd dist/; python3 -m pip install --user --force-reinstall chempy-head.zip; python3 -m pytest --pyargs chempy)
 
   test_py_venv:
     image: bjodah/bjodahimg18dev:v1.3
     group: testing
     environment:
-      - CHEMPY_DEPRECATION_FILTER='ignore'    
+      - CHEMPY_DEPRECATION_FILTER=ignore
     commands:
       - python3 -m virtualenv vnv
       - bash -c "source ./vnv/bin/activate && python3 -m pip install pytest && python3 -m pytest chempy"
@@ -60,6 +79,8 @@ pipeline:
   bldconda:
     image: bjodah/bjodahimg18dev:v1.3
     group: testing
+    environment:
+      - CONDA_PKGS_DIRS=/opt/conda_packages
     commands:
       - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
       - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${CI_BRANCH}" conda-recipe
@@ -68,7 +89,11 @@ pipeline:
     image: bjodah/bjodahimg18dev:v1.3
     group: testing
     environment:
-      - CHEMPY_DEPRECATION_FILTER='ignore'    
+      - PYTHONUSERBASE=/opt/pyusrb
+      - CHEMPY_DEPRECATION_FILTER=ignore
+      - CPATH=/opt/sundials-3.1.2/include
+      - LIBRARY_PATH=/opt/sundials-3.1.2/lib
+      - LD_LIBRARY_PATH=/opt/sundials-3.1.2/lib
     commands:
       - PYTHONPATH=$(pwd) ./scripts/render_notebooks.sh
       - ./.ci/grep-for-binary-data.sh
@@ -79,12 +104,16 @@ pipeline:
   gendocs:
     image: bjodah/bjodahimg18dev:v1.3
     group: testing
+    environment:
+      - PYTHONUSERBASE=/opt/pyusrb
+      - CHEMPY_DEPRECATION_FILTER=ignore
+      - CPATH=/opt/sundials-3.1.2/include
+      - LIBRARY_PATH=/opt/sundials-3.1.2/lib
+      - LD_LIBRARY_PATH=/opt/sundials-3.1.2/lib
     commands:
       - ./scripts/generate_docs.sh
       - cp LICENSE doc/_build/html/
       - cp -r doc/_build/html/ "deploy/public_html/branches/${CI_BRANCH}"
-
-
 
 
   rebuild-cache:
@@ -93,6 +122,7 @@ pipeline:
     mount:
       - /opt/sundials-3.1.2
       - /opt/pyusrb
+      - /opt/conda_packages
     volumes:
       - /tmp/cache:/cache
 
