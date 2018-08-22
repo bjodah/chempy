@@ -3,18 +3,18 @@ pipeline:
     image: drillster/drone-volume-cache
     restore: true
     mount:
-      - /opt/sundials-3.1.2
-      - /opt/pyusrb
-      - /opt/conda_packages
+      - ./sundials-3.1.2
+      - ./pyusrb
+      - ./conda_packages
     volumes:
       - /tmp/cache:/cache
+    ttl: 90  # liftetime in days
 
   install:
     image: bjodah/bjodahimg18dev:v1.3
     environment:
-      - SUN3BASE=/opt/sundials-3.1.2
-      - PYTHONUSERBASE=/opt/pyusrb
-    commands:
+      - export SUN3BASE=$(pwd)/sundials-3.1.2
+      - export PYTHONUSERBASE=$(pwd)/pyusrb
       - if [ ! -d $SUN3BASE ]; then .ci/get_sundials.sh 3.1.2 $SUN3BASE -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t" $SUN3BASE; fi
       - if [ ! -d $PYTHONUSERBASE ]; then mkdir $PYTHONUSERBASE; fi
       - CPATH=$SUN3BASE/include LIBRARY_PATH=$SUN3BASE/lib LD_LIBRARY_PATH=$SUN3BASE/lib python3 -m pip install --user -e .[all]
@@ -28,12 +28,11 @@ pipeline:
   test_py:
     image: bjodah/bjodahimg18dev:v1.3
     group: testing
-    environment:
-      - PYTHONUSERBASE=/opt/pyusrb
-      - CPATH=/opt/sundials-3.1.2/include
-      - LIBRARY_PATH=/opt/sundials-3.1.2/lib
-      - LD_LIBRARY_PATH=/opt/sundials-3.1.2/lib
     commands:
+      - export PYTHONUSERBASE=$(pwd)/pyusrb
+      - export CPATH=$(pwd)/sundials-3.1.2/include
+      - export LIBRARY_PATH=$(pwd)/sundials-3.1.2/lib
+      - LD_LIBRARY_PATH=$(pwd)/sundials-3.1.2/lib
       - ./scripts/run_tests.sh --cov chempy --cov-report html --slow --veryslow
       - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
       - cp -r htmlcov/ deploy/public_html/branches/"${DRONE_BRANCH}"/
@@ -65,9 +64,8 @@ pipeline:
   bldconda:
     image: bjodah/bjodahimg18dev:v1.3
     group: testing
-    environment:
-      - CONDA_PKGS_DIRS=/opt/conda_packages
     commands:
+      - export CONDA_PKGS_DIRS=$(pwd)/conda_packages
       - git fetch -tq
       - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
       - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${DRONE_BRANCH}" conda-recipe
@@ -76,13 +74,13 @@ pipeline:
     image: bjodah/bjodahimg18dev:v1.3
     group: testing
     environment:
-      - PYTHONUSERBASE=/opt/pyusrb
       - CHEMPY_DEPRECATION_FILTER=ignore
-      - CPATH=/opt/sundials-3.1.2/include
-      - LIBRARY_PATH=/opt/sundials-3.1.2/lib
-      - LD_LIBRARY_PATH=/opt/sundials-3.1.2/lib
     commands:
-      - PYTHONPATH=$(pwd) ./scripts/render_notebooks.sh
+      - export PYTHONUSERBASE=$(pwd)/pyusrb
+      - export CPATH=$(pwd)/sundials-3.1.2/include
+      - export LIBRARY_PATH=$(pwd)/sundials-3.1.2/lib
+      - export LD_LIBRARY_PATH=$(pwd)/sundials-3.1.2/lib
+      - ./scripts/render_notebooks.sh
       - ./.ci/grep-for-binary-data.sh
       - mv index.html index.ipynb.html
       - (cd examples/; for f in bokeh_*.py; do python3 -m bokeh html $f; done)
@@ -92,12 +90,12 @@ pipeline:
     image: bjodah/bjodahimg18dev:v1.3
     group: testing
     environment:
-      - PYTHONUSERBASE=/opt/pyusrb
       - CHEMPY_DEPRECATION_FILTER=ignore
-      - CPATH=/opt/sundials-3.1.2/include
-      - LIBRARY_PATH=/opt/sundials-3.1.2/lib
-      - LD_LIBRARY_PATH=/opt/sundials-3.1.2/lib
     commands:
+      - export PYTHONUSERBASE=$(pwd)/pyusrb
+      - export CPATH=$(pwd)/sundials-3.1.2/include
+      - export LIBRARY_PATH=$(pwd)/sundials-3.1.2/lib
+      - export LD_LIBRARY_PATH=$(pwd)/sundials-3.1.2/lib
       - ./scripts/generate_docs.sh
       - cp LICENSE doc/_build/html/
       - cp -r doc/_build/html/ "deploy/public_html/branches/${DRONE_BRANCH}"
@@ -107,9 +105,9 @@ pipeline:
     image: drillster/drone-volume-cache
     rebuild: true
     mount:
-      - /opt/sundials-3.1.2
-      - /opt/pyusrb
-      - /opt/conda_packages
+      - ./sundials-3.1.2
+      - ./pyusrb
+      - ./conda_packages
     volumes:
       - /tmp/cache:/cache
 
