@@ -209,7 +209,7 @@ def multi_indexed_cases(od):
     Examples
     --------
     >>> from collections import OrderedDict
-    >>> od = OrderedDict([('a', [1, 2, 3], 'b': [False, True])])
+    >>> od = OrderedDict([('a', [1, 2, 3]), ('b', [False, True])])
     >>> cases = multi_indiexed_cases(od)
     >>> len(cases)
     6
