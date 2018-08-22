@@ -12,7 +12,7 @@ pipeline:
 
   install:
     image: bjodah/bjodahimg18dev:v1.3
-    environment:
+    commands:
       - export SUN3BASE=$(pwd)/sundials-3.1.2
       - export PYTHONUSERBASE=$(pwd)/pyusrb
       - if [ ! -d $SUN3BASE ]; then .ci/get_sundials.sh 3.1.2 $SUN3BASE -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t" $SUN3BASE; fi
