@@ -1262,7 +1262,7 @@ def balance_stoichiometry(reactants, products, substances=None,
         sol = Tuple(*[Integer(x) for x in _solve_balancing_ilp_pulp(A)])
 
     fact = gcd(sol)
-    sol = MutableDenseMatrix([e/fact for e in sol])
+    sol = MutableDenseMatrix([e/fact for e in sol]).reshape(len(sol), 1)
     sol /= reduce(gcd, sol)
     if 0 in sol:
         raise ValueError("Superfluous species given.")
@@ -1273,7 +1273,7 @@ def balance_stoichiometry(reactants, products, substances=None,
         for x in sol:
             if len(x.free_symbols) != 0:
                 raise ValueError("The system was under-determined")
-        if not all(residual == 0 for residual in A.dot(sol)):
+        if not all(residual == 0 for residual in A * sol):
             raise ValueError("Failed to balance reaction")
 
     def _x(k):
