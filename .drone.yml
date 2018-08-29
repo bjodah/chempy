@@ -4,7 +4,7 @@ cache:
     - /drone/pyuserb
 
 build:
-  image: bjodah/bjodahimg18dev:v1.3
+  image: bjodah/bjodahimg18dev:v1.4
   environment:
     - SUN3BASE=/drone/sundials-3.1.2
     - PYTHONUSERBASE=/drone/pyuserb
