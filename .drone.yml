@@ -51,8 +51,8 @@ pipeline:
     commands:
       - git fetch -tq
       - cd deploy/public_html/branches/${DRONE_BRANCH}
-      - python3 -m pip install chempy-*.tar.gz
-      - python3 -m pytest --pyargs chempy
+      - python3 -m virtualenv /tmp/test_sdist
+      - (source /tmp/test_sdist/bin/activate; python3 -m pip install chempy-*.tar.gz; python3 -m pytest chempy)
 
   test_git_archive:
     image: bjodah/bjodahimg18dev:v1.4
@@ -61,8 +61,8 @@ pipeline:
       - CHEMPY_DEPRECATION_FILTER=ignore
     commands:
       - cd deploy/public_html/branches/${DRONE_BRANCH}
-      - python3 -m pip install chempy-head.zip
-      - python3 -m pytest --pyargs chempy
+      - python3 -m virtualenv /tmp/test_git_archive
+      - (source /tmp/test_git_archive/bin/activate; python3 -m pip install chempy-head.zip; python3 -m pytest chempy)
 
   bldconda:
     image: bjodah/bjodahimg18dev:v1.4
@@ -101,8 +101,7 @@ pipeline:
       - export LD_LIBRARY_PATH=$(pwd)/ci_cache/sund-3.1.2/lib
       - ./scripts/generate_docs.sh
       - cp LICENSE doc/_build/html/
-      - cp -r doc/_build/html/ "deploy/public_html/branches/${DRONE_BRANCH}"
-
+      - cp -r doc/_build/html/ deploy/public_html/branches/${DRONE_BRANCH}
 
   rebuild-cache:
     image: drillster/drone-volume-cache
