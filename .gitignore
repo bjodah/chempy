@@ -9,6 +9,7 @@
 MANIFEST
 *.egg-info
 dist/
+deploy/
 examples/*.png
 !examples/kinetics.png
 examples/*.html
