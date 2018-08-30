@@ -6,6 +6,7 @@ pipeline:
       - ./ci_cache/sund-3.1.2
       - ./ci_cache/pyusrb
       - ./ci_cache/conda_packages
+      - ./ci_cache/pip_cache
     volumes:
       - /tmp/cache:/cache
     ttl: 90  # liftetime in days
@@ -20,7 +21,7 @@ pipeline:
       - export CPATH=$SUN3BASE/include
       - export LIBRARY_PATH=$SUN3BASE/lib
       - export LD_LIBRARY_PATH=$SUN3BASE/lib
-      - python3 -m pip install --user -e .[all]
+      - python3 -m pip install --cache-dir ./ci_cache/pip_cache --user -e .[all]
       - python3 -c "import pycvodes"  # debug this CI config
       - git fetch -tq
       - python3 setup.py sdist                    # test pip installable sdist (checks MANIFEST.in)
@@ -28,7 +29,7 @@ pipeline:
       - mkdir -p deploy/public_html/branches/${DRONE_BRANCH}
       - cp dist/chempy-* deploy/public_html/branches/${DRONE_BRANCH}/
 
-  test_py:
+  test-suite:
     image: bjodah/bjodahimg18dev:v1.4
     group: testing
     commands:
@@ -42,29 +43,13 @@ pipeline:
       - cp -r htmlcov/ deploy/public_html/branches/${DRONE_BRANCH}/
       - ./.ci/grep-for-merge-blocking-token.sh
       - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
-
-  test_sdist:
-    image: bjodah/bjodahimg18dev:v1.4
-    group: testing
-    environment:
-      - CHEMPY_DEPRECATION_FILTER=ignore
-    commands:
-      - git fetch -tq
-      - cd deploy/public_html/branches/${DRONE_BRANCH}
+      - export CHEMPY_DEPRECATION_FILTER=ignore
       - python3 -m virtualenv /tmp/test_sdist
-      - bash -c "(source /tmp/test_sdist/bin/activate; python3 -m pip install chempy-*.tar.gz; python3 -m pytest chempy)"
-
-  test_git_archive:
-    image: bjodah/bjodahimg18dev:v1.4
-    group: testing
-    environment:
-      - CHEMPY_DEPRECATION_FILTER=ignore
-    commands:
-      - cd deploy/public_html/branches/${DRONE_BRANCH}
       - python3 -m virtualenv /tmp/test_git_archive
-      - bash -c "(source /tmp/test_git_archive/bin/activate; python3 -m pip install chempy-head.zip; python3 -m pytest chempy)"
+      - bash -c "(source /tmp/test_sdist/bin/activate; python3 -m pip install --cache-dir ./ci_cache/pip_cache chempy-*.tar.gz; python3 -m pytest chempy)"
+      - bash -c "(source /tmp/test_git_archive/bin/activate; python3 -m pip install --cache-dir ./ci_cache/pip_cache chempy-head.zip; python3 -m pytest chempy)"
 
-  bldconda:
+  conda-recipe:
     image: bjodah/bjodahimg18dev:v1.4
     group: testing
     commands:
@@ -73,7 +58,7 @@ pipeline:
       - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
       - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${DRONE_BRANCH}" conda-recipe
 
-  rendernb:
+  render-notebooks:
     image: bjodah/bjodahimg18dev:v1.4
     group: testing
     environment:
@@ -89,9 +74,8 @@ pipeline:
       - (cd examples/; for f in bokeh_*.py; do python3 -m bokeh html $f; done)
       - cp -r index.* examples/ "deploy/public_html/branches/${DRONE_BRANCH}"
 
-  gendocs:
+  compile-documentation:
     image: bjodah/bjodahimg18dev:v1.4
-    group: testing
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
     commands:
@@ -110,6 +94,7 @@ pipeline:
       - ./ci_cache/sund-3.1.2
       - ./ci_cache/pyusrb
       - ./ci_cache/conda_packages
+      - ./ci_cache/pip_cache
     volumes:
       - /tmp/cache:/cache
 
