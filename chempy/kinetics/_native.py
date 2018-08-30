@@ -109,7 +109,9 @@ def _get_subst_comp(rsys, odesys, comp_keys, skip_keys):
 
 def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False, conc_roots=None):
     comp_keys = Substance.composition_keys(rsys.substances.values(), skip_keys=skip_keys)
-    if isinstance(odesys, PartiallySolvedSystem):
+    if PartiallySolvedSystem is None:
+        raise ValueError("Failed to import 'native_sys' from 'pyodesys.native'")
+    elif isinstance(odesys, PartiallySolvedSystem):
         init_conc = '&m_p[%d]' % (len(odesys.params) - len(odesys.original_dep))
     else:
         init_conc = 'y'
