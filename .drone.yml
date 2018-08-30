@@ -52,7 +52,7 @@ pipeline:
       - git fetch -tq
       - cd deploy/public_html/branches/${DRONE_BRANCH}
       - python3 -m virtualenv /tmp/test_sdist
-      - (source /tmp/test_sdist/bin/activate; python3 -m pip install chempy-*.tar.gz; python3 -m pytest chempy)
+      - bash -c "(source /tmp/test_sdist/bin/activate; python3 -m pip install chempy-*.tar.gz; python3 -m pytest chempy)"
 
   test_git_archive:
     image: bjodah/bjodahimg18dev:v1.4
@@ -62,7 +62,7 @@ pipeline:
     commands:
       - cd deploy/public_html/branches/${DRONE_BRANCH}
       - python3 -m virtualenv /tmp/test_git_archive
-      - (source /tmp/test_git_archive/bin/activate; python3 -m pip install chempy-head.zip; python3 -m pytest chempy)
+      - bash -c "(source /tmp/test_git_archive/bin/activate; python3 -m pip install chempy-head.zip; python3 -m pytest chempy)"
 
   bldconda:
     image: bjodah/bjodahimg18dev:v1.4
