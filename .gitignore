@@ -1,6 +1,6 @@
 **~
 .config/
-.*cache/
+*cache/
 **/.ipython/
 **/.ipynb_checkpoints/
 **.cache/
@@ -23,6 +23,8 @@ doc/
 examples/equilibria.pdf
 venv/
 build/
+*.bak0
+*.bak1
 .local/
 .ipython/
 .jupyter/*

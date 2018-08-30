@@ -50,10 +50,8 @@ pipeline:
       - CHEMPY_DEPRECATION_FILTER=ignore
     commands:
       - git fetch -tq
-      - git status
-      - VERSION=$(python3 setup.py --version)
       - cd deploy/public_html/branches/${DRONE_BRANCH}
-      - python3 -m pip install chempy-$VERSION.tar.gz
+      - python3 -m pip install chempy-*.tar.gz
       - python3 -m pytest --pyargs chempy
 
   test_git_archive:
