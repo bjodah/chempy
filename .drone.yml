@@ -47,8 +47,8 @@ pipeline:
       - python3 -m virtualenv /tmp/test_sdist
       - python3 -m virtualenv /tmp/test_git_archive
       - cd deploy/public_html/branches/${DRONE_BRANCH}
-      - bash -c "source /tmp/test_sdist/bin/activate; python3 -m pip install --cache-dir ./ci_cache/pip_cache $(eval ls chempy-*.tar.gz); python3 -m pytest chempy"
-      - bash -c "source /tmp/test_git_archive/bin/activate; python3 -m pip install --cache-dir ./ci_cache/pip_cache chempy-head.zip; python3 -m pytest chempy"
+      - bash -c "source /tmp/test_sdist/bin/activate; pip install --cache-dir ./ci_cache/pip_cache $(eval ls chempy-*.tar.gz) pytest; pytest --pyargs chempy"
+      - bash -c "source /tmp/test_git_archive/bin/activate; pip install --cache-dir ./ci_cache/pip_cache chempy-head.zip pytest; pytest --pyargs chempy"
 
   conda-recipe:
     image: bjodah/bjodahimg18dev:v1.4
