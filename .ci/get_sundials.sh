@@ -9,6 +9,7 @@
 VERSION=$1
 PREFIX=$2
 if [ -d "$PREFIX" ]; then 2>&1 echo "Directory already exists: $PREFIX"; exit 1; fi
+if [[ $(realpath "$PREFIX") == $(realpath "$(pwd)/sundials-${VERSION}") ]]; then 2>&1 echo "Path clash"; exit 1; fi
 if [[ $VERSION == "3.1.1" ]]; then
     SUNDIALS_FNAME="sundials-3.1.1.tar.gz"
     SUNDIALS_MD5="e63f4de0be5be97f750b30b0fa11ef34"
@@ -54,7 +55,7 @@ for URL in "${SUNDIALS_URLS[@]}"; do
             exit 1
         fi
         cd ..
-        rm -r sundials*
+        rm -r sundials_build/ sundials-${VERSION}/
         exit 0
     fi
 done
