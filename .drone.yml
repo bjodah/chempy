@@ -35,7 +35,7 @@ pipeline:
       - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
       - export CPATH=$(pwd)/ci_cache/sund-3.1.2/include
       - export LIBRARY_PATH=$(pwd)/ci_cache/sund-3.1.2/lib
-      - LD_LIBRARY_PATH=$(pwd)/ci_cache/sund-3.1.2/lib
+      - export LD_LIBRARY_PATH=$(pwd)/ci_cache/sund-3.1.2/lib
       - python3 -c "import pycvodes"  # debug this CI config
       - ./scripts/run_tests.sh --cov chempy --cov-report html --slow --veryslow
       - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
