@@ -2,8 +2,8 @@ v0.7.x (unreleased)
 ===================
 - Drop official support for Python 2.7
 
-v0.6.x (unreleased)
-===================
+v0.6.9
+======
 - Fix bug in Species.from_formula  (e.g. 'UO2+2(aq)')
 
 v0.6.8
