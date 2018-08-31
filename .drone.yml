@@ -1,33 +1,112 @@
-cache:
-  mount:
-    - /drone/sundials-3.1.2
-    - /drone/pyuserb
+pipeline:
+  restore-cache:
+    image: drillster/drone-volume-cache
+    restore: true
+    mount:
+      - ./ci_cache/sund-3.1.2
+      - ./ci_cache/pyusrb
+      - ./ci_cache/conda_packages
+      - ./ci_cache/pip_cache
+    volumes:
+      - /tmp/cache:/cache
+    ttl: 90  # liftetime in days
 
-build:
-  image: bjodah/bjodahimg18dev:v1.4
-  environment:
-    - SUN3BASE=/drone/sundials-3.1.2
-    - PYTHONUSERBASE=/drone/pyuserb
-  commands:
-    - git fetch -tq
-    - if [ ! -d $SUN3BASE ]; then .ci/get_sundials.sh 3.1.2 $SUN3BASE -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t" $SUN3BASE; fi
-    - if [ ! -d $PYTHONUSERBASE ]; then mkdir $PYTHONUSERBASE; fi
-    - CPATH=$SUN3BASE/include LIBRARY_PATH=$SUN3BASE/lib LD_LIBRARY_PATH=$SUN3BASE/lib ./.ci/run_ci.sh chempy
-    - ./.ci/prepare_deploy.sh
-    - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
-    - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${CI_BRANCH}" conda-recipe
-    - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
-    - ./.ci/grep-for-merge-blocking-token.sh
-    - ./.ci/grep-for-binary-data.sh
+  install:
+    image: bjodah/bjodahimg18dev:v1.4
+    commands:
+      - export SUN3BASE=$(pwd)/ci_cache/sund-3.1.2
+      - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
+      - if [ ! -d $SUN3BASE ]; then .ci/get_sundials.sh 3.1.2 $SUN3BASE -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t" $SUN3BASE; fi
+      - if [ ! -d $PYTHONUSERBASE ]; then mkdir $PYTHONUSERBASE; fi
+      - export CPATH=$SUN3BASE/include
+      - export LIBRARY_PATH=$SUN3BASE/lib
+      - export LD_LIBRARY_PATH=$SUN3BASE/lib
+      - python3 -m pip install --cache-dir ./ci_cache/pip_cache --user -e .[all]
+      - python3 -c "import pycvodes"  # debug this CI config
+      - git fetch -tq
+      - python3 setup.py sdist                    # test pip installable sdist (checks MANIFEST.in)
+      - git archive -o dist/chempy-head.zip HEAD  # test pip installable zip (symlinks break)
+      - mkdir -p deploy/public_html/branches/${DRONE_BRANCH}
+      - cp dist/chempy-* deploy/public_html/branches/${DRONE_BRANCH}/
 
+  test-suite:
+    image: bjodah/bjodahimg18dev:v1.4
+    group: testing
+    commands:
+      - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
+      - export CPATH=$(pwd)/ci_cache/sund-3.1.2/include
+      - export LIBRARY_PATH=$(pwd)/ci_cache/sund-3.1.2/lib
+      - export LD_LIBRARY_PATH=$(pwd)/ci_cache/sund-3.1.2/lib
+      - python3 -c "import pycvodes"  # debug this CI config
+      - ./scripts/run_tests.sh --cov chempy --cov-report html --slow --veryslow
+      - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
+      - cp -r htmlcov/ deploy/public_html/branches/${DRONE_BRANCH}/
+      - ./.ci/grep-for-merge-blocking-token.sh
+      - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
+      - export CHEMPY_DEPRECATION_FILTER=ignore
+      - python3 -m virtualenv /tmp/test_sdist
+      - python3 -m virtualenv /tmp/test_git_archive
+      - cd deploy/public_html/branches/${DRONE_BRANCH}
+      - bash -c "source /tmp/test_sdist/bin/activate; pip install --cache-dir ./ci_cache/pip_cache $(eval ls chempy-*.tar.gz) pytest; pytest --pyargs chempy"
+      - bash -c "source /tmp/test_git_archive/bin/activate; pip install --cache-dir ./ci_cache/pip_cache chempy-head.zip pytest; pytest --pyargs chempy"
 
-deploy:
+  conda-recipe:
+    image: bjodah/bjodahimg18dev:v1.4
+    group: testing
+    commands:
+      - export CONDA_PKGS_DIRS=$(pwd)/ci_cache/conda_packages
+      - git fetch -tq
+      - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
+      - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${DRONE_BRANCH}" conda-recipe
+      - (cd $CONDA_PKGS_DIRS; find . -maxdepth 1 -type d -not -path . -not -path .. | xargs rm -r)
 
-  rsync:
-    host: hera.physchem.kth.se
-    user: chempy
+  render-notebooks:
+    image: bjodah/bjodahimg18dev:v1.4
+    group: testing
+    environment:
+      - CHEMPY_DEPRECATION_FILTER=ignore
+    commands:
+      - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
+      - export CPATH=$(pwd)/ci_cache/sund-3.1.2/include
+      - export LIBRARY_PATH=$(pwd)/ci_cache/sund-3.1.2/lib
+      - export LD_LIBRARY_PATH=$(pwd)/ci_cache/sund-3.1.2/lib
+      - ./scripts/render_notebooks.sh
+      - ./.ci/grep-for-binary-data.sh
+      - mv index.html index.ipynb.html
+      - (cd examples/; for f in bokeh_*.py; do python3 -m bokeh html $f; done)
+      - cp -r index.* examples/ "deploy/public_html/branches/${DRONE_BRANCH}"
+
+  compile-documentation:
+    image: bjodah/bjodahimg18dev:v1.4
+    environment:
+      - CHEMPY_DEPRECATION_FILTER=ignore
+    commands:
+      - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
+      - export CPATH=$(pwd)/ci_cache/sund-3.1.2/include
+      - export LIBRARY_PATH=$(pwd)/ci_cache/sund-3.1.2/lib
+      - export LD_LIBRARY_PATH=$(pwd)/ci_cache/sund-3.1.2/lib
+      - ./scripts/generate_docs.sh
+      - cp LICENSE doc/_build/html/
+      - cp -r doc/_build/html/ deploy/public_html/branches/${DRONE_BRANCH}
+
+  rebuild-cache:
+    image: drillster/drone-volume-cache
+    rebuild: true
+    mount:
+      - ./ci_cache/sund-3.1.2
+      - ./ci_cache/pyusrb
+      - ./ci_cache/conda_packages
+      - ./ci_cache/pip_cache
+    volumes:
+      - /tmp/cache:/cache
+
+  deploy:
+    image: drillster/drone-rsync
+    when:
+      event: [push]
+    hosts: [ "192.168.1.99" ]  # davycrockett.mooo.com
     port: 22
-    source: deploy/
-    target: ~
-    recursive: true
-    delete: false
+    user: chempy
+    secrets: [ rsync_key ]  # secret only set fro event "push" not "pull_request"
+    source: ./deploy/public_html
+    target: ~/

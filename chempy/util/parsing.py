@@ -121,7 +121,7 @@ def _get_charge(chgstr):
             if len(before) > 0 and len(after) > 0:
                 raise ValueError("Values both before and after charge token")
             if len(before) > 0:
-                # will_be_missing_in='0.5.0'
+                # will_be_missing_in='0.8.0'
                 warnings.warn("'Fe/3+' deprecated, use e.g. 'Fe+3'",
                               ChemPyDeprecationWarning, stacklevel=3)
                 return sign * int(1 if before == '' else before)
@@ -144,7 +144,7 @@ def _formula_to_parts(formula, prefixes, suffixes):
 
     # Extract charge
     if '/' in formula:
-        # will_be_missing_in='0.5.0'
+        # will_be_missing_in='0.8.0'
         warnings.warn("/ depr. (before 0.5.0): use 'Fe+3' over 'Fe/3+'",
                       ChemPyDeprecationWarning, stacklevel=3)
         parts = formula.split('/')

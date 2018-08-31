@@ -73,7 +73,7 @@ class EqSystem(ReactionSystem):
             self.substances.values()) if s.phase_idx != phase_idx]
 
     @property
-    @deprecated(last_supported_version='0.3.1', will_be_missing_in='0.5.0',
+    @deprecated(last_supported_version='0.3.1', will_be_missing_in='0.8.0',
                 use_instead=other_phase_species_idxs)
     def precipitate_substance_idxs(self):
         return [idx for idx, s in enumerate(
@@ -84,7 +84,7 @@ class EqSystem(ReactionSystem):
                 if rxn.has_precipitates(self.substances)]
 
     @property
-    @deprecated(last_supported_version='0.3.1', will_be_missing_in='0.5.0',
+    @deprecated(last_supported_version='0.3.1', will_be_missing_in='0.8.0',
                 use_instead=phase_transfer_reaction_idxs)
     def precipitate_rxn_idxs(self):
         return [idx for idx, rxn in enumerate(self.rxns)
