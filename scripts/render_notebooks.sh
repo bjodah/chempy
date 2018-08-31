@@ -6,7 +6,7 @@ fi
 SCRIPTS_PATH=$(unset CDPATH && cd "$(dirname "$0")" && echo $PWD)
 for dir in . examples/; do
     cd $dir
-    find . -iname "*.ipynb" | xargs -P 4 "$SCRIPTS_PATH/render_notebook.sh"
+    find . -iname "*.ipynb" | xargs -P 2 "$SCRIPTS_PATH/render_notebook.sh"
     cd -
 done
 
