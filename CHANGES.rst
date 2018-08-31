@@ -1,5 +1,9 @@
-v0.7.x (unreleased)
-===================
+v0.7.1
+======
+- Updated requirements on upstream packages
+
+v0.7.0
+======
 - Drop official support for Python 2.7
 
 v0.6.x (unreleased)
