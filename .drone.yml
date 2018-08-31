@@ -107,5 +107,5 @@ pipeline:
     port: 22
     user: chempy
     secrets: [ rsync_key ]
-    source: ./deploy
-    target: ~/public_html
+    source: ./deploy/public_html
+    target: ~/
