@@ -25,6 +25,7 @@ venv/
 build/
 *.bak0
 *.bak1
+sundials-*.tar.gz
 .local/
 .ipython/
 .jupyter/*

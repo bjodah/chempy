@@ -55,7 +55,7 @@ for URL in "${SUNDIALS_URLS[@]}"; do
             exit 1
         fi
         cd ..
-        rm -r sundials_build/ sundials-${VERSION}/ sundials-${VERSION}.tar.gz
+        rm -r sundials_build/ sundials-${VERSION}/
         exit 0
     fi
 done

@@ -103,8 +103,6 @@ pipeline:
     image: drillster/drone-rsync
     hosts: [ "192.168.1.99" ]  # davycrockett.mooo.com
     port: 22
-    user: [ rsync_user ]
-    key: [ rsync_key ]
     secrets: [ rsync_user, rsync_key ]
     source: ./deploy
     target: ~/public_html

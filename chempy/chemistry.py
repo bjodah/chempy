@@ -219,7 +219,7 @@ class Species(Substance):
         self.phase_idx = phase_idx
 
     @property
-    @deprecated(last_supported_version='0.3.0', will_be_missing_in='0.5.0')
+    @deprecated(last_supported_version='0.3.0', will_be_missing_in='0.8.0')
     def precipitate(self):
         """ deprecated attribute, provided for compatibility for now """
         return self.phase_idx > 0
@@ -317,7 +317,7 @@ class Species(Substance):
 
 
 @deprecated(last_supported_version='0.3.0',
-            will_be_missing_in='0.7.0', use_instead=Species)
+            will_be_missing_in='0.8.0', use_instead=Species)
 class Solute(Substance):
     """ [DEPRECATED] Use `.Species` instead
 
