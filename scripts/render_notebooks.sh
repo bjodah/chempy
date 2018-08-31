@@ -5,7 +5,7 @@ if [ -f index.ipynb ]; then
 fi
 for dir in . examples/; do
     cd $dir
-    jupyter nbconvert --debug --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb
+    find . -iname "*.ipynb" | xargs -P 4 ./scripts/render_notebook.sh
     cd -
 done
 
