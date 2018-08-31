@@ -58,7 +58,7 @@ pipeline:
       - git fetch -tq
       - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
       - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${DRONE_BRANCH}" conda-recipe
-      - (cd $CONDA_PKGS_DIRS; find . -maxdepth 1 -type d | xargs rm -r)
+      - (cd $CONDA_PKGS_DIRS; find . -maxdepth 1 -type d -not -path . -not -path .. | xargs rm -r)
 
   render-notebooks:
     image: bjodah/bjodahimg18dev:v1.4
