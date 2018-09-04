@@ -411,7 +411,7 @@ def _get_unit_from_registry(dimensionality, registry):
 
 
 def default_unit_in_registry(value, registry):
-    _dimensionality = get_physical_quantity(value)
+    _dimensionality = get_physical_dimensionality(value)
     if _dimensionality == {}:
         return 1
     return _get_unit_from_registry(_dimensionality, registry)
