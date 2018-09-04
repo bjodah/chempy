@@ -493,6 +493,8 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
     if parameter_symbols is None:
         keys = []
         for rxn in rsys.rxns:
+            if isinstance(rxn.param, (float,)):
+                continue  # can be multiplied with Symbol instance
             key, = rxn.param.unique_keys
             keys.append(key)
         parameter_symbols = OrderedDict([(key, backend.Symbol(key)) for key in keys])
