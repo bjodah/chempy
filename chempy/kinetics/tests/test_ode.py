@@ -941,23 +941,3 @@ def test_create_odesys():
 
     result2 = odesys.integrate(tend, c0, p, integrator='cvode')
     assert np.allclose(result2.yout[-1, :], to_unitless(result1.yout[-1, :], u.molar))
-
-
-@requires('numpy', 'pyodesys', 'sympy', 'pycvodes')
-def test_create_odesys__float():
-    rsys = ReactionSystem.from_string("""
-    A -> B; 'k1'
-    B -> C; 3.14
-    """, substance_factory=Substance)
-
-    odesys, odesys_extra = create_odesys(rsys, unit_registry=SI_base_registry)
-
-    tend = 10
-    c0 = {'A': 3, 'B': 2, 'C': 1}
-    p = dict(k1=1.4)
-    result = odesys.integrate(tend, c0, p, integrator='cvode', atol=1e-10, rtol=1e-10)
-
-    from pyodesys.tests.bateman import bateman_full  # analytic, never mind the details
-    ref = np.array(bateman_full(result.yout[0, :], result.params.tolist()+[3.14, 0],
-                                result.xout - result.xout[0], exp=np.exp)).T
-    assert np.allclose(result.yout, ref)
