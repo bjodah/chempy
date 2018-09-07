@@ -1,3 +1,7 @@
+v0.7.x
+======
+- Fixed bug in Reaction.precipitate_stoich
+
 v0.7.1
 ======
 - Updated requirements on upstream packages
