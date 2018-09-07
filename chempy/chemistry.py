@@ -576,7 +576,7 @@ class Reaction(object):
 
     def _xprecipitate_stoich(self, substances, xor):
         return tuple((
-            0 if xor ^ getattr(v, 'phase_idx', 0) > 0 else
+            0 if xor ^ (getattr(v, 'phase_idx', 0) > 0) else
             self.prod.get(k, 0) + self.inact_prod.get(k, 0) -
             self.reac.get(k, 0) - self.inact_reac.get(k, 0)
         ) for k, v in substances.items())
@@ -591,7 +591,7 @@ class Reaction(object):
                     found1 = idx
                 else:
                     raise NotImplementedError("Only one precipitate assumed.")
-        return net, net[idx], idx
+        return net, net[found1], found1
 
     def non_precipitate_stoich(self, substances):
         """ Only stoichiometry of non-precipitates """
@@ -982,11 +982,11 @@ class Equilibrium(Reaction):
     def dimensionality(self, substances):
         result = 0
         for r, n in self.reac.items():
-            if getattr(substances[r], 'precipitate', False):
+            if getattr(substances[r], 'phase_idx', 0) > 0:
                 continue
             result -= n
         for p, n in self.prod.items():
-            if getattr(substances[p], 'precipitate', False):
+            if getattr(substances[p], 'phase_idx', 0) > 0:
                 continue
             result += n
         return result
