@@ -1,5 +1,14 @@
 Note that 0.6.x is in maintanence mode, see chempy >=0.7.0 for latest version.
 
+v0.7.x
+======
+- Fixed bug in Reaction.precipitate_stoich
+
+v0.7.1
+======
+- Updated requirements on upstream packages
+
+
 v0.6.x
 ======
 - Fixed bug in Reaction.precipitate_stoich
