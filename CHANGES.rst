@@ -1,10 +1,4 @@
-v0.7.1
-======
-- Updated requirements on upstream packages
-
-v0.7.0
-======
-- Drop official support for Python 2.7
+Note that 0.6.x is in maintanence mode, see chempy >=0.7.0 for latest version.
 
 v0.6.x
 ======
