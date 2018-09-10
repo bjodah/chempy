@@ -511,7 +511,7 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
         zip([substance_symbols[key] for key in rsys.substances], [rates[key] for key in rsys.substances]),
         symbols['time'],
         parameter_symbols.values(),
-        names=rsys.substances.keys(),
+        names=list(rsys.substances.keys()),
         latex_names=[s.latex_name for s in rsys.substances.values()],
         param_names=parameter_symbols.keys(),
         latex_param_names=[pretty_replace(n) for n in parameter_symbols.keys()],
