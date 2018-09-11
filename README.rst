@@ -261,19 +261,35 @@ for dealing with units in the scientific Python ecosystem).
 
 Chemical equilibria
 ~~~~~~~~~~~~~~~~~~~
+If we want to predict pH of a bicarbonate solution we simply just need pKa and pKw values:
+
+.. code:: python
+
+   >>> from collections import defaultdict
+   >>> from chempy.equilibria import EqSystem
+   >>> eqsys = EqSystem.from_string("""HCO3- = H+ + CO3-2; 10**-10.3
+   ... H2CO3 = H+ + HCO3-; 10**-6.3
+   ... H2O = H+ + OH-; 10**-14/55.4
+   ... """)  # pKa1(H2CO3) = 6.3 (implicitly incl. CO2(aq)), pKa2=10.3 & pKw=14
+   >>> arr, info, sane = eqsys.root(defaultdict(float, {'H2O': 55.4, 'HCO3-': 1e-2}))
+   >>> conc = dict(zip(eqsys.substances, arr))
+   >>> from math import log10
+   >>> print("pH: %.2f" % -log10(conc['H+']))
+   pH: 8.30
+
+here is another example for ammonia:
+
 .. code:: python
 
    >>> from chempy import Equilibrium
    >>> from chempy.chemistry import Species
    >>> water_autop = Equilibrium({'H2O'}, {'H+', 'OH-'}, 10**-14)  # unit "molar" assumed
    >>> ammonia_prot = Equilibrium({'NH4+'}, {'NH3', 'H+'}, 10**-9.24)  # same here
-   >>> from chempy.equilibria import EqSystem
    >>> substances = [Species.from_formula(f) for f in 'H2O OH- H+ NH3 NH4+'.split()]
    >>> eqsys = EqSystem([water_autop, ammonia_prot], substances)
    >>> print('\n'.join(map(str, eqsys.rxns)))  # "rxns" short for "reactions"
    H2O = H+ + OH-; 1e-14
    NH4+ = H+ + NH3; 5.75e-10
-   >>> from collections import defaultdict
    >>> init_conc = defaultdict(float, {'H2O': 1, 'NH3': 0.1})
    >>> x, sol, sane = eqsys.root(init_conc)
    >>> assert sol['success'] and sane
