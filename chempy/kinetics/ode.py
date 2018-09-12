@@ -496,7 +496,6 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
             uk, = rxn.param.unique_keys
             keys.append(uk)
             for pk in rxn.param.parameter_keys:
-                print(pk)
                 if pk not in keys:
                     keys.append(pk)
         parameter_symbols = OrderedDict([(key, backend.Symbol(key)) for key in keys])
