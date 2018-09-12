@@ -922,14 +922,17 @@ def test_create_odesys():
     odesys, odesys_extra = create_odesys(rsys, unit_registry=SI_base_registry)
 
     tend = 10
-    tend_units = tend*u.s
     c0 = {'A': 1e-6, 'B': 0, 'C': 1, 'P': 0}
     p = dict(k1=3, k2=4)
+
+    tend_units = tend*u.s
     p_units = {'k1': p['k1']/u.s, 'k2': p['k2']/u.M/u.s}
     c0_units = {k: v*u.molar for k, v in c0.items()}
+
     validation = odesys_extra['validate'](dict(**c0_units, **p_units))
     P, = validation['not_seen']
     assert P.name == 'P'
+
     ref_rates = {'A': -p_units['k1']*c0_units['A'], 'P': p_units['k2']*c0_units['B']*c0_units['C']}
     ref_rates['B'] = -ref_rates['A'] - ref_rates['P']
     ref_rates['C'] = -ref_rates['P']
@@ -941,3 +944,21 @@ def test_create_odesys():
 
     result2 = odesys.integrate(tend, c0, p, integrator='cvode')
     assert np.allclose(result2.yout[-1, :], to_unitless(result1.yout[-1, :], u.molar))
+
+
+@requires('pycvodes', 'sym', units_library)
+def test_create_odesys__Radiolytic():
+    rsys1 = ReactionSystem.from_string("""
+    -> e-(aq); Radiolytic.fk('g_emaq')
+    """, checks=())
+    ic1 = {'e-(aq)': 0.0}
+    t1 = 5
+    p1 = dict(
+        g_emaq=42.0,
+        doserate=17.0,
+        density=5.0
+    )
+    odesys1, odesys_extra = create_odesys(rsys1)
+    result1 = odesys1.integrate(t1, ic1, p1)
+    yref1 = result1.xout*p1['g_emaq']*p1['doserate']*p1['density']
+    assert np.allclose(yref1, result1.yout.squeeze())
