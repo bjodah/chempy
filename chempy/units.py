@@ -166,6 +166,7 @@ def get_derived_unit(registry, key):
     derived['diffusion'] = derived['diffusivity']  # 'diffusion' is deprecated
     derived['radiolytic_yield'] = registry['amount']/derived['energy']
     derived['doserate'] = derived['energy']/registry['mass']/registry['time']
+    derived['linear_energy_transfer'] = derived['energy']/registry['length']
 
     try:
         return derived[key]
