@@ -605,7 +605,7 @@ def create_Piecewise(parameter_name, nan_fallback=False):
     return Expr.from_callback(_pw, parameter_keys=(parameter_name,))
 
 
-def create_Poly(parameter_name, reciprocal=False, shift=None, name=None, backend: x):
+def create_Poly(parameter_name, reciprocal=False, shift=None, name=None):
     """
     Examples
     --------
