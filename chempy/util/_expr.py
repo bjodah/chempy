@@ -605,7 +605,7 @@ def create_Piecewise(parameter_name, nan_fallback=False):
     return Expr.from_callback(_pw, parameter_keys=(parameter_name,))
 
 
-def create_Poly(parameter_name, reciprocal=False, shift=None, name=None, transform_x=lambda x, backend: x):
+def create_Poly(parameter_name, reciprocal=False, shift=None, name=None, backend: x):
     """
     Examples
     --------
@@ -629,6 +629,7 @@ def create_Poly(parameter_name, reciprocal=False, shift=None, name=None, transfo
         shift = 'shift'
 
     def _poly(args, x, backend=math, **kwargs):
+
         if shift is None:
             coeffs = args
             x0 = x
@@ -636,8 +637,6 @@ def create_Poly(parameter_name, reciprocal=False, shift=None, name=None, transfo
             coeffs = args[1:]
             x_shift = args[0]
             x0 = x - x_shift
-
-        x = transform_x(x, backend=backend)
 
         cur = 1
         res = None
