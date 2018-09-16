@@ -7,7 +7,7 @@ ChemPy
 .. image:: https://img.shields.io/pypi/v/chempy.svg
    :target: https://pypi.python.org/pypi/chempy
    :alt: PyPI version
-.. image:: https://img.shields.io/badge/python-2.7,3.5,3.6,3.7-blue.svg
+.. image:: https://img.shields.io/badge/python-3.5,3.6,3.7-blue.svg
    :target: https://www.python.org/
    :alt: Python version
 .. image:: https://img.shields.io/pypi/l/chempy.svg
@@ -70,8 +70,8 @@ Simplest way to install ChemPy and its (optional) dependencies is to use the
 currently conda packages are only provided for Linux. On Windows and OS X
 you will need to use ``pip`` instead::
 
-   $ pip install chempy pytest
-   $ pytest -rs --pyargs chempy
+   $ python3 -m pip install chempy pytest
+   $ python3 -m pytest -rs --pyargs chempy
 
 there will a few tests which will be skipped due to some missing optional
 backends in addition to those in SciPy (used for solving systems of non-linear
@@ -82,14 +82,14 @@ Optional dependencies
 If you used ``conda`` to install ChemPy you can skip this section.
 But if you use ``pip`` the default installation is achieved by writing::
 
-   $ python -m pip install --user --upgrade chempy pytest
-   $ python -m pytest -rs --pyargs chempy
+   $ python3 -m pip install --user --upgrade chempy pytest
+   $ python3 -m pytest -rs --pyargs chempy
 
 you can skip the ``--user`` flag if you have got root permissions.
 You may be interested in using additional backends (in addition to those provided by SciPy)
 for solving ODE-systems and non-linear optimization problems::
 
-   $ pip install chempy[all]
+   $ python3 -m pip install chempy[all]
 
 Note that this option will install the following libraries
 (some of which require additional libraries to be present on your system):
