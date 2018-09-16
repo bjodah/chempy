@@ -5,6 +5,9 @@ if [[ "$CI_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then
     echo ${CI_BRANCH} | tail -c +2 > __conda_version__.txt
 fi
 
+python2 -m pip install --user --upgrade --upgrade-strategy only-if-needed .[all]
+PYTHON=python2 ./scripts/run_tests.sh
+
 git archive -o /tmp/$PKG_NAME.zip HEAD  # test pip installable zip (symlinks break)
 python3 -m pip install --user /tmp/$PKG_NAME.zip
 python3 -m pip uninstall -y chempy
