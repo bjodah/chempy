@@ -5,6 +5,7 @@ if [[ "$CI_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then
     echo ${CI_BRANCH} | tail -c +2 > __conda_version__.txt
 fi
 
+python2 -m pip >/dev/null || curl https://bootstrap.pypa.io/get-pip.py 2>/dev/null | python2 -
 python2 -m pip install --user --upgrade --upgrade-strategy only-if-needed .[all]
 PYTHON=python2 ./scripts/run_tests.sh
 
