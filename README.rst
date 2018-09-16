@@ -77,6 +77,12 @@ there will a few tests which will be skipped due to some missing optional
 backends in addition to those in SciPy (used for solving systems of non-linear
 equations and ordinary differential equations).
 
+If you are still using Python 2 you can use the long-term-support 0.6.x branch
+of ChemPy which will continue to receive bugfixes::
+
+   $ python2 -m pip install chempy<0.7
+
+
 Optional dependencies
 ~~~~~~~~~~~~~~~~~~~~~
 If you used ``conda`` to install ChemPy you can skip this section.
