@@ -929,7 +929,7 @@ def test_create_odesys():
     p_units = {'k1': p['k1']/u.s, 'k2': p['k2']/u.M/u.s}
     c0_units = {k: v*u.molar for k, v in c0.items()}
 
-    validation = odesys_extra['validate'](dict(**c0_units, **p_units))
+    validation = odesys_extra['validate'](dict(c0_units, **p_units))
     P, = validation['not_seen']
     assert P.name == 'P'
 
