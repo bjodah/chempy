@@ -52,7 +52,7 @@ pipeline:
       - ( python2 -m pip >/dev/null || curl -Ls https://bootstrap.pypa.io/get-pip.py | python2 - --user )
       - python2 -m pip install --user virtualenv
       - python2 -m virtualenv /tmp/test_py2
-      - bash -c "source /tmp/test_py2/bin/activate; pip install --cache-dir ./ci_cache/pip_cache .[all] pytest; pytest --pyargs chempy"
+      - bash -c "source /tmp/test_py2/bin/activate; pip install --cache-dir ./ci_cache/pip_cache fastcache pytest '.[all]'; pytest -rs --pyargs chempy"
 
   conda-recipe:
     image: bjodah/bjodahimg18dev:v1.4
