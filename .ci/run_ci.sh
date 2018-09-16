@@ -7,7 +7,7 @@ fi
 
 curl -Ls https://bootstrap.pypa.io/get-pip.py | python2 - --user
 python2 -m pip install --user --upgrade --upgrade-strategy only-if-needed .[all]
-PYTHON=python2 ./scripts/run_tests.sh
+python2 -m pytest -ra --slow --veryslow && python2 -m doctest README.rst
 
 git archive -o /tmp/$PKG_NAME.zip HEAD  # test pip installable zip (symlinks break)
 python3 -m pip install --user /tmp/$PKG_NAME.zip
