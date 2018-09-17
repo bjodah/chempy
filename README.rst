@@ -80,7 +80,7 @@ equations and ordinary differential equations).
 If you are still using Python 2 you can use the long-term-support 0.6.x branch
 of ChemPy which will continue to receive bugfixes::
 
-   $ python2 -m pip install chempy<0.7
+   $ python2 -m pip install "chempy<0.7"
 
 
 Optional dependencies

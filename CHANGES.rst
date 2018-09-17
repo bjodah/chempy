@@ -1,6 +1,8 @@
-v0.7.x
+v0.7.2
 ======
 - Fixed bug in Reaction.precipitate_stoich
+- Changed Python-3-only syntax to support Python 2
+- Python < 3.5 is now deprecated for ChemPy <0.7
 
 v0.7.1
 ======
@@ -10,9 +12,10 @@ v0.7.0
 ======
 - Drop official support for Python 2.7
 
-v0.6.x (unreleased)
-===================
-- Fix bug in Species.from_formula  (e.g. 'UO2+2(aq)')
+v0.6.10
+=======
+- Fixed bug in Reaction.precipitate_stoich
+- Changed Python-3-only syntax to support Python 2
 
 v0.6.8
 ======
