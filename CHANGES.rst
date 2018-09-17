@@ -9,9 +9,10 @@ v0.7.1
 - Updated requirements on upstream packages
 
 
-v0.6.x
-======
+v0.6.10
+=======
 - Fixed bug in Reaction.precipitate_stoich
+- Changed Python-3-only syntax to support Python 2
 
 v0.6.9
 ======
