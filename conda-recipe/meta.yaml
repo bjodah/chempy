@@ -1,5 +1,5 @@
 {% set name = "chempy" %}
-{% set version = "0.7.1.dev0+git" %}
+{% set version = "0.7.3.dev0+git" %}
 
 package:
   name: {{ name|lower }}
