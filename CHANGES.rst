@@ -8,6 +8,9 @@ v0.7.1
 ======
 - Updated requirements on upstream packages
 
+v0.6.11
+=======
+- Fixed an issue with PuLP under FreeBSD (gh-109)
 
 v0.6.10
 =======
