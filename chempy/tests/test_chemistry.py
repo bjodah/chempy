@@ -305,12 +305,15 @@ def test_balance_stoichiometry__simple():
 @requires('sympy')
 @pytest.mark.parametrize('underdet', [False, None, True])
 def test_balance_stoichiometry__impossible(underdet):
-    with pytest.raises(ValueError):
+    from pulp.solvers import PulpSolverError
+    with pytest.raises((ValueError, PulpSolverError)):
         r1, p1 = balance_stoichiometry({'CO'}, {'CO2'}, underdetermined=underdet)
 
 
 @requires('sympy', 'pulp')
 def test_balance_stoichiometry__underdetermined():
+    from pulp.solvers import PulpSolverError
+
     with pytest.raises(ValueError):
         balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'}, underdetermined=False)
     reac, prod = balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'})
@@ -325,7 +328,7 @@ def test_balance_stoichiometry__underdetermined():
         balance_stoichiometry({'C3H4O3', 'H3PO4'}, {'C3H6O3'}, underdetermined=None)
 
     for underdet in [False, True, None]:
-        with pytest.raises(ValueError):
+        with pytest.raises((ValueError, PulpSolverError)):
             balance_stoichiometry({'C3H6O3'}, {'C3H4O3'}, underdetermined=underdet)
 
     with pytest.raises(ValueError):  # https://github.com/bjodah/chempy/pull/86#issuecomment-375421609
