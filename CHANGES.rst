@@ -1,3 +1,7 @@
+v0.7.3
+======
+- Fixed an issue with PuLP under FreeBSD (gh-109)
+
 v0.7.2
 ======
 - Fixed bug in Reaction.precipitate_stoich
