@@ -1,0 +1,442 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.kinetics.arrhenius &mdash; chempy 0.7.2 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="chempy 0.7.2 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.7.2
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">chempy</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>chempy.kinetics.arrhenius</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.kinetics.arrhenius</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Contains functions for the `Arrhenius equation</span>
+<span class="sd">&lt;https://en.wikipedia.org/wiki/Arrhenius_equation&gt;`_</span>
+<span class="sd">(:func:`arrhenius_equation`) and a convenience fitting routine</span>
+<span class="sd">(:func:`fit_arrhenius_equation`).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.._util</span> <span class="k">import</span> <span class="n">get_backend</span>
+<span class="kn">from</span> <span class="nn">..util.regression</span> <span class="k">import</span> <span class="n">least_squares</span>
+<span class="kn">from</span> <span class="nn">..util.pyutil</span> <span class="k">import</span> <span class="n">defaultnamedtuple</span>
+<span class="kn">from</span> <span class="nn">..units</span> <span class="k">import</span> <span class="n">default_constants</span><span class="p">,</span> <span class="n">default_units</span><span class="p">,</span> <span class="n">format_string</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">np</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">def</span> <span class="nf">_fit_linearized</span><span class="p">(</span><span class="n">backtransfm</span><span class="p">,</span> <span class="n">lin_x</span><span class="p">,</span> <span class="n">lin_y</span><span class="p">,</span> <span class="n">lin_yerr</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lin_x</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lin_y</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;k and T needs to be of equal length.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">lin_yerr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lin_yerr</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lin_y</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;kerr and T needs to be of equal length.&quot;</span><span class="p">)</span>
+    <span class="n">lin_p</span><span class="p">,</span> <span class="n">lin_vcv</span><span class="p">,</span> <span class="n">lin_r2</span> <span class="o">=</span> <span class="n">least_squares</span><span class="p">(</span><span class="n">lin_x</span><span class="p">,</span> <span class="n">lin_y</span><span class="p">,</span> <span class="n">lin_yerr</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">cb</span><span class="p">(</span><span class="n">lin_p</span><span class="p">)</span> <span class="k">for</span> <span class="n">cb</span> <span class="ow">in</span> <span class="n">backtransfm</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_fit</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">kerr</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">lin_x</span><span class="p">,</span> <span class="n">lin_y</span><span class="p">,</span> <span class="n">backtransfm</span><span class="p">,</span> <span class="n">linearized</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">_lin_y</span> <span class="o">=</span> <span class="n">lin_y</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">kerr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">lin_yerr</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">lin_yerr</span> <span class="o">=</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">lin_y</span><span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="n">kerr</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span> <span class="o">-</span> <span class="n">_lin_y</span><span class="p">)</span> <span class="o">+</span>
+                    <span class="nb">abs</span><span class="p">(</span><span class="n">lin_y</span><span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="n">kerr</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span> <span class="o">-</span> <span class="n">_lin_y</span><span class="p">))</span><span class="o">/</span><span class="mi">2</span>
+
+    <span class="n">lopt</span> <span class="o">=</span> <span class="n">_fit_linearized</span><span class="p">(</span><span class="n">backtransfm</span><span class="p">,</span> <span class="n">lin_x</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">k</span><span class="p">),</span> <span class="n">_lin_y</span><span class="p">,</span> <span class="n">lin_yerr</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">linearized</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">lopt</span>
+    <span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="k">import</span> <span class="n">curve_fit</span>
+    <span class="n">popt</span><span class="p">,</span> <span class="n">pcov</span> <span class="o">=</span> <span class="n">curve_fit</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">lopt</span><span class="p">,</span> <span class="n">kerr</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">popt</span><span class="p">,</span> <span class="n">pcov</span>
+
+
+<span class="k">def</span> <span class="nf">_get_R</span><span class="p">(</span><span class="n">constants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">constants</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="mf">8.314472</span>
+        <span class="k">if</span> <span class="n">units</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">J</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">Joule</span>
+            <span class="n">K</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">Kelvin</span>
+            <span class="n">mol</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">mol</span>
+            <span class="n">R</span> <span class="o">*=</span> <span class="n">J</span><span class="o">/</span><span class="n">mol</span><span class="o">/</span><span class="n">K</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">molar_gas_constant</span>
+    <span class="k">return</span> <span class="n">R</span>
+
+
+<div class="viewcode-block" id="arrhenius_equation"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.arrhenius.arrhenius_equation">[docs]</a><span class="k">def</span> <span class="nf">arrhenius_equation</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">Ea</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">constants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the rate coefficient according to the Arrhenius equation</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    A: float with unit</span>
+<span class="sd">        frequency factor</span>
+<span class="sd">    Ea: float with unit</span>
+<span class="sd">        activation energy</span>
+<span class="sd">    T: float with unit</span>
+<span class="sd">        temperature</span>
+<span class="sd">    constants: object (optional, default: None)</span>
+<span class="sd">        if None:</span>
+<span class="sd">            T assumed to be in Kelvin, Ea in J/(K mol)</span>
+<span class="sd">        else:</span>
+<span class="sd">            attributes accessed: molar_gas_constant</span>
+<span class="sd">            Tip: pass quantities.constants</span>
+<span class="sd">    units: object (optional, default: None)</span>
+<span class="sd">        attributes accessed: Joule, Kelvin and mol</span>
+<span class="sd">    backend: module (optional)</span>
+<span class="sd">        module with &quot;exp&quot;, default: numpy, math</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">be</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="n">_get_R</span><span class="p">(</span><span class="n">constants</span><span class="p">,</span> <span class="n">units</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">RT</span> <span class="o">=</span> <span class="p">(</span><span class="n">R</span><span class="o">*</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="n">Ea</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="n">RT</span> <span class="o">=</span> <span class="n">R</span><span class="o">*</span><span class="n">T</span>
+    <span class="k">return</span> <span class="n">A</span><span class="o">*</span><span class="n">be</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">Ea</span><span class="o">/</span><span class="n">RT</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="fit_arrhenius_equation"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.arrhenius.fit_arrhenius_equation">[docs]</a><span class="k">def</span> <span class="nf">fit_arrhenius_equation</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">kerr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">linearized</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">constants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Curve fitting of the Arrhenius equation to data points</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    T : float</span>
+<span class="sd">    k : array_like</span>
+<span class="sd">    kerr : array_like (optional)</span>
+<span class="sd">    linearized : bool</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_fit</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">kerr</span><span class="p">,</span> <span class="n">arrhenius_equation</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">T</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="mi">1</span><span class="o">/</span><span class="n">T</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">T</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">k</span><span class="p">),</span>
+                <span class="p">[</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="o">-</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">_get_R</span><span class="p">(</span><span class="n">constants</span><span class="p">,</span> <span class="n">units</span><span class="p">)],</span> <span class="n">linearized</span><span class="o">=</span><span class="n">linearized</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_fit_arrhenius_equation</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">kerr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">linearized</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Curve fitting of the Arrhenius equation to data points</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    k : array_like</span>
+<span class="sd">    T : float</span>
+<span class="sd">    kerr : array_like (optional)</span>
+<span class="sd">    linearized : bool</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">T</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;k and T needs to be of equal length.&quot;</span><span class="p">)</span>
+    <span class="kn">from</span> <span class="nn">math</span> <span class="k">import</span> <span class="n">exp</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">T</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">k</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="n">_get_R</span><span class="p">(</span><span class="n">constants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">Ea</span> <span class="o">=</span> <span class="o">-</span><span class="n">R</span><span class="o">*</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">linearized</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">A</span><span class="p">,</span> <span class="n">Ea</span>
+    <span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="k">import</span> <span class="n">curve_fit</span>
+    <span class="k">if</span> <span class="n">kerr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">kerr</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">popt</span><span class="p">,</span> <span class="n">pcov</span> <span class="o">=</span> <span class="n">curve_fit</span><span class="p">(</span><span class="n">arrhenius_equation</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="p">[</span><span class="n">A</span><span class="p">,</span> <span class="n">Ea</span><span class="p">],</span> <span class="n">weights</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">popt</span><span class="p">,</span> <span class="n">pcov</span>
+
+
+<div class="viewcode-block" id="ArrheniusParam"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.arrhenius.ArrheniusParam">[docs]</a><span class="k">class</span> <span class="nc">ArrheniusParam</span><span class="p">(</span><span class="n">defaultnamedtuple</span><span class="p">(</span><span class="s1">&#39;ArrheniusParam&#39;</span><span class="p">,</span> <span class="s1">&#39;A Ea ref&#39;</span><span class="p">,</span> <span class="p">[</span><span class="kc">None</span><span class="p">])):</span>
+    <span class="sd">&quot;&quot;&quot; Kinetic data in the form of an Arrhenius parameterisation</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Ea: float</span>
+<span class="sd">        activation energy</span>
+<span class="sd">    A: float</span>
+<span class="sd">        preexponential prefactor (Arrhenius type eq.)</span>
+<span class="sd">    ref: object (default: None)</span>
+<span class="sd">        arbitrary reference (e.g. string representing citation key)</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; k = ArrheniusParam(1e13, 40e3)</span>
+<span class="sd">    &gt;&gt;&gt; &#39;%.5g&#39; % k(298.15)</span>
+<span class="sd">    &#39;9.8245e+05&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ArrheniusParam.from_fit_of_data"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.arrhenius.ArrheniusParam.from_fit_of_data">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_fit_of_data</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">kerr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">args</span><span class="p">,</span> <span class="n">vcv</span> <span class="o">=</span> <span class="n">fit_arrhenius_equation</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">kerr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">constants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Evaluates the arrhenius equation for a specified state</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        T: float</span>
+<span class="sd">        constants: module (optional)</span>
+<span class="sd">        units: module (optional)</span>
+<span class="sd">        backend: module (default: math)</span>
+
+<span class="sd">        See also</span>
+<span class="sd">        --------</span>
+<span class="sd">        See :func:`chempy.arrhenius.arrhenius_equation`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">arrhenius_equation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ea</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">constants</span><span class="o">=</span><span class="n">constants</span><span class="p">,</span>
+                                  <span class="n">units</span><span class="o">=</span><span class="n">units</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ArrheniusParam.Ea_over_R"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.arrhenius.ArrheniusParam.Ea_over_R">[docs]</a>    <span class="k">def</span> <span class="nf">Ea_over_R</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">units</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ea</span><span class="o">/</span><span class="n">_get_R</span><span class="p">(</span><span class="n">constants</span><span class="p">,</span> <span class="n">units</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ArrheniusParam.as_RateExpr"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.arrhenius.ArrheniusParam.as_RateExpr">[docs]</a>    <span class="k">def</span> <span class="nf">as_RateExpr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unique_keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">constants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">.rates</span> <span class="k">import</span> <span class="n">Arrhenius</span><span class="p">,</span> <span class="n">MassAction</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ea_over_R</span><span class="p">(</span><span class="n">constants</span><span class="p">,</span> <span class="n">units</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">MassAction</span><span class="p">(</span><span class="n">Arrhenius</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">unique_keys</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="ArrheniusParam.format"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.arrhenius.ArrheniusParam.format">[docs]</a>    <span class="k">def</span> <span class="nf">format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">str_A</span><span class="p">,</span> <span class="n">str_A_unit</span> <span class="o">=</span> <span class="n">format_string</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">tex</span><span class="p">)</span>
+            <span class="n">str_Ea</span><span class="p">,</span> <span class="n">str_Ea_unit</span> <span class="o">=</span> <span class="n">format_string</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Ea</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">tex</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">str_A</span><span class="p">,</span> <span class="n">str_A_unit</span> <span class="o">=</span> <span class="n">precision</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="p">),</span> <span class="s1">&#39;-&#39;</span>
+            <span class="n">str_Ea</span><span class="p">,</span> <span class="n">str_Ea_unit</span> <span class="o">=</span> <span class="n">precision</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Ea</span><span class="p">),</span> <span class="s1">&#39;-&#39;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">str_A</span><span class="p">,</span> <span class="n">str_A_unit</span><span class="p">),</span> <span class="p">(</span><span class="n">str_Ea</span><span class="p">,</span> <span class="n">str_Ea_unit</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ArrheniusParam.equation_as_string"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.arrhenius.ArrheniusParam.equation_as_string">[docs]</a>    <span class="k">def</span> <span class="nf">equation_as_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">tex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="p">(</span><span class="n">str_A</span><span class="p">,</span> <span class="n">str_A_unit</span><span class="p">),</span> <span class="p">(</span><span class="n">str_Ea</span><span class="p">,</span> <span class="n">str_Ea_unit</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">precision</span><span class="p">,</span> <span class="n">tex</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tex</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">r</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">\exp \left(-\frac{{</span><span class="si">{}</span><span class="s2">}}{{RT}} \right)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">str_A</span><span class="p">,</span> <span class="n">str_Ea</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">str_Ea_unit</span><span class="p">),</span> <span class="n">str_A_unit</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">*exp(-</span><span class="si">{}</span><span class="s2">/(R*T))&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">str_A</span><span class="p">,</span> <span class="n">str_Ea</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">str_Ea_unit</span><span class="p">),</span> <span class="n">str_A_unit</span></div>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">equation_as_string</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%.5g</span><span class="s1">&#39;</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="ArrheniusParamWithUnits"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.arrhenius.ArrheniusParamWithUnits">[docs]</a><span class="k">class</span> <span class="nc">ArrheniusParamWithUnits</span><span class="p">(</span><span class="n">ArrheniusParam</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">constants</span><span class="o">=</span><span class="n">default_constants</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="n">default_units</span><span class="p">,</span>
+                 <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See :func:`chempy.arrhenius.arrhenius_equation`. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">ArrheniusParamWithUnits</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span>
+            <span class="n">state</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">units</span><span class="p">,</span> <span class="n">backend</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ArrheniusParamWithUnits.as_RateExpr"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.arrhenius.ArrheniusParamWithUnits.as_RateExpr">[docs]</a>    <span class="k">def</span> <span class="nf">as_RateExpr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unique_keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">constants</span><span class="o">=</span><span class="n">default_constants</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="n">default_units</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">ArrheniusParamWithUnits</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">as_RateExpr</span><span class="p">(</span><span class="n">unique_keys</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">units</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.7.2',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
