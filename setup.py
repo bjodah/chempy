@@ -124,7 +124,8 @@ setup_kwargs = dict(
         'pulp>=1.6.8',
         # 'dot2tex>=2.9.0'
     ],
-    extras_require=extras_req
+    extras_require=extras_req,
+    python_requires='>=3.5'
 )
 
 if __name__ == '__main__':
