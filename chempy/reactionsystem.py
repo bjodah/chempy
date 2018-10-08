@@ -69,7 +69,10 @@ class ReactionSystem(object):
                  sort_substances=None):
         self.rxns = list(rxns)
         if substances is None:
-            substances = set.union(*[set(rxn.keys()) for rxn in self.rxns])
+            if self.rxns:
+                substances = set.union(*[set(rxn.keys()) for rxn in self.rxns])
+            else:
+                substances = set()
 
         if sort_substances is None:
             if isinstance(substances, (OrderedDict, tuple, list, str)):

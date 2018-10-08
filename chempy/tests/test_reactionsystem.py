@@ -43,6 +43,12 @@ def test_ReactionSystem():
     with pytest.raises(ValueError):
         rs['r2']
 
+    empty_rs = ReactionSystem([])
+    rs2 = empty_rs + rs
+    assert rs2 == rs
+    rs3 = rs + empty_rs
+    assert rs3 == rs
+
 
 @requires(parsing_library)
 def test_ReactionSystem__missing_substances_from_keys():
