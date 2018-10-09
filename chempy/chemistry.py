@@ -493,8 +493,8 @@ class Reaction(object):
                 substance_keys = substance_keys.split()
         return to_reaction(string, substance_keys, cls._str_arrow, cls, globals_, **kwargs)
 
-    def copy(self, **kwargs):
-        return self.__class__(**{k: kwargs.get(k, getattr(self, k)) for k in self._all_attr})
+    def copy(self, checks=(), **kwargs):
+        return self.__class__(checks=checks, **{k: kwargs.get(k, getattr(self, k)) for k in self._all_attr})
 
     def check_any_effect(self):
         """ Checks if the reaction has any effect """

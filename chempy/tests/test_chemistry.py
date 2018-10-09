@@ -134,6 +134,11 @@ def test_Reaction__from_string():
     assert Reaction.from_string(str(r4), 'H+ OH- H2O') == r4
     assert Reaction.from_string(str(r4), None) == r4
 
+    r5 = Reaction.from_string("H2O2 -> 0.5 O2 + H2O", checks=[
+        c for c in Reaction.default_checks if c != 'all_integral'])
+    r6 = r5.copy()
+    assert r5 == r6
+
 
 @requires(parsing_library, units_library)
 def test_Reaction_from_string__units():
