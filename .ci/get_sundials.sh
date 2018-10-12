@@ -15,6 +15,9 @@ if [[ $VERSION == "3.1.1" ]]; then
 elif [[ $VERSION == "3.1.2" ]]; then
     SUNDIALS_FNAME="sundials-3.1.2.tar.gz"
     SUNDIALS_MD5="63304dafc935c94a0ad37832085384bc"
+elif [[ $VERSION == "3.2.0" ]]; then
+    SUNDIALS_FNAME="sundials-3.2.0.tar.gz"
+    SUNDIALS_MD5="669e05565d3294478848ed497ac35a6e"
 elif [[ $VERSION == "2.7.0" ]]; then
     SUNDIALS_FNAME="sundials-2.7.0.tar.gz"
     SUNDIALS_MD5="c304631b9bc82877d7b0e9f4d4fd94d3"
