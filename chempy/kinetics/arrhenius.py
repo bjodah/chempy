@@ -53,7 +53,7 @@ def _get_R(constants=None, units=None):
             mol = units.mol
             R *= J/mol/K
     else:
-        R = constants.molar_gas_constant
+        R = constants.molar_gas_constant.simplified
     return R
 
 
@@ -208,11 +208,9 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
 
 
 class ArrheniusParamWithUnits(ArrheniusParam):
-    def __call__(self, state, constants=default_constants, units=default_units,
-                 backend=None):
+    def __call__(self, state, constants=default_constants, units=default_units, backend=None):
         """ See :func:`chempy.arrhenius.arrhenius_equation`. """
-        return super(ArrheniusParamWithUnits, self).__call__(
-            state, constants, units, backend)
+        return super(ArrheniusParamWithUnits, self).__call__(state, constants, units, backend)
 
     def as_RateExpr(self, unique_keys=None, constants=default_constants, units=default_units):
         return super(ArrheniusParamWithUnits, self).as_RateExpr(unique_keys, constants, units)
