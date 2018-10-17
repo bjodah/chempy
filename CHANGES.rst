@@ -8,6 +8,10 @@ v0.7.1
 ======
 - Updated requirements on upstream packages
 
+v0.6.12
+=======
+- Fixed bug with quantities.constants when used with Arrhenius class
+
 v0.6.11
 =======
 - Fixed an issue with PuLP under FreeBSD (gh-109)
