@@ -74,7 +74,7 @@ def mk_Radiolytic(*doserate_names):
 
     Parameters
     ----------
-    \*doserate_names : str instances
+    \\*doserate_names : str instances
         Default: ('',)
 
 
@@ -215,6 +215,10 @@ class Arrhenius(Expr):
 
     def __call__(self, variables, backend=math, **kwargs):
         A, Ea_over_R = self.all_args(variables, backend=backend, **kwargs)
+        try:
+            Ea_over_R = Ea_over_R.simplified
+        except AttributeError:
+            pass
         return A*backend.exp(-Ea_over_R/variables['temperature'])
 
 
