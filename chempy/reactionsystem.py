@@ -632,7 +632,7 @@ class ReactionSystem(object):
         --------
         >>> s = 'Cu+2 + NH3 -> CuNH3+2'
         >>> import re
-        >>> substances = re.split(' \+ | -> ', s)
+        >>> substances = re.split(r' \+ | -> ', s)
         >>> rsys = ReactionSystem.from_string(s, substances)
         >>> rsys.composition_balance_vectors()
         ([[2, 0, 2], [0, 3, 3], [0, 1, 1], [1, 0, 1]], [0, 1, 7, 29])

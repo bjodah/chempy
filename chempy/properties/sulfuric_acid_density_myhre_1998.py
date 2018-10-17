@@ -95,7 +95,7 @@ reference = {
     'pages': (617, 622),
     'author': 'Cathrine E. L. Myhre and Claus J. Nielsen and Ole W. Saastad',
     'title': 'Density and Surface Tension of Aqueous H2{SO}4 at Low Temperature',
-    'journal': 'Journal of Chemical {\&} Engineering Data'
+    'journal': r'Journal of Chemical {\&} Engineering Data'
 }
 
 

@@ -4,11 +4,13 @@ from __future__ import (absolute_import, division, print_function)
 
 import math
 
+from chempy.chemistry import Reaction
+from chempy.util.testing import requires
+from chempy.units import units_library, allclose, default_units as u
+
 from ..arrhenius import (
     arrhenius_equation, ArrheniusParam, ArrheniusParamWithUnits
 )
-from chempy.util.testing import requires
-from chempy.units import default_units, units_library
 
 
 def test_arrhenius_equation():
@@ -23,10 +25,17 @@ def test_ArrheniusParam():
 
 @requires(units_library)
 def test_ArrheniusParamWithUnits():
-    s = default_units.second
-    mol = default_units.mol
-    J = default_units.joule
-    K = default_units.kelvin
-    k = ArrheniusParamWithUnits(1e10/s, 42e3 * J/mol)(273.15*K)
-    ref = 1e10/s * math.exp(-42e3/(8.3145*273.15))
+    s = u.second
+    mol = u.mol
+    J = u.joule
+    K = u.kelvin
+    act_J__mol = 42e3
+    ap = ArrheniusParamWithUnits(1e10/s, act_J__mol * J/mol)
+    freezing_K = 273.15
+    k = ap(freezing_K*K)
+    ref = 1e10/s * math.exp(-act_J__mol/(8.3145*freezing_K))
     assert abs((k - ref)/ref) < 1e-4
+
+    r = Reaction({'H2O2': 1}, {'OH': 2}, ap)
+    ratc = r.rate_expr().rate_coeff({'temperature': freezing_K*u.K})
+    assert allclose(ratc, ref, rtol=1e-4)
