@@ -62,7 +62,7 @@ def test_GibbsEqConst__unique_keys():
 @requires('sympy')
 def test_GibbsEqConst__latex():
     import sympy
-    DH, DS, R, T = sympy.symbols('\Delta\ H \Delta\ S R T')
+    DH, DS, R, T = sympy.symbols(r'\Delta\ H \Delta\ S R T')
     gee = GibbsEqConst([DH/R, DS/R])
     res = gee.eq_const({'temperature': T}, backend=sympy)
     ref = sympy.exp(-(DH - T*DS)/(R*T))
