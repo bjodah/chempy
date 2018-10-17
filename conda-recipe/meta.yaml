@@ -1,5 +1,9 @@
 {% set name = "chempy" %}
-{% set version = "0.7.3.dev0+git" %}
+{% set version = GIT_DESCRIBE_TAG | replace("v", "") %}
+{% set number = GIT_DESCRIBE_NUMBER | int %}
+{% if number > 0 %}
+   {% set version = version + ".post" + GIT_DESCRIBE_NUMBER %}
+{% endif %}
 
 package:
   name: {{ name|lower }}
@@ -26,7 +30,7 @@ requirements:
     - quantities >=0.12.1
     - pulp >=1.6.8
     - pyneqsys >=0.5.4
-    - pyodesys >=0.12.3
+    - pyodesys >=0.12.4
     - pyparsing >=2.0.3
     - sym >=0.3.4
     - notebook

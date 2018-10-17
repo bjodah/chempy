@@ -18,15 +18,6 @@ license = 'BSD'
 
 RELEASE_VERSION = os.environ.get('%s_RELEASE_VERSION' % pkg_name.upper(), '')  # v*
 
-# http://conda.pydata.org/docs/build.html#environment-variables-set-during-the-build-process
-if os.environ.get('CONDA_BUILD', '0') == '1':
-    try:
-        RELEASE_VERSION = 'v' + io.open(
-            '__conda_version__.txt', 'rt', encoding='utf-8'
-        ).readline().rstrip()
-    except IOError:
-        pass
-
 
 def _path_under_setup(*args):
     return os.path.join(os.path.dirname(__file__), *args)
@@ -52,7 +43,8 @@ else:
         else:
             if 'develop' not in sys.argv:
                 warnings.warn("Using git to derive version: dev-branches may compete.")
-                __version__ = re.sub('v([0-9.]+)-(\d+)-(\w+)', r'\1.post\2+\3', _git_version)  # .dev < '' < .post
+                _ver_tmplt = r'\1.post\2' if os.environ.get('CONDA_BUILD', '0') == '1' else r'\1.post\2+\3'
+                __version__ = re.sub('v([0-9.]+)-(\d+)-(\S+)', _ver_tmplt, _git_version)  # .dev < '' < .post
 
 submodules = [
     'chempy.electrochemistry',
@@ -96,7 +88,7 @@ if not len(long_descr) > 100:
 _author, _author_email = open(_path_under_setup('AUTHORS'), 'rt').readline().split('<')
 
 extras_req = {
-    'integrators': ['pyodeint>=0.10.1', 'pycvodes>=0.11.6', 'pygslodeiv2>=0.9.1'],
+    'integrators': ['pyodeint>=0.10.1', 'pycvodes>=0.11.9', 'pygslodeiv2>=0.9.1'],
     'solvers': ['pykinsol>=0.1.3'],
     'native': ['pycompilation>=0.4.3', 'pycodeexport>=0.1.2', 'appdirs'],
     'docs': ['Sphinx', 'sphinx_rtd_theme', 'numpydoc'],
@@ -120,7 +112,7 @@ setup_kwargs = dict(
     install_requires=[
         'numpy>1.11.3', 'scipy>=1.0.1', 'matplotlib>=2.2.3',
         'sympy>=1.1.1,!=1.2', 'quantities>=0.12.1', 'pyneqsys>=0.5.4',
-        'pyodesys>=0.12.3', 'pyparsing>=2.0.3', 'sym>=0.3.4', 'jupyter',
+        'pyodesys>=0.12.4', 'pyparsing>=2.0.3', 'sym>=0.3.4', 'jupyter',
         'pulp>=1.6.8',
         # 'dot2tex>=2.9.0'
     ],
