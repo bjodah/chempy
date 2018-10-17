@@ -6,7 +6,9 @@ import math
 import pytest
 
 from chempy import Reaction, ReactionSystem, Substance
-from chempy.units import allclose, Backend, to_unitless, units_library, default_units as u
+from chempy.units import (
+    allclose, Backend, to_unitless, units_library, default_constants, default_units as u
+)
 from chempy.util._expr import Expr
 from chempy.util.parsing import parsing_library
 from chempy.util.testing import requires
@@ -166,16 +168,23 @@ def test_specialfraction_rateexpr__units():
         ('k_HBr', alt_k), ('kprime_HBr', alt_kprime)]))
 
 
-@requires(units_library)
-def test_ArrheniusMassAction__units():
-    A, Ea_over_R = 1.2e11/u.molar**2/u.second, 40e3/8.3145*u.kelvin
-    ama = MassAction(Arrhenius([A, Ea_over_R]))
+@requires(units_library, 'numpy')
+@pytest.mark.parametrize('R_from_constants', [False, True])
+def test_ArrheniusMassAction__units(R_from_constants):
+    import numpy as np
+    Ea = 40e3*u.J/u.mol
+    R = default_constants.molar_gas_constant if R_from_constants else (8.3145*u.J/u.mol/u.K)
+    A, Ea_over_R = 1.2e11/u.molar**2/u.second, Ea/R
+    ref1 = A*np.exp(-to_unitless(Ea_over_R/(290*u.K)))
+    arrh = Arrhenius([A, Ea_over_R])
+    assert allclose(arrh({'temperature': 290*u.K}), ref1)
+    ama = MassAction(arrh)
     r = Reaction({'A': 2, 'B': 1}, {'C': 1}, ama, {'B': 1})
     T_ = 'temperature'
 
     def ref(v):
         return 1.2e11/u.molar**2/u.second*math.exp(
-            -Ea_over_R/v[T_])*v['B']*v['A']**2
+            -Ea_over_R.simplified/v[T_])*v['B']*v['A']**2
     ma = r.rate_expr()
 
     for params in [(11.*u.molar, 13.*u.molar, 17.*u.molar, 311.2*u.kelvin),
