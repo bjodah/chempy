@@ -159,7 +159,7 @@ def number_to_scientific_latex(number, uncertainty=None, unit=None, fmt=None):
     '1.23(79)'
 
     """
-    return _number_to_X(number, uncertainty, unit, fmt, latex_of_unit, _latex_pow_10, '\,')
+    return _number_to_X(number, uncertainty, unit, fmt, latex_of_unit, _latex_pow_10, r'\,')
 
 
 def _unicode_pow_10(significand, mantissa):

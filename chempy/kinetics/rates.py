@@ -74,7 +74,7 @@ def mk_Radiolytic(*doserate_names):
 
     Parameters
     ----------
-    \*doserate_names : str instances
+    \\*doserate_names : str instances
         Default: ('',)
 
 
