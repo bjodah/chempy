@@ -1,3 +1,7 @@
+v0.7.4
+======
+- Fixed bug with quantities.constants when used with Arrhenius class
+
 v0.7.3
 ======
 - Fixed an issue with PuLP under FreeBSD (gh-109)
