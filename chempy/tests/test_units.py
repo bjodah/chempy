@@ -119,8 +119,11 @@ def test_to_unitless():
     result = to_unitless(vals, u.metre)
     assert result[0] == 0.1
     assert result[1] == 0.2
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         to_unitless([42, 43], u.metre)
+
+    with pytest.raises(ValueError):
+        to_unitless(np.array([42, 43]), u.metre)
 
     vals = [1.0, 2.0]*dm
     result = to_unitless(vals, u.metre)
