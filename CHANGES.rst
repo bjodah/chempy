@@ -1,3 +1,7 @@
+v0.7.x
+======
+- Made chempy.units.to_unitless more strict
+
 v0.7.4
 ======
 - Fixed bug with quantities.constants when used with Arrhenius class
