@@ -1,0 +1,60 @@
+chempy.kinetics package
+=======================
+
+.. automodule:: chempy.kinetics
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Submodules
+----------
+
+chempy.kinetics.analysis module
+-------------------------------
+
+.. automodule:: chempy.kinetics.analysis
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.kinetics.arrhenius module
+--------------------------------
+
+.. automodule:: chempy.kinetics.arrhenius
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.kinetics.eyring module
+-----------------------------
+
+.. automodule:: chempy.kinetics.eyring
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.kinetics.integrated module
+---------------------------------
+
+.. automodule:: chempy.kinetics.integrated
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.kinetics.ode module
+--------------------------
+
+.. automodule:: chempy.kinetics.ode
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+chempy.kinetics.rates module
+----------------------------
+
+.. automodule:: chempy.kinetics.rates
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
