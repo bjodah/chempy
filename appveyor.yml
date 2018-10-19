@@ -1,13 +1,9 @@
 environment:
 
   matrix:
-    - TARGET_ARCH: x86
-      CONDA_PY: 35
-      CONDA_INSTALL_LOCN: C:\\Miniconda35
-
     - TARGET_ARCH: x64
-      CONDA_PY: 35
-      CONDA_INSTALL_LOCN: C:\\Miniconda35-x64
+      CONDA_PY: 36
+      CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
 
 platform:
     - x64
@@ -26,6 +22,6 @@ install:
 build: off
 
 test_script:
-    - "conda install --yes --quiet python pip numpy scipy matplotlib"
+    - "conda install --yes --quiet python pip numpy scipy matplotlib pytest"
     - "pip install ."
     - "pytest --pyargs chempy -ra"

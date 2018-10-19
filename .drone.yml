@@ -21,6 +21,8 @@ pipeline:
       - export CPATH=$SUN3BASE/include
       - export LIBRARY_PATH=$SUN3BASE/lib
       - export LD_LIBRARY_PATH=$SUN3BASE/lib
+      - python3 -m pip install --upgrade pip
+      - python3 -m pip uninstall -y pyodesys  # evict from cache?
       - python3 -m pip install --cache-dir ./ci_cache/pip_cache --user -e .[all]
       - python3 -c "import pycvodes"  # debug this CI config
       - git fetch -tq

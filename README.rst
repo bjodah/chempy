@@ -28,7 +28,7 @@ ChemPy
 
 About ChemPy
 ------------
-`ChemPy <https://github.com/bjodah/chempy>`_ is a `Python <https://www.python.org>`_ package useful for
+ChemPy is a `Python <https://www.python.org>`_ package useful for
 chemistry (mainly physical/inorganic/analytical chemistry). Currently it includes:
 
 - Numerical integration routines for chemical kinetics (ODE solver front-end)

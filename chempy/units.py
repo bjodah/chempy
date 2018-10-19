@@ -332,7 +332,7 @@ def to_unitless(value, new_unit=None):
     if isinstance(value, (list, tuple)):
         return np.array([to_unitless(elem, new_unit) for elem in value])
     elif isinstance(value, np.ndarray) and not hasattr(value, 'rescale'):
-        if new_unit == 1 and value.dtype != object:
+        if is_unitless(new_unit) and new_unit == 1 and value.dtype != object:
             return value
         return np.array([to_unitless(elem, new_unit) for elem in value])
     elif isinstance(value, dict):
