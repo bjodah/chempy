@@ -1,4 +1,4 @@
-v0.7.x
+v0.7.5
 ======
 - Made chempy.units.to_unitless more strict
 
