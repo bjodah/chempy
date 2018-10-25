@@ -1176,6 +1176,8 @@ def balance_stoichiometry(reactants, products, substances=None,
     _intersect = sorted(set.intersection(*map(set, (reactants, products))))
     if _intersect:
         if allow_duplicates:
+            if underdetermined is not None:
+                raise NotImplementedError("allow_duplicates currently requires underdetermined=None")
             if set(reactants) == set(products):
                 raise ValueError("cannot balance: reactants and products identical")
             for perm in product(*[(False, True)]*len(_intersect)):  # brute force (naive)
