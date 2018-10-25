@@ -1157,8 +1157,9 @@ def balance_stoichiometry(reactants, products, substances=None,
     >>> b = balance_stoichiometry({'Fe', 'O2'}, {'FeO', 'Fe2O3'}, underdetermined=None)
     >>> b == ({'Fe': 3, 'O2': 2}, {'FeO': 1, 'Fe2O3': 1})
     True
-    >>> d = balance_stoichiometry({'C', 'CO'}, {'C', 'CO', 'CO2'}, allow_duplicates=True)
+    >>> d = balance_stoichiometry({'C', 'CO'}, {'C', 'CO', 'CO2'}, underdetermined=None, allow_duplicates=True)
     >>> d == ({'CO': 2}, {'C': 1, 'CO2': 1})
+    True
 
     Returns
     -------
