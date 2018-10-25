@@ -28,7 +28,7 @@ ChemPy
 
 About ChemPy
 ------------
-`ChemPy <https://github.com/bjodah/chempy>`_ is a `Python <https://www.python.org>`_ package useful for
+ChemPy is a `Python <https://www.python.org>`_ package useful for
 chemistry (mainly physical/inorganic/analytical chemistry). Currently it includes:
 
 - Numerical integration routines for chemical kinetics (ODE solver front-end)
@@ -324,8 +324,9 @@ also e.g. empirical equations and convenience classes for them available, e.g.:
    >>> print('%.1e' % kH_O2(298.15))
    1.2e-03
 
-to get more information about e.g. this class, you may can look at the API
-`documentation <https://bjodah.github.io/chempy/latest/chempy.html#module-chempy.henry>`_ .
+to get more information about e.g. this class, you may can look at the `API documentation`_.
+
+.. _API documentation: https://bjodah.github.io/chempy/latest/chempy.html#module-chempy.henry
 
 
 Chemical kinetics (system of ordinary differential equations)
