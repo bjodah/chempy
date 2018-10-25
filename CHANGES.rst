@@ -1,3 +1,7 @@
+v0.7.6
+======
+- ``balance_stoichiometry`` got a new keyword argument "allow_duplicates" (see gh-120)
+
 v0.7.5
 ======
 - Made chempy.units.to_unitless more strict
