@@ -65,13 +65,13 @@ Simplest way to install ChemPy and its (optional) dependencies is to use the
 `conda package manager <https://conda.pydata.org/docs/>`_::
 
    $ conda install -c bjodah chempy pytest
-   $ pytest -rs --pyargs chempy
+   $ pytest -rs -W ignore::chempy.ChemPyDeprecationWarning --pyargs chempy
 
 currently conda packages are only provided for Linux. On Windows and OS X
 you will need to use ``pip`` instead::
 
-   $ pip install chempy pytest
-   $ pytest -rs --pyargs chempy
+   $ python3 -m pip install chempy pytest
+   $ python3 -m pytest -rs -W ignore::chempy.ChemPyDeprecationWarning --pyargs chempy
 
 there will a few tests which will be skipped due to some missing optional
 backends in addition to those in SciPy (used for solving systems of non-linear

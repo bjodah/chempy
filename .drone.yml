@@ -21,7 +21,6 @@ build:
     - ./.ci/grep-for-merge-blocking-token.sh
     - ./.ci/grep-for-binary-data.sh
 
-
 deploy:
 
   rsync:
