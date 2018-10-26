@@ -3,7 +3,7 @@ from __future__ import (absolute_import, division, print_function)
 
 from collections import OrderedDict, defaultdict
 from functools import reduce
-from itertools import chain
+from itertools import chain, product
 from operator import mul, add
 import math
 import warnings
@@ -1114,7 +1114,7 @@ def _solve_balancing_ilp_pulp(A):
 
 def balance_stoichiometry(reactants, products, substances=None,
                           substance_factory=Substance.from_formula,
-                          parametric_symbols=None, underdetermined=True):
+                          parametric_symbols=None, underdetermined=True, allow_duplicates=False):
     """ Balances stoichiometric coefficients of a reaction
 
     Parameters
@@ -1133,6 +1133,8 @@ def balance_stoichiometry(reactants, products, substances=None,
         across all terms). Set to ``False`` to disallow (raise ValueError) on
         e.g. "C + O2 -> CO + CO2". Set to ``None`` if you want the symbols replaced
         so that the coefficients are the smallest possible positive (non-zero) integers.
+    allow_duplicates : bool
+        If False: raises an excpetion if keys appear in both ``reactants`` and ``products``.
 
     Examples
     --------
@@ -1155,6 +1157,9 @@ def balance_stoichiometry(reactants, products, substances=None,
     >>> b = balance_stoichiometry({'Fe', 'O2'}, {'FeO', 'Fe2O3'}, underdetermined=None)
     >>> b == ({'Fe': 3, 'O2': 2}, {'FeO': 1, 'Fe2O3': 1})
     True
+    >>> d = balance_stoichiometry({'C', 'CO'}, {'C', 'CO', 'CO2'}, underdetermined=None, allow_duplicates=True)
+    >>> d == ({'CO': 2}, {'C': 1, 'CO2': 1})
+    True
 
     Returns
     -------
@@ -1168,9 +1173,34 @@ def balance_stoichiometry(reactants, products, substances=None,
         Integer, Tuple, preorder_traversal as pre
     )
 
-    _intersect = set.intersection(*map(set, (reactants, products)))
+    _intersect = sorted(set.intersection(*map(set, (reactants, products))))
     if _intersect:
-        raise ValueError("Substances on both sides: %s" % str(_intersect))
+        if allow_duplicates:
+            if underdetermined is not None:
+                raise NotImplementedError("allow_duplicates currently requires underdetermined=None")
+            if set(reactants) == set(products):
+                raise ValueError("cannot balance: reactants and products identical")
+            for perm in product(*[(False, True)]*len(_intersect)):  # brute force (naive)
+                r = set(reactants)
+                p = set(products)
+                for remove_reac, dupl in zip(perm, _intersect):
+                    if remove_reac:
+                        r.remove(dupl)
+                    else:
+                        p.remove(dupl)
+                try:
+                    result = balance_stoichiometry(
+                        r, p, substances=substances, substance_factory=substance_factory,
+                        parametric_symbols=parametric_symbols, underdetermined=underdetermined,
+                        allow_duplicates=False)
+                except Exception:
+                    continue
+                else:
+                    return result
+            else:
+                raise ValueError("Failed to remove duplicate keys: %s" % _intersect)
+        else:
+            raise ValueError("Substances on both sides: %s" % str(_intersect))
     if substances is None:
         substances = OrderedDict([(k, substance_factory(k)) for k in chain(reactants, products)])
     if isinstance(substances, str):

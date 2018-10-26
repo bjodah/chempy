@@ -389,3 +389,32 @@ def test_balance_stoichiometry__substances__underdetermined():
 def test_balance_stoichiometry__missing_product_atom():
     with pytest.raises(ValueError):  # No Al on product side
         balance_stoichiometry({'C7H5(NO2)3', 'Al', 'NH4NO3'}, {'CO', 'H2O', 'N2'})
+
+
+@requires('sympy')
+def test_balance_stoichiometry__duplicates():
+    cases = """
+C + CO + CO2 -> C + CO        # suggested solution:  C +      CO2 ->     2 CO
+C + CO + CO2 -> C +      CO2  # suggested solution:      2 CO      -> C +      CO2
+C + CO + CO2 ->     CO + CO2  # suggested solution:  C +      CO2 ->     2 CO
+C + CO       -> C + CO + CO2  # suggested solution:      2 CO      -> C +      CO2
+C +      CO2 -> C + CO + CO2  # suggested solution:  C +      CO2 ->     2 CO
+    CO + CO2 -> C + CO + CO2  # suggested solution:      2 CO      -> C +      CO2
+"""
+    for prob, sol in [l.split('#') for l in cases.strip().splitlines()]:
+        tst_r = Reaction.from_string(prob)
+        ref_r = Reaction.from_string(sol.split(':')[1])
+        tst_bal = balance_stoichiometry(tst_r.reac, tst_r.prod,
+                                        allow_duplicates=True, underdetermined=None)
+        assert Reaction(*tst_bal) == ref_r
+
+    with pytest.raises(ValueError):
+            balance_stoichiometry({'C', 'CO', 'CO2'}, {'C', 'CO', 'CO2'},
+                                  allow_duplicates=True, underdetermined=None)
+
+    gh120 = {'H4P2O7', 'HPO3', 'H2O'}, {'H4P2O7', 'HPO3'}
+    bal120 = balance_stoichiometry(*gh120, allow_duplicates=True, underdetermined=None)
+    assert bal120 == ({'HPO3': 2, 'H2O': 1}, {'H4P2O7': 1})
+
+    with pytest.raises(ValueError):
+        balance_stoichiometry(*gh120)
