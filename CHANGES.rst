@@ -8,6 +8,11 @@ v0.7.1
 ======
 - Updated requirements on upstream packages
 
+v0.6.13
+=======
+- Fix to Arrhenius
+- Fix in Reaction.copy
+
 v0.6.12
 =======
 - Fixed bug with quantities.constants when used with Arrhenius class
