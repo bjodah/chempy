@@ -1,0 +1,705 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.printing package &mdash; chempy 0.7.6 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="chempy 0.7.6 documentation" href="index.html"/>
+        <link rel="up" title="chempy package" href="chempy.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.7.6
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="chempy.html">chempy package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="chempy.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="chempy.electrochemistry.html">chempy.electrochemistry package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.kinetics.html">chempy.kinetics package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">chempy.printing package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.printing.js">chempy.printing.js module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.printing.numbers">chempy.printing.numbers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.printing.pretty">chempy.printing.pretty module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.printing.printer">chempy.printing.printer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.printing.string">chempy.printing.string module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.printing.table">chempy.printing.table module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.printing.tables">chempy.printing.tables module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.printing.tex">chempy.printing.tex module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.printing.web">chempy.printing.web module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.properties.html">chempy.properties package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.thermodynamics.html">chempy.thermodynamics package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.util.html">chempy.util package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.arrhenius">chempy.arrhenius module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.chemistry">chempy.chemistry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.debye_huckel">chempy.debye_huckel module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.einstein_smoluchowski">chempy.einstein_smoluchowski module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.electrolytes">chempy.electrolytes module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.equilibria">chempy.equilibria module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.eyring">chempy.eyring module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.henry">chempy.henry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.reactionsystem">chempy.reactionsystem module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.symbolic">chempy.symbolic module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.units">chempy.units module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">chempy</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="chempy.html">chempy package</a> &raquo;</li>
+        
+      <li>chempy.printing package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/chempy.printing.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-chempy.printing">
+<span id="chempy-printing-package"></span><h1>chempy.printing package<a class="headerlink" href="#module-chempy.printing" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-chempy.printing.js">
+<span id="chempy-printing-js-module"></span><h2>chempy.printing.js module<a class="headerlink" href="#module-chempy.printing.js" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="chempy.printing.js.JSPrinter">
+<em class="property">class </em><code class="descclassname">chempy.printing.js.</code><code class="descname">JSPrinter</code><span class="sig-paren">(</span><em>settings=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/js.html#JSPrinter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.js.JSPrinter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#chempy.printing.web.CSSPrinter" title="chempy.printing.web.CSSPrinter"><code class="xref py py-class docutils literal notranslate"><span class="pre">chempy.printing.web.CSSPrinter</span></code></a></p>
+<p>Prints javascript-enabled HTML representaions</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">doprint</span></code>(obj)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.printing.js.javascript">
+<code class="descclassname">chempy.printing.js.</code><code class="descname">javascript</code><span class="sig-paren">(</span><em>obj</em>, <em>**settings</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/js.html#javascript"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.js.javascript" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-chempy.printing.numbers">
+<span id="chempy-printing-numbers-module"></span><h2>chempy.printing.numbers module<a class="headerlink" href="#module-chempy.printing.numbers" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="chempy.printing.numbers.number_to_scientific_html">
+<code class="descclassname">chempy.printing.numbers.</code><code class="descname">number_to_scientific_html</code><span class="sig-paren">(</span><em>number</em>, <em>uncertainty=None</em>, <em>unit=None</em>, <em>fmt=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/numbers.html#number_to_scientific_html"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.numbers.number_to_scientific_html" title="Permalink to this definition">¶</a></dt>
+<dd><p>Formats a number as HTML (optionally with unit/uncertainty)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>number</strong> : float (w or w/o unit)</p>
+<p><strong>uncertainty</strong> : same as number</p>
+<p><strong>unit</strong> : unit</p>
+<p class="last"><strong>fmt</strong> : int or callable</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">number_to_scientific_html</span><span class="p">(</span><span class="mf">3.14</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;3.14&#39;</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">number_to_scientific_html</span><span class="p">(</span><span class="mf">3.14159265e-7</span><span class="p">)</span>
+<span class="go">&#39;3.1416&amp;sdot;10&lt;sup&gt;-7&lt;/sup&gt;&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">number_to_scientific_html</span><span class="p">(</span><span class="mf">1e13</span><span class="p">)</span>
+<span class="go">&#39;10&lt;sup&gt;13&lt;/sup&gt;&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">quantities</span> <span class="k">as</span> <span class="nn">pq</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">number_to_scientific_html</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">pq</span><span class="o">.</span><span class="n">m</span> <span class="o">/</span> <span class="n">pq</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+<span class="go">&#39;1.4142 m/s&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.printing.numbers.number_to_scientific_latex">
+<code class="descclassname">chempy.printing.numbers.</code><code class="descname">number_to_scientific_latex</code><span class="sig-paren">(</span><em>number</em>, <em>uncertainty=None</em>, <em>unit=None</em>, <em>fmt=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/numbers.html#number_to_scientific_latex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.numbers.number_to_scientific_latex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Formats a number as LaTeX (optionally with unit/uncertainty)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>number</strong> : float (w or w/o unit)</p>
+<p><strong>uncertainty</strong> : same as number</p>
+<p><strong>unit</strong> : unit</p>
+<p class="last"><strong>fmt</strong> : int or callable</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">number_to_scientific_latex</span><span class="p">(</span><span class="mf">3.14</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;3.14&#39;</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">number_to_scientific_latex</span><span class="p">(</span><span class="mf">3.14159265e-7</span><span class="p">)</span>
+<span class="go">&#39;3.1416\\cdot 10^{-7}&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">quantities</span> <span class="k">as</span> <span class="nn">pq</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">number_to_scientific_latex</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">pq</span><span class="o">.</span><span class="n">m</span> <span class="o">/</span> <span class="n">pq</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+<span class="go">&#39;1.4142\\,\\mathrm{\\frac{m}{s}}&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">number_to_scientific_latex</span><span class="p">(</span><span class="mf">1.23456</span><span class="p">,</span> <span class="o">.</span><span class="mi">789</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">&#39;1.23(79)&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.printing.numbers.number_to_scientific_unicode">
+<code class="descclassname">chempy.printing.numbers.</code><code class="descname">number_to_scientific_unicode</code><span class="sig-paren">(</span><em>number</em>, <em>uncertainty=None</em>, <em>unit=None</em>, <em>fmt=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/numbers.html#number_to_scientific_unicode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.numbers.number_to_scientific_unicode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Formats a number as unicode (optionally with unit/uncertainty)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>number</strong> : float (w or w/o unit)</p>
+<p><strong>uncertainty</strong> : same as number</p>
+<p><strong>unit</strong> : unit</p>
+<p class="last"><strong>fmt</strong> : int or callable</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">number_to_scientific_unicode</span><span class="p">(</span><span class="mf">3.14</span><span class="p">)</span> <span class="o">==</span> <span class="sa">u</span><span class="s1">&#39;3.14&#39;</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">number_to_scientific_unicode</span><span class="p">(</span><span class="mf">3.14159265e-7</span><span class="p">)</span> <span class="o">==</span> <span class="sa">u</span><span class="s1">&#39;3.1416·10⁻⁷&#39;</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">quantities</span> <span class="k">as</span> <span class="nn">pq</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">number_to_scientific_unicode</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">pq</span><span class="o">.</span><span class="n">m</span> <span class="o">/</span> <span class="n">pq</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+<span class="go">&#39;1.4142 m/s&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.printing.numbers.roman">
+<code class="descclassname">chempy.printing.numbers.</code><code class="descname">roman</code><span class="sig-paren">(</span><em>num</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/numbers.html#roman"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.numbers.roman" title="Permalink to this definition">¶</a></dt>
+<dd><p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">roman</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">&#39;IV&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">roman</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
+<span class="go">&#39;XVII&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.printing.pretty">
+<span id="chempy-printing-pretty-module"></span><h2>chempy.printing.pretty module<a class="headerlink" href="#module-chempy.printing.pretty" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="chempy.printing.pretty.UnicodePrinter">
+<em class="property">class </em><code class="descclassname">chempy.printing.pretty.</code><code class="descname">UnicodePrinter</code><span class="sig-paren">(</span><em>settings=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/pretty.html#UnicodePrinter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.pretty.UnicodePrinter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#chempy.printing.string.StrPrinter" title="chempy.printing.string.StrPrinter"><code class="xref py py-class docutils literal notranslate"><span class="pre">chempy.printing.string.StrPrinter</span></code></a></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="67%" />
+<col width="33%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>printmethod_attr</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">doprint</span></code>(obj)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.printing.pretty.unicode_">
+<code class="descclassname">chempy.printing.pretty.</code><code class="descname">unicode_</code><span class="sig-paren">(</span><em>obj</em>, <em>**settings</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/pretty.html#unicode_"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.pretty.unicode_" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-chempy.printing.printer">
+<span id="chempy-printing-printer-module"></span><h2>chempy.printing.printer module<a class="headerlink" href="#module-chempy.printing.printer" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="chempy.printing.printer.Printer">
+<em class="property">class </em><code class="descclassname">chempy.printing.printer.</code><code class="descname">Printer</code><span class="sig-paren">(</span><em>settings=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/printer.html#Printer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.printer.Printer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="67%" />
+<col width="33%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>printmethod_attr</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#chempy.printing.printer.Printer.doprint" title="chempy.printing.printer.Printer.doprint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">doprint</span></code></a>(obj)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="chempy.printing.printer.Printer.doprint">
+<code class="descname">doprint</code><span class="sig-paren">(</span><em>obj</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/printer.html#Printer.doprint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.printer.Printer.doprint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="chempy.printing.printer.Printer.printmethod_attr">
+<code class="descname">printmethod_attr</code><em class="property"> = None</em><a class="headerlink" href="#chempy.printing.printer.Printer.printmethod_attr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.printing.string">
+<span id="chempy-printing-string-module"></span><h2>chempy.printing.string module<a class="headerlink" href="#module-chempy.printing.string" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="chempy.printing.string.StrPrinter">
+<em class="property">class </em><code class="descclassname">chempy.printing.string.</code><code class="descname">StrPrinter</code><span class="sig-paren">(</span><em>settings=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/string.html#StrPrinter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.string.StrPrinter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#chempy.printing.printer.Printer" title="chempy.printing.printer.Printer"><code class="xref py py-class docutils literal notranslate"><span class="pre">chempy.printing.printer.Printer</span></code></a></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="67%" />
+<col width="33%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>printmethod_attr</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">doprint</span></code>(obj)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.printing.string.str_">
+<code class="descclassname">chempy.printing.string.</code><code class="descname">str_</code><span class="sig-paren">(</span><em>obj</em>, <em>**settings</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/string.html#str_"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.string.str_" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-chempy.printing.table">
+<span id="chempy-printing-table-module"></span><h2>chempy.printing.table module<a class="headerlink" href="#module-chempy.printing.table" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="chempy.printing.table.Table">
+<em class="property">class </em><code class="descclassname">chempy.printing.table.</code><code class="descname">Table</code><span class="sig-paren">(</span><em>rows</em>, <em>headers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/table.html#Table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.table.Table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.printing.table.as_per_substance_html_table">
+<code class="descclassname">chempy.printing.table.</code><code class="descname">as_per_substance_html_table</code><span class="sig-paren">(</span><em>cont</em>, <em>substances=None</em>, <em>header=None</em>, <em>substance_factory=&lt;bound method Substance.from_formula of &lt;class 'chempy.chemistry.Substance'&gt;&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/table.html#as_per_substance_html_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.table.as_per_substance_html_table" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-chempy.printing.tables">
+<span id="chempy-printing-tables-module"></span><h2>chempy.printing.tables module<a class="headerlink" href="#module-chempy.printing.tables" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="chempy.printing.tables.BimolecularTable">
+<em class="property">class </em><code class="descclassname">chempy.printing.tables.</code><code class="descname">BimolecularTable</code><span class="sig-paren">(</span><em>idx_rxn_pairs</em>, <em>substances</em>, <em>colors=None</em>, <em>missing=None</em>, <em>missing_color='eee8aa'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/tables.html#BimolecularTable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.tables.BimolecularTable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">chempy.printing.tables._RxnTable</span></code></p>
+<p>Table of bimolecular reactions</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>idx_rxn_pairs</strong> : iterable of (int, Reaction) pairs</p>
+<p><strong>substances</strong> : dict</p>
+<blockquote>
+<div><p>Mapping substance key to Substance instance.</p>
+</div></blockquote>
+<p><strong>sinks_sources_disjoint</strong> : tuple, None or True</p>
+<blockquote>
+<div><p>Colors sinks &amp; sources. When <code class="docutils literal notranslate"><span class="pre">True</span></code> <code class="xref py py-meth docutils literal notranslate"><span class="pre">sinks_sources_disjoint()</span></code> is called.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">string: html representation</p>
+<p class="last">list: reactions not considered</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_ReactionSystem</span></code>(rsys[,&nbsp;color_categories])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="chempy.printing.tables.UnimolecularTable">
+<em class="property">class </em><code class="descclassname">chempy.printing.tables.</code><code class="descname">UnimolecularTable</code><span class="sig-paren">(</span><em>idx_rxn_pairs</em>, <em>substances</em>, <em>colors=None</em>, <em>missing=None</em>, <em>missing_color='eee8aa'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/tables.html#UnimolecularTable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.tables.UnimolecularTable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">chempy.printing.tables._RxnTable</span></code></p>
+<p>Table of unimolecular reactions in a ReactionSystem</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>rsys</strong> : ReactionSystem</p>
+<p><strong>sinks_sources_disjoint</strong> : tuple, None or True</p>
+<blockquote>
+<div><p>Colors sinks &amp; sources. When <code class="docutils literal notranslate"><span class="pre">True</span></code> <code class="xref py py-meth docutils literal notranslate"><span class="pre">sinks_sources_disjoint()</span></code> is called.</p>
+</div></blockquote>
+<p><strong>html_cell_label</strong> : Reaction formatting callback</p>
+<blockquote>
+<div><p>The function takes an integer, a Reaction instance and a dict of Substances as
+parameters and return a string.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">string: html representation</p>
+<p class="last">list: reactions not considered</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_ReactionSystem</span></code>(rsys[,&nbsp;color_categories])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.printing.tex">
+<span id="chempy-printing-tex-module"></span><h2>chempy.printing.tex module<a class="headerlink" href="#module-chempy.printing.tex" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="chempy.printing.tex.LatexPrinter">
+<em class="property">class </em><code class="descclassname">chempy.printing.tex.</code><code class="descname">LatexPrinter</code><span class="sig-paren">(</span><em>settings=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/tex.html#LatexPrinter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.tex.LatexPrinter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#chempy.printing.string.StrPrinter" title="chempy.printing.string.StrPrinter"><code class="xref py py-class docutils literal notranslate"><span class="pre">chempy.printing.string.StrPrinter</span></code></a></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="67%" />
+<col width="33%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>printmethod_attr</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">doprint</span></code>(obj)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.printing.tex.latex">
+<code class="descclassname">chempy.printing.tex.</code><code class="descname">latex</code><span class="sig-paren">(</span><em>obj</em>, <em>**settings</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/tex.html#latex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.tex.latex" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-chempy.printing.web">
+<span id="chempy-printing-web-module"></span><h2>chempy.printing.web module<a class="headerlink" href="#module-chempy.printing.web" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="chempy.printing.web.CSSPrinter">
+<em class="property">class </em><code class="descclassname">chempy.printing.web.</code><code class="descname">CSSPrinter</code><span class="sig-paren">(</span><em>settings=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/web.html#CSSPrinter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.web.CSSPrinter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#chempy.printing.web.HTMLPrinter" title="chempy.printing.web.HTMLPrinter"><code class="xref py py-class docutils literal notranslate"><span class="pre">chempy.printing.web.HTMLPrinter</span></code></a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">doprint</span></code>(obj)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="chempy.printing.web.HTMLPrinter">
+<em class="property">class </em><code class="descclassname">chempy.printing.web.</code><code class="descname">HTMLPrinter</code><span class="sig-paren">(</span><em>settings=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/web.html#HTMLPrinter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.web.HTMLPrinter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#chempy.printing.string.StrPrinter" title="chempy.printing.string.StrPrinter"><code class="xref py py-class docutils literal notranslate"><span class="pre">chempy.printing.string.StrPrinter</span></code></a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">doprint</span></code>(obj)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="chempy.printing.web.HTMLPrinter.printmethod_attr">
+<code class="descname">printmethod_attr</code><em class="property"> = '_html'</em><a class="headerlink" href="#chempy.printing.web.HTMLPrinter.printmethod_attr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.printing.web.css">
+<code class="descclassname">chempy.printing.web.</code><code class="descname">css</code><span class="sig-paren">(</span><em>obj</em>, <em>**settings</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/web.html#css"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.web.css" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="chempy.printing.web.html">
+<code class="descclassname">chempy.printing.web.</code><code class="descname">html</code><span class="sig-paren">(</span><em>obj</em>, <em>**settings</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/printing/web.html#html"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.printing.web.html" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.7.6',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
