@@ -112,6 +112,12 @@ def test_Reaction():
     assert r5.reac == lhs5 and r5.prod == rhs5
 
 
+def test_Reaction__copy():
+    r1 = Reaction({'H2O'}, {'H2O'}, checks=())
+    r2 = r1.copy()
+    assert r1 == r2
+
+
 @requires(parsing_library)
 def test_Reaction__from_string():
     r = Reaction.from_string("H2O -> H+ + OH-; 1e-4", 'H2O H+ OH-'.split())
