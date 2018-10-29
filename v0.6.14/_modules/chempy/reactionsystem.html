@@ -1,0 +1,993 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.reactionsystem &mdash; chempy 0.6.14 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="chempy 0.6.14 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.6.14
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">chempy</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>chempy.reactionsystem</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.reactionsystem</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span><span class="p">,</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">chain</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">.chemistry</span> <span class="k">import</span> <span class="n">Reaction</span><span class="p">,</span> <span class="n">Substance</span>
+<span class="kn">from</span> <span class="nn">.units</span> <span class="k">import</span> <span class="n">to_unitless</span>
+<span class="kn">from</span> <span class="nn">.util.pyutil</span> <span class="k">import</span> <span class="n">deprecated</span>
+
+
+<div class="viewcode-block" id="ReactionSystem"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem">[docs]</a><span class="k">class</span> <span class="nc">ReactionSystem</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Collection of reactions forming a system (model).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rxns : sequence</span>
+<span class="sd">         Sequence of :py:class:`Reaction` instances.</span>
+<span class="sd">    substances : OrderedDict or string or None</span>
+<span class="sd">         Mapping str -&gt; Substance instances, None =&gt; deduced from reactions.</span>
+<span class="sd">         If a set is passed as substances (or a string which is split), then</span>
+<span class="sd">         ``substance_factory`` will be used to construct substances from the items.</span>
+<span class="sd">    name : string (optional)</span>
+<span class="sd">         Name of ReactionSystem (e.g. model name / citation key).</span>
+<span class="sd">    checks : iterable of str, optional</span>
+<span class="sd">        Raises ``ValueError`` if any method ``check_%s`` returns False</span>
+<span class="sd">        for all ``%s`` in ``checks``. Default: ``ReactionSystem.default_checks``.</span>
+<span class="sd">    substance_factory : callback</span>
+<span class="sd">        Could also be e.g. :meth:`Substance.from_formula`.</span>
+<span class="sd">    sort_substances : bool</span>
+<span class="sd">        Sort keys in substances lexicographically by key? default: ``None`` implies</span>
+<span class="sd">        True unless substances is either one of ``OrderedDict``, list, tuple or str.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rxns : list of objects</span>
+<span class="sd">        Sequence of :class:`Reaction` instances.</span>
+<span class="sd">    substances : OrderedDict or string or iterable of strings/Substance</span>
+<span class="sd">        Mapping substance name to substance index.</span>
+<span class="sd">    ns : int</span>
+<span class="sd">        Number of substances.</span>
+<span class="sd">    nr : int</span>
+<span class="sd">        Number of reactions.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from chempy import Reaction</span>
+<span class="sd">    &gt;&gt;&gt; r1 = Reaction({&#39;R1&#39;: 1}, {&#39;P1&#39;: 1}, 42.0)</span>
+<span class="sd">    &gt;&gt;&gt; rsys = ReactionSystem([r1], &#39;R1 P1&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; rsys.as_per_substance_array({&#39;R1&#39;: 2, &#39;P1&#39;: 3})</span>
+<span class="sd">    array([2., 3.])</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        When any reaction occurs more than once</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_BaseReaction</span> <span class="o">=</span> <span class="n">Reaction</span>
+    <span class="n">_BaseSubstance</span> <span class="o">=</span> <span class="n">Substance</span>
+    <span class="n">default_checks</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;balance&#39;</span><span class="p">,</span> <span class="s1">&#39;substance_keys&#39;</span><span class="p">,</span> <span class="s1">&#39;duplicate&#39;</span><span class="p">,</span> <span class="s1">&#39;duplicate_names&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rxns</span><span class="p">,</span> <span class="n">substances</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">checks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">substance_factory</span><span class="o">=</span><span class="n">Substance</span><span class="p">,</span> <span class="n">missing_substances_from_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">sort_substances</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">rxns</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">substances</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">:</span>
+                <span class="n">substances</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="nb">set</span><span class="p">(</span><span class="n">rxn</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">substances</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">sort_substances</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">substances</span><span class="p">,</span> <span class="p">(</span><span class="n">OrderedDict</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">str</span><span class="p">)):</span>
+                <span class="n">sort_substances</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sort_substances</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">substances</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">substances</span> <span class="o">=</span> <span class="n">substances</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">substances</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">set</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">substances</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="s1">&#39; &#39;</span> <span class="ow">in</span> <span class="n">substances</span><span class="p">:</span>
+                <span class="n">substances</span> <span class="o">=</span> <span class="n">substances</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">substances</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([</span>
+                <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">substance_factory</span><span class="p">(</span><span class="n">s</span><span class="p">))</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">substances</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">Substance</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">substances</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">substances</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">substances</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">substances</span><span class="p">,</span> <span class="s1">&#39;values&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">Substance</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">substances</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">substances</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">substances</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">substances</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">substance_factory</span><span class="p">(</span><span class="n">k</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">substances</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">missing_substances_from_keys</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">set</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="nb">set</span><span class="p">(</span><span class="n">rxn</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">])</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">substance_factory</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+        <span class="k">for</span> <span class="n">check</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">default_checks</span> <span class="k">if</span> <span class="n">checks</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">checks</span><span class="p">):</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;check_&#39;</span><span class="o">+</span><span class="n">check</span><span class="p">)(</span><span class="n">throw</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">sort_substances</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sort_substances_inplace</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ReactionSystem.split"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.split">[docs]</a>    <span class="k">def</span> <span class="nf">split</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Splits the reaction system into multiple disjoint reaction systems. &quot;&quot;&quot;</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># tuples of (list, set) -- list of reactions, set of substance keys</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">gr</span><span class="p">,</span> <span class="n">gs</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">:</span>  <span class="c1"># check if reaction is part of group, break out</span>
+                <span class="n">rks</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                <span class="n">group_found</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">rks</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">gs</span><span class="p">:</span>
+                        <span class="n">gr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                        <span class="n">gs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">rks</span><span class="p">)</span>
+                        <span class="n">group_found</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">break</span>
+                <span class="k">if</span> <span class="n">group_found</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># reaction did not fit any group</span>
+                <span class="n">groups</span><span class="o">.</span><span class="n">append</span><span class="p">(([</span><span class="n">i</span><span class="p">],</span> <span class="nb">set</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="c1"># We might have too many groups as this point, we will now recursively fuse groups</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">groups</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>  <span class="c1"># do groups share a substance?</span>
+                    <span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">groups</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">groups</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">groups</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">):</span>
+                <span class="k">break</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">[</span><span class="n">ri</span><span class="p">]</span> <span class="k">for</span> <span class="n">ri</span> <span class="ow">in</span> <span class="n">gr</span><span class="p">],</span>
+            <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">gs</span><span class="p">]),</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span> <span class="k">for</span> <span class="n">gr</span><span class="p">,</span> <span class="n">gs</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.categorize_substances"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.categorize_substances">[docs]</a>    <span class="k">def</span> <span class="nf">categorize_substances</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns categories of substance keys (e.g. nonparticipating, unaffected etc.)</span>
+
+<span class="sd">        Some substances are only *accumulated* (i.e. irreversibly formed) and are never net</span>
+<span class="sd">        reactants in any reactions, others are *depleted* (they are never net proucts in</span>
+<span class="sd">        any reaction). Some substanaces are *unaffected* since they appear with equal coefficients on</span>
+<span class="sd">        both reactant and product side, while some may be *nonparticipating* (they don&#39;t appear on</span>
+<span class="sd">        either side and have thus no effect on the reactionsystem).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        \\*\\*kwargs:</span>
+<span class="sd">             Keyword arguments passed on to :class:`ReactionSystem`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict of sets of substance keys, the dictionary has the following keys:</span>
+<span class="sd">            - ``&#39;accumulated&#39;``: keys only participating as net products.</span>
+<span class="sd">            - ``&#39;depleted&#39;``: keys only participating as net reactants.</span>
+<span class="sd">            - ``&#39;unaffected&#39;``: keys appearing in reactions but with zero net effect.</span>
+<span class="sd">            - ``&#39;nonparticipating&#39;``: keys not appearing in any reactions.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+        <span class="n">irrev_rxns</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">irrev_rxns</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">as_reactions</span><span class="p">())</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">irrev_rxns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">irrev_rsys</span> <span class="o">=</span> <span class="n">ReactionSystem</span><span class="p">(</span><span class="n">irrev_rxns</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">all_r</span> <span class="o">=</span> <span class="n">irrev_rsys</span><span class="o">.</span><span class="n">all_reac_stoichs</span><span class="p">()</span>
+        <span class="n">all_p</span> <span class="o">=</span> <span class="n">irrev_rsys</span><span class="o">.</span><span class="n">all_prod_stoichs</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">all_r</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">all_p</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Expected positive stoichiometric coefficients&quot;</span><span class="p">)</span>
+        <span class="n">net</span> <span class="o">=</span> <span class="n">all_p</span> <span class="o">-</span> <span class="n">all_r</span>
+        <span class="n">accumulated</span><span class="p">,</span> <span class="n">depleted</span><span class="p">,</span> <span class="n">unaffected</span><span class="p">,</span> <span class="n">nonparticipating</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(),</span> <span class="nb">set</span><span class="p">(),</span> <span class="nb">set</span><span class="p">(),</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sk</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">irrev_rsys</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">in_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">net</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">in_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">net</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">in_r</span> <span class="ow">and</span> <span class="n">in_p</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">elif</span> <span class="n">in_r</span><span class="p">:</span>
+                <span class="n">depleted</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">sk</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">in_p</span><span class="p">:</span>
+                <span class="n">accumulated</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">sk</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">all_p</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+                    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">all_p</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">all_r</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]),</span> <span class="s2">&quot;Open issue at github.com/bjodah/chempy&quot;</span>
+                    <span class="n">unaffected</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">sk</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">nonparticipating</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">sk</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">accumulated</span><span class="o">=</span><span class="n">accumulated</span><span class="p">,</span>
+            <span class="n">depleted</span><span class="o">=</span><span class="n">depleted</span><span class="p">,</span>
+            <span class="n">unaffected</span><span class="o">=</span><span class="n">unaffected</span><span class="p">,</span>
+            <span class="n">nonparticipating</span><span class="o">=</span><span class="n">nonparticipating</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.sort_substances_inplace"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.sort_substances_inplace">[docs]</a>    <span class="k">def</span> <span class="nf">sort_substances_inplace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">kv</span><span class="p">:</span> <span class="n">kv</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="sd">&quot;&quot;&quot; Sorts the OrderedDict attribute ``substances`` &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">substances</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">))</span></div>
+
+    <span class="k">def</span> <span class="nf">_category_colors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checks</span><span class="o">=</span><span class="p">()):</span>
+        <span class="n">colors</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">categories</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorize_substances</span><span class="p">(</span><span class="n">checks</span><span class="o">=</span><span class="n">checks</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">categories</span><span class="p">[</span><span class="s1">&#39;accumulated&#39;</span><span class="p">]:</span>
+            <span class="n">colors</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;90ee90&#39;</span><span class="p">,</span> <span class="s1">&#39;008000&#39;</span><span class="p">)</span>  <span class="c1"># LightGreen, Green</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">categories</span><span class="p">[</span><span class="s1">&#39;depleted&#39;</span><span class="p">]:</span>
+            <span class="n">colors</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;ffb6c1&#39;</span><span class="p">,</span> <span class="s1">&#39;c71585&#39;</span><span class="p">)</span>  <span class="c1"># LightPink, MediumVioletRed</span>
+        <span class="k">return</span> <span class="n">colors</span>
+
+<div class="viewcode-block" id="ReactionSystem.html"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.html">[docs]</a>    <span class="k">def</span> <span class="nf">html</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">with_param</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">checks</span><span class="o">=</span><span class="p">(),</span> <span class="n">color_categories</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">print_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns a string with an HTML representation</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        with_param : bool</span>
+<span class="sd">        checks : tuple</span>
+<span class="sd">        color_categories : bool</span>
+<span class="sd">        split : bool</span>
+<span class="sd">        print_fn : callable</span>
+<span class="sd">            default: :func:`chempy.printing.html`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">print_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">.printing</span> <span class="k">import</span> <span class="n">html</span> <span class="k">as</span> <span class="n">print_fn</span>
+
+        <span class="k">if</span> <span class="n">split</span><span class="p">:</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">checks</span><span class="o">=</span><span class="n">checks</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s1">&#39;&lt;br&gt;&lt;hl&gt;&lt;br&gt;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rs</span><span class="o">.</span><span class="n">html</span><span class="p">(</span><span class="n">with_param</span><span class="p">)</span> <span class="k">for</span> <span class="n">rs</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">)</span>
+        <span class="n">colors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_category_colors</span><span class="p">(</span><span class="n">checks</span><span class="o">=</span><span class="n">checks</span><span class="p">)</span> <span class="k">if</span> <span class="n">color_categories</span> <span class="k">else</span> <span class="p">{}</span>
+        <span class="k">return</span> <span class="n">print_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">colors</span><span class="o">=</span><span class="n">colors</span><span class="p">,</span> <span class="n">substances</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.string"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.string">[docs]</a>    <span class="k">def</span> <span class="nf">string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">with_param</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">.printing</span> <span class="k">import</span> <span class="n">str_</span>
+        <span class="k">return</span> <span class="n">str_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">with_param</span><span class="o">=</span><span class="n">with_param</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># jupyter notebook hook</span>
+        <span class="kn">from</span> <span class="nn">.printing</span> <span class="k">import</span> <span class="n">javascript</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">html</span><span class="p">(</span><span class="n">print_fn</span><span class="o">=</span><span class="n">javascript</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ReactionSystem.check_duplicate"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.check_duplicate">[docs]</a>    <span class="k">def</span> <span class="nf">check_duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">throw</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Raies ValueError if there are duplicates in ``self.rxns`` &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i1</span><span class="p">,</span> <span class="n">rxn1</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i2</span><span class="p">,</span> <span class="n">rxn2</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">[</span><span class="n">i1</span><span class="o">+</span><span class="mi">1</span><span class="p">:],</span> <span class="n">i1</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">rxn1</span> <span class="o">==</span> <span class="n">rxn2</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">throw</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Duplicate reactions </span><span class="si">%d</span><span class="s2"> &amp; </span><span class="si">%d</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span>
+                                         <span class="p">(</span><span class="n">i1</span><span class="p">,</span> <span class="n">i2</span><span class="p">,</span> <span class="n">rxn1</span><span class="o">.</span><span class="n">string</span><span class="p">(</span><span class="n">with_param</span><span class="o">=</span><span class="kc">False</span><span class="p">)))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.check_duplicate_names"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.check_duplicate_names">[docs]</a>    <span class="k">def</span> <span class="nf">check_duplicate_names</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">throw</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">names_seen</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">rxn</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">rxn</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">names_seen</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">throw</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Duplicate names at </span><span class="si">%d</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">rxn</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">names_seen</span><span class="p">[</span><span class="n">rxn</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.check_substance_keys"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.check_substance_keys">[docs]</a>    <span class="k">def</span> <span class="nf">check_substance_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">throw</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span><span class="n">rxn</span><span class="o">.</span><span class="n">reac</span><span class="p">,</span> <span class="n">rxn</span><span class="o">.</span><span class="n">prod</span><span class="p">,</span> <span class="n">rxn</span><span class="o">.</span><span class="n">inact_reac</span><span class="p">,</span>
+                             <span class="n">rxn</span><span class="o">.</span><span class="n">inact_prod</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">throw</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown key: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.check_balance"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.check_balance">[docs]</a>    <span class="k">def</span> <span class="nf">check_balance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">throw</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Checks if all reactions are balanced.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strict : bool</span>
+<span class="sd">            Puts a requirement on all substances to have their ``composition`` attribute set.</span>
+<span class="sd">        throw : bool</span>
+<span class="sd">            Raies ValueError if there are unbalanecd reactions in self.rxns</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">subst</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">subst</span><span class="o">.</span><span class="n">composition</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">strict</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">throw</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No composition for </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">subst</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="kc">False</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">net</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">rxn</span><span class="o">.</span><span class="n">composition_violation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">,</span> <span class="n">composition_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">net</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">throw</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Composition violation (</span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">) in </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span>
+                                         <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="n">rxn</span><span class="o">.</span><span class="n">string</span><span class="p">(</span><span class="n">with_param</span><span class="o">=</span><span class="kc">False</span><span class="p">)))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.obeys_mass_balance"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.obeys_mass_balance">[docs]</a>    <span class="k">def</span> <span class="nf">obeys_mass_balance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns True if all reactions obeys mass balance, else False. &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rxn</span><span class="o">.</span><span class="n">mass_balance_violation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.obeys_charge_neutrality"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.obeys_charge_neutrality">[docs]</a>    <span class="k">def</span> <span class="nf">obeys_charge_neutrality</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns False if any reaction violate charge neutrality. &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rxn</span><span class="o">.</span><span class="n">charge_neutrality_violation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.from_string"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.from_string">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">substances</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rxn_parse_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Create a reaction system from a string</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        s : str</span>
+<span class="sd">            Multiline string.</span>
+<span class="sd">        substances : convertible to iterable of str</span>
+<span class="sd">        rxn_parse_kwargs : dict</span>
+<span class="sd">            Keyword arguments passed on to the Reaction baseclass&#39; method ``from_string``.</span>
+<span class="sd">        substance_factory : callable</span>
+<span class="sd">            Defaults to ``cls._BaseSubstance.from_formula``. Can be set to e.g. ``Substance``.</span>
+<span class="sd">        \\*\\*kwargs:</span>
+<span class="sd">            Keyword arguments passed to the constructor of the class</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; rs = ReactionSystem.from_string(&#39;\\n&#39;.join([&#39;2 HNO2 -&gt; H2O + NO + NO2; 3&#39;, &#39;2 NO2 -&gt; N2O4; 4&#39;]))</span>
+<span class="sd">        &gt;&gt;&gt; r1, r2 = 5*5*3, 7*7*4</span>
+<span class="sd">        &gt;&gt;&gt; rs.rates({&#39;HNO2&#39;: 5, &#39;NO2&#39;: 7}) == {&#39;HNO2&#39;: -2*r1, &#39;H2O&#39;: r1, &#39;NO&#39;: r1, &#39;NO2&#39;: r1 - 2*r2, &#39;N2O4&#39;: r2}</span>
+<span class="sd">        True</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">substance_keys</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;missing_substances_from_keys&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="k">else</span> <span class="n">substances</span>
+        <span class="n">rxns</span> <span class="o">=</span> <span class="p">[</span><span class="bp">cls</span><span class="o">.</span><span class="n">_BaseReaction</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">substance_keys</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">rxn_parse_kwargs</span> <span class="ow">or</span> <span class="p">{}))</span>
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;substance_factory&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;substance_factory&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_BaseSubstance</span><span class="o">.</span><span class="n">from_formula</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">rxns</span><span class="p">,</span> <span class="n">substances</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="n">candidate</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">key</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">candidate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">candidate</span> <span class="o">=</span> <span class="n">r</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Multiple reactions with the same name&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">candidate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;No reaction with name </span><span class="si">%s</span><span class="s2"> found&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">candidate</span>
+
+<div class="viewcode-block" id="ReactionSystem.subset"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.subset">[docs]</a>    <span class="k">def</span> <span class="nf">subset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">checks</span><span class="o">=</span><span class="p">()):</span>
+        <span class="sd">&quot;&quot;&quot; Creates a new ReactionSystem with a subset of reactions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pred : callable</span>
+<span class="sd">            Signature: ``pred(Reaction) -&gt; bool``.</span>
+<span class="sd">        checks : tuple</span>
+<span class="sd">            See ``ReactionSystem``.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">new_rxns</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span> <span class="k">if</span> <span class="n">pred</span><span class="p">(</span><span class="n">r</span><span class="p">)]</span>
+        <span class="n">new_substances</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span>
+                                      <span class="nb">any</span><span class="p">([</span><span class="n">k</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">new_rxns</span><span class="p">])])</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_rxns</span><span class="p">,</span> <span class="n">substances</span><span class="o">=</span><span class="n">new_substances</span><span class="p">,</span> <span class="n">checks</span><span class="o">=</span><span class="n">checks</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__iadd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">substances</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">rxns</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">substances</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">other</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">substances</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="s1">&#39;rxns&#39;</span><span class="p">,</span> <span class="n">other</span><span class="p">)),</span> <span class="n">substances</span><span class="p">,</span> <span class="n">checks</span><span class="o">=</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span> <span class="ow">is</span> <span class="n">other</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">rxns</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">substances</span>
+
+<div class="viewcode-block" id="ReactionSystem.substance_names"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.substance_names">[docs]</a>    <span class="k">def</span> <span class="nf">substance_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns a tuple of the substances&#39; names &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">substance</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">substance</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">values</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.substance_participation"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.substance_participation">[docs]</a>    <span class="k">def</span> <span class="nf">substance_participation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substance_key</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot; Returns indices of reactions where substance_key occurs</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        substance_key: str</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; rs = ReactionSystem.from_string(&#39;2 H2 + O2 -&gt; 2 H2O\n 2 H2O2 -&gt; 2 H2O + O2&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; rs.substance_participation(&#39;H2&#39;)</span>
+<span class="sd">        [0]</span>
+<span class="sd">        &gt;&gt;&gt; rs.substance_participation(&#39;O2&#39;)</span>
+<span class="sd">        [0, 1]</span>
+<span class="sd">        &gt;&gt;&gt; rs.substance_participation(&#39;O3&#39;)</span>
+<span class="sd">        []</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        List of indices for self.rxns where `substance_key` participates</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">ri</span> <span class="k">for</span> <span class="n">ri</span><span class="p">,</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">)</span> <span class="k">if</span> <span class="n">substance_key</span> <span class="ow">in</span> <span class="n">rxn</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Number of reactions &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ns</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Number of substances &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ReactionSystem.params"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.params">[docs]</a>    <span class="k">def</span> <span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns list of per reaction ``param`` value &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">rxn</span><span class="o">.</span><span class="n">param</span> <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.as_per_substance_array"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.as_per_substance_array">[docs]</a>    <span class="k">def</span> <span class="nf">as_per_substance_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cont</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">raise_on_unk</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Turns a dict into an ordered array</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cont : array_like or dict</span>
+<span class="sd">        dtype : str or numpy.dtype object</span>
+<span class="sd">        unit : unit, optional</span>
+<span class="sd">        raise_on_unk : bool</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cont</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cont</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">substance_keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">raise_on_unk</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">cont</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">substance_keys</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Unkown substance key: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">k</span><span class="p">)</span>
+            <span class="n">cont</span> <span class="o">=</span> <span class="p">[</span><span class="n">cont</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">substance_keys</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">unit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cont</span> <span class="o">=</span> <span class="n">to_unitless</span><span class="p">(</span><span class="n">cont</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
+
+        <span class="n">cont</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">cont</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">cont</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ns</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect size&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cont</span><span class="o">*</span><span class="p">(</span><span class="n">unit</span> <span class="k">if</span> <span class="n">unit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.as_per_substance_dict"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.as_per_substance_dict">[docs]</a>    <span class="k">def</span> <span class="nf">as_per_substance_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arr</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">arr</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.as_substance_index"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.as_substance_index">[docs]</a>    <span class="k">def</span> <span class="nf">as_substance_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substance_key</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns the index of a Substance in the system&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">substance_key</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">substance_key</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">substance_key</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.per_substance_varied"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.per_substance_varied">[docs]</a>    <span class="k">def</span> <span class="nf">per_substance_varied</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">per_substance</span><span class="p">,</span> <span class="n">varied</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Dense nd-array for all combinations of varied levels per substance</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        per_substance: dict or array</span>
+<span class="sd">        varied: dict</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; rsys = ReactionSystem([], &#39;A B C&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; arr, keys = rsys.per_substance_varied({&#39;A&#39;: 2, &#39;B&#39;: 3, &#39;C&#39;: 5}, {&#39;C&#39;: [5, 7, 9, 11]})</span>
+<span class="sd">        &gt;&gt;&gt; arr.shape, keys</span>
+<span class="sd">        ((4, 3), (&#39;C&#39;,))</span>
+<span class="sd">        &gt;&gt;&gt; all(arr[1, :] == [2, 3, 7])</span>
+<span class="sd">        True</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ndarray : with len(varied) + 1 number of axes, and with last axis length == self.ns</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+        <span class="n">varied</span> <span class="o">=</span> <span class="n">varied</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">varied_keys</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">varied</span><span class="p">)</span>
+        <span class="n">n_varied</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">varied</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">varied</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">varied</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ns</span><span class="p">,))</span>
+        <span class="n">result</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_per_substance_array</span><span class="p">(</span><span class="n">per_substance</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">varied</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="n">varied</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">varied_axis</span> <span class="o">=</span> <span class="n">varied_keys</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">varied_idx</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">vals</span><span class="p">):</span>
+                    <span class="n">index</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">varied_idx</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">varied_axis</span> <span class="k">else</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_varied</span><span class="p">))</span>
+                    <span class="n">result</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">as_substance_index</span><span class="p">(</span><span class="n">k</span><span class="p">),)]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="k">return</span> <span class="n">result</span><span class="p">,</span> <span class="n">varied_keys</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.per_reaction_effect_on_substance"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.per_reaction_effect_on_substance">[docs]</a>    <span class="k">def</span> <span class="nf">per_reaction_effect_on_substance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substance_key</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">ri</span><span class="p">,</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">):</span>
+            <span class="n">n</span><span class="p">,</span> <span class="o">=</span> <span class="n">rxn</span><span class="o">.</span><span class="n">net_stoich</span><span class="p">((</span><span class="n">substance_key</span><span class="p">,))</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">result</span><span class="p">[</span><span class="n">ri</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.rates"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.rates">[docs]</a>    <span class="k">def</span> <span class="nf">rates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">math</span><span class="p">,</span> <span class="n">substance_keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ratexs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cstr_fr_fc</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Per substance sums of reaction rates rates.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        variables : dict</span>
+<span class="sd">        backend : module, optional</span>
+<span class="sd">        substance_keys : iterable of str, optional</span>
+<span class="sd">        ratexs : iterable of RateExpr instances</span>
+<span class="sd">        cstr_fr_fc : tuple (str, tuple of str)</span>
+<span class="sd">            Continuously stirred tank reactor conditions. Pair of</span>
+<span class="sd">            flow/volume ratio key (feed-rate/tank-volume) and feed concentration</span>
+<span class="sd">            keys. (if second item is a string it is taken to be a prefix)</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            per substance_key time derivatives of concentrations.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; r = Reaction({&#39;R&#39;: 2}, {&#39;P&#39;: 1}, 42.0)</span>
+<span class="sd">        &gt;&gt;&gt; rsys = ReactionSystem([r])</span>
+<span class="sd">        &gt;&gt;&gt; rates = rsys.rates({&#39;R&#39;: 3, &#39;P&#39;: 5})</span>
+<span class="sd">        &gt;&gt;&gt; abs(rates[&#39;P&#39;] - 42*3**2) &lt; 1e-14</span>
+<span class="sd">        True</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">ratexs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ratexs</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">nr</span>
+        <span class="k">for</span> <span class="n">rxn</span><span class="p">,</span> <span class="n">ratex</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">,</span> <span class="n">ratexs</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">rxn</span><span class="o">.</span><span class="n">rate</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">backend</span><span class="p">,</span> <span class="n">substance_keys</span><span class="p">,</span> <span class="n">ratex</span><span class="o">=</span><span class="n">ratex</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+                    <span class="n">result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="n">v</span>
+        <span class="k">if</span> <span class="n">cstr_fr_fc</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">substance_keys</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">substance_keys</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Only a subset of substances subject to CSTR treatment&quot;</span><span class="p">)</span>
+            <span class="n">substance_keys</span> <span class="o">=</span> <span class="p">(</span><span class="n">substance_keys</span> <span class="ow">or</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+            <span class="n">fr_key</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="n">cstr_fr_fc</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">fc_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">fc</span> <span class="o">+</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">substance_keys</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">fc_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">fc</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">substance_keys</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fc_keys</span> <span class="o">=</span> <span class="n">fc</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fc</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">substance_keys</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Got incorrect number of feed concentration keys&quot;</span><span class="p">)</span>
+            <span class="n">fr</span> <span class="o">=</span> <span class="n">variables</span><span class="p">[</span><span class="n">fr_key</span><span class="p">]</span>  <span class="c1"># feed rate / tank volume ratio</span>
+
+            <span class="k">for</span> <span class="n">fck</span><span class="p">,</span> <span class="n">sk</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">fc_keys</span><span class="p">,</span> <span class="n">substance_keys</span><span class="p">):</span>
+                <span class="n">result</span><span class="p">[</span><span class="n">sk</span><span class="p">]</span> <span class="o">+=</span> <span class="n">fr</span><span class="o">*</span><span class="p">(</span><span class="n">variables</span><span class="p">[</span><span class="n">fck</span><span class="p">]</span> <span class="o">-</span> <span class="n">variables</span><span class="p">[</span><span class="n">sk</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+    <span class="k">def</span> <span class="nf">_stoichs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+        <span class="k">if</span> <span class="n">keys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="c1"># dtype: see https://github.com/sympy/sympy/issues/10295</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">eq</span><span class="p">,</span> <span class="n">attr</span><span class="p">)(</span><span class="n">keys</span><span class="p">))</span> <span class="k">for</span> <span class="n">eq</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ReactionSystem.net_stoichs"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.net_stoichs">[docs]</a>    <span class="k">def</span> <span class="nf">net_stoichs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stoichs</span><span class="p">(</span><span class="s1">&#39;net_stoich&#39;</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.all_reac_stoichs"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.all_reac_stoichs">[docs]</a>    <span class="k">def</span> <span class="nf">all_reac_stoichs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stoichs</span><span class="p">(</span><span class="s1">&#39;all_reac_stoich&#39;</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.active_reac_stoichs"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.active_reac_stoichs">[docs]</a>    <span class="k">def</span> <span class="nf">active_reac_stoichs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stoichs</span><span class="p">(</span><span class="s1">&#39;active_reac_stoich&#39;</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.all_prod_stoichs"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.all_prod_stoichs">[docs]</a>    <span class="k">def</span> <span class="nf">all_prod_stoichs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stoichs</span><span class="p">(</span><span class="s1">&#39;all_prod_stoich&#39;</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.active_prod_stoichs"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.active_prod_stoichs">[docs]</a>    <span class="k">def</span> <span class="nf">active_prod_stoichs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stoichs</span><span class="p">(</span><span class="s1">&#39;active_prod_stoich&#39;</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.stoichs"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.stoichs">[docs]</a>    <span class="k">def</span> <span class="nf">stoichs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">non_precip_rids</span><span class="o">=</span><span class="p">()):</span>  <span class="c1"># TODO: rename to cond_stoichs</span>
+        <span class="sd">&quot;&quot;&quot; Conditional stoichiometries depending on precipitation status &quot;&quot;&quot;</span>
+        <span class="c1"># dtype: see https://github.com/sympy/sympy/issues/10295</span>
+        <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span>
+            <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">eq</span><span class="o">.</span><span class="n">precipitate_stoich</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="n">idx</span>
+            <span class="ow">in</span> <span class="n">non_precip_rids</span> <span class="k">else</span>
+            <span class="n">eq</span><span class="o">.</span><span class="n">non_precipitate_stoich</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">)</span>
+        <span class="p">)</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">eq</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">)],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.composition_balance_vectors"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.composition_balance_vectors">[docs]</a>    <span class="k">def</span> <span class="nf">composition_balance_vectors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns a list of lists with compositions and a list of composition keys.</span>
+
+<span class="sd">        The list of lists can be viewed as a matrix with rows corresponding to composition keys</span>
+<span class="sd">        (which are given as the second item in the returned tuple) and columns corresponding to</span>
+<span class="sd">        substances. Multiplying the matrix with a vector of concentrations give an equation which</span>
+<span class="sd">        is an invariant (corresponds to mass &amp; charge conservation).</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; s = &#39;Cu+2 + NH3 -&gt; CuNH3+2&#39;</span>
+<span class="sd">        &gt;&gt;&gt; import re</span>
+<span class="sd">        &gt;&gt;&gt; substances = re.split(r&#39; \+ | -&gt; &#39;, s)</span>
+<span class="sd">        &gt;&gt;&gt; rsys = ReactionSystem.from_string(s, substances)</span>
+<span class="sd">        &gt;&gt;&gt; rsys.composition_balance_vectors()</span>
+<span class="sd">        ([[2, 0, 2], [0, 3, 3], [0, 1, 1], [1, 0, 1]], [0, 1, 7, 29])</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        A: list of lists</span>
+<span class="sd">        ck: (sorted) tuple of composition keys</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">subs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="n">ck</span> <span class="o">=</span> <span class="n">Substance</span><span class="o">.</span><span class="n">composition_keys</span><span class="p">(</span><span class="n">subs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[[</span><span class="n">s</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">subs</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ck</span><span class="p">],</span> <span class="n">ck</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.upper_conc_bounds"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.upper_conc_bounds">[docs]</a>    <span class="k">def</span> <span class="nf">upper_conc_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">init_concs</span><span class="p">,</span> <span class="n">min_</span><span class="o">=</span><span class="nb">min</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skip_keys</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,)):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot; Calculates upper concentration bounds per substance based on substance composition.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        init_concs : dict or array_like</span>
+<span class="sd">            Per substance initial conidtions.</span>
+<span class="sd">        min_ : callbable</span>
+<span class="sd">        dtype : dtype or None</span>
+<span class="sd">        skip_keys : tuple</span>
+<span class="sd">            What composition keys to skip.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray :</span>
+<span class="sd">            Per substance upper limit (ordered as :attr:`substances`).</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The function does not take into account wheter there actually exists a</span>
+<span class="sd">        reaction path leading to a substance. Note also that the upper limit is</span>
+<span class="sd">        per substance, i.e. the sum of all upper bounds amount to more substance than</span>
+<span class="sd">        available in ``init_conc``.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; rs = ReactionSystem.from_string(&#39;2 HNO2 -&gt; H2O + NO + NO2 \n 2 NO2 -&gt; N2O4&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; from collections import defaultdict</span>
+<span class="sd">        &gt;&gt;&gt; c0 = defaultdict(float, HNO2=20)</span>
+<span class="sd">        &gt;&gt;&gt; ref = {&#39;HNO2&#39;: 20, &#39;H2O&#39;: 10, &#39;NO&#39;: 20, &#39;NO2&#39;: 20, &#39;N2O4&#39;: 10}</span>
+<span class="sd">        &gt;&gt;&gt; rs.as_per_substance_dict(rs.upper_conc_bounds(c0)) == ref</span>
+<span class="sd">        True</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+        <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+        <span class="n">init_concs_arr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_per_substance_array</span><span class="p">(</span><span class="n">init_concs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">composition_conc</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">conc</span><span class="p">,</span> <span class="n">s_obj</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">init_concs_arr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="k">for</span> <span class="n">comp_nr</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="n">s_obj</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">comp_nr</span> <span class="ow">in</span> <span class="n">skip_keys</span><span class="p">:</span>  <span class="c1"># charge may be created (if compensated)</span>
+                    <span class="k">continue</span>
+                <span class="n">composition_conc</span><span class="p">[</span><span class="n">comp_nr</span><span class="p">]</span> <span class="o">+=</span> <span class="n">coeff</span><span class="o">*</span><span class="n">conc</span>
+        <span class="n">bounds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">s_obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">choose_from</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">comp_nr</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="n">s_obj</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">comp_nr</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">choose_from</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">composition_conc</span><span class="p">[</span><span class="n">comp_nr</span><span class="p">]</span><span class="o">/</span><span class="n">coeff</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">choose_from</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">bounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">bounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">min_</span><span class="p">(</span><span class="n">choose_from</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">bounds</span></div>
+
+    <span class="k">def</span> <span class="nf">_unimolecular_reactions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">ns</span>
+        <span class="n">unconsidered_ri</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">order</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">ri</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_substance_index</span><span class="p">(</span><span class="n">keys</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Need 1 or 2 keys&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">A</span><span class="p">[</span><span class="n">ri</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">A</span><span class="p">[</span><span class="n">ri</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+                <span class="n">A</span><span class="p">[</span><span class="n">ri</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">unconsidered_ri</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">A</span><span class="p">,</span> <span class="n">unconsidered_ri</span>
+
+<div class="viewcode-block" id="ReactionSystem.unimolecular_html_table"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.unimolecular_html_table">[docs]</a>    <span class="nd">@deprecated</span><span class="p">(</span><span class="n">last_supported_version</span><span class="o">=</span><span class="s1">&#39;0.5.7&#39;</span><span class="p">,</span> <span class="n">will_be_missing_in</span><span class="o">=</span><span class="s1">&#39;0.7.0&#39;</span><span class="p">,</span>
+                <span class="n">use_instead</span><span class="o">=</span><span class="s1">&#39;chempy.printing.tables.UnimolecularTable&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">unimolecular_html_table</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">.printing.tables</span> <span class="k">import</span> <span class="n">UnimolecularTable</span>
+        <span class="k">return</span> <span class="n">UnimolecularTable</span><span class="o">.</span><span class="n">from_ReactionSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_bimolecular_reactions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="p">[[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">ns</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ns</span><span class="p">)]</span>
+        <span class="n">unconsidered_ri</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">order</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">ri</span> <span class="o">=</span> <span class="n">ci</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_substance_index</span><span class="p">(</span><span class="n">keys</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">ri</span><span class="p">,</span> <span class="n">ci</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">as_substance_index</span><span class="p">,</span> <span class="n">keys</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Need 1 or 2 keys&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">A</span><span class="p">[</span><span class="n">ri</span><span class="p">][</span><span class="n">ci</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">A</span><span class="p">[</span><span class="n">ri</span><span class="p">][</span><span class="n">ci</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+                <span class="n">A</span><span class="p">[</span><span class="n">ri</span><span class="p">][</span><span class="n">ci</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">unconsidered_ri</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">A</span><span class="p">,</span> <span class="n">unconsidered_ri</span>
+
+<div class="viewcode-block" id="ReactionSystem.bimolecular_html_table"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.bimolecular_html_table">[docs]</a>    <span class="nd">@deprecated</span><span class="p">(</span><span class="n">last_supported_version</span><span class="o">=</span><span class="s1">&#39;0.5.7&#39;</span><span class="p">,</span> <span class="n">will_be_missing_in</span><span class="o">=</span><span class="s1">&#39;0.7.0&#39;</span><span class="p">,</span>
+                <span class="n">use_instead</span><span class="o">=</span><span class="s1">&#39;chempy.printing.tables.BimolecularTable&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">bimolecular_html_table</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">.printing.tables</span> <span class="k">import</span> <span class="n">BimolecularTable</span>
+        <span class="k">return</span> <span class="n">BimolecularTable</span><span class="o">.</span><span class="n">from_ReactionSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ReactionSystem.identify_equilibria"><a class="viewcode-back" href="../../chempy.html#chempy.reactionsystem.ReactionSystem.identify_equilibria">[docs]</a>    <span class="k">def</span> <span class="nf">identify_equilibria</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns a list of index pairs of reactions forming equilibria.</span>
+
+<span class="sd">        The pairs are sorted with respect to index (lowest first)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">eq</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ri1</span><span class="p">,</span> <span class="n">rxn1</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">ri2</span><span class="p">,</span> <span class="n">rxn2</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxns</span><span class="p">[</span><span class="n">ri1</span><span class="o">+</span><span class="mi">1</span><span class="p">:],</span> <span class="n">ri1</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+
+                <span class="n">all_eq</span> <span class="o">=</span> <span class="p">(</span><span class="n">rxn1</span><span class="o">.</span><span class="n">all_reac_stoich</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">)</span> <span class="o">==</span> <span class="n">rxn2</span><span class="o">.</span><span class="n">all_prod_stoich</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">)</span> <span class="ow">and</span>
+                          <span class="n">rxn1</span><span class="o">.</span><span class="n">all_prod_stoich</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">)</span> <span class="o">==</span> <span class="n">rxn2</span><span class="o">.</span><span class="n">all_reac_stoich</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">substances</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">all_eq</span><span class="p">:</span>
+                    <span class="n">eq</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">ri1</span><span class="p">,</span> <span class="n">ri2</span><span class="p">))</span>
+                    <span class="k">break</span>
+        <span class="k">return</span> <span class="n">eq</span></div></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.6.14',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
