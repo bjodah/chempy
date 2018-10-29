@@ -401,10 +401,10 @@ def get_physical_dimensionality(value):
     return {_quantities_mapping[k.__class__]: v for k, v
             in uniform(value).simplified.dimensionality.items()}
 
-get_physical_quantity = deprecated(
-    use_instead=get_physical_dimensionality,
-    will_be_missing_in='0.8.0'
-)(get_physical_dimensionality)
+
+@deprecated(use_instead=get_physical_dimensionality, will_be_missing_in='0.8.0')
+def get_physical_quantity(value):
+    return get_physical_dimensionality(value)
 
 
 def _get_unit_from_registry(dimensionality, registry):
@@ -412,7 +412,7 @@ def _get_unit_from_registry(dimensionality, registry):
 
 
 def default_unit_in_registry(value, registry):
-    _dimensionality = get_physical_quantity(value)
+    _dimensionality = get_physical_dimensionality(value)
     if _dimensionality == {}:
         return 1
     return _get_unit_from_registry(_dimensionality, registry)
