@@ -1,5 +1,9 @@
 Note that 0.6.x is in maintanence mode, see chempy >=0.7.0 for latest version.
 
+v0.6.15
+=======
+- Fix deprecation of get_physical_quantity
+
 v0.6.14
 =======
 - ``balance_stoichiometry`` got a new keyword argument "allow_duplicates" (see gh-120)
