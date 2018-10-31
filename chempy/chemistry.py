@@ -1203,7 +1203,15 @@ def balance_stoichiometry(reactants, products, substances=None,
                 else:
                     return result
             else:
-                raise ValueError("Failed to remove duplicate keys: %s" % _intersect)
+                try:  # remove *all* duplicates
+                    result = balance_stoichiometry(
+                        r - set(_intersect), p - set(_intersect), substances=substances, substance_factory=substance_factory,
+                        parametric_symbols=parametric_symbols, underdetermined=underdetermined,
+                        allow_duplicates=False)
+                except Exception:
+                    raise ValueError("Failed to remove duplicate keys: %s" % _intersect)
+                else:
+                    return result
         else:
             raise ValueError("Substances on both sides: %s" % str(_intersect))
     if substances is None:

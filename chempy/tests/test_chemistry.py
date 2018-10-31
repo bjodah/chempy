@@ -424,3 +424,6 @@ C +      CO2 -> C + CO + CO2  # suggested solution:  C +      CO2 ->     2 CO
 
     with pytest.raises(ValueError):
         balance_stoichiometry(*gh120)
+
+    # https://github.com/bjodah/chempy/issues/120#issuecomment-434453703
+    balMn = balance_stoichiometry({'H2O2', 'Mn1', 'H1'}, {'Mn1', 'H2O1'}, allow_duplicates=True, underdetermined=None)
