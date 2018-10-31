@@ -1185,6 +1185,19 @@ def balance_stoichiometry(reactants, products, substances=None,
                 raise NotImplementedError("allow_duplicates currently requires underdetermined=None")
             if set(reactants) == set(products):
                 raise ValueError("cannot balance: reactants and products identical")
+
+            # For each duplicate, try to drop it completely:
+            for dupl in _intersect:
+                try:
+                    result = balance_stoichiometry(
+                        [sp for sp in reactants if sp != dupl],
+                        [sp for sp in products if sp != dupl],
+                        substances=substances, substance_factory=substance_factory,
+                        underdetermined=underdetermined, allow_duplicates=True)
+                except Exception:
+                    continue
+                else:
+                    return result
             for perm in product(*[(False, True)]*len(_intersect)):  # brute force (naive)
                 r = set(reactants)
                 p = set(products)
