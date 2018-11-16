@@ -15,7 +15,7 @@ except ImportError:
 from chempy import Equilibrium, Reaction, ReactionSystem, Substance
 from chempy.thermodynamics.expressions import MassActionEq
 from chempy.units import (
-    SI_base_registry, get_derived_unit, allclose, units_library,
+    SI_base_registry, get_derived_unit, allclose, units_library, linspace,
     to_unitless, default_constants as const, default_units as u
 )
 from chempy.util._expr import Expr
@@ -24,7 +24,10 @@ from .test_rates import _get_SpecialFraction_rsys
 from ..arrhenius import ArrheniusParam
 from ..rates import Arrhenius, MassAction, Radiolytic, RampedTemp
 from .._rates import ShiftedTPoly
-from ..ode import get_odesys, chained_parameter_variation, _create_odesys as create_odesys
+from ..ode import (
+    get_odesys, chained_parameter_variation,
+    _mk_dedim, _create_odesys as create_odesys
+)
 from ..integrated import dimerization_irrev, binary_rev
 
 
@@ -962,3 +965,24 @@ def test_create_odesys__Radiolytic():
     result1 = odesys1.integrate(t1, ic1, p1)
     yref1 = result1.xout*p1['g_emaq']*p1['doserate']*p1['density']
     assert np.allclose(yref1, result1.yout.squeeze())
+
+
+@requires('pycvodes', 'sym', units_library)
+def test_create_odesys__validate__catalyst():
+    rsys1 = ReactionSystem.from_string("""
+    H2O2 + Pt -> 2 OH + Pt; 'k_decomp'
+    """)
+    ic1 = defaultdict(lambda: 0*u.molar, {'H2O2': 3.0*u.molar, 'Pt': 0.5*u.molar})
+    t1 = linspace(0*u.s, .3*u.s, 7)
+    p1 = dict(k_decomp=42/u.second/u.molar)
+    odesys1, odesys_extra = create_odesys(rsys1)
+    validation = odesys_extra['validate'](dict(ic1, **p1))
+    assert not validation['not_seen']
+
+    dedim_ctx = _mk_dedim(SI_base_registry)
+    (t, c, _p), dedim_extra = dedim_ctx['dedim_tcp'](t1, [ic1[k] for k in odesys1.names], p1)
+    result1 = odesys1.integrate(t, c, _p)
+    tout = result1.xout * dedim_extra['unit_time']
+    cout = result1.yout * dedim_extra['unit_conc']
+    yref1 = ic1['H2O2']*np.exp(-tout*ic1['Pt']*p1['k_decomp'])
+    assert allclose(yref1, cout[:, odesys1.names.index('H2O2')], rtol=1e-6)
