@@ -603,8 +603,11 @@ def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None, i
     rates = {}
     for k, v in rsys.rates(symbols).items():
         expr = transform(v)
-        rate = backend.lambdify(args, expr)(*conditions.values())
-        to_unitless(rate, u.molar/u.second)
+        if expr == 0:
+            rate = 0 * u.molar/u.second
+        else:
+            rate = backend.lambdify(args, expr)(*conditions.values())
+            to_unitless(rate, u.molar/u.second)
         rates[k] = rate
         seen = [b or a in expr.free_symbols for b, a in zip(seen, args)]
     not_seen = [a for s, a in zip(seen, args) if not s]
