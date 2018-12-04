@@ -1,3 +1,8 @@
+v0.7.7
+======
+- Fixed a bug in ``chempy.kinetics.ode._validate``
+- ``balance_stoichiometry`` now is even more allowing with "allow_duplicates"
+
 v0.7.6
 ======
 - ``balance_stoichiometry`` got a new keyword argument "allow_duplicates" (see gh-120)
