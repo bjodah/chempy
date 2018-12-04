@@ -1,0 +1,293 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.printing.web &mdash; chempy 0.7.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="chempy 0.7.1 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.7.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">chempy</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>chempy.printing.web</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.printing.web</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">.numbers</span> <span class="k">import</span> <span class="n">number_to_scientific_html</span>
+<span class="kn">from</span> <span class="nn">.string</span> <span class="k">import</span> <span class="n">StrPrinter</span>
+
+
+<span class="k">def</span> <span class="nf">_html_clsname</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">&quot;chempy_&quot;</span> <span class="o">+</span> <span class="n">key</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="s1">&#39;plus&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;minus&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="s1">&#39;(&#39;</span><span class="p">,</span> <span class="s1">&#39;leftparen&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="s1">&#39;)&#39;</span><span class="p">,</span> <span class="s1">&#39;rightparen&#39;</span><span class="p">)</span>
+
+<span class="n">_html_semicolon</span> <span class="o">=</span> <span class="s1">&#39;&amp;#59; &#39;</span>
+
+
+<div class="viewcode-block" id="HTMLPrinter"><a class="viewcode-back" href="../../../chempy.printing.html#chempy.printing.web.HTMLPrinter">[docs]</a><span class="k">class</span> <span class="nc">HTMLPrinter</span><span class="p">(</span><span class="n">StrPrinter</span><span class="p">):</span>
+
+    <span class="n">printmethod_attr</span> <span class="o">=</span> <span class="s1">&#39;_html&#39;</span>
+    <span class="n">_default_settings</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">StrPrinter</span><span class="o">.</span><span class="n">_default_settings</span><span class="p">,</span>
+        <span class="n">repr_name</span><span class="o">=</span><span class="s1">&#39;html&#39;</span><span class="p">,</span>
+        <span class="n">Equilibrium_arrow</span><span class="o">=</span><span class="s1">&#39;&amp;harr;&#39;</span><span class="p">,</span>
+        <span class="n">Reaction_arrow</span><span class="o">=</span><span class="s1">&#39;&amp;rarr;&#39;</span><span class="p">,</span>
+        <span class="n">Reaction_param_separator</span><span class="o">=</span><span class="n">_html_semicolon</span><span class="p">,</span>
+        <span class="n">magnitude_fmt</span><span class="o">=</span><span class="n">number_to_scientific_html</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_print_Substance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">html_name</span> <span class="ow">or</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="k">def</span> <span class="nf">_print_ReactionSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rsys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">HTMLPrinter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_print_ReactionSystem</span><span class="p">(</span><span class="n">rsys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;br&gt;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="html"><a class="viewcode-back" href="../../../chempy.printing.html#chempy.printing.web.html">[docs]</a><span class="k">def</span> <span class="nf">html</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="o">**</span><span class="n">settings</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">HTMLPrinter</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span><span class="o">.</span><span class="n">doprint</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CSSPrinter"><a class="viewcode-back" href="../../../chempy.printing.html#chempy.printing.web.CSSPrinter">[docs]</a><span class="k">class</span> <span class="nc">CSSPrinter</span><span class="p">(</span><span class="n">HTMLPrinter</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_print_Substance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">html_name</span> <span class="ow">or</span> <span class="n">key</span>
+        <span class="n">common_sty</span> <span class="o">=</span> <span class="s1">&#39;border-radius: 5pt; padding: 0pt 3pt 0pt 3pt;&#39;</span>
+        <span class="n">colors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="s1">&#39;colors&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">colors</span><span class="p">:</span>
+            <span class="n">style</span> <span class="o">=</span> <span class="s1">&#39;background-color:#</span><span class="si">%s</span><span class="s1">; border: 1px solid #</span><span class="si">%s</span><span class="s1">; </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">colors</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">common_sty</span><span class="p">,))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">style</span> <span class="o">=</span> <span class="n">common_sty</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="s1">&#39;&lt;span class=&quot;</span><span class="si">%s</span><span class="s1">&quot; style=&quot;</span><span class="si">%s</span><span class="s1">&quot;&gt;</span><span class="si">%s</span><span class="s1">&lt;/span&gt;&#39;</span>
+        <span class="k">return</span> <span class="n">fmt</span> <span class="o">%</span> <span class="p">(</span><span class="n">_html_clsname</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="n">style</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_tr_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rsys</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;chempy_</span><span class="si">%d</span><span class="s1">_</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">rsys</span><span class="p">),</span> <span class="n">i</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_print_ReactionSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rsys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">sep</span> <span class="o">=</span> <span class="s1">&#39;&lt;/td&gt;&lt;td style=&quot;text-align:left;&quot;&gt;&amp;nbsp;&#39;</span>
+        <span class="n">around</span> <span class="o">=</span> <span class="s1">&#39;&lt;/td&gt;&lt;td style=&quot;text-align:center;&quot;&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;/td&gt;&lt;td style=&quot;text-align:left;&quot;&gt;&#39;</span>
+        <span class="c1"># cf. https://github.com/jupyter/notebook/issues/2160#issuecomment-352216152</span>
+        <span class="n">row_template</span> <span class="o">=</span> <span class="s1">&#39;&lt;tr class=&quot;</span><span class="si">%s</span><span class="s1">&quot;&gt;&lt;td style=&quot;text-align:right;&quot;&gt;</span><span class="si">%s</span><span class="s1">&lt;/td&gt;&lt;/tr&gt;&#39;</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span><span class="n">row_template</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tr_id</span><span class="p">(</span><span class="n">rsys</span><span class="p">,</span> <span class="n">i</span><span class="p">),</span> <span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_print</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">Reaction_param_separator</span><span class="o">=</span><span class="n">sep</span><span class="p">,</span> <span class="n">Reaction_around_arrow</span><span class="o">=</span><span class="n">around</span><span class="p">),</span>
+            <span class="n">rsys</span><span class="o">.</span><span class="n">rxns</span>
+        <span class="p">))]</span>
+        <span class="n">tab_template</span> <span class="o">=</span> <span class="s1">&#39;&lt;table class=&quot;chempy_ReactionSystem chempy_</span><span class="si">%d</span><span class="s1">&quot;&gt;</span><span class="si">%s%s</span><span class="s1">&lt;/table&gt;&#39;</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="s1">&#39;&lt;tr&gt;&lt;th style=&quot;text-align:center;&quot; colspan=&quot;4&quot;&gt;</span><span class="si">%s</span><span class="s1">&lt;/th&gt;&lt;/tr&gt;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">rsys</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tab_template</span> <span class="o">%</span> <span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">rsys</span><span class="p">),</span> <span class="n">header</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rows</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="css"><a class="viewcode-back" href="../../../chempy.printing.html#chempy.printing.web.css">[docs]</a><span class="k">def</span> <span class="nf">css</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="o">**</span><span class="n">settings</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">CSSPrinter</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span><span class="o">.</span><span class="n">doprint</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.7.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

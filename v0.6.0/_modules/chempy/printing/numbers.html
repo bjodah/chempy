@@ -1,0 +1,455 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.printing.numbers &mdash; chempy 0.6.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="chempy 0.6.0 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.6.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">chempy</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>chempy.printing.numbers</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <a href="https://github.com/bjodah/chempy/blob/v0.6.0/doc/_modules/chempy/printing/numbers.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.printing.numbers</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">math</span> <span class="k">import</span> <span class="n">log10</span><span class="p">,</span> <span class="n">floor</span>
+
+<span class="kn">from</span> <span class="nn">..units</span> <span class="k">import</span> <span class="n">html_of_unit</span><span class="p">,</span> <span class="n">latex_of_unit</span><span class="p">,</span> <span class="n">unicode_of_unit</span><span class="p">,</span> <span class="n">to_unitless</span><span class="p">,</span> <span class="n">unit_of</span>
+<span class="kn">from</span> <span class="nn">..util.parsing</span> <span class="k">import</span> <span class="n">_unicode_sup</span>
+
+
+<div class="viewcode-block" id="roman"><a class="viewcode-back" href="../../../chempy.printing.html#chempy.printing.numbers.roman">[docs]</a><span class="k">def</span> <span class="nf">roman</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; roman(4)</span>
+<span class="sd">    &#39;IV&#39;</span>
+<span class="sd">    &gt;&gt;&gt; roman(17)</span>
+<span class="sd">    &#39;XVII&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tokens</span> <span class="o">=</span> <span class="s1">&#39;M CM D CD C XC L XL X IX V IV I&#39;</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">900</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">tokens</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+        <span class="n">cnt</span> <span class="o">=</span> <span class="n">num</span><span class="o">//</span><span class="n">v</span>
+        <span class="n">result</span> <span class="o">+=</span> <span class="n">t</span><span class="o">*</span><span class="n">cnt</span>
+        <span class="n">num</span> <span class="o">-=</span> <span class="n">v</span><span class="o">*</span><span class="n">cnt</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<span class="k">def</span> <span class="nf">_mag</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">floor</span><span class="p">(</span><span class="n">log10</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">num</span><span class="p">))))</span>
+
+
+<span class="k">def</span> <span class="nf">_float_str_w_uncert</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">xe</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Prints uncertain number with parenthesis</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : nominal value</span>
+<span class="sd">    xe : uncertainty</span>
+<span class="sd">    precision : number of significant digits in uncertainty</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; _float_str_w_uncert(-9.99752e5, 349, 3)</span>
+<span class="sd">    &#39;-999752(349)&#39;</span>
+<span class="sd">    &gt;&gt;&gt; _float_str_w_uncert(-9.99752e15, 349e10, 2)</span>
+<span class="sd">    &#39;-9.9975(35)e15&#39;</span>
+<span class="sd">    &gt;&gt;&gt; _float_str_w_uncert(3.1416, 0.029, 1)</span>
+<span class="sd">    &#39;3.14(3)&#39;</span>
+<span class="sd">    &gt;&gt;&gt; _float_str_w_uncert(3.1416e9, 2.9e6, 1)</span>
+<span class="sd">    &#39;3.142(3)e9&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    shortest string representation of &quot;x +- xe&quot; either as</span>
+<span class="sd">    ``x.xx(ee)e+xx`` or ``xxx.xx(ee)``</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The code in this function is from a question on StackOverflow:</span>
+<span class="sd">        http://stackoverflow.com/questions/6671053</span>
+<span class="sd">        written by:</span>
+<span class="sd">            Lemming, http://stackoverflow.com/users/841562/lemming</span>
+<span class="sd">        the code is licensed under &#39;CC-WIKI&#39;.</span>
+<span class="sd">        (see: http://blog.stackoverflow.com/2009/06/attribution-required/)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># base 10 exponents</span>
+    <span class="n">x_exp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">floor</span><span class="p">(</span><span class="n">log10</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">))))</span>
+    <span class="n">xe_exp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">floor</span><span class="p">(</span><span class="n">log10</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">xe</span><span class="p">))))</span>
+
+    <span class="c1"># uncertainty</span>
+    <span class="n">un_exp</span> <span class="o">=</span> <span class="n">xe_exp</span><span class="o">-</span><span class="n">precision</span><span class="o">+</span><span class="mi">1</span>
+    <span class="n">un_int</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">xe</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="n">un_exp</span><span class="p">))</span>
+
+    <span class="c1"># nominal value</span>
+    <span class="n">no_exp</span> <span class="o">=</span> <span class="n">un_exp</span>
+    <span class="n">no_int</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="n">no_exp</span><span class="p">))</span>
+
+    <span class="c1"># format - nom(unc)exp</span>
+    <span class="n">fieldw</span> <span class="o">=</span> <span class="n">x_exp</span> <span class="o">-</span> <span class="n">no_exp</span>
+    <span class="n">fmt</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%%</span><span class="s1">.</span><span class="si">%d</span><span class="s1">f&#39;</span> <span class="o">%</span> <span class="n">fieldw</span>
+    <span class="n">result1</span> <span class="o">=</span> <span class="p">(</span><span class="n">fmt</span> <span class="o">+</span> <span class="s1">&#39;(</span><span class="si">%.0f</span><span class="s1">)e</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="n">no_int</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="n">fieldw</span><span class="p">),</span> <span class="n">un_int</span><span class="p">,</span> <span class="n">x_exp</span><span class="p">)</span>
+
+    <span class="c1"># format - nom(unc)</span>
+    <span class="n">fieldw</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">no_exp</span><span class="p">)</span>
+    <span class="n">fmt</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%%</span><span class="s1">.</span><span class="si">%d</span><span class="s1">f&#39;</span> <span class="o">%</span> <span class="n">fieldw</span>
+    <span class="n">result2</span> <span class="o">=</span> <span class="p">(</span><span class="n">fmt</span> <span class="o">+</span> <span class="s1">&#39;(</span><span class="si">%.0f</span><span class="s1">)&#39;</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="n">no_int</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="n">no_exp</span><span class="p">,</span> <span class="n">un_int</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">un_exp</span><span class="p">))</span>
+
+    <span class="c1"># return shortest representation</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">result2</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">result1</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">result2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">result1</span>
+
+
+<span class="k">def</span> <span class="nf">_number_to_X</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="n">uncertainty</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="n">fmt</span><span class="p">,</span> <span class="n">unit_fmt</span><span class="p">,</span> <span class="n">fmt_pow_10</span><span class="p">,</span> <span class="n">space</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">):</span>
+    <span class="n">uncertainty</span> <span class="o">=</span> <span class="n">uncertainty</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="s1">&#39;uncertainty&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">unit</span> <span class="o">=</span> <span class="n">unit</span> <span class="ow">or</span> <span class="n">unit_of</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">unit</span> <span class="ow">is</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">unit_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">mag</span> <span class="o">=</span> <span class="n">number</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">unit_str</span> <span class="o">=</span> <span class="n">space</span> <span class="o">+</span> <span class="n">unit_fmt</span><span class="p">(</span><span class="n">unit</span><span class="p">)</span>
+        <span class="n">mag</span> <span class="o">=</span> <span class="n">to_unitless</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">uncertainty</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">uncertainty</span> <span class="o">=</span> <span class="n">to_unitless</span><span class="p">(</span><span class="n">uncertainty</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">uncertainty</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">fmt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fmt</span> <span class="o">=</span> <span class="mi">5</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fmt</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">flt</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;</span><span class="si">%%</span><span class="s1">.</span><span class="si">%d</span><span class="s1">g&#39;</span> <span class="o">%</span> <span class="n">fmt</span><span class="p">)</span> <span class="o">%</span> <span class="n">mag</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">flt</span> <span class="o">=</span> <span class="n">fmt</span><span class="p">(</span><span class="n">mag</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">fmt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fmt</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fmt</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">flt</span> <span class="o">=</span> <span class="n">_float_str_w_uncert</span><span class="p">(</span><span class="n">mag</span><span class="p">,</span> <span class="n">uncertainty</span><span class="p">,</span> <span class="n">fmt</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">flt</span> <span class="o">=</span> <span class="n">fmt</span><span class="p">(</span><span class="n">mag</span><span class="p">,</span> <span class="n">uncertainty</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;e&#39;</span> <span class="ow">in</span> <span class="n">flt</span><span class="p">:</span>
+        <span class="n">significand</span><span class="p">,</span> <span class="n">mantissa</span> <span class="o">=</span> <span class="n">flt</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;e&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fmt_pow_10</span><span class="p">(</span><span class="n">significand</span><span class="p">,</span> <span class="n">mantissa</span><span class="p">)</span> <span class="o">+</span> <span class="n">unit_str</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">flt</span> <span class="o">+</span> <span class="n">unit_str</span>
+
+
+<span class="k">def</span> <span class="nf">_latex_pow_10</span><span class="p">(</span><span class="n">significand</span><span class="p">,</span> <span class="n">mantissa</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">significand</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;1.0&#39;</span><span class="p">):</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="s1">&#39;10^{</span><span class="si">%s</span><span class="s1">}&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="n">significand</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;\cdot 10^{</span><span class="si">%s</span><span class="s1">}&#39;</span>
+    <span class="k">return</span> <span class="n">fmt</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">mantissa</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="number_to_scientific_latex"><a class="viewcode-back" href="../../../chempy.printing.html#chempy.printing.numbers.number_to_scientific_latex">[docs]</a><span class="k">def</span> <span class="nf">number_to_scientific_latex</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="n">uncertainty</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot; Formats a number as LaTeX (optionally with unit/uncertainty)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    number : float (w or w/o unit)</span>
+<span class="sd">    uncertainty : same as number</span>
+<span class="sd">    unit : unit</span>
+<span class="sd">    fmt : int or callable</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_latex(3.14) == &#39;3.14&#39;</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_latex(3.14159265e-7)</span>
+<span class="sd">    &#39;3.1416\\cdot 10^{-7}&#39;</span>
+<span class="sd">    &gt;&gt;&gt; import quantities as pq</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_latex(2**0.5 * pq.m / pq.s)</span>
+<span class="sd">    &#39;1.4142\\,\\mathrm{\\frac{m}{s}}&#39;</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_latex(1.23456, .789, fmt=2)</span>
+<span class="sd">    &#39;1.23(79)&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_number_to_X</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="n">uncertainty</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="n">fmt</span><span class="p">,</span> <span class="n">latex_of_unit</span><span class="p">,</span> <span class="n">_latex_pow_10</span><span class="p">,</span> <span class="s1">&#39;\,&#39;</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_unicode_pow_10</span><span class="p">(</span><span class="n">significand</span><span class="p">,</span> <span class="n">mantissa</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">significand</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;1.0&#39;</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="sa">u</span><span class="s1">&#39;10&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">significand</span> <span class="o">+</span> <span class="sa">u</span><span class="s1">&#39;·10&#39;</span>
+    <span class="k">return</span> <span class="n">result</span> <span class="o">+</span> <span class="sa">u</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">_unicode_sup</span><span class="o">.</span><span class="n">get</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">mantissa</span><span class="p">))))</span>
+
+
+<div class="viewcode-block" id="number_to_scientific_unicode"><a class="viewcode-back" href="../../../chempy.printing.html#chempy.printing.numbers.number_to_scientific_unicode">[docs]</a><span class="k">def</span> <span class="nf">number_to_scientific_unicode</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="n">uncertainty</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sa">u</span><span class="sd">&quot;&quot;&quot; Formats a number as unicode (optionally with unit/uncertainty)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    number : float (w or w/o unit)</span>
+<span class="sd">    uncertainty : same as number</span>
+<span class="sd">    unit : unit</span>
+<span class="sd">    fmt : int or callable</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_unicode(3.14) == u&#39;3.14&#39;</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_unicode(3.14159265e-7) == u&#39;3.1416·10⁻⁷&#39;</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; import quantities as pq</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_unicode(2**0.5 * pq.m / pq.s)</span>
+<span class="sd">    &#39;1.4142 m/s&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_number_to_X</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="n">uncertainty</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="n">fmt</span><span class="p">,</span> <span class="n">unicode_of_unit</span><span class="p">,</span> <span class="n">_unicode_pow_10</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_html_pow_10</span><span class="p">(</span><span class="n">significand</span><span class="p">,</span> <span class="n">mantissa</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">significand</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;1.0&#39;</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="s1">&#39;10&lt;sup&gt;&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">significand</span> <span class="o">+</span> <span class="s1">&#39;&amp;sdot;10&lt;sup&gt;&#39;</span>
+    <span class="k">return</span> <span class="n">result</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">mantissa</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;&lt;/sup&gt;&#39;</span>
+
+
+<div class="viewcode-block" id="number_to_scientific_html"><a class="viewcode-back" href="../../../chempy.printing.html#chempy.printing.numbers.number_to_scientific_html">[docs]</a><span class="k">def</span> <span class="nf">number_to_scientific_html</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="n">uncertainty</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot; Formats a number as HTML (optionally with unit/uncertainty)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    number : float (w or w/o unit)</span>
+<span class="sd">    uncertainty : same as number</span>
+<span class="sd">    unit : unit</span>
+<span class="sd">    fmt : int or callable</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_html(3.14) == &#39;3.14&#39;</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_html(3.14159265e-7)</span>
+<span class="sd">    &#39;3.1416&amp;sdot;10&lt;sup&gt;-7&lt;/sup&gt;&#39;</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_html(1e13)</span>
+<span class="sd">    &#39;10&lt;sup&gt;13&lt;/sup&gt;&#39;</span>
+<span class="sd">    &gt;&gt;&gt; import quantities as pq</span>
+<span class="sd">    &gt;&gt;&gt; number_to_scientific_html(2**0.5 * pq.m / pq.s)</span>
+<span class="sd">    &#39;1.4142 m/s&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_number_to_X</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="n">uncertainty</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="n">fmt</span><span class="p">,</span> <span class="n">html_of_unit</span><span class="p">,</span> <span class="n">_html_pow_10</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.6.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
