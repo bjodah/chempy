@@ -29,10 +29,11 @@ sed -i -E \
 
 ssh $PKG@$SERVER 'mkdir -p ~/public_html/conda-packages'
 
-# https://github.com/bjodah/anfilte
-anfilte-build . dist/conda-recipe-$VERSION dist/
-scp dist/noarch/${PKG}-${VERSION}*.bz2 $PKG@$SERVER:~/public_html/conda-packages/
-ssh $PKG@$SERVER 'mkdir -p ~/public_html/conda-recipes'
-scp -r dist/conda-recipe-$VERSION/ $PKG@$SERVER:~/public_html/conda-recipes/
+### https://github.com/bjodah/anfilte
+# anfilte-build . dist/conda-recipe-$VERSION dist/
+# scp dist/noarch/${PKG}-${VERSION}*.bz2 $PKG@$SERVER:~/public_html/conda-packages/
+# ssh $PKG@$SERVER 'mkdir -p ~/public_html/conda-recipes'
+# scp -r dist/conda-recipe-$VERSION/ $PKG@$SERVER:~/public_html/conda-recipes/
+
 scp "$SDIST_FILE" "$PKG@$SERVER:~/public_html/releases/"
 ./scripts/update-gh-pages.sh v$VERSION
