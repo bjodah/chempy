@@ -1,5 +1,10 @@
 Note that 0.6.x is in maintanence mode, see chempy >=0.7.0 for latest version.
 
+v0.6.16
+=======
+- Fixed a bug in ``chempy.kinetics.ode._validate``
+- ``balance_stoichiometry`` now is even more allowing with "allow_duplicates"
+
 v0.6.15
 =======
 - Fix deprecation of get_physical_quantity
