@@ -194,6 +194,17 @@ def test_ReactionSystem__from_string():
     assert r3.param != Radiolytic(2.1e-7)
     assert r3.order() == 0
 
+def test_ReactionSystem__from_string___special_naming():
+    rs = ReactionSystem.from_string("""
+H2O* + H2O -> 2 H2O
+H2O* -> OH + H
+""")  # excited water
+    for sk in 'H2O* H2O OH H'.split():
+        assert sk in rs.substances
+    assert rs.substances['H2O*'].composition == {1: 2, 8: 1}
+    assert rs.categorize_substances() == dict(accumulated={'OH', 'H', 'H2O'}, depleted={'H2O*'},
+                                              unaffected=set(), nonparticipating=set())
+
 
 @requires(parsing_library)
 def test_ReactionSystem__from_string__string_rate_const():

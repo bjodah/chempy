@@ -140,6 +140,9 @@ def test_Reaction__from_string():
     assert Reaction.from_string(str(r4), 'H+ OH- H2O') == r4
     assert Reaction.from_string(str(r4), None) == r4
 
+    r5 = Reaction.from_string("H2O -> H + OH; None; data=dict(ref='foo; bar; baz;')")
+    assert r5.data['ref'] == 'foo; bar; baz;'
+
 
 @requires(parsing_library, units_library)
 def test_Reaction_from_string__units():
