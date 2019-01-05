@@ -5,6 +5,7 @@ from collections import OrderedDict, defaultdict
 from functools import reduce
 from itertools import chain, product
 from operator import mul, add
+import copy
 import math
 import warnings
 
@@ -498,7 +499,7 @@ class Reaction(object):
             kwargs['checks'] = ()
         for k in self._all_attr:
             if k not in kwargs:
-                kwargs[k] = getattr(self, k)
+                kwargs[k] = copy.copy(getattr(self, k))
         return self.__class__(**kwargs)
 
     def check_any_effect(self):
