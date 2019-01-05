@@ -195,6 +195,7 @@ def test_ReactionSystem__from_string():
     assert r3.order() == 0
 
 
+@requires(parsing_library)
 def test_ReactionSystem__from_string___special_naming():
     rs = ReactionSystem.from_string("""
 H2O* + H2O -> 2 H2O
