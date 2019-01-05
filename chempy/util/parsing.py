@@ -336,15 +336,14 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
             globals_.update({k: v for k, v in chempy.__dict__.items()
                              if not k.startswith('_')})
             globals_.update(default_units.as_dict())
-    try:
-        stoich, param, kw = map(str.strip, line.rstrip('\n').split(';'))
-    except ValueError:
-        if ';' in line:
-            stoich, param = map(str.strip, line.rstrip('\n').split(';'))
-        else:
-            stoich, param = line.strip(), kwargs.pop('param', 'None')
+    parts = line.rstrip('\n').split(';')
+    stoich = parts[0].strip()
+    if len(parts) > 2:
+        kwargs.update(eval('dict('+';'.join(parts[2:])+')', globals_ or {}))
+    if len(parts) > 1:
+        param = parts[1].strip()
     else:
-        kwargs.update({} if globals_ is False else eval('dict('+kw+')', globals_))
+        param = kwargs.pop('param', 'None')
 
     if isinstance(param, str):
         if param.startswith("'") and param.endswith("'") and "'" not in param[1:-1]:
