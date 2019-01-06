@@ -116,6 +116,9 @@ def test_Reaction__copy():
     r1 = Reaction({'H2O'}, {'H2O'}, checks=())
     r2 = r1.copy()
     assert r1 == r2
+    r2.reac['H2O2'] = r2.reac.pop('H2O')  # 1
+    r2.prod['H2O2'] = r2.prod.pop('H2O')  # 1
+    assert r1.reac == {'H2O': 1} and r1.prod == {'H2O': 1}
 
 
 @requires(parsing_library)
@@ -140,8 +143,13 @@ def test_Reaction__from_string():
     assert Reaction.from_string(str(r4), 'H+ OH- H2O') == r4
     assert Reaction.from_string(str(r4), None) == r4
 
-    r5 = Reaction.from_string("H2O -> H + OH; None; data=dict(ref='foo; bar; baz;')")
-    assert r5.data['ref'] == 'foo; bar; baz;'
+    r5 = Reaction.from_string("H2O2 -> 0.5 O2 + H2O", checks=[
+        c for c in Reaction.default_checks if c != 'all_integral'])
+    r6 = r5.copy()
+    assert r5 == r6
+
+    r7 = Reaction.from_string("H2O -> H + OH; None; data=dict(ref='foo; bar; baz;')")
+    assert r7.data['ref'] == 'foo; bar; baz;'
 
 
 @requires(parsing_library, units_library)
