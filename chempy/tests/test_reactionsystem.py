@@ -7,7 +7,7 @@ import pytest
 
 from ..util.testing import requires
 from ..util.parsing import parsing_library
-from ..units import default_units, units_library
+from ..units import default_units, units_library, allclose
 from ..chemistry import Substance, Reaction
 from ..reactionsystem import ReactionSystem
 
@@ -184,6 +184,9 @@ def test_ReactionSystem__from_string():
     assert r2.reac == {'H2O': 2, 'H+': 1}
     assert r2.prod == {'H2O': 1, 'H3O+': 1}
 
+
+@requires(parsing_library, units_library)
+def test_ReactionSystem__from_string__units():
     r3, = ReactionSystem.from_string('(H2O) -> e-(aq) + H+ + OH; Radiolytic(2.1e-7*mol/J)').rxns
     assert len(r3.reac) == 0 and r3.inact_reac == {'H2O': 1}
     assert r3.prod == {'e-(aq)': 1, 'H+': 1, 'OH': 1}
@@ -193,6 +196,12 @@ def test_ReactionSystem__from_string():
     assert r3.param != Radiolytic(2.0e-7*mol/J)
     assert r3.param != Radiolytic(2.1e-7)
     assert r3.order() == 0
+
+    k = 1e-4/default_units.second
+    rs = ReactionSystem.from_string("""
+    H2O -> H+ + OH-; {}
+    """.format(repr(k)))
+    assert allclose(rs.rxns[0].param, k)
 
 
 @requires(parsing_library)

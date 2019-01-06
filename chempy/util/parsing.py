@@ -336,6 +336,8 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
             globals_.update({k: v for k, v in chempy.__dict__.items()
                              if not k.startswith('_')})
             globals_.update(default_units.as_dict())
+            import numpy as np
+            globals_['array'] = np.array
     parts = line.rstrip('\n').split(';')
     stoich = parts[0].strip()
     if len(parts) > 2:
