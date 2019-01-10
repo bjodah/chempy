@@ -170,6 +170,16 @@ def test_ReactionSystem__add():
     rs7 = rs6 + (Reaction.from_string("H+ + H2O -> H3O+"),)
     assert len(rs7.rxns) == 4
 
+    rs1 = ReactionSystem.from_string('O2 + H2 -> H2O2')
+    rs1.substances['H2O2'].data['D'] = 123
+    rs2 = ReactionSystem.from_string('H2O2 -> 2 OH')
+    rs2.substances['H2O2'].data['D'] = 456
+    rs2.substances['OH'].data['D'] = 789
+    rs3 = rs2 + rs1
+    assert (rs3.substances['H2O2'].data['D'] == 123 and rs3.substances['OH'].data['D'] == 789)
+    rs2 += rs1
+    assert (rs2.substances['H2O2'].data['D'] == 123 and rs2.substances['OH'].data['D'] == 789)
+
 
 @requires(parsing_library)
 def test_ReactionSystem__from_string():
