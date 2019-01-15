@@ -610,10 +610,9 @@ def test_chained_parameter_variation():
     assert np.allclose(cref, cout, atol=kw['atol']*forgive, rtol=kw['rtol']*forgive)
 
 
-@requires('pyodesys', 'scipy', 'sym')
-def test_get_odesys__cstr():
+def _odesys__cstr(factory):
     rsys = ReactionSystem.from_string("2 H2O2 -> O2 + 2 H2O; 5")
-    odesys, extra = get_odesys(rsys, cstr=True)
+    odesys, extra = factory(rsys, cstr=True)
     fr, fc = extra['cstr_fr_fc']
     tout, c0 = np.linspace(0, .13, 7), {'H2O2': 2, 'O2': 4, 'H2O': 3}
     params = {fr: 13, fc['H2O2']: 11, fc['O2']: 43, fc['H2O']: 45}
@@ -632,6 +631,16 @@ def test_get_odesys__cstr():
     assert np.allclose(res.named_dep('H2O2'), ref_H2O[:, 0])
     assert np.allclose(res.named_dep('O2'), ref_O2[:, 1])
     assert np.allclose(res.named_dep('H2O'), ref_H2O[:, 1])
+
+
+@requires('pyodesys', 'scipy', 'sym')
+def test_get_odesys__cstr():
+    _odesys_cstr(get_odesys)
+
+
+@requires('pyodesys', 'scipy', 'sym')
+def test_create_odesys__cstr():
+    _odesys_cstr(create_odesys)
 
 
 @requires('pygslodeiv2', 'sym', units_library)
