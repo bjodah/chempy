@@ -610,19 +610,20 @@ def test_chained_parameter_variation():
     assert np.allclose(cref, cout, atol=kw['atol']*forgive, rtol=kw['rtol']*forgive)
 
 
-def _odesys__cstr(factory):
-    rsys = ReactionSystem.from_string("2 H2O2 -> O2 + 2 H2O; 5")
-    odesys, extra = factory(rsys, cstr=True)
-    fr, fc = extra['cstr_fr_fc']
+
+def _check_cstr(odesys, fr, fc, extra_pars=None):
     tout, c0 = np.linspace(0, .13, 7), {'H2O2': 2, 'O2': 4, 'H2O': 3}
     params = {fr: 13, fc['H2O2']: 11, fc['O2']: 43, fc['H2O']: 45}
+    params.update(extra_pars or {})
     res = odesys.integrate(tout, c0, params)
     from chempy.kinetics.integrated import binary_irrev_cstr
 
     def get_analytic(result, k, n):
-        ref = binary_irrev_cstr(result.xout, 5, result.named_dep('H2O2')[0],
-                                result.named_dep(k)[0], result.named_param(fc['H2O2']), result.named_param(fc[k]),
-                                result.named_param(fr), n)
+        ref = binary_irrev_cstr(
+            result.xout, 5, result.named_dep('H2O2')[0],
+            result.named_dep(k)[0], result.named_param(fc['H2O2']), result.named_param(fc[k]),
+            result.named_param(fr), n
+        )
         return np.array(ref).T
 
     ref_O2 = get_analytic(res, 'O2', 1)
@@ -635,12 +636,18 @@ def _odesys__cstr(factory):
 
 @requires('pyodesys', 'scipy', 'sym')
 def test_get_odesys__cstr():
-    _odesys_cstr(get_odesys)
+    rsys = ReactionSystem.from_string("2 H2O2 -> O2 + 2 H2O; 5")
+    odesys, extra = get_odesys(rsys, cstr=True)
+    fr, fc = extra['cstr_fr_fc']
+    _check_cstr(odesys, fr, fc)
 
 
 @requires('pyodesys', 'scipy', 'sym')
 def test_create_odesys__cstr():
-    _odesys_cstr(create_odesys)
+    rsys = ReactionSystem.from_string("2 H2O2 -> O2 + 2 H2O; 'k2'")
+    fr, fc = 'feedratio', OrderedDict([(sk, 'fc_%s' % sk) for sk in rsys.substances])
+    odesys, extra = create_odesys(rsys, rates_kw=dict(cstr_fr_fc=(fr, fc)))
+    _check_cstr(odesys, fr, fc, extra_pars=dict(k2=5))
 
 
 @requires('pygslodeiv2', 'sym', units_library)

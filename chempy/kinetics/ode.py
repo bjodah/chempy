@@ -504,6 +504,9 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
             for pk in rxn.param.parameter_keys:
                 if pk not in keys:
                     keys.append(pk)
+        if 'cstr_fr_fc' in rates_kw:
+            keys.append(rates_kw['cstr_fr_fc'][0])
+            keys.extend(rates_kw['cstr_fr_fc'][1].values())
         parameter_symbols = OrderedDict([(key, backend.Symbol(key)) for key in keys])
 
     if not isinstance(parameter_symbols, OrderedDict):
