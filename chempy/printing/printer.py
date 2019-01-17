@@ -5,6 +5,7 @@ class Printer(object):
     _str = str  # set to unicdoe int UnicodePrinter for Python 2
     _default_settings = dict(
         with_param=True,
+        with_name=True,
         fallback_print_fn=str,
         Reaction_param_separator='; ',
         Reaction_around_arrow=(' ', ' '),

@@ -630,7 +630,7 @@ class Reaction(object):
         return str_(self, substances=substances, with_param=with_param, **kwargs)
 
     def __str__(self):
-        return self.string(with_param=True)
+        return self.string(with_param=True, with_name=True)
 
     def latex(self, substances, with_param=False, **kwargs):
         r""" Returns a LaTeX representation of the reaction

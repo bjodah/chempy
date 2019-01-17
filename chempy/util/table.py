@@ -184,7 +184,7 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
                     k = k_fmt % rxn.param
                 else:
                     k = k_fmt(rxn.param)
-        latex_kw = dict(with_param=False)
+        latex_kw = dict(with_param=False, with_name=False)
         if tex:
             latex_kw['substances'] = rsys.substances
             latex_kw['Reaction_around_arrow'] = ('}}' + coldelim + '\\ensuremath{{',
