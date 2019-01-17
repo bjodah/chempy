@@ -203,6 +203,8 @@ def test_ReactioN__latex():
     subst = {k: Substance.from_formula(k) for k in keys}
     r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
     assert r2.latex(subst) == r'2 H_{2}O \rightarrow 2 H_{2} + O_{2}'
+    r3 = Reaction.from_string("2 H2O -> 2 H2 + O2; 42; name='split'", subst)
+    assert r3.latex(subst) == r'2 H_{2}O \rightarrow 2 H_{2} + O_{2}; 42; split'
 
 
 @requires(parsing_library)
@@ -211,6 +213,8 @@ def test_Reaction__unicode():
     subst = {k: Substance.from_formula(k) for k in keys}
     r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
     assert r2.unicode(subst) == u'2 H₂O → 2 H₂ + O₂'
+    r3 = Reaction.from_string("2 H2O -> 2 H2 + O2; 42; name='split'", subst)
+    assert r3.latex(subst) == r'2 H₂O → 2 H₂ + O₂; 42; split'
 
 
 @requires(parsing_library)
