@@ -504,7 +504,7 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
             for pk in rxn.param.parameter_keys:
                 if pk not in keys:
                     keys.append(pk)
-        if 'cstr_fr_fc' in rates_kw:
+        if rates_kw and 'cstr_fr_fc' in rates_kw:
             flowrate_volume, feed_conc = rates_kw['cstr_fr_fc']
             keys.append(flowrate_volume)
             keys.extend(feed_conc.values())

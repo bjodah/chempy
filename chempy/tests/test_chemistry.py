@@ -204,7 +204,10 @@ def test_ReactioN__latex():
     r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
     assert r2.latex(subst) == r'2 H_{2}O \rightarrow 2 H_{2} + O_{2}'
     r3 = Reaction.from_string("2 H2O -> 2 H2 + O2; 42; name='split'", subst)
-    assert r3.latex(subst) == r'2 H_{2}O \rightarrow 2 H_{2} + O_{2}; 42; split'
+    assert r3.latex(subst, with_param=True, with_name=True) == r'2 H_{2}O \rightarrow 2 H_{2} + O_{2}; 42; split'
+    assert r3.latex(subst, with_name=True) == r'2 H_{2}O \rightarrow 2 H_{2} + O_{2}; split'
+    assert r3.latex(subst, with_param=True) == r'2 H_{2}O \rightarrow 2 H_{2} + O_{2}; 42'
+    assert r3.latex(subst) == r'2 H_{2}O \rightarrow 2 H_{2} + O_{2}'
 
 
 @requires(parsing_library)
@@ -214,7 +217,10 @@ def test_Reaction__unicode():
     r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
     assert r2.unicode(subst) == u'2 H₂O → 2 H₂ + O₂'
     r3 = Reaction.from_string("2 H2O -> 2 H2 + O2; 42; name='split'", subst)
-    assert r3.latex(subst) == r'2 H₂O → 2 H₂ + O₂; 42; split'
+    assert r3.unicode(subst) == r'2 H₂O → 2 H₂ + O₂'
+    assert r3.unicode(subst, with_name=True) == r'2 H₂O → 2 H₂ + O₂; split'
+    assert r3.unicode(subst, with_name=True, with_param=True) == r'2 H₂O → 2 H₂ + O₂; 42; split'
+    assert r3.unicode(subst, with_param=True) == r'2 H₂O → 2 H₂ + O₂; 42'
 
 
 @requires(parsing_library)

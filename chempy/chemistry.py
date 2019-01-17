@@ -609,7 +609,7 @@ class Reaction(object):
                 return True
         return False
 
-    def string(self, substances=None, with_param=False, **kwargs):
+    def string(self, substances=None, with_param=False, with_name=False, **kwargs):
         """ Returns a string representation of the reaction
 
         Parameters
@@ -618,6 +618,8 @@ class Reaction(object):
             mapping substance keys to Substance instances
         with_param: bool
             whether to print the parameter (default: False)
+        with_name: bool
+            whether to print the name (default: False)
 
         Examples
         --------
@@ -627,12 +629,12 @@ class Reaction(object):
 
         """
         from .printing import str_
-        return str_(self, substances=substances, with_param=with_param, **kwargs)
+        return str_(self, substances=substances, with_param=with_param, with_name=with_name, **kwargs)
 
     def __str__(self):
         return self.string(with_param=True, with_name=True)
 
-    def latex(self, substances, with_param=False, **kwargs):
+    def latex(self, substances, with_param=False, with_name=False, **kwargs):
         r""" Returns a LaTeX representation of the reaction
 
         Parameters
@@ -641,6 +643,8 @@ class Reaction(object):
             mapping substance keys to Substance instances
         with_param: bool
             whether to print the parameter (default: False)
+        with_name: bool
+            whether to print the name (default: False)
 
         Examples
         --------
@@ -656,9 +660,9 @@ class Reaction(object):
 
         """
         from .printing import latex
-        return latex(self, substances=substances, with_param=with_param, **kwargs)
+        return latex(self, substances=substances, with_param=with_param, with_name=with_name, **kwargs)
 
-    def unicode(self, substances, with_param=False, **kwargs):
+    def unicode(self, substances, with_param=False, with_name=False, **kwargs):
         u""" Returns a unicode string representation of the reaction
 
         Examples
@@ -674,9 +678,10 @@ class Reaction(object):
 
         """
         from .printing import unicode_
-        return unicode_(self, substances=substances, with_param=with_param, **kwargs)
+        return unicode_(self, substances=substances, with_param=with_param,
+                        with_name=with_name, **kwargs)
 
-    def html(self, substances, with_param=False, **kwargs):
+    def html(self, substances, with_param=False, with_name=False, **kwargs):
         """ Returns a HTML representation of the reaction
 
         Examples
@@ -692,7 +697,8 @@ class Reaction(object):
 
         """
         from .printing import html
-        return html(self, with_param=with_param, substances=substances, **kwargs)
+        return html(self, with_param=with_param, with_name=with_name,
+                    substances=substances, **kwargs)
 
     def _repr_html_(self):
         return self.html({k: k for k in self.keys()})

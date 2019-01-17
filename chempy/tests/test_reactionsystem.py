@@ -107,11 +107,11 @@ def test_ReactionSystem__html_tables():
     ut, unc = rs.unimolecular_html_table()
     assert unc == {0}
     from chempy.printing import html
-    assert html(ut) == u'<table><tr><td>A</td><td ><a title="1: A → 2 A">R2</a></td></tr></table>'
+    assert html(ut, with_name=False) == u'<table><tr><td>A</td><td ><a title="1: A → 2 A">R2</a></td></tr></table>'
 
     bt, bnc = rs.bimolecular_html_table()
     assert bnc == {1}
-    assert html(bt) == u'<table><th></th><th>A</th>\n<tr><td>A</td><td ><a title="0: 2 A → A">R1</a></td></tr></table>'
+    assert html(bt, with_name=False) == u'<table><th></th><th>A</th>\n<tr><td>A</td><td ><a title="0: 2 A → A">R1</a></td></tr></table>'
 
 
 @requires(parsing_library, 'numpy')
