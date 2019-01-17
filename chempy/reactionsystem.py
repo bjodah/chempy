@@ -214,12 +214,14 @@ class ReactionSystem(object):
             colors[k] = ('ffb6c1', 'c71585')  # LightPink, MediumVioletRed
         return colors
 
-    def html(self, with_param=True, checks=(), color_categories=True, split=True, print_fn=None):
+    def html(self, with_param=True, with_name=True, checks=(), color_categories=True,
+             split=True, print_fn=None):
         """ Returns a string with an HTML representation
 
         Parameters
         ----------
         with_param : bool
+        with_name : bool
         checks : tuple
         color_categories : bool
         split : bool
@@ -233,13 +235,14 @@ class ReactionSystem(object):
         if split:
             parts = self.split(checks=checks)
             if len(parts) > 1:
-                return '<br><hl><br>'.join(rs.html(with_param) for rs in parts)
+                return '<br><hl><br>'.join(rs.html(with_param=with_param, with_name=with_name)
+                                           for rs in parts)
         colors = self._category_colors(checks=checks) if color_categories else {}
         return print_fn(self, colors=colors, substances=self.substances)
 
-    def string(self, with_param=True):
+    def string(self, with_param=True, with_name=True):
         from .printing import str_
-        return str_(self, with_param=with_param)
+        return str_(self, with_param=with_param, with_name=with_name)
 
     def _repr_html_(self):  # jupyter notebook hook
         from .printing import javascript
@@ -252,7 +255,7 @@ class ReactionSystem(object):
                 if rxn1 == rxn2:
                     if throw:
                         raise ValueError("Duplicate reactions %d & %d: %s" %
-                                         (i1, i2, rxn1.string(with_param=False)))
+                                         (i1, i2, rxn1.string(with_param=False, with_name=False)))
                     else:
                         return False
         return True
@@ -307,7 +310,7 @@ class ReactionSystem(object):
                 if net != 0:
                     if throw:
                         raise ValueError("Composition violation (%s: %s) in %s" %
-                                         (k, net, rxn.string(with_param=False)))
+                                         (k, net, rxn.string(with_param=False, with_name=False)))
                     else:
                         return False
         return True
