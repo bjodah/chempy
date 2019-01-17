@@ -61,7 +61,7 @@ class CSSPrinter(HTMLPrinter):
             rsys.rxns
         ))]
         tab_template = '<table class="chempy_ReactionSystem chempy_%d">%s%s</table>'
-        header = '<tr><th style="text-align:center;" colspan="4">%s</th></tr>' % (rsys.name or '')
+        header = '<tr><th style="text-align:center;" colspan="5">%s</th></tr>' % (rsys.name or '')
         return tab_template % (id(rsys), header, '\n\n'.join(rows))
 
 

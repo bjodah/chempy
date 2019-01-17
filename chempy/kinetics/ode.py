@@ -451,7 +451,7 @@ def chained_parameter_variation(odesys, durations, init_conc, varied_params, def
 
 
 def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_replace=lambda x: x,
-                   backend=None, SymbolicSys=None, time_symbol=None, unit_registry=None):
+                   backend=None, SymbolicSys=None, time_symbol=None, unit_registry=None, rates_kw=None):
     """ This will be a simpler version of get_odesys without the unit handling code.
     The motivation is to reduce complexity (the code of get_odesys is long with multiple closures).
 
@@ -469,7 +469,13 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
     parameter_symbols : OrderedDict
     backend : str or module
         Symbolic backend (e.g. sympy). The package ``sym`` is used as a wrapper.
-
+    SymbolicSys: class
+        See ``pyodesys`` for API.
+    time_symbol : Symbol
+    unit_registry : object
+        e.g. ``chempy.units.SI_base_registry``
+    rates_kw : dict
+        Keyword arguments passed to the ``rates`` method of rsys.
 
     Returns
     -------
@@ -498,6 +504,10 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
             for pk in rxn.param.parameter_keys:
                 if pk not in keys:
                     keys.append(pk)
+        if rates_kw and 'cstr_fr_fc' in rates_kw:
+            flowrate_volume, feed_conc = rates_kw['cstr_fr_fc']
+            keys.append(flowrate_volume)
+            keys.extend(feed_conc.values())
         parameter_symbols = OrderedDict([(key, backend.Symbol(key)) for key in keys])
 
     if not isinstance(parameter_symbols, OrderedDict):
@@ -507,7 +517,7 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
     symbols['time'] = time_symbol or backend.Symbol('t')
     if any(symbols['time'] == v for k, v in symbols.items() if k != 'time'):
         raise ValueError("time_symbol already in use (name clash?)")
-    rates = rsys.rates(symbols)
+    rates = rsys.rates(symbols, **(rates_kw or {}))
     compo_vecs, compo_names = rsys.composition_balance_vectors()
 
     odesys = SymbolicSys(
