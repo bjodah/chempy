@@ -23,7 +23,7 @@ class _RxnTable(object):
 
     def _cell_label_html(self, ori_idx, rxn):
         """ Reaction formatting callback. (reaction index -> string) """
-        pretty = rxn.unicode(self.substances, with_param=True)
+        pretty = rxn.unicode(self.substances, with_param=True, with_name=False)
         return '<a title="%d: %s">%s</a>' % (ori_idx, pretty, rxn.name or rxn.param)
 
     def _cell_html(self, A, ri, ci=None):

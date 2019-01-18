@@ -95,8 +95,7 @@ def test_ReactionSystem__rates__cstr():
         'H2O': 2*r + fr*fc['H2O'] - fr*c0['H2O']
     }
     variables = dict(chain(c0.items(), [('fc_'+key, val) for key, val in fc.items()], [('fr', fr)]))
-    for fck in (['fc_'+key for key in rs.substances], 'fc_'):
-        assert rs.rates(variables, cstr_fr_fc=('fr', fck)) == ref
+    assert rs.rates(variables, cstr_fr_fc=('fr', {sk: 'fc_'+sk for sk in rs.substances})) == ref
 
 
 @requires('numpy')
@@ -107,11 +106,12 @@ def test_ReactionSystem__html_tables():
     ut, unc = rs.unimolecular_html_table()
     assert unc == {0}
     from chempy.printing import html
-    assert html(ut) == u'<table><tr><td>A</td><td ><a title="1: A → 2 A">R2</a></td></tr></table>'
+    assert html(ut, with_name=False) == u'<table><tr><td>A</td><td ><a title="1: A → 2 A">R2</a></td></tr></table>'
 
     bt, bnc = rs.bimolecular_html_table()
     assert bnc == {1}
-    assert html(bt) == u'<table><th></th><th>A</th>\n<tr><td>A</td><td ><a title="0: 2 A → A">R1</a></td></tr></table>'
+    assert html(bt, with_name=False) == (
+        u'<table><th></th><th>A</th>\n<tr><td>A</td><td ><a title="0: 2 A → A">R1</a></td></tr></table>')
 
 
 @requires(parsing_library, 'numpy')

@@ -58,6 +58,9 @@ class StrPrinter(Printer):
                     self._get('magnitude_fmt', **kwargs))
             except AttributeError:
                 res += self._Reaction_param_str(rxn, **kwargs)
+        if self._get('with_name', **kwargs) and rxn.name is not None:
+            res += self._get('Reaction_param_separator', **kwargs)
+            res += rxn.name
         return res
 
     def _print_ReactionSystem(self, rsys, **kwargs):

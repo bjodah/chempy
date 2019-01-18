@@ -5,7 +5,6 @@ import math
 
 from collections import OrderedDict, defaultdict
 from itertools import chain
-import warnings
 
 from .chemistry import Reaction, Substance
 from .units import to_unitless
@@ -214,12 +213,14 @@ class ReactionSystem(object):
             colors[k] = ('ffb6c1', 'c71585')  # LightPink, MediumVioletRed
         return colors
 
-    def html(self, with_param=True, checks=(), color_categories=True, split=True, print_fn=None):
+    def html(self, with_param=True, with_name=True, checks=(), color_categories=True,
+             split=True, print_fn=None):
         """ Returns a string with an HTML representation
 
         Parameters
         ----------
         with_param : bool
+        with_name : bool
         checks : tuple
         color_categories : bool
         split : bool
@@ -233,13 +234,14 @@ class ReactionSystem(object):
         if split:
             parts = self.split(checks=checks)
             if len(parts) > 1:
-                return '<br><hl><br>'.join(rs.html(with_param) for rs in parts)
+                return '<br><hl><br>'.join(rs.html(with_param=with_param, with_name=with_name)
+                                           for rs in parts)
         colors = self._category_colors(checks=checks) if color_categories else {}
         return print_fn(self, colors=colors, substances=self.substances)
 
-    def string(self, with_param=True):
+    def string(self, with_param=True, with_name=True):
         from .printing import str_
-        return str_(self, with_param=with_param)
+        return str_(self, with_param=with_param, with_name=with_name)
 
     def _repr_html_(self):  # jupyter notebook hook
         from .printing import javascript
@@ -252,7 +254,7 @@ class ReactionSystem(object):
                 if rxn1 == rxn2:
                     if throw:
                         raise ValueError("Duplicate reactions %d & %d: %s" %
-                                         (i1, i2, rxn1.string(with_param=False)))
+                                         (i1, i2, rxn1.string(with_param=False, with_name=False)))
                     else:
                         return False
         return True
@@ -307,7 +309,7 @@ class ReactionSystem(object):
                 if net != 0:
                     if throw:
                         raise ValueError("Composition violation (%s: %s) in %s" %
-                                         (k, net, rxn.string(with_param=False)))
+                                         (k, net, rxn.string(with_param=False, with_name=False)))
                     else:
                         return False
         return True
@@ -543,8 +545,9 @@ class ReactionSystem(object):
         ratexs : iterable of RateExpr instances
         cstr_fr_fc : tuple (str, tuple of str)
             Continuously stirred tank reactor conditions. Pair of
-            flow/volume ratio key (feed-rate/tank-volume) and feed concentration
-            keys. (if second item is a string it is taken to be a prefix)
+            flow/volume ratio key (feed-rate/tank-volume) and dict mapping
+            feed concentration keys to substance keys.
+
         Returns
         -------
         dict
@@ -569,23 +572,23 @@ class ReactionSystem(object):
                 else:
                     result[k] += v
         if cstr_fr_fc:
-            if substance_keys is not None and tuple(substance_keys) != tuple(self.substances.keys()):
-                warnings.warn("Only a subset of substances subject to CSTR treatment")
-            substance_keys = (substance_keys or tuple(self.substances.keys()))
+            # if substance_keys is not None and tuple(substance_keys) != tuple(self.substances.keys()):
+            #     warnings.warn("Only a subset of substances subject to CSTR treatment")
+            # substance_keys = (substance_keys or tuple(self.substances.keys()))
 
             fr_key, fc = cstr_fr_fc
-            if isinstance(fc, str):
-                fc_keys = [fc + k for k in substance_keys]
-            elif isinstance(fc, dict):
-                fc_keys = [fc[k] for k in substance_keys]
-            else:
-                fc_keys = fc
-            if len(fc) != len(substance_keys):
-                raise ValueError("Got incorrect number of feed concentration keys")
-            fr = variables[fr_key]  # feed rate / tank volume ratio
+            # if isinstance(fc, str):
+            #     fc_keys = [fc + k for k in substance_keys]
+            # elif isinstance(fc, dict):
+            #     fc_keys = [fc[k] for k in substance_keys]
+            # else:
+            #     fc_keys = fc
+            # if len(fc) != len(substance_keys):
+            #     raise ValueError("Got incorrect number of feed concentration keys")
+            # fr = variables[fr_key]  # feed rate / tank volume ratio
 
-            for fck, sk in zip(fc_keys, substance_keys):
-                result[sk] += fr*(variables[fck] - variables[sk])
+            for sk, fck in fc.items():  # zip(fc_keys, substance_keys):
+                result[sk] += variables[fr_key]*(variables[fck] - variables[sk])
         return result
 
     def _stoichs(self, attr, keys=None):
