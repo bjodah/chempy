@@ -5,7 +5,6 @@ import math
 
 from collections import OrderedDict, defaultdict
 from itertools import chain
-import warnings
 
 from .chemistry import Reaction, Substance
 from .units import to_unitless

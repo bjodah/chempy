@@ -610,7 +610,6 @@ def test_chained_parameter_variation():
     assert np.allclose(cref, cout, atol=kw['atol']*forgive, rtol=kw['rtol']*forgive)
 
 
-
 def _check_cstr(odesys, fr, fc, extra_pars=None):
     tout, c0 = np.linspace(0, .13, 7), {'H2O2': 2, 'O2': 4, 'H2O': 3}
     params = {fr: 13, fc['H2O2']: 11, fc['O2']: 43, fc['H2O']: 45}
