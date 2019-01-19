@@ -5,7 +5,6 @@ import math
 
 from collections import OrderedDict, defaultdict
 from itertools import chain
-import warnings
 
 from .chemistry import Reaction, Substance
 from .units import to_unitless
@@ -546,8 +545,9 @@ class ReactionSystem(object):
         ratexs : iterable of RateExpr instances
         cstr_fr_fc : tuple (str, tuple of str)
             Continuously stirred tank reactor conditions. Pair of
-            flow/volume ratio key (feed-rate/tank-volume) and feed concentration
-            keys. (if second item is a string it is taken to be a prefix)
+            flow/volume ratio key (feed-rate/tank-volume) and dict mapping
+            feed concentration keys to substance keys.
+
         Returns
         -------
         dict

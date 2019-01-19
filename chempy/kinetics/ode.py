@@ -507,7 +507,8 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
         if rates_kw and 'cstr_fr_fc' in rates_kw:
             flowrate_volume, feed_conc = rates_kw['cstr_fr_fc']
             keys.append(flowrate_volume)
-            keys.extend(feed_conc.keys())
+            keys.extend(feed_conc.values())
+            assert all(sk in rsys.substances for sk in feed_conc)
         parameter_symbols = OrderedDict([(key, backend.Symbol(key)) for key in keys])
 
     if not isinstance(parameter_symbols, OrderedDict):
