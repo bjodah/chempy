@@ -572,23 +572,9 @@ class ReactionSystem(object):
                 else:
                     result[k] += v
         if cstr_fr_fc:
-            if substance_keys is not None and tuple(substance_keys) != tuple(self.substances.keys()):
-                warnings.warn("Only a subset of substances subject to CSTR treatment")
-            substance_keys = (substance_keys or tuple(self.substances.keys()))
-
             fr_key, fc = cstr_fr_fc
-            if isinstance(fc, str):
-                fc_keys = [fc + k for k in substance_keys]
-            elif isinstance(fc, dict):
-                fc_keys = [fc[k] for k in substance_keys]
-            else:
-                fc_keys = fc
-            if len(fc) != len(substance_keys):
-                raise ValueError("Got incorrect number of feed concentration keys")
-            fr = variables[fr_key]  # feed rate / tank volume ratio
-
-            for fck, sk in zip(fc_keys, substance_keys):
-                result[sk] += fr*(variables[fck] - variables[sk])
+            for sk, fck in fc.items():
+                result[sk] += variables[fr_key]*(variables[fck] - variables[sk])
         return result
 
     def _stoichs(self, attr, keys=None):
