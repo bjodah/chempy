@@ -712,7 +712,7 @@ class ReactionSystem(object):
         unconsidered_ri = set()
         for i, r in enumerate(self.rxns):
             if r.order() == 1:
-                keys = list(r.reac.keys())
+                keys = [k for k, v in r.reac.items() if v != 0]
                 if len(keys) == 1:
                     ri = self.as_substance_index(keys[0])
                 else:
@@ -735,7 +735,7 @@ class ReactionSystem(object):
         unconsidered_ri = set()
         for i, r in enumerate(self.rxns):
             if r.order() == 2:
-                keys = list(r.reac.keys())
+                keys = [k for k, v in r.reac.items() if v != 0]
                 if len(keys) == 1:
                     ri = ci = self.as_substance_index(keys[0])
                 elif len(keys) == 2:
