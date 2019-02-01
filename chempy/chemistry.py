@@ -506,29 +506,38 @@ class Reaction(object):
                 kwargs[k] = copy.copy(getattr(self, k))
         return self.__class__(**kwargs)
 
-    def check_any_effect(self):
+    def check_any_effect(self, throw=False):
         """ Checks if the reaction has any effect """
         if not any(self.net_stoich(self.keys())):
-            return False
+            if throw:
+                raise ValueError("The net stoichiometry change of all species are zero.")
+            else:
+                return False
         return True
 
-    def check_all_positive(self):
+    def check_all_positive(self, throw=False):
         """ Checks if all stoichiometric coefficients are positive """
-        for cont in (self.reac, self.prod, self.inact_reac, self.inact_prod):
-            for v in cont.values():
+        for nam, cont in [(nam, getattr(self, nam)) for nam in 'reac prod inact_reac inact_prod'.split()]:
+            for k, v in cont.items():
                 if v < 0:
-                    return False
+                    if throw:
+                        raise ValueError("Found a negative stoichiometry for %s in %s." % (k, nam))
+                    else:
+                        return False
         return True
 
-    def check_all_integral(self):
+    def check_all_integral(self, throw=False):
         """ Checks if all stoichiometric coefficents are integers """
-        for cont in (self.reac, self.prod, self.inact_reac, self.inact_prod):
-            for v in cont.values():
+        for nam, cont in [(nam, getattr(self, nam)) for nam in 'reac prod inact_reac inact_prod'.split()]:
+            for k, v in cont.items():
                 if v != type(v)(int(v)):
-                    return False
+                    if throw:
+                        raise ValueError("Found a non-integer stoichiometric coefficient for %s in %s." % (k, nam))
+                    else:
+                        return False
         return True
 
-    def check_consistent_units(self):
+    def check_consistent_units(self, throw=False):
         if is_quantity(self.param):  # This will assume mass action
             try:
                 to_unitless(self.param/(

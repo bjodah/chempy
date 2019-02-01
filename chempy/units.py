@@ -17,7 +17,7 @@ getter & setter functions in `chempy.units`).
 """
 from __future__ import (absolute_import, division, print_function)
 
-from functools import reduce
+from functools import reduce, wraps
 from operator import mul
 
 from .util.arithmeticdict import ArithmeticDict
@@ -675,10 +675,22 @@ def polyval(p, x):
     _y = np.polyval(_p, _x)
     return _y*u_y
 
-patched_numpy = NameSpace(np)
-patched_numpy.allclose = allclose
-patched_numpy.concatenate = concatenate
-patched_numpy.linspace = linspace
-patched_numpy.tile = tile
-patched_numpy.polyfit = polyfit
-patched_numpy.polyval = polyval
+def _wrap_numpy(k):
+    numpy_func = getattr(np, k)
+    @wraps(numpy_func)
+    def f(*args, **kwargs):
+        return numpy_func(*map(to_unitless, args), **kwargs)
+    return f
+
+if np is None:
+    patched_numpy = None
+else:
+    patched_numpy = NameSpace(np)
+    patched_numpy.allclose = allclose
+    patched_numpy.concatenate = concatenate
+    patched_numpy.linspace = linspace
+    patched_numpy.tile = tile
+    patched_numpy.polyfit = polyfit
+    patched_numpy.polyval = polyval
+    for k in 'log log10 log2 log1p exp expm1 logaddexp logaddexp2'.split():
+        setattr(patched_numpy, k, _wrap_numpy(k))
