@@ -543,7 +543,10 @@ class Reaction(object):
                 to_unitless(self.param/(
                     default_units.molar**(1-self.order())/default_units.s))
             except Exception:
-                return False
+                if throw:
+                    raise
+                else:
+                    return False
             else:
                 return True
         else:
@@ -894,11 +897,19 @@ class Equilibrium(Reaction):
     _str_arrow = '='
     param_char = 'K'  # convention
 
-    def check_consistent_units(self):
+    def check_consistent_units(self, throw=False):
         if is_quantity(self.param):  # This will assume mass action
             exponent = sum(self.prod.values()) - sum(self.reac.values())
-            return unit_of(self.param, simplified=True) == unit_of(
-                default_units.molar**exponent, simplified=True)
+            unit_param = unit_of(self.param, simplified=True)
+            unit_expected = unit_of(default_units.molar**exponent, simplified=True)
+            if unit_param == unit_expected:
+                return True
+            else:
+                if throw:
+                    raise ValueError("Inconsistent units in equilibrium: %s vs %s" %
+                                     (unit_param, unit_expected))
+                else:
+                    return False
         else:
             return True  # the user might not be using ``chempy.units``
 

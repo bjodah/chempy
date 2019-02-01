@@ -17,8 +17,9 @@ getter & setter functions in `chempy.units`).
 """
 from __future__ import (absolute_import, division, print_function)
 
-from functools import reduce, wraps
+from functools import reduce
 from operator import mul
+import sys
 
 from .util.arithmeticdict import ArithmeticDict
 from .util.pyutil import NameSpace, deprecated
@@ -677,6 +678,11 @@ def polyval(p, x):
 
 def _wrap_numpy(k):
     numpy_func = getattr(np, k)
+    if sys.version_info[0] > 2:
+        from functools import wraps
+    else:
+        wraps = lambda _meta_fun: lambda x: x  # py2: numpy.ufunc lacks "__module__"
+
     @wraps(numpy_func)
     def f(*args, **kwargs):
         return numpy_func(*map(to_unitless, args), **kwargs)
