@@ -419,7 +419,7 @@ class Reaction(object):
     _str_arrow = '->'
 
     param_char = 'k'  # convention
-    default_checks = ('any_effect', 'all_positive', 'all_integral', 'consistent_units')
+    default_checks = {'any_effect', 'all_positive', 'all_integral', 'consistent_units'}
 
     @staticmethod
     def _init_stoich(container):
@@ -432,7 +432,7 @@ class Reaction(object):
 
     def __init__(
             self, reac, prod, param=None, inact_reac=None, inact_prod=None,
-            name=None, ref=None, data=None, checks=None):
+            name=None, ref=None, data=None, checks=None, dont_check=None):
         self.reac = self._init_stoich(reac)
         self.inact_reac = self._init_stoich(inact_reac)
         self.prod = self._init_stoich(prod)
@@ -441,9 +441,13 @@ class Reaction(object):
         self.name = name
         self.ref = ref
         self.data = data or {}
-        for check in (self.default_checks if checks is None else checks):
-            if not getattr(self, 'check_'+check)():
-                raise ValueError("Check failed: '%s'" % check)
+        if checks is not None and dont_check is not None:
+            raise ValueError("Cannot specify both checks and dont_check")
+        if checks is None:
+            checks = self.default_checks ^ (dont_check or set())
+
+        for check in checks:
+            getattr(self, 'check_'+check)(throw=True)
 
     @classmethod
     def from_string(cls, string, substance_keys=None, globals_=None, **kwargs):
@@ -889,7 +893,7 @@ class Equilibrium(Reaction):
         else:
             return True  # the user might not be using ``chempy.units``
 
-    def as_reactions(self, kf=None, kb=None, units=None, variables=None, backend=math, new_name=None):
+    def as_reactions(self, kf=None, kb=None, units=None, variables=None, backend=math, new_name=None, **kwargs):
         """ Creates a forward and backward :class:`Reaction` pair
 
         Parameters
@@ -929,9 +933,9 @@ class Equilibrium(Reaction):
 
         return (
             Reaction(self.reac, self.prod, kf, self.inact_reac,
-                     self.inact_prod, ref=self.ref, name=fw_name),
+                     self.inact_prod, ref=self.ref, name=fw_name, **kwargs),
             Reaction(self.prod, self.reac, kb, self.inact_prod,
-                     self.inact_reac, ref=self.ref, name=bw_name)
+                     self.inact_reac, ref=self.ref, name=bw_name, **kwargs)
         )
 
     def equilibrium_expr(self):
