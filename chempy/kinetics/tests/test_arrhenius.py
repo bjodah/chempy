@@ -18,13 +18,16 @@ def test_arrhenius_equation():
 
 _A1, _Ea1, _T1, _k1 = 1e10, 42e3, 273.15, 1e10 * math.exp(-42e3/(8.3145*273.15))
 
+
 def test_ArrheniusParam():
     k = ArrheniusParam(_A1, _Ea1)(_T1)
     assert abs((k - _k1)/_k1) < 1e-4
 
+
 def test_ArrheniusParam__from_rateconst_at_T():
     ap = ArrheniusParam.from_rateconst_at_T(_Ea1, (_T1, _k1))
     assert abs((ap.A - _A1)/_A1) < 1e-4
+
 
 def _get_ref2_units():
     A__s = 1e10
@@ -51,6 +54,7 @@ def test_ArrheniusParamWithUnits():
     r = Reaction({'H2O2': 1}, {'OH': 2}, ap)
     ratc = r.rate_expr().rate_coeff({'temperature': _2.T})
     assert allclose(ratc, _2.k, rtol=1e-4)
+
 
 @requires(units_library)
 def test_ArrheniusParamWithUnits__from_rateconst_at_T():

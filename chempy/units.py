@@ -676,12 +676,14 @@ def polyval(p, x):
     _y = np.polyval(_p, _x)
     return _y*u_y
 
+
 def _wrap_numpy(k):
     numpy_func = getattr(np, k)
     if sys.version_info[0] > 2:
         from functools import wraps
     else:
-        wraps = lambda _meta_fun: lambda x: x  # py2: numpy.ufunc lacks "__module__"
+        def wraps(_meta_fun):
+            return lambda x: x  # py2: numpy.ufunc lacks "__module__"
 
     @wraps(numpy_func)
     def f(*args, **kwargs):
