@@ -484,7 +484,7 @@ class Reaction(object):
         >>> r5 = Reaction.from_string("A -> B; 1/molar/second", 'A B')
         Traceback (most recent call last):
             ...
-        ValueError: Check failed: 'consistent_units'
+        ValueError: Unable to convert between units ...
 
 
         Notes
