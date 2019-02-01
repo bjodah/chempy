@@ -230,11 +230,14 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
 class ArrheniusParamWithUnits(ArrheniusParam):
 
     @classmethod
-    def from_rateconst_at_T(cls, *args, constants=default_constants, units=default_units, **kwargs):
+    def from_rateconst_at_T(cls, *args, **kwargs):
+        if 'constants' not in kwargs:
+            kwargs['constants'] = default_constants
+        if 'units' not in kwargs:
+            kwargs['units'] = default_units
         if 'backend' not in kwargs:
             kwargs['backend'] = patched_numpy
-        return super(ArrheniusParamWithUnits, cls).from_rateconst_at_T(
-            *args, constants=constants, units=units, **kwargs)
+        return super(ArrheniusParamWithUnits, cls).from_rateconst_at_T(*args, **kwargs)
 
     def __call__(self, state, constants=default_constants, units=default_units, backend=None):
         """ See :func:`chempy.arrhenius.arrhenius_equation`. """
