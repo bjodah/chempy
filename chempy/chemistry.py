@@ -419,7 +419,7 @@ class Reaction(object):
     _str_arrow = '->'
 
     param_char = 'k'  # convention
-    default_checks = ('any_effect', 'all_positive', 'all_integral', 'consistent_units')
+    default_checks = {'any_effect', 'all_positive', 'all_integral', 'consistent_units'}
 
     @staticmethod
     def _init_stoich(container):
@@ -432,7 +432,7 @@ class Reaction(object):
 
     def __init__(
             self, reac, prod, param=None, inact_reac=None, inact_prod=None,
-            name=None, ref=None, data=None, checks=None):
+            name=None, ref=None, data=None, checks=None, dont_check=None):
         self.reac = self._init_stoich(reac)
         self.inact_reac = self._init_stoich(inact_reac)
         self.prod = self._init_stoich(prod)
@@ -441,9 +441,13 @@ class Reaction(object):
         self.name = name
         self.ref = ref
         self.data = data or {}
-        for check in (self.default_checks if checks is None else checks):
-            if not getattr(self, 'check_'+check)():
-                raise ValueError("Check failed: '%s'" % check)
+        if checks is not None and dont_check is not None:
+            raise ValueError("Cannot specify both checks and dont_check")
+        if checks is None:
+            checks = self.default_checks ^ (dont_check or set())
+
+        for check in checks:
+            getattr(self, 'check_'+check)(throw=True)
 
     @classmethod
     def from_string(cls, string, substance_keys=None, globals_=None, **kwargs):
@@ -480,7 +484,7 @@ class Reaction(object):
         >>> r5 = Reaction.from_string("A -> B; 1/molar/second", 'A B')
         Traceback (most recent call last):
             ...
-        ValueError: Check failed: 'consistent_units'
+        ValueError: Unable to convert between units ...
 
 
         Notes
@@ -502,35 +506,47 @@ class Reaction(object):
                 kwargs[k] = copy.copy(getattr(self, k))
         return self.__class__(**kwargs)
 
-    def check_any_effect(self):
+    def check_any_effect(self, throw=False):
         """ Checks if the reaction has any effect """
         if not any(self.net_stoich(self.keys())):
-            return False
+            if throw:
+                raise ValueError("The net stoichiometry change of all species are zero.")
+            else:
+                return False
         return True
 
-    def check_all_positive(self):
+    def check_all_positive(self, throw=False):
         """ Checks if all stoichiometric coefficients are positive """
-        for cont in (self.reac, self.prod, self.inact_reac, self.inact_prod):
-            for v in cont.values():
+        for nam, cont in [(nam, getattr(self, nam)) for nam in 'reac prod inact_reac inact_prod'.split()]:
+            for k, v in cont.items():
                 if v < 0:
-                    return False
+                    if throw:
+                        raise ValueError("Found a negative stoichiometry for %s in %s." % (k, nam))
+                    else:
+                        return False
         return True
 
-    def check_all_integral(self):
+    def check_all_integral(self, throw=False):
         """ Checks if all stoichiometric coefficents are integers """
-        for cont in (self.reac, self.prod, self.inact_reac, self.inact_prod):
-            for v in cont.values():
+        for nam, cont in [(nam, getattr(self, nam)) for nam in 'reac prod inact_reac inact_prod'.split()]:
+            for k, v in cont.items():
                 if v != type(v)(int(v)):
-                    return False
+                    if throw:
+                        raise ValueError("Found a non-integer stoichiometric coefficient for %s in %s." % (k, nam))
+                    else:
+                        return False
         return True
 
-    def check_consistent_units(self):
+    def check_consistent_units(self, throw=False):
         if is_quantity(self.param):  # This will assume mass action
             try:
                 to_unitless(self.param/(
                     default_units.molar**(1-self.order())/default_units.s))
             except Exception:
-                return False
+                if throw:
+                    raise
+                else:
+                    return False
             else:
                 return True
         else:
@@ -881,15 +897,23 @@ class Equilibrium(Reaction):
     _str_arrow = '='
     param_char = 'K'  # convention
 
-    def check_consistent_units(self):
+    def check_consistent_units(self, throw=False):
         if is_quantity(self.param):  # This will assume mass action
             exponent = sum(self.prod.values()) - sum(self.reac.values())
-            return unit_of(self.param, simplified=True) == unit_of(
-                default_units.molar**exponent, simplified=True)
+            unit_param = unit_of(self.param, simplified=True)
+            unit_expected = unit_of(default_units.molar**exponent, simplified=True)
+            if unit_param == unit_expected:
+                return True
+            else:
+                if throw:
+                    raise ValueError("Inconsistent units in equilibrium: %s vs %s" %
+                                     (unit_param, unit_expected))
+                else:
+                    return False
         else:
             return True  # the user might not be using ``chempy.units``
 
-    def as_reactions(self, kf=None, kb=None, units=None, variables=None, backend=math, new_name=None):
+    def as_reactions(self, kf=None, kb=None, units=None, variables=None, backend=math, new_name=None, **kwargs):
         """ Creates a forward and backward :class:`Reaction` pair
 
         Parameters
@@ -929,9 +953,9 @@ class Equilibrium(Reaction):
 
         return (
             Reaction(self.reac, self.prod, kf, self.inact_reac,
-                     self.inact_prod, ref=self.ref, name=fw_name),
+                     self.inact_prod, ref=self.ref, name=fw_name, **kwargs),
             Reaction(self.prod, self.reac, kb, self.inact_prod,
-                     self.inact_reac, ref=self.ref, name=bw_name)
+                     self.inact_reac, ref=self.ref, name=bw_name, **kwargs)
         )
 
     def equilibrium_expr(self):
