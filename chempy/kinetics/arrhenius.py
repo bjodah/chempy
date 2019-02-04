@@ -10,7 +10,7 @@ from __future__ import (absolute_import, division, print_function)
 from .._util import get_backend
 from ..util.regression import least_squares
 from ..util.pyutil import defaultnamedtuple
-from ..units import default_constants, default_units, format_string
+from ..units import default_constants, default_units, format_string, patched_numpy
 
 try:
     import numpy as np
@@ -156,6 +156,26 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
     """
 
     @classmethod
+    def from_rateconst_at_T(cls, Ea, T_k, backend=None, constants=None, units=None, **kwargs):
+        """ Constructs an instance from a known rate constant at a given temperature.
+
+        Parameters
+        ----------
+        Ea : float
+            Activation energy.
+        T_k : tuple of two floats
+            Temperature & rate constant.
+
+        """
+        # k = A*exp(-Ea/R/T)
+        # A = k*exp(Ea/R/T)
+        T, k = T_k
+        R = _get_R(constants, units)
+        if backend is None:
+            from chempy.units import patched_numpy as backend
+        return cls(k*backend.exp(Ea/R/T), Ea, **kwargs)
+
+    @classmethod
     def from_fit_of_data(cls, T, k, kerr=None, **kwargs):
         args, vcv = fit_arrhenius_equation(T, k, kerr)
         return cls(*args, **kwargs)
@@ -208,6 +228,17 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
 
 
 class ArrheniusParamWithUnits(ArrheniusParam):
+
+    @classmethod
+    def from_rateconst_at_T(cls, *args, **kwargs):
+        if 'constants' not in kwargs:
+            kwargs['constants'] = default_constants
+        if 'units' not in kwargs:
+            kwargs['units'] = default_units
+        if 'backend' not in kwargs:
+            kwargs['backend'] = patched_numpy
+        return super(ArrheniusParamWithUnits, cls).from_rateconst_at_T(*args, **kwargs)
+
     def __call__(self, state, constants=default_constants, units=default_units, backend=None):
         """ See :func:`chempy.arrhenius.arrhenius_equation`. """
         return super(ArrheniusParamWithUnits, self).__call__(state, constants, units, backend)

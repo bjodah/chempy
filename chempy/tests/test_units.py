@@ -420,6 +420,14 @@ def test_pow0():
 
 
 @requires(units_library)
+def test_patched_numpy():
+    # see https://github.com/python-quantities/python-quantities/issues/152
+    assert allclose(pnp.exp(3*u.joule/(2*u.cal)), 1.43119335, rtol=1e-5)
+    for arg in ([1, 2], [[1], [2]], [1], 2):
+        assert np.all(pnp.exp(arg) == np.exp(arg))
+
+
+@requires(units_library)
 def test_tile():
     a = [2*u.m, 3*u.km]
     assert allclose(pnp.tile(a, 2), [2*u.m, 3000*u.m, 2e-3*u.km, 3*u.km])

@@ -61,9 +61,9 @@ class ReactionSystem(object):
 
     _BaseReaction = Reaction
     _BaseSubstance = Substance
-    default_checks = ('balance', 'substance_keys', 'duplicate', 'duplicate_names')
+    default_checks = {'balance', 'substance_keys', 'duplicate', 'duplicate_names'}
 
-    def __init__(self, rxns, substances=None, name=None, checks=None,
+    def __init__(self, rxns, substances=None, name=None, checks=None, dont_check=None,
                  substance_factory=Substance, missing_substances_from_keys=False,
                  sort_substances=None):
         self.rxns = list(rxns)
@@ -99,7 +99,11 @@ class ReactionSystem(object):
 
         self.name = name
 
-        for check in (self.default_checks if checks is None else checks):
+        if checks is not None and dont_check is not None:
+            raise ValueError("Cannot specify both checks and dont_check")
+        if checks is None:
+            checks = self.default_checks ^ (dont_check or set())
+        for check in checks:
             getattr(self, 'check_'+check)(throw=True)
 
         if sort_substances:
