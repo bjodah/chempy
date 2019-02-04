@@ -24,6 +24,7 @@ def test_ArrheniusParam():
     assert abs((k - _k1)/_k1) < 1e-4
 
 
+@requires('numpy')
 def test_ArrheniusParam__from_rateconst_at_T():
     ap = ArrheniusParam.from_rateconst_at_T(_Ea1, (_T1, _k1))
     assert abs((ap.A - _A1)/_A1) < 1e-4
