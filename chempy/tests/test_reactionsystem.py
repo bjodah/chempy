@@ -184,6 +184,14 @@ def test_ReactionSystem__from_string():
     assert r2.reac == {'H2O': 2, 'H+': 1}
     assert r2.prod == {'H2O': 1, 'H3O+': 1}
 
+    rs2 = ReactionSystem.from_string("""
+ #  H2O -> OH + H
+  H2O -> H+ + OH-
+#H+ + OH- -> H2O
+""")
+    assert len(rs2.rxns) == 1
+    assert sorted(rs2.substances.keys()) == sorted('H2O H+ OH-'.split())
+
 
 @requires(parsing_library, units_library)
 def test_ReactionSystem__from_string__units():
