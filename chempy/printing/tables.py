@@ -21,12 +21,12 @@ class _RxnTable(object):
         from .web import css
         return css(self, substances=self.substances, colors=self.colors)
 
-    def _cell_label_html(self, ori_idx, rxn):
+    def _cell_label_html(self, printer, ori_idx, rxn):
         """ Reaction formatting callback. (reaction index -> string) """
         pretty = rxn.unicode(self.substances, with_param=True, with_name=False)
-        return '<a title="%d: %s">%s</a>' % (ori_idx, pretty, rxn.name or rxn.param)
+        return '<a title="%d: %s">%s</a>' % (ori_idx, pretty, printer._print(rxn.name or rxn.param))
 
-    def _cell_html(self, A, ri, ci=None):
+    def _cell_html(self, printer, A, ri, ci=None):
         args = []
         if ci is not None and ri > ci:
             r = '-'
@@ -41,7 +41,7 @@ class _RxnTable(object):
             if c is None:
                 r = ''
             else:
-                r = ', '.join(self._cell_label_html(*r) for r in c)
+                r = ', '.join(self._cell_label_html(printer, *r) for r in c)
 
             if is_missing:
                 args.append('style="background-color: #%s;"' % self.missing_color)
@@ -74,7 +74,7 @@ class UnimolecularTable(_RxnTable):
             kwargs['substances'] = self.substances
         ss = printer._get('substances', **kwargs)
         rows = '\n'.join('<tr><td>%s</td>%s</tr>' % (
-            printer._print(s), self._cell_html(self.idx_rxn_pairs, rowi)
+            printer._print(s), self._cell_html(printer, self.idx_rxn_pairs, rowi)
         ) for rowi, s in enumerate(ss.values()))
         return '<table>%s</table>' % rows
 
@@ -105,7 +105,7 @@ class BimolecularTable(_RxnTable):
         header = '<th></th>' + ''.join('<th>%s</th>' % printer._print(s) for
                                        s in ss.values())
         rows = ['<tr><td>%s</td>%s</tr>' % (
-            printer._print(s), ''.join(self._cell_html(self.idx_rxn_pairs, rowi, ci)
+            printer._print(s), ''.join(self._cell_html(printer, self.idx_rxn_pairs, rowi, ci)
                                        for ci in range(len(ss)))
         ) for rowi, s in enumerate(ss.values())]
         return '<table>%s</table>' % '\n'.join([header, '\n'.join(rows)])

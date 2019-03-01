@@ -380,7 +380,10 @@ class ReactionSystem(object):
         return candidate
 
     def subset(self, pred, checks=()):
-        """ Creates a new ReactionSystem with a subset of reactions.
+        """ Creates two new instances with the distinct subsets of reactions
+
+        First ReactionSystem will contain the reactions for which the predicate
+        is True, the second for which it is False.
 
         Parameters
         ----------
@@ -389,11 +392,54 @@ class ReactionSystem(object):
         checks : tuple
             See ``ReactionSystem``.
 
+        Returns
+        -------
+        length 2 tuple 
+
         """
-        new_rxns = [r for r in self.rxns if pred(r)]
-        new_substances = OrderedDict([(k, v) for k, v in self.substances.items() if
-                                      any([k in r.keys() for r in new_rxns])])
-        return self.__class__(new_rxns, substances=new_substances, checks=checks)
+        yes_no = yes, no = [], []
+        for r in self.rxns:
+            yes.append(r) if pred(r) else no.append(r)
+        def new_substances(coll):
+            return OrderedDict([(k, v) for k, v in self.substances.items() if
+                                any([k in r.keys() for r in coll])])
+
+        return tuple(self.__class__(coll, substances=new_substances(coll), checks=checks)
+                     for coll in yes_no)
+
+    @staticmethod
+    def concatenate(rsystems, cmp_attrs='reac inact_reac prod inact_prod'.split()):
+        """ Concatenates ReactionSystem instances
+
+        Reactions with identical stoichiometries are added to a separated
+        reactionsystem for "duplicates"
+
+        Parameters
+        ----------
+        rsystems : iterable of ReactionSystem instances
+
+        Returns
+        -------
+        pair of ReactionSystem instaces: the "sum" and "duplicates"
+
+        """
+        iter_rs = iter(rsystems)
+        rsys = next(iter_rs)
+        skipped = ReactionSystem([])
+        def _pred(r):
+            for rr in rsys.rxns:
+                for attr in cmp_attrs:
+                    if getattr(r, attr) != getattr(rr, attr):
+                        break
+                else:
+                    return False
+            return True
+
+        for rs in iter_rs:
+            yes, no = rs.subset(_pred)
+            rsys += yes
+            skipped += no
+        return rsys, skipped
 
     def __iadd__(self, other):
         try:
