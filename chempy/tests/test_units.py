@@ -11,7 +11,7 @@ import pytest
 
 from ..util.testing import requires
 from ..units import (
-    allclose, concatenate, get_derived_unit, is_unitless, linspace, logspace_from_lin,
+    allclose, concatenate, fold_constants, get_derived_unit, is_unitless, linspace, logspace_from_lin,
     SI_base_registry, unitless_in_registry, format_string, get_physical_dimensionality,
     to_unitless, magnitude, default_unit_in_registry, Backend, latex_of_unit,
     unit_of, unit_registry_to_human_readable, units_library, simplified, uniform,
@@ -464,3 +464,8 @@ def test_uniform():
     _check(tuple(base), refs)
     keys = 'foo bar'.split()
     assert magnitude(uniform(dict(zip(keys, base)))) in [dict(zip(keys, r)) for r in refs]
+
+
+@requires(units_library)
+def test_fold_constants():
+    assert abs(fold_constants(dc.pi) - np.pi) < 1e-15

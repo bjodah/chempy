@@ -702,3 +702,17 @@ else:
     patched_numpy.polyval = polyval
     for k in 'log log10 log2 log1p exp expm1 logaddexp logaddexp2'.split():
         setattr(patched_numpy, k, _wrap_numpy(k))
+
+
+def fold_constants(arg):
+    if hasattr(arg, 'dimensionality'):
+        m = arg.magnitude
+        d = 1
+        for k, v in arg.dimensionality.items():
+            if isinstance(k, pq.UnitConstant):
+                m = m * k.simplified**v
+            else:
+                d = d * k**v
+        return m*d
+    else:
+        return arg
