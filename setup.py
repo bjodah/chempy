@@ -44,7 +44,7 @@ else:
             if 'develop' not in sys.argv:
                 warnings.warn("Using git to derive version: dev-branches may compete.")
                 _ver_tmplt = r'\1.post\2' if os.environ.get('CONDA_BUILD', '0') == '1' else r'\1.post\2+\3'
-                __version__ = re.sub('v([0-9.]+)-(\d+)-(\S+)', _ver_tmplt, _git_version)  # .dev < '' < .post
+                __version__ = re.sub(r'v([0-9.]+)-(\d+)-(\S+)', _ver_tmplt, _git_version)  # .dev < '' < .post
 
 
 submodules = [

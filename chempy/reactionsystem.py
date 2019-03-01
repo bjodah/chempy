@@ -333,7 +333,8 @@ class ReactionSystem(object):
         return True
 
     @classmethod
-    def from_string(cls, s, substances=None, rxn_parse_kwargs=None, **kwargs):
+    def from_string(cls, s, substances=None, rxn_parse_kwargs=None,
+                    comment_tokens=('#',), **kwargs):
         """ Create a reaction system from a string
 
         Parameters
@@ -343,6 +344,8 @@ class ReactionSystem(object):
         substances : convertible to iterable of str
         rxn_parse_kwargs : dict
             Keyword arguments passed on to the Reaction baseclass' method ``from_string``.
+        comment_tokens : iterable of str instances
+            Tokens which causes lines to be ignored when prefixed by any of them.
         substance_factory : callable
             Defaults to ``cls._BaseSubstance.from_formula``. Can be set to e.g. ``Substance``.
         \\*\\*kwargs:
@@ -358,7 +361,8 @@ class ReactionSystem(object):
         """
         substance_keys = None if kwargs.get('missing_substances_from_keys', False) else substances
         rxns = [cls._BaseReaction.from_string(r, substance_keys, **(rxn_parse_kwargs or {}))
-                for r in s.split('\n') if r.strip() != '']
+                for r in s.split('\n') if r.strip() != '' and not any(
+                    r.strip().startswith(tok) for tok in comment_tokens)]
         if 'substance_factory' not in kwargs:
             kwargs['substance_factory'] = cls._BaseSubstance.from_formula
         return cls(rxns, substances, **kwargs)
@@ -376,7 +380,10 @@ class ReactionSystem(object):
         return candidate
 
     def subset(self, pred, checks=()):
-        """ Creates a new ReactionSystem with a subset of reactions.
+        """ Creates two new instances with the distinct subsets of reactions
+
+        First ReactionSystem will contain the reactions for which the predicate
+        is True, the second for which it is False.
 
         Parameters
         ----------
@@ -385,11 +392,55 @@ class ReactionSystem(object):
         checks : tuple
             See ``ReactionSystem``.
 
+        Returns
+        -------
+        length 2 tuple
         """
-        new_rxns = [r for r in self.rxns if pred(r)]
-        new_substances = OrderedDict([(k, v) for k, v in self.substances.items() if
-                                      any([k in r.keys() for r in new_rxns])])
-        return self.__class__(new_rxns, substances=new_substances, checks=checks)
+        yes_no = yes, no = [], []
+        for r in self.rxns:
+            yes.append(r) if pred(r) else no.append(r)
+
+        def new_substances(coll):
+            return OrderedDict([(k, v) for k, v in self.substances.items() if
+                                any([k in r.keys() for r in coll])])
+
+        return tuple(self.__class__(coll, substances=new_substances(coll), checks=checks)
+                     for coll in yes_no)
+
+    @staticmethod
+    def concatenate(rsystems, cmp_attrs='reac inact_reac prod inact_prod'.split()):
+        """ Concatenates ReactionSystem instances
+
+        Reactions with identical stoichiometries are added to a separated
+        reactionsystem for "duplicates"
+
+        Parameters
+        ----------
+        rsystems : iterable of ReactionSystem instances
+
+        Returns
+        -------
+        pair of ReactionSystem instaces: the "sum" and "duplicates"
+
+        """
+        iter_rs = iter(rsystems)
+        rsys = next(iter_rs)
+        skipped = ReactionSystem([])
+
+        def _pred(r):
+            for rr in rsys.rxns:
+                for attr in cmp_attrs:
+                    if getattr(r, attr) != getattr(rr, attr):
+                        break
+                else:
+                    return False
+            return True
+
+        for rs in iter_rs:
+            yes, no = rs.subset(_pred)
+            rsys += yes
+            skipped += no
+        return rsys, skipped
 
     def __iadd__(self, other):
         try:
@@ -576,22 +627,8 @@ class ReactionSystem(object):
                 else:
                     result[k] += v
         if cstr_fr_fc:
-            # if substance_keys is not None and tuple(substance_keys) != tuple(self.substances.keys()):
-            #     warnings.warn("Only a subset of substances subject to CSTR treatment")
-            # substance_keys = (substance_keys or tuple(self.substances.keys()))
-
             fr_key, fc = cstr_fr_fc
-            # if isinstance(fc, str):
-            #     fc_keys = [fc + k for k in substance_keys]
-            # elif isinstance(fc, dict):
-            #     fc_keys = [fc[k] for k in substance_keys]
-            # else:
-            #     fc_keys = fc
-            # if len(fc) != len(substance_keys):
-            #     raise ValueError("Got incorrect number of feed concentration keys")
-            # fr = variables[fr_key]  # feed rate / tank volume ratio
-
-            for sk, fck in fc.items():  # zip(fc_keys, substance_keys):
+            for sk, fck in fc.items():
                 result[sk] += variables[fr_key]*(variables[fck] - variables[sk])
         return result
 
