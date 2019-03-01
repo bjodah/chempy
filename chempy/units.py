@@ -42,7 +42,7 @@ else:
     UncertainQuantity = pq.UncertainQuantity
     # Let us extend the underlying pq namespace with some common units in
     # chemistry
-    default_constants = pq.constants
+    default_constants = NameSpace(pq.constants)
 
     default_units = NameSpace(pq)
     default_units.dm = default_units.decimetre = pq.UnitQuantity(
@@ -142,7 +142,7 @@ def get_derived_unit(registry, key):
     key: str
         one of the registry keys or one of: 'diffusivity', 'electricalmobility',
         'permittivity', 'charge', 'energy', 'concentration', 'density',
-        'radiolyticyield'.
+        'radiolytic_yield'.
 
     Examples
     --------
@@ -645,7 +645,7 @@ def concatenate(arrays, **kwargs):
 
 
 def tile(array, *args, **kwargs):
-    """ Parched version of numpy.tile """
+    """ Patched version of numpy.tile (with support for units) """
     try:
         elem = array[0, ...]
     except TypeError:
@@ -702,3 +702,17 @@ else:
     patched_numpy.polyval = polyval
     for k in 'log log10 log2 log1p exp expm1 logaddexp logaddexp2'.split():
         setattr(patched_numpy, k, _wrap_numpy(k))
+
+
+def fold_constants(arg):
+    if hasattr(arg, 'dimensionality'):
+        m = arg.magnitude
+        d = 1
+        for k, v in arg.dimensionality.items():
+            if isinstance(k, pq.UnitConstant):
+                m = m * k.simplified**v
+            else:
+                d = d * k**v
+        return m*d
+    else:
+        return arg

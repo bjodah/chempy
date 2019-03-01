@@ -14,6 +14,27 @@ from .periodic import symbols
 parsing_library = 'pyparsing'  # info used for selective testing.
 
 
+def get_parsing_context():
+    """ returns the default dictionary for parsing strings in chempy """
+    import chempy
+    from chempy.kinetics import rates
+    from chempy.units import default_units, default_constants, to_unitless
+    import numpy
+    globals_ = dict(to_unitless=to_unitless)
+
+    def _update(mod, keys=None):
+        if keys is None:
+            keys = dir(mod)
+        globals_.update({k: getattr(mod, k) for k in keys if not k.startswith('_')})
+    _update(numpy, keys='array log exp'.split())  # could of course add add more
+    _update(rates)
+    _update(chempy)
+    for df in [default_units, default_constants]:
+        if df is not None:
+            globals_.update(df.as_dict())
+    return globals_
+
+
 @memoize()
 def _get_formula_parser():
     """ Create a forward pyparsing parser for chemical formulae
@@ -327,21 +348,11 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
 
     """
     if globals_ is None:
-        import chempy
-        from chempy.kinetics import rates
-        from chempy.units import default_units
-        globals_ = {k: getattr(rates, k) for k in dir(rates)}
-        globals_.update({'chempy': chempy})
-        if default_units is not None:
-            globals_.update({k: v for k, v in chempy.__dict__.items()
-                             if not k.startswith('_')})
-            globals_.update(default_units.as_dict())
-            import numpy as np
-            globals_['array'] = np.array
+        globals_ = get_parsing_context()
     parts = line.rstrip('\n').split(';')
     stoich = parts[0].strip()
     if len(parts) > 2:
-        kwargs.update(eval('dict('+';'.join(parts[2:])+')', globals_ or {}))
+        kwargs.update(eval('dict('+';'.join(parts[2:])+'\n)', globals_ or {}))
     if len(parts) > 1:
         param = parts[1].strip()
     else:
