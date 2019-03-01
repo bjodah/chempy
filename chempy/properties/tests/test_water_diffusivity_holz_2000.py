@@ -28,7 +28,7 @@ def test_water_self_diffusion_coefficient():
         pass
     else:
         unit = u.m**2/u.s
-        assert allclose(1e9*w_sd(298.15*u.K, units=pq),
+        assert allclose(1e9*w_sd(298.15*u.K, units=u),
                         2.299*unit, rtol=1e-3, atol=1e-8*unit)
-        assert allclose(1e9*w_sd(linspace(297, 299)*u.K, units=pq),
+        assert allclose(1e9*w_sd(linspace(297, 299)*u.K, units=u),
                         2.299*u.m**2/u.s, rtol=5e-2, atol=1e-2*unit)
