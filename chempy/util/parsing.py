@@ -352,7 +352,7 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
     parts = line.rstrip('\n').split(';')
     stoich = parts[0].strip()
     if len(parts) > 2:
-        kwargs.update(eval('dict('+';'.join(parts[2:])+')', globals_ or {}))
+        kwargs.update(eval('dict('+';'.join(parts[2:])+'\n)', globals_ or {}))
     if len(parts) > 1:
         param = parts[1].strip()
     else:

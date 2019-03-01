@@ -186,12 +186,13 @@ def test_ReactionSystem__from_string():
 
     rs2 = ReactionSystem.from_string("""
  #  H2O -> OH + H
-  H+ + OH- -> H2O; 4*pi*(4e-9*m**2/s + 2e-9*m**2/s)*0.44*nm*Avogadro_constant
+  H+ + OH- -> H2O; 4*pi*(4e-9*m**2/s + 2e-9*m**2/s)*0.44*nm*Avogadro_constant; ref='made up #hashtag'  # comment
 #H+ + OH- -> H2O
 """)
     assert len(rs2.rxns) == 1
     assert sorted(rs2.substances.keys()) == sorted('H2O H+ OH-'.split())
     assert allclose(rs2.rxns[0].param, 1.99786e10/default_units.M/default_units.s, rtol=1e-5)
+    assert rs2.rxns[0].ref == 'made up #hashtag'
 
 
 @requires(parsing_library, units_library)
