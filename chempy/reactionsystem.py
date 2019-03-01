@@ -394,12 +394,12 @@ class ReactionSystem(object):
 
         Returns
         -------
-        length 2 tuple 
-
+        length 2 tuple
         """
         yes_no = yes, no = [], []
         for r in self.rxns:
             yes.append(r) if pred(r) else no.append(r)
+
         def new_substances(coll):
             return OrderedDict([(k, v) for k, v in self.substances.items() if
                                 any([k in r.keys() for r in coll])])
@@ -426,6 +426,7 @@ class ReactionSystem(object):
         iter_rs = iter(rsystems)
         rsys = next(iter_rs)
         skipped = ReactionSystem([])
+
         def _pred(r):
             for rr in rsys.rxns:
                 for attr in cmp_attrs:

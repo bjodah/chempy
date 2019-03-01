@@ -18,9 +18,10 @@ def get_parsing_context():
     """ returns the default dictionary for parsing strings in chempy """
     import chempy
     from chempy.kinetics import rates
-    from chempy.units import default_units, default_constants, to_unitless, rescale
+    from chempy.units import default_units, default_constants, to_unitless
     import numpy
     globals_ = dict(to_unitless=to_unitless)
+
     def _update(mod, keys=None):
         if keys is None:
             keys = dir(mod)

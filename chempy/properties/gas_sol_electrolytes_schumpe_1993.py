@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-This module implements an expression for estimating how gas solubility in water is affected by dissolved non-reactive salts,
-the expression and parameters are from Schumpe (1993).
+This module implements an expression for estimating how gas solubility in water
+is affected by dissolved non-reactive salts, the expression and parameters are from Schumpe (1993).
 """
 
 import warnings
@@ -40,8 +40,8 @@ p_ion_rM = {  # "rM" === "per molar"
     'HCO3-': 0.1372,
     'HSO3-': 0.0543,
     'H2PO4-': 0.1025,
-    #'0-O-': 0.0765,
-    #'0-OCH2COO-': 0.0119,
+    # '0-O-': 0.0765,
+    # '0-OCH2COO-': 0.0119,
     'S2O3-2': 0.1109,
     'HPO4-2': 0.1789,
     'CO3-2': 0.1666,
@@ -104,7 +104,13 @@ reference = dict(
     title='The estimation of gas solubilities in salt solutions',
     volume=48,
     issn='0009-2509',
-    abstract='The effects of dissolved salts on the solubilities of gases were analysed based on a comprehensive set of literature data for the temperature of 298.2 K. A new empirical model was suggested which, at no increase in the number of adjustable parameters, described the data with a lower standard deviation than previously suggested models. The parameter values evaluated for the new model allow to estimate the effects of 20 cations and 19 anions on the solubilities of 15 gases.',
+    abstract=(
+        'The effects of dissolved salts on the solubilities of gases were analysed based on '
+        'a comprehensive set of literature data for the temperature of 298.2 K. A new '
+        'empirical model was suggested which, at no increase in the number of adjustable '
+        'parameters, described the data with a lower standard deviation than previously '
+        'suggested models. The parameter values evaluated for the new model allow to '
+        'estimate the effects of 20 cations and 19 anions on the solubilities of 15 gases.'),
     pages=(153, 158),
     number=1,
     journaltitle='Chemical Engineering Science',
