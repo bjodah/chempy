@@ -177,8 +177,6 @@ def test_Reaction_from_string__units():
     with pytest.raises(ValueError):
         Reaction.from_string("H2O -> H+ + OH-; 1e-4/M/s", 'H2O H+ OH-'.split())
 
-    Reaction.from_string("CO2(aq) = CO2(g); chempy.henry.HenryWithUnits(3.3e-4 * molar / Pa, 2400 * K)")
-
 
 @requires(parsing_library, units_library)
 def test_Substance__molar_mass():
@@ -266,11 +264,14 @@ def test_Equilibrium__eliminate():
 
 @requires(parsing_library, units_library)
 def test_Equilibrium__from_string():
-    Equilibrium.from_string('H2O = H+ + OH-')
-    Equilibrium.from_string('H2O = H+ + OH-; 1e-14')
-    Equilibrium.from_string('H2O = H+ + OH-; 1e-14*molar')
+    assert Equilibrium.from_string('H2O = H+ + OH-').param is None
+    assert Equilibrium.from_string('H2O = H+ + OH-; 1e-14').param == 1e-14
+    assert Equilibrium.from_string('H2O = H+ + OH-; 1e-14*molar').param ** 0 == 1
     with pytest.raises(ValueError):
         Equilibrium.from_string('H+ + OH- = H2O; 1e-14*molar')
+    eq5 = Equilibrium.from_string("CO2(aq) = CO2(g);"
+                                  "chempy.henry.HenryWithUnits(3.3e-4 * molar / Pa, 2400 * K)")
+    assert eq5.reac == {'CO2(aq)': 1}
 
 
 def test_Equilibrium__cancel():

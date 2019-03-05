@@ -446,6 +446,9 @@ class ReactionSystem(object):
         try:
             self.substances.update(other.substances)
         except AttributeError:
+            other = list(other)
+            if not all(isinstance(r, Reaction) for r in other):
+                raise ValueError("Need an iterable of Reaction instances")
             self.rxns.extend(other)
         else:
             self.rxns.extend(other.rxns)
@@ -456,7 +459,10 @@ class ReactionSystem(object):
             substances = OrderedDict(chain(self.substances.items(), other.substances.items()))
         except AttributeError:
             substances = self.substances.copy()
-        return self.__class__(chain(self.rxns, getattr(other, 'rxns', other)), substances, checks=())
+        other_rxns = list(getattr(other, 'rxns', other))
+        if not all(isinstance(r, Reaction) for r in other_rxns):
+            raise ValueError("Need an iterable of Reaction instances")
+        return self.__class__(chain(self.rxns, other_rxns), substances, checks=())
 
     def __eq__(self, other):
         if self is other:
