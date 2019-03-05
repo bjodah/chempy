@@ -177,6 +177,8 @@ def test_Reaction_from_string__units():
     with pytest.raises(ValueError):
         Reaction.from_string("H2O -> H+ + OH-; 1e-4/M/s", 'H2O H+ OH-'.split())
 
+    Reaction.from_string("CO2(aq) = CO2(g); chempy.henry.HenryWithUnits(3.3e-4 * molar / Pa, 2400 * K)")
+
 
 @requires(parsing_library, units_library)
 def test_Substance__molar_mass():
