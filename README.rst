@@ -1,8 +1,8 @@
 ChemPy
 ======
 
-.. image:: http://davycrockett.mooo.com:49080/api/badges/bjodah/chempy/status.svg
-   :target: http://davycrockett.mooo.com:49080/bjodah/chempy
+.. image:: http://hera.physchem.kth.se:8080/api/badges/bjodah/chempy/status.svg
+   :target: http://hera.physchem.kth.se:8080/bjodah/chempy
    :alt: Build status
 .. image:: https://img.shields.io/pypi/v/chempy.svg
    :target: https://pypi.python.org/pypi/chempy

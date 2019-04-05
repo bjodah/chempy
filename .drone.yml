@@ -110,7 +110,7 @@ pipeline:
     image: drillster/drone-rsync
     when:
       event: [push]
-    hosts: [ "192.168.1.99" ]  # davycrockett.mooo.com
+    hosts: [ "hera.physchem.kth.se" ]
     port: 22
     user: chempy
     secrets: [ rsync_key ]  # secret only set fro event "push" not "pull_request"
