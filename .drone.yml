@@ -56,16 +56,6 @@ pipeline:
       - sed -i -E -e "/python_requires/d" setup.py
       - bash -c "source /tmp/test_py2/bin/activate; pip install --cache-dir ./ci_cache/pip_cache fastcache pytest '.[all]' && pytest -rs --pyargs chempy -k 'not native'"
 
-  conda-recipe:
-    image: bjodah/bjodahimg18dev:v1.5
-    group: testing
-    commands:
-      - export CONDA_PKGS_DIRS=$(pwd)/ci_cache/conda_packages
-      - git fetch -tq
-      - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
-      - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${DRONE_BRANCH}" conda-recipe
-      - (cd $CONDA_PKGS_DIRS; find . -maxdepth 1 -type d -not -path . -not -path .. | xargs rm -r)
-
   render-notebooks:
     image: bjodah/bjodahimg18dev:v1.5
     group: testing
@@ -81,6 +71,16 @@ pipeline:
       - mv index.html index.ipynb.html
       - (cd examples/; for f in bokeh_*.py; do python3 -m bokeh html $f; done)
       - cp -r index.* examples/ "deploy/public_html/branches/${DRONE_BRANCH}"
+
+#  conda-recipe:
+#    image: bjodah/bjodahimg18dev:v1.5
+#    group: testing
+#    commands:
+#      - export CONDA_PKGS_DIRS=$(pwd)/ci_cache/conda_packages
+#      - git fetch -tq
+#      - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
+#      - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${DRONE_BRANCH}" conda-recipe
+#      - (cd $CONDA_PKGS_DIRS; find . -maxdepth 1 -type d -not -path . -not -path .. | xargs rm -r)
 
   compile-documentation:
     image: bjodah/bjodahimg18dev:v1.5

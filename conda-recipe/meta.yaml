@@ -30,7 +30,7 @@ requirements:
     - quantities >=0.12.1
     - pulp >=1.6.8
     - pyneqsys >=0.5.4
-    - pyodesys >=0.12.4
+    - pyodesys >=0.12.5
     - pyparsing >=2.0.3
     - sym >=0.3.4
     - notebook
