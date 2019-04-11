@@ -19,11 +19,12 @@ pipeline:
       - git fetch -tq
       - if [ ! -d $SUN3BASE ]; then .ci/get_sundials.sh 3.2.1 $SUN3BASE -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_SIZE=32 $SUN3BASE; fi
       - if [ ! -d $PYTHONUSERBASE ]; then mkdir $PYTHONUSERBASE; fi
+      - apt-get update && apt-get install --assume-yes python-dev
       - CPATH=$SUN3BASE/include LIBRARY_PATH=$SUN3BASE/lib LD_LIBRARY_PATH=$SUN3BASE/lib ./.ci/run_ci.sh chempy
       - ./.ci/prepare_deploy.sh
-      - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
-      - PATH=/opt/miniconda3/bin:$PATH conda update --quiet conda-build
-      - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${CI_BRANCH}" conda-recipe
+      - #PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
+      - #PATH=/opt/miniconda3/bin:$PATH conda update --quiet conda-build
+      - #PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${CI_BRANCH}" conda-recipe
       - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
       - ./.ci/grep-for-merge-blocking-token.sh
       - ./.ci/grep-for-binary-data.sh
