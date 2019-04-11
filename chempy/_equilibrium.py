@@ -48,7 +48,7 @@ def _get_rc_interval(stoich, c0):
     else:
         lower = 0
 
-    if lower == 0 and upper == 0:
+    if lower is 0 and upper is 0:
         raise ValueError("0-interval")
     else:
         return lower, upper

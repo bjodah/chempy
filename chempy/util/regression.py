@@ -138,7 +138,7 @@ def least_squares_units(x, y, w=1):
 
     """
     x_unit, y_unit = unit_of(x), unit_of(y)
-    explicit_errors = w != 1
+    explicit_errors = w is not 1
     if explicit_errors:
         if unit_of(w) == y_unit**-2:
             _w = to_unitless(w, y_unit**-2)
