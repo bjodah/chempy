@@ -3,7 +3,7 @@ pipeline:
     image: drillster/drone-volume-cache
     restore: true
     mount:
-      - ./ci_cache/sund-3.2.1
+      - ./ci_cache/sund-4.1.0
       - ./ci_cache/pyusrb
       - ./ci_cache/conda_packages
       - ./ci_cache/pip_cache
@@ -14,14 +14,13 @@ pipeline:
   install:
     image: bjodah/bjodahimg18dev:v1.6
     commands:
-      - export SUN3BASE=$(pwd)/ci_cache/sund-3.2.1
+      - export SUN3BASE=$(pwd)/ci_cache/sund-4.1.0
       - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
-      - if [ ! -d $SUN3BASE ]; then .ci/get_sundials.sh 3.2.1 $SUN3BASE -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_SIZE=32 $SUN3BASE; fi
+      - if [ ! -d $SUN3BASE ]; then .ci/get_sundials.sh 4.1.0 $SUN3BASE -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_SIZE=32 $SUN3BASE; fi
       - if [ ! -d $PYTHONUSERBASE ]; then mkdir $PYTHONUSERBASE; fi
       - export CPATH=$SUN3BASE/include
       - export LIBRARY_PATH=$SUN3BASE/lib
       - export LD_LIBRARY_PATH=$SUN3BASE/lib
-      - python3 -m pip install --upgrade pip
       - python3 -m pip install --cache-dir ./ci_cache/pip_cache --user -e .[all]
       - python3 -c "import pycvodes"  # debug this CI config
       - git fetch -tq
@@ -33,11 +32,13 @@ pipeline:
   test-suite:
     image: bjodah/bjodahimg18dev:v1.6
     group: testing
+    environment:
+      - CPLUS_INCLUDE_PATH=/opt/boost_1_69_0/include
     commands:
       - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
-      - export CPATH=$(pwd)/ci_cache/sund-3.2.1/include
-      - export LIBRARY_PATH=$(pwd)/ci_cache/sund-3.2.1/lib
-      - export LD_LIBRARY_PATH=$(pwd)/ci_cache/sund-3.2.1/lib
+      - export CPATH=$(pwd)/ci_cache/sund-4.1.0/include
+      - export LIBRARY_PATH=$(pwd)/ci_cache/sund-4.1.0/lib
+      - export LD_LIBRARY_PATH=$(pwd)/ci_cache/sund-4.1.0/lib
       - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
       - ./scripts/run_tests.sh --cov chempy --cov-report html --slow --veryslow
       - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
@@ -63,9 +64,9 @@ pipeline:
       - CHEMPY_DEPRECATION_FILTER=ignore
     commands:
       - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
-      - export CPATH=$(pwd)/ci_cache/sund-3.2.1/include
-      - export LIBRARY_PATH=$(pwd)/ci_cache/sund-3.2.1/lib
-      - export LD_LIBRARY_PATH=$(pwd)/ci_cache/sund-3.2.1/lib
+      - export CPATH=$(pwd)/ci_cache/sund-4.1.0/include
+      - export LIBRARY_PATH=$(pwd)/ci_cache/sund-4.1.0/lib
+      - export LD_LIBRARY_PATH=$(pwd)/ci_cache/sund-4.1.0/lib
       - ./scripts/render_notebooks.sh
       - ./.ci/grep-for-binary-data.sh
       - mv index.html index.ipynb.html
@@ -88,9 +89,9 @@ pipeline:
       - CHEMPY_DEPRECATION_FILTER=ignore
     commands:
       - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
-      - export CPATH=$(pwd)/ci_cache/sund-3.2.1/include
-      - export LIBRARY_PATH=$(pwd)/ci_cache/sund-3.2.1/lib
-      - export LD_LIBRARY_PATH=$(pwd)/ci_cache/sund-3.2.1/lib
+      - export CPATH=$(pwd)/ci_cache/sund-4.1.0/include
+      - export LIBRARY_PATH=$(pwd)/ci_cache/sund-4.1.0/lib
+      - export LD_LIBRARY_PATH=$(pwd)/ci_cache/sund-4.1.0/lib
       - ./scripts/generate_docs.sh
       - cp LICENSE doc/_build/html/
       - cp -r doc/_build/html/ deploy/public_html/branches/${DRONE_BRANCH}
@@ -99,7 +100,7 @@ pipeline:
     image: drillster/drone-volume-cache
     rebuild: true
     mount:
-      - ./ci_cache/sund-3.2.1
+      - ./ci_cache/sund-4.1.0
       - ./ci_cache/pyusrb
       - ./ci_cache/conda_packages
       - ./ci_cache/pip_cache
