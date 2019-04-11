@@ -161,6 +161,9 @@ def test_ReactionSystem__add():
 
     rs4 = ReactionSystem.from_string("H2O -> H+ + OH-; 1e-4")
     rs4 += [Reaction({'H+', 'OH-'}, {'H2O'}, 1e10)]
+    assert len(rs4.rxns) == 2
+    assert rs4.rxns[0].reac == {'H2O': 1}
+    assert rs4.rxns[1].reac == {'H+': 1, 'OH-': 1}
     res = rs4.rates({'H2O': 1, 'H+': 1e-7, 'OH-': 1e-7})
     for k in 'H2O H+ OH-'.split():
         assert abs(res[k]) < 1e-16
@@ -170,6 +173,12 @@ def test_ReactionSystem__add():
     rs7 = rs6 + (Reaction.from_string("H+ + H2O -> H3O+"),)
     assert len(rs7.rxns) == 4
 
+    with pytest.raises(ValueError):
+        rs5 += (rs1, rs2)
+
+    with pytest.raises(ValueError):
+        rs5 + (rs1, rs2)
+
     rs1 = ReactionSystem.from_string('O2 + H2 -> H2O2')
     rs1.substances['H2O2'].data['D'] = 123
     rs2 = ReactionSystem.from_string('H2O2 -> 2 OH')
@@ -177,11 +186,17 @@ def test_ReactionSystem__add():
     rs2.substances['OH'].data['D'] = 789
     rs3 = rs2 + rs1
     assert (rs3.substances['H2O2'].data['D'] == 123 and rs3.substances['OH'].data['D'] == 789)
+    assert rs3.rxns[0].reac == {'H2O2': 1}
+    assert rs3.rxns[1].reac == {'O2': 1, 'H2': 1}
+    assert len(rs3.rxns) == 2
     rs2 += rs1
     assert (rs2.substances['H2O2'].data['D'] == 123 and rs2.substances['OH'].data['D'] == 789)
+    assert rs2.rxns[0].reac == {'H2O2': 1}
+    assert rs2.rxns[1].reac == {'O2': 1, 'H2': 1}
+    assert len(rs2.rxns) == 2
 
 
-@requires(parsing_library)
+@requires(parsing_library, units_library)
 def test_ReactionSystem__from_string():
     rs = ReactionSystem.from_string('-> H + OH; Radiolytic(2.1e-7)', checks=())
     assert rs.rxns[0].reac == {}
@@ -193,6 +208,16 @@ def test_ReactionSystem__from_string():
     r2, = ReactionSystem.from_string("H2O + H2O + H+ -> H3O+ + H2O").rxns
     assert r2.reac == {'H2O': 2, 'H+': 1}
     assert r2.prod == {'H2O': 1, 'H3O+': 1}
+
+    rs2 = ReactionSystem.from_string("""
+ #  H2O -> OH + H
+  H+ + OH- -> H2O; 4*pi*(4e-9*m**2/s + 2e-9*m**2/s)*0.44*nm*Avogadro_constant; ref='made up #hashtag'  # comment
+#H+ + OH- -> H2O
+""")
+    assert len(rs2.rxns) == 1
+    assert sorted(rs2.substances.keys()) == sorted('H2O H+ OH-'.split())
+    assert allclose(rs2.rxns[0].param, 1.99786e10/default_units.M/default_units.s, rtol=1e-5)
+    assert rs2.rxns[0].ref == 'made up #hashtag'
 
 
 @requires(parsing_library, units_library)
@@ -349,6 +374,22 @@ def test_ReactionSystem__subset():
     r1 = Reaction({'NH3': 2}, {'N2': 1, 'H2': 3})
     r2 = Reaction({'N2H4': 1}, {'N2': 1, 'H2': 2})
     rs1 = ReactionSystem([r1, r2])
-    rs2 = rs1.subset(lambda r: 'N2H4' in r.keys())
+    rs2, rs3 = rs1.subset(lambda r: 'N2H4' in r.keys())
     assert len(rs1.rxns) == 2 and len(rs2.rxns) == 1
     assert rs2 == ReactionSystem([r2])
+    assert rs3 == ReactionSystem([r1])
+
+
+def test_ReactionSystem__concatenate():
+    rs1 = ReactionSystem.from_string("""
+    H + OH -> H2O; 1e10; name='rs1a'
+    2 H2O2 -> 2 H2O + O2; 1e-7; name='rs1b'
+""")
+    rs2 = ReactionSystem.from_string("""
+    H + OH -> H2O; 1e11; name='rs2a'
+    H2O2 -> H2 + O2; 1e-9; name='rs2b'
+""")
+    rs, skipped = ReactionSystem.concatenate([rs1, rs2])
+    sr, = skipped.rxns
+    assert sr.name == 'rs2a'
+    assert rs.rxns[-1].name == 'rs2b'

@@ -9,7 +9,7 @@ import pytest
 from ..util.arithmeticdict import ArithmeticDict
 from ..util.testing import requires
 from ..util.parsing import parsing_library
-from ..units import default_units, units_library, to_unitless
+from ..units import default_units, units_library, to_unitless, allclose
 from ..chemistry import (
     equilibrium_quotient, Substance, Species, Reaction,
     Equilibrium, balance_stoichiometry
@@ -148,7 +148,7 @@ def test_Reaction__from_string():
     r6 = r5.copy()
     assert r5 == r6
 
-    r7 = Reaction.from_string("H2O -> H + OH; None; data=dict(ref='foo; bar; baz;')")
+    r7 = Reaction.from_string("H2O -> H + OH; None; data=dict(ref='foo; bar; baz;')  # foobar")
     assert r7.data['ref'] == 'foo; bar; baz;'
 
 
@@ -159,9 +159,9 @@ def test_Reaction_from_string__units():
     r6 = Reaction.from_string('->', checks=())
     assert r6.reac == {} and r6.prod == {}
 
-    r7 = Reaction.from_string('2 A -> B; 2e-3*metre**3/mol/hour', None)
+    r7 = Reaction.from_string('2 A -> B; exp(log(2e-3))*metre**3/mol/hour', None)
     assert r7.reac == {'A': 2} and r7.prod == {'B': 1}
-    assert r7.param == 2e-3*default_units.metre**3/default_units.mol/default_units.hour
+    assert allclose(r7.param, 2e-3*default_units.metre**3/default_units.mol/default_units.hour)
 
     with pytest.raises(ValueError):
         Reaction.from_string('2 A -> B; 2e-3/hour', None)
@@ -264,11 +264,14 @@ def test_Equilibrium__eliminate():
 
 @requires(parsing_library, units_library)
 def test_Equilibrium__from_string():
-    Equilibrium.from_string('H2O = H+ + OH-')
-    Equilibrium.from_string('H2O = H+ + OH-; 1e-14')
-    Equilibrium.from_string('H2O = H+ + OH-; 1e-14*molar')
+    assert Equilibrium.from_string('H2O = H+ + OH-').param is None
+    assert Equilibrium.from_string('H2O = H+ + OH-; 1e-14').param == 1e-14
+    assert Equilibrium.from_string('H2O = H+ + OH-; 1e-14*molar').param ** 0 == 1
     with pytest.raises(ValueError):
         Equilibrium.from_string('H+ + OH- = H2O; 1e-14*molar')
+    eq5 = Equilibrium.from_string("CO2(aq) = CO2(g);"
+                                  "chempy.henry.HenryWithUnits(3.3e-4 * molar / Pa, 2400 * K)")
+    assert eq5.reac == {'CO2(aq)': 1}
 
 
 def test_Equilibrium__cancel():

@@ -155,6 +155,12 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
 
     """
 
+    def html(self, fmt):
+        return '%s exp((%s)/(RT))' % (fmt(self.A), fmt(self.Ea))
+
+    def unicode(self, fmt):
+        return '%s exp((%s)/(RT))' % (fmt(self.A), fmt(self.Ea))
+
     @classmethod
     def from_rateconst_at_T(cls, Ea, T_k, backend=None, constants=None, units=None, **kwargs):
         """ Constructs an instance from a known rate constant at a given temperature.

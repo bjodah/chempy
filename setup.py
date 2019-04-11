@@ -44,7 +44,7 @@ else:
             if 'develop' not in sys.argv:
                 warnings.warn("Using git to derive version: dev-branches may compete.")
                 _ver_tmplt = r'\1.post\2' if os.environ.get('CONDA_BUILD', '0') == '1' else r'\1.post\2+\3'
-                __version__ = re.sub('v([0-9.]+)-(\d+)-(\S+)', _ver_tmplt, _git_version)  # .dev < '' < .post
+                __version__ = re.sub(r'v([0-9.]+)-(\d+)-(\S+)', _ver_tmplt, _git_version)  # .dev < '' < .post
 
 submodules = [
     'chempy.electrochemistry',
@@ -112,7 +112,7 @@ setup_kwargs = dict(
     install_requires=[
         'numpy>1.11.3', 'scipy>=1.0.1', 'matplotlib>=2.2.3',
         'sympy>=1.1.1,!=1.2', 'quantities>=0.12.1', 'pyneqsys>=0.5.5',
-        'pyodesys>=0.12.4' if sys.version_info[0] >= 3 else 'pyodesys<0.12',
+        'pyodesys>=0.12.5' if sys.version_info[0] >= 3 else 'pyodesys<0.12',
         'pyparsing>=2.0.3', 'sym>=0.3.4', 'jupyter',
         'pulp>=1.6.8',
         # 'dot2tex>=2.9.0'

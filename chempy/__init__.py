@@ -15,6 +15,8 @@ from .kinetics import EyringParam, EyringHS, MassAction
 
 from .util.pyutil import ChemPyDeprecationWarning
 
+from . import henry
+
 import sys
 
 if sys.version_info < (3, 5, 0):

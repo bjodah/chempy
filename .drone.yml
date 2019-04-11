@@ -12,7 +12,9 @@ pipeline:
     ttl: 90  # liftetime in days
 
   install:
-    image: bjodah/bjodahimg18dev:v1.5
+    image: bjodah/bjodahimg18dev:v1.6
+    environment:
+      - CPLUS_INCLUDE_PATH=/opt/boost_1_69_0/include
     commands:
       - export SUN3BASE=$(pwd)/ci_cache/sund-3.2.1
       - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
@@ -21,7 +23,6 @@ pipeline:
       - export CPATH=$SUN3BASE/include
       - export LIBRARY_PATH=$SUN3BASE/lib
       - export LD_LIBRARY_PATH=$SUN3BASE/lib
-      - python3 -m pip install --upgrade pip
       - python3 -m pip install --cache-dir ./ci_cache/pip_cache --user -e .[all]
       - python3 -c "import pycvodes"  # debug this CI config
       - git fetch -tq
@@ -31,8 +32,10 @@ pipeline:
       - cp dist/chempy-* deploy/public_html/branches/${DRONE_BRANCH}/
 
   test-suite:
-    image: bjodah/bjodahimg18dev:v1.5
+    image: bjodah/bjodahimg18dev:v1.6
     group: testing
+    environment:
+      - CPLUS_INCLUDE_PATH=/opt/boost_1_69_0/include
     commands:
       - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
       - export CPATH=$(pwd)/ci_cache/sund-3.2.1/include
@@ -50,24 +53,15 @@ pipeline:
       - bash -c "source /tmp/test_sdist/bin/activate; pip install --cache-dir ./ci_cache/pip_cache $(eval ls chempy-*.tar.gz) pytest; pytest --pyargs chempy"
       - bash -c "source /tmp/test_git_archive/bin/activate; pip install --cache-dir ./ci_cache/pip_cache chempy-head.zip pytest; pytest --pyargs chempy"
       - cd -
+      - apt-get update && apt-get install --assume-yes python-dev
       - ( python2 -m pip >/dev/null || curl -Ls https://bootstrap.pypa.io/get-pip.py | python2 - --user )
       - python2 -m pip install --user virtualenv
       - python2 -m virtualenv /tmp/test_py2
       - sed -i -E -e "/python_requires/d" setup.py
       - bash -c "source /tmp/test_py2/bin/activate; pip install --cache-dir ./ci_cache/pip_cache fastcache pytest '.[all]' && pytest -rs --pyargs chempy -k 'not native'"
 
-  conda-recipe:
-    image: bjodah/bjodahimg18dev:v1.5
-    group: testing
-    commands:
-      - export CONDA_PKGS_DIRS=$(pwd)/ci_cache/conda_packages
-      - git fetch -tq
-      - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
-      - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${DRONE_BRANCH}" conda-recipe
-      - (cd $CONDA_PKGS_DIRS; find . -maxdepth 1 -type d -not -path . -not -path .. | xargs rm -r)
-
   render-notebooks:
-    image: bjodah/bjodahimg18dev:v1.5
+    image: bjodah/bjodahimg18dev:v1.6
     group: testing
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
@@ -82,8 +76,18 @@ pipeline:
       - (cd examples/; for f in bokeh_*.py; do python3 -m bokeh html $f; done)
       - cp -r index.* examples/ "deploy/public_html/branches/${DRONE_BRANCH}"
 
+#  conda-recipe:
+#    image: bjodah/bjodahimg18dev:v1.6
+#    group: testing
+#    commands:
+#      - export CONDA_PKGS_DIRS=$(pwd)/ci_cache/conda_packages
+#      - git fetch -tq
+#      - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
+#      - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${DRONE_BRANCH}" conda-recipe
+#      - (cd $CONDA_PKGS_DIRS; find . -maxdepth 1 -type d -not -path . -not -path .. | xargs rm -r)
+
   compile-documentation:
-    image: bjodah/bjodahimg18dev:v1.5
+    image: bjodah/bjodahimg18dev:v1.6
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
     commands:
@@ -102,7 +106,7 @@ pipeline:
       - ./ci_cache/sund-3.2.1
       - ./ci_cache/pyusrb
       - ./ci_cache/conda_packages
-      - ./ci_cache/pip_cache
+#      - ./ci_cache/pip_cache
     volumes:
       - /tmp/cache:/cache
 
@@ -110,7 +114,7 @@ pipeline:
     image: drillster/drone-rsync
     when:
       event: [push]
-    hosts: [ "192.168.1.99" ]  # davycrockett.mooo.com
+    hosts: [ "hera.physchem.kth.se" ]
     port: 22
     user: chempy
     secrets: [ rsync_key ]  # secret only set fro event "push" not "pull_request"
