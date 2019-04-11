@@ -1,9 +1,5 @@
 #!/bin/bash -xeu
-PKG_NAME=${1:-${CI_REPO##*/}}
-if [[ "$CI_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then
-    eval export ${PKG_NAME^^}_RELEASE_VERSION=\$CI_BRANCH
-    echo ${CI_BRANCH} | tail -c +2 > __conda_version__.txt
-fi
+PKG_NAME=${1:-${DRONE_REPO##*/}}
 
 curl -Ls https://bootstrap.pypa.io/get-pip.py | python2 - --user
 python2 -m pip install --user --upgrade --upgrade-strategy only-if-needed .[all]
