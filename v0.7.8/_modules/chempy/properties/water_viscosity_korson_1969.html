@@ -1,0 +1,266 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.properties.water_viscosity_korson_1969 &mdash; chempy 0.7.8 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.7.8
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">chempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>chempy.properties.water_viscosity_korson_1969</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.properties.water_viscosity_korson_1969</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">.._util</span> <span class="k">import</span> <span class="n">_any</span>
+
+
+<span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="mf">1.1709</span><span class="p">,</span> <span class="mf">0.001827</span><span class="p">,</span> <span class="mf">89.93</span>
+<span class="n">eta20_cP</span> <span class="o">=</span> <span class="mf">1.0020</span>
+
+
+<div class="viewcode-block" id="water_viscosity"><a class="viewcode-back" href="../../../chempy.properties.html#chempy.properties.water_viscosity_korson_1969.water_viscosity">[docs]</a><span class="k">def</span> <span class="nf">water_viscosity</span><span class="p">(</span><span class="n">T</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">eta20</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Viscosity of water (cP) as function of temperature (K)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    T : float</span>
+<span class="sd">        Temperature (in Kelvin) (default: 298.15 K)</span>
+<span class="sd">    eta20 : float</span>
+<span class="sd">        Viscosity of water at 20 degree Celsius.</span>
+<span class="sd">    units : object (optional)</span>
+<span class="sd">        object with attributes: kelvin &amp; centipoise</span>
+<span class="sd">    warn : bool</span>
+<span class="sd">        Emit UserWarning when outside temperature range.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Water viscosity at temperature ``T``.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">units</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cP</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cP</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">centipoise</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">kelvin</span>
+    <span class="k">if</span> <span class="n">T</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="mf">298.15</span><span class="o">*</span><span class="n">K</span>
+    <span class="k">if</span> <span class="n">eta20</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">eta20</span> <span class="o">=</span> <span class="n">eta20_cP</span><span class="o">*</span><span class="n">cP</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">T</span> <span class="o">-</span> <span class="mf">273.15</span><span class="o">*</span><span class="n">K</span>
+    <span class="k">if</span> <span class="n">warn</span> <span class="ow">and</span> <span class="p">(</span><span class="n">_any</span><span class="p">(</span><span class="n">t</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="o">*</span><span class="n">K</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_any</span><span class="p">(</span><span class="n">t</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="o">*</span><span class="n">K</span><span class="p">)):</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Temperature is outside range (0-100 degC)&quot;</span><span class="p">)</span>
+    <span class="c1"># equation (5) in the paper says &quot;log&quot; but they seem to mean &quot;log10&quot;</span>
+    <span class="c1"># when comparing with Table II.</span>
+    <span class="k">return</span> <span class="n">eta20</span> <span class="o">*</span> <span class="mi">10</span><span class="o">**</span><span class="p">((</span><span class="n">A</span><span class="o">*</span><span class="p">(</span><span class="mi">20</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="n">B</span><span class="o">*</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="mi">20</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">C</span><span class="p">))</span></div>
+
+
+<span class="n">reference</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">doi</span><span class="o">=</span><span class="s1">&#39;10.1021/j100721a006&#39;</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s1">&#39;https://doi.org/10.1021/j100721a006&#39;</span><span class="p">,</span>
+    <span class="n">year</span><span class="o">=</span><span class="mi">1969</span><span class="p">,</span>
+    <span class="n">month</span><span class="o">=</span><span class="s1">&#39;jan&#39;</span><span class="p">,</span>
+    <span class="n">publisher</span><span class="o">=</span><span class="s1">&#39;American Chemical Society (</span><span class="si">{ACS}</span><span class="s1">)&#39;</span><span class="p">,</span>
+    <span class="n">volume</span><span class="o">=</span><span class="mi">73</span><span class="p">,</span>
+    <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">pages</span><span class="o">=</span><span class="p">(</span><span class="mi">34</span><span class="p">,</span> <span class="mi">39</span><span class="p">),</span>
+    <span class="n">author</span><span class="o">=</span><span class="s1">&#39;Lawrence Korson and Walter Drost-Hansen and Frank J. Millero&#39;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Viscosity of water at various temperatures&#39;</span><span class="p">,</span>
+    <span class="n">journal</span><span class="o">=</span><span class="s1">&#39;The Journal of Physical Chemistry&#39;</span>
+<span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.7.8',
+            LANGUAGE:'en',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="../../../_static/language_data.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
