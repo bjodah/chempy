@@ -106,7 +106,7 @@ pipeline:
       - ./ci_cache/sund-3.2.1
       - ./ci_cache/pyusrb
       - ./ci_cache/conda_packages
-      - ./ci_cache/pip_cache
+#      - ./ci_cache/pip_cache
     volumes:
       - /tmp/cache:/cache
 
