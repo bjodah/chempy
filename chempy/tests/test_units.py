@@ -94,6 +94,7 @@ def test_is_unitless():
     assert is_unitless([2, 3, 4])
     assert not is_unitless([2*u.m, 3*u.m])
     assert not is_unitless([3, 4*u.m])
+    assert is_unitless(u.dimensionless)  # this was causing RecursionError
 
 
 @requires(units_library)

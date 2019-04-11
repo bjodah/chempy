@@ -268,7 +268,10 @@ def is_unitless(expr):
 
     """
     if hasattr(expr, 'dimensionality'):
-        return expr.simplified.dimensionality == pq.dimensionless.dimensionality
+        if expr == pq.dimensionless:
+            return True
+        else:
+            return expr.simplified.dimensionality == pq.dimensionless.dimensionality
     if isinstance(expr, dict):
         return all(is_unitless(_) for _ in expr.values())
     elif isinstance(expr, (tuple, list)):
