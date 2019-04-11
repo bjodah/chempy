@@ -1,3 +1,12 @@
+v0.7.8
+======
+- Reaction __init__ got a new kwarg: ``dont_check``
+- Fixes to check logic
+- Fixes to pretty printing
+- ArrheniusParam got a new convenience classmethod: ``from_rateconst_at_T``
+- ReactionSystem got a new method: ``concatenate``
+- New submodule for template rendering: .util.rendering
+
 v0.7.7
 ======
 - Fixed a bug in ``chempy.kinetics.ode._validate``
