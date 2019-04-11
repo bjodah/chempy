@@ -1,33 +1,49 @@
-cache:
-  mount:
-    - /drone/sundials-3.2.0
-    - /drone/pyusrb
+pipeline:
+  restore-cache:
+    image: drillster/drone-volume-cache
+    restore: true
+    mount:
+      - ./ci_cache/sund-3.2.1
+      - ./ci_cache/pyusrb
+    volumes:
+      - /tmp/cache:/cache
+    ttl: 90  # liftetime in days
 
-build:
-  image: bjodah/bjodahimg18dev:v1.4
-  environment:
-    - SUN3BASE=/drone/sundials-3.2.0
-    - PYTHONUSERBASE=/drone/pyusrb
-  commands:
-    - git fetch -tq
-    - if [ ! -d $SUN3BASE ]; then .ci/get_sundials.sh 3.2.0 $SUN3BASE -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_SIZE=32 $SUN3BASE; fi
-    - if [ ! -d $PYTHONUSERBASE ]; then mkdir $PYTHONUSERBASE; fi
-    - CPATH=$SUN3BASE/include LIBRARY_PATH=$SUN3BASE/lib LD_LIBRARY_PATH=$SUN3BASE/lib ./.ci/run_ci.sh chempy
-    - ./.ci/prepare_deploy.sh
-    - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
-    - PATH=/opt/miniconda3/bin:$PATH conda update --quiet conda-build
-    - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${CI_BRANCH}" conda-recipe
-    - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
-    - ./.ci/grep-for-merge-blocking-token.sh
-    - ./.ci/grep-for-binary-data.sh
+  build:
+    image: bjodah/bjodahimg18dev:v1.6
+    environment:
+      - CPLUS_INCLUDE_PATH=/opt/boost_1_69_0/include
+    commands:
+      - export SUN3BASE=$(pwd)/ci_cache/sundials-3.2.1
+      - PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
+      - git fetch -tq
+      - if [ ! -d $SUN3BASE ]; then .ci/get_sundials.sh 3.2.1 $SUN3BASE -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_SIZE=32 $SUN3BASE; fi
+      - if [ ! -d $PYTHONUSERBASE ]; then mkdir $PYTHONUSERBASE; fi
+      - CPATH=$SUN3BASE/include LIBRARY_PATH=$SUN3BASE/lib LD_LIBRARY_PATH=$SUN3BASE/lib ./.ci/run_ci.sh chempy
+      - ./.ci/prepare_deploy.sh
+      - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
+      - PATH=/opt/miniconda3/bin:$PATH conda update --quiet conda-build
+      - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${CI_BRANCH}" conda-recipe
+      - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
+      - ./.ci/grep-for-merge-blocking-token.sh
+      - ./.ci/grep-for-binary-data.sh
 
-deploy:
+  rebuild-cache:
+    image: drillster/drone-volume-cache
+    rebuild: true
+    mount:
+      - ./ci_cache/sund-3.2.1
+      - ./ci_cache/pyusrb
+    volumes:
+      - /tmp/cache:/cache
 
-  rsync:
-    host: hera.physchem.kth.se
-    user: chempy
+  deploy:
+    image: drillster/drone-rsync
+    when:
+      event: [push]
+    hosts: [ "hera.physchem.kth.se" ]
     port: 22
-    source: deploy/
-    target: ~
-    recursive: true
-    delete: false
+    user: chempy
+    secrets: [ rsync_key ]  # secret only set fro event "push" not "pull_request"
+    source: ./deploy/public_html
+    target: ~/
