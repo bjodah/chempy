@@ -13,7 +13,7 @@ from .units import allclose
 
 
 def _get_b0(b0, units=None):
-    if units is not None and b0 is 1:
+    if units is not None and b0 == 1:
         return b0*units.molal
     else:
         return b0

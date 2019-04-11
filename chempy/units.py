@@ -181,7 +181,7 @@ def unit_registry_to_human_readable(unit_registry):
         return None
     new_registry = {}
     for k in SI_base_registry:
-        if unit_registry[k] is 1:
+        if unit_registry[k] == 1:
             new_registry[k] = 1, 1
         else:
             dim_list = list(unit_registry[k].dimensionality)
@@ -341,7 +341,7 @@ def to_unitless(value, new_unit=None):
         for k in value:
             new_value[k] = to_unitless(value[k], new_unit)
         return new_value
-    elif isinstance(value, (int, float)) and new_unit is 1 or new_unit is None:
+    elif isinstance(value, (int, float)) and new_unit == 1 or new_unit is None:
         return value
     elif isinstance(value, str):
         raise ValueError("str not supported")

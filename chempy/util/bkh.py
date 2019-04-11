@@ -123,7 +123,7 @@ def integration_with_sliders(
             else:
                 slider_defaults = dict(start=_C(k)/2, end=_C(k)*2, step=_C(k)/10)
         c0_widgets[k] = Slider(
-            title=k if output_conc_unit is 1 else k + ' / ' + output_conc_unit.dimensionality.unicode,
+            title=k if output_conc_unit == 1 else k + ' / ' + output_conc_unit.dimensionality.unicode,
             value=_C(k), **slider_kwargs.get(k, slider_defaults)
         )
 

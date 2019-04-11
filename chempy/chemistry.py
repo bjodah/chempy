@@ -1330,7 +1330,7 @@ def balance_stoichiometry(reactants, products, substances=None,
                     cd = gcd(cd, term.args[0])
         if cd != 1:
             sol = sol.func(*[arg.subs(symb, symb/cd) for arg in sol.args])
-    if underdetermined is 1:
+    if underdetermined == 1:
         from ._release import __version__
         if int(__version__.split('.')[1]) > 6:
             warnings.warn(  # deprecated because comparison with ``1`` problematic (True==1)
