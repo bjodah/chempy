@@ -53,6 +53,7 @@ pipeline:
       - bash -c "source /tmp/test_sdist/bin/activate; pip install --cache-dir ./ci_cache/pip_cache $(eval ls chempy-*.tar.gz) pytest; pytest --pyargs chempy"
       - bash -c "source /tmp/test_git_archive/bin/activate; pip install --cache-dir ./ci_cache/pip_cache chempy-head.zip pytest; pytest --pyargs chempy"
       - cd -
+      - apt-get update && apt-get install python-dev
       - ( python2 -m pip >/dev/null || curl -Ls https://bootstrap.pypa.io/get-pip.py | python2 - --user )
       - python2 -m pip install --user virtualenv
       - python2 -m virtualenv /tmp/test_py2
