@@ -13,6 +13,7 @@ pipeline:
 
   install:
     image: bjodah/bjodahimg18dev:v1.6
+    environment:
       - CPLUS_INCLUDE_PATH=/opt/boost_1_69_0/include
     commands:
       - export SUN3BASE=$(pwd)/ci_cache/sund-3.2.1
