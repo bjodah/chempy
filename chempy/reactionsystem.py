@@ -665,7 +665,7 @@ class ReactionSystem(object):
         ) for idx, eq in enumerate(self.rxns)], dtype=object)
 
     def composition_balance_vectors(self):
-        """ Returns a list of lists with compositions and a list of composition keys.
+        r""" Returns a list of lists with compositions and a list of composition keys.
 
         The list of lists can be viewed as a matrix with rows corresponding to composition keys
         (which are given as the second item in the returned tuple) and columns corresponding to

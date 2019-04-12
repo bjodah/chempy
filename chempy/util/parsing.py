@@ -31,6 +31,7 @@ def get_parsing_context():
     except ImportError:
         def _numpy_not_installed_raise(*args, **kwargs):
             raise ImportError("numpy not installed, no such method")
+
         class numpy:
             array = staticmethod(_numpy_not_installed_raise)
             log = staticmethod(_numpy_not_installed_raise)
