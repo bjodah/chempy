@@ -19,7 +19,7 @@ def get_parsing_context():
     import chempy
     from chempy.kinetics import rates
     from chempy.units import default_units, default_constants, to_unitless
-    globals_ = dict(to_unitless=to_unitless)
+    globals_ = dict(to_unitless=to_unitless, chempy=chempy)
 
     def _update(mod, keys=None):
         if keys is None:
