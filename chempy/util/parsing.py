@@ -19,14 +19,25 @@ def get_parsing_context():
     import chempy
     from chempy.kinetics import rates
     from chempy.units import default_units, default_constants, to_unitless
-    import numpy
     globals_ = dict(to_unitless=to_unitless, chempy=chempy)
 
     def _update(mod, keys=None):
         if keys is None:
             keys = dir(mod)
         globals_.update({k: getattr(mod, k) for k in keys if not k.startswith('_')})
-    _update(numpy, keys='array log exp'.split())  # could of course add add more
+
+    try:
+        import numpy
+    except ImportError:
+        def _numpy_not_installed_raise(*args, **kwargs):
+            raise ImportError("numpy not installed, no such method")
+
+        class numpy:
+            array = staticmethod(_numpy_not_installed_raise)
+            log = staticmethod(_numpy_not_installed_raise)
+            exp = staticmethod(_numpy_not_installed_raise)
+
+    _update(numpy, keys='array log exp'.split())  # could of course add more
     _update(rates)
     _update(chempy)
     for df in [default_units, default_constants]:
