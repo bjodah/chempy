@@ -25,7 +25,7 @@ def test_water_self_diffusion_coefficient():
 
 
 @requires(units_library)
-def test_water_self_diffusion_coefficient():
+def test_water_self_diffusion_coefficient__units():
     from chempy.units import allclose, linspace, default_units as u
     unit = u.m**2/u.s
     assert allclose(1e9*w_sd(298.15*u.K, units=u),
