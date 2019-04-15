@@ -356,6 +356,7 @@ def test_ReactionSystem__subset():
     assert rs3 == ReactionSystem([r1])
 
 
+@requires(parsing_library)
 def test_ReactionSystem__concatenate():
     rs1 = ReactionSystem.from_string("""
     H + OH -> H2O; 1e10; name='rs1a'
