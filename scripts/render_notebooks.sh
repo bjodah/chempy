@@ -24,7 +24,7 @@ for dir in . examples/; do
     cd $dir
     for fname in *.ipynb; do
         echo "rendering ${fname}..."
-        quiet_unless_fail jupyter nbconvert --debug --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 "${fname}"
+        quiet_unless_fail jupyter nbconvert --debug --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 "${fname}" || exit 1
     done
     cd -
 done
