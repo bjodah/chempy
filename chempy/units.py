@@ -115,7 +115,10 @@ def magnitude(value):
 
 
 def simplified(value):
-    return value.simplified
+    if hasattr(value, 'simplified'):
+        return value.simplified
+    else:
+        return to_unitless(value)
 
 
 def is_quantity(arg):
