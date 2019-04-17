@@ -10,7 +10,6 @@ function quiet_unless_fail {
 	cat ${OUTPUT_FILE}
 	echo "The following command exited with exit status ${EXIT_CODE}: ${EXECMD}"
 	/bin/rm ${OUTPUT_FILE}
-	exit $?
     fi
     /bin/rm ${OUTPUT_FILE}
 }
@@ -24,7 +23,10 @@ for dir in . examples/; do
     cd $dir
     for fname in *.ipynb; do
         echo "rendering ${fname}..."
-        quiet_unless_fail jupyter nbconvert --debug --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 "${fname}" || exit 1
+        quiet_unless_fail jupyter nbconvert --debug --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 "${fname}"
+        if [ ${EXIT_CODE} -ne 0 ]; then
+            exit ${EXIT_CODE}
+        fi
     done
     cd -
 done
