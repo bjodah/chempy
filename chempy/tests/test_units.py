@@ -437,6 +437,7 @@ def test_tile():
 @requires(units_library)
 def test_simplified():
     assert allclose(simplified(dc.molar_gas_constant), 8.314*u.J/u.mol/u.K, rtol=2e-3)
+    assert simplified(2.0) == 2.0
 
 
 @requires(units_library)
