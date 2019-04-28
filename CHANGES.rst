@@ -1,5 +1,14 @@
 Note that 0.6.x is in maintanence mode, see chempy >=0.7.0 for latest version.
 
+v0.6.17
+=======
+- Reaction __init__ got a new kwarg: ``dont_check``
+- Fixes to check logic
+- Fixes to pretty printing
+- ArrheniusParam got a new convenience classmethod: ``from_rateconst_at_T``
+- ReactionSystem got a new method: ``concatenate``
+- New submodule for template rendering: .util.rendering
+
 v0.6.16
 =======
 - Fixed a bug in ``chempy.kinetics.ode._validate``
