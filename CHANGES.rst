@@ -1,5 +1,9 @@
 Note that 0.6.x is in maintanence mode, see chempy >=0.7.0 for latest version.
 
+v0.6.18
+=======
+- ``chempy.util.pyutil.multi_indexed_cases`` learned new kwargs.
+
 v0.6.17
 =======
 - Reaction __init__ got a new kwarg: ``dont_check``
