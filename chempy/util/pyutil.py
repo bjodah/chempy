@@ -4,14 +4,19 @@ General utilities and exceptions.
 """
 from __future__ import (absolute_import, division, print_function)
 
-from collections import defaultdict, namedtuple, Mapping, OrderedDict
+from collections import defaultdict, namedtuple, Mapping, OrderedDict, abc
 from functools import wraps
 from itertools import product
 import os
+import types
 import warnings
 
 from .. import __url__
 from .deprecation import Deprecation
+
+
+def identity(x):
+    return x
 
 
 class NoConvergence(Exception):
@@ -195,7 +200,8 @@ def defaultnamedtuple(typename, field_names, defaults=()):
     return Tuple
 
 
-def multi_indexed_cases(od):
+def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=None, apply_return=list,
+                        named_index=False):
     """ Returns a list of length-2 tuples
 
     Each tuple consist of a multi-index (tuple of integers) and a dictionary.
@@ -203,8 +209,18 @@ def multi_indexed_cases(od):
     Parameters
     ----------
     od : OrderedDict
-        Maps each key to a number of values. ``list`` and ``tuple`` instances
-        are converted to ``OrderedDict``.
+        Maps each key to a number of values. Instances of ``list``, ``tuple``,
+        ``types.GeneratorType``, ``collections.abc.ItemsView`` are converted to ``OrderedDict``.
+    dict_ : type, optional
+        Used in the result (see ``Returns``).
+    apply_keys : callable, optional
+        Transformation of keys.
+    apply_values : callable, optional
+        Transformation of values.
+    apply_return : callable, optional
+        Applied on return value. ``None`` for generator.
+    named_index : bool
+        Tuple of indices will be a ``namedtuple`` (requires all keys to be ``str``).
 
     Examples
     --------
@@ -220,15 +236,27 @@ def multi_indexed_cases(od):
 
     Returns
     -------
-    List of length-2 tuples, each consisting of one tuple of inidices and one dictionary.
+    List of length-2 tuples, each consisting of one tuple of inidices and one dictionary (of type ``dict_``).
 
     """
-    if isinstance(od, (list, tuple)):
-        od = OrderedDict(od)
-    if not isinstance(od, OrderedDict):
-        raise NotImplementedError("Expected an OrderedDcit")
-    keys, values = map(list, [od.keys(), od.values()])
-    return [(mi, {k: v[i] for k, v, i in zip(keys, values, mi)}) for mi in product(*map(range, map(len, values)))]
+    if isinstance(od, OrderedDict):
+        pass
+    else:
+        if hasattr(od, 'items'):
+            od = od.items()
+
+        if isinstance(od, (list, tuple, types.GeneratorType, abc.ItemsView)):
+            od = OrderedDict(od)
+        else:
+            raise NotImplementedError("Expected an OrderedDict")
+
+    keys, values = tuple(map(apply_keys or identity, od.keys())), tuple(od.values())
+    MultiIndex = namedtuple('MultiIndex', keys) if named_index else lambda *args: tuple(args)
+    _generator = ((MultiIndex(*mi), dict_([
+        (k, (apply_values or identity)(v[i])) for
+        k, v, i in zip(keys, values, mi)
+    ])) for mi in product(*map(range, map(len, values))))
+    return (apply_return or identity)(_generator)
 
 
 def memoize(max_nargs=0):
