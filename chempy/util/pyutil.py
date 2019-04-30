@@ -4,15 +4,18 @@ General utilities and exceptions.
 """
 from __future__ import (absolute_import, division, print_function)
 
-from collections import defaultdict, namedtuple, Mapping, OrderedDict
+from collections import defaultdict, namedtuple, Mapping, OrderedDict, abc
 from functools import wraps
 from itertools import product
 import os
+import types
 import warnings
 
 from .. import __url__
 from .deprecation import Deprecation
 
+def identity(*args):
+    return args
 
 class NoConvergence(Exception):
     pass
@@ -195,7 +198,7 @@ def defaultnamedtuple(typename, field_names, defaults=()):
     return Tuple
 
 
-def multi_indexed_cases(od):
+def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=None, apply_return=list):
     """ Returns a list of length-2 tuples
 
     Each tuple consist of a multi-index (tuple of integers) and a dictionary.
@@ -203,8 +206,10 @@ def multi_indexed_cases(od):
     Parameters
     ----------
     od : OrderedDict
-        Maps each key to a number of values. ``list`` and ``tuple`` instances
-        are converted to ``OrderedDict``.
+        Maps each key to a number of values. Instances of ``list``, ``tuple``,
+        ``types.GeneratorType``, ``collections.abc.ItemsView`` are converted to ``OrderedDict``.
+    dict_ : type, optional
+
 
     Examples
     --------
@@ -223,12 +228,26 @@ def multi_indexed_cases(od):
     List of length-2 tuples, each consisting of one tuple of inidices and one dictionary.
 
     """
-    if isinstance(od, (list, tuple)):
-        od = OrderedDict(od)
-    if not isinstance(od, OrderedDict):
-        raise NotImplementedError("Expected an OrderedDcit")
-    keys, values = map(list, [od.keys(), od.values()])
-    return [(mi, {k: v[i] for k, v, i in zip(keys, values, mi)}) for mi in product(*map(range, map(len, values)))]
+    if isinstance(od, OrderedDict):
+        pass
+    else:
+        if hasattr(od, 'items'):
+            od = od.items()
+
+        if isinstance(od, (list, tuple, types.GeneratorType, abc.ItemsView)):
+            od = OrderedDict(od)
+        else:
+            raise NotImplementedError("Expected an OrderedDict")
+
+    keys, values = tuple(od.keys()), tuple(od.values())
+    _generator = ((mi, dict_([
+        ((apply_keys or identity)(k), (apply_values or identity)(v[i])) for
+        k, v, i in zip(keys, values, mi)
+    ])) for mi in product(*map(range, map(len, values))))
+    if apply_return is None:
+        yield from _generator
+    else:
+        return apply_return(_generator)
 
 
 def memoize(max_nargs=0):
