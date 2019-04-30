@@ -200,7 +200,8 @@ def defaultnamedtuple(typename, field_names, defaults=()):
     return Tuple
 
 
-def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=None, apply_return=list):
+def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=None, apply_return=list,
+                        named_index=False):
     """ Returns a list of length-2 tuples
 
     Each tuple consist of a multi-index (tuple of integers) and a dictionary.
@@ -218,6 +219,8 @@ def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=
         Transformation of values.
     apply_return : callable, optional
         Applied on return value. ``None`` for generator.
+    named_index : bool
+        Tuple of indices will be a ``namedtuple`` (requires all keys to be ``str``).
 
     Examples
     --------
@@ -247,9 +250,10 @@ def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=
         else:
             raise NotImplementedError("Expected an OrderedDict")
 
-    keys, values = tuple(od.keys()), tuple(od.values())
-    _generator = ((mi, dict_([
-        ((apply_keys or identity)(k), (apply_values or identity)(v[i])) for
+    keys, values = tuple(map(apply_keys or identity, od.keys())), tuple(od.values())
+    MultiIndex = namedtuple('MultiIndex', keys) if named_index else lambda *args: tuple(args)
+    _generator = ((MultiIndex(*mi), dict_([
+        (k, (apply_values or identity)(v[i])) for
         k, v, i in zip(keys, values, mi)
     ])) for mi in product(*map(range, map(len, values))))
     return (apply_return or identity)(_generator)

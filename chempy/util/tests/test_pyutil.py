@@ -52,10 +52,14 @@ def test_multi_indexed_cases():
         assert isinstance(d, OrderedDict)
         assert isinstance(mi, tuple)
 
-    result = multi_indexed_cases([(3, ['0.5']), (4, ['0.25'])], dict_=dict,
-                                 apply_return=None, apply_values=float, apply_keys=str)
+    result = multi_indexed_cases([(97, ['0.5']), (98, ['0.25'])], dict_=dict, apply_return=None,
+                                 apply_values=float, apply_keys=chr, named_index=True)
     assert isinstance(result, types.GeneratorType)
     (mi, c), = result
     assert mi == (0, 0)
+    assert isinstance(mi, tuple)
+    assert mi.a == 0
+    assert mi.b == 0
+    assert mi._asdict() == {'a': 0, 'b': 0}
     assert type(c) is dict
-    assert c == {'3': 0.5, '4': 0.25}
+    assert c == {'a': 0.5, 'b': 0.25}
