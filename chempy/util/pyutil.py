@@ -211,7 +211,13 @@ def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=
         Maps each key to a number of values. Instances of ``list``, ``tuple``,
         ``types.GeneratorType``, ``collections.abc.ItemsView`` are converted to ``OrderedDict``.
     dict_ : type, optional
-
+        Used in the result (see ``Returns``).
+    apply_keys : callable, optional
+        Transformation of keys.
+    apply_values : callable, optional
+        Transformation of values.
+    apply_return : callable, optional
+        Applied on return value. ``None`` for generator.
 
     Examples
     --------
@@ -227,7 +233,7 @@ def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=
 
     Returns
     -------
-    List of length-2 tuples, each consisting of one tuple of inidices and one dictionary.
+    List of length-2 tuples, each consisting of one tuple of inidices and one dictionary (of type ``dict_``).
 
     """
     if isinstance(od, OrderedDict):
