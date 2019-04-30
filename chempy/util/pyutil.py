@@ -14,8 +14,10 @@ import warnings
 from .. import __url__
 from .deprecation import Deprecation
 
-def identity(*args):
-    return args
+
+def identity(x):
+    return x
+
 
 class NoConvergence(Exception):
     pass
@@ -244,10 +246,7 @@ def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=
         ((apply_keys or identity)(k), (apply_values or identity)(v[i])) for
         k, v, i in zip(keys, values, mi)
     ])) for mi in product(*map(range, map(len, values))))
-    if apply_return is None:
-        yield from _generator
-    else:
-        return apply_return(_generator)
+    return (apply_return or identity)(_generator)
 
 
 def memoize(max_nargs=0):
