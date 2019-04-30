@@ -1,0 +1,294 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.properties.debye_huckel_radii &mdash; chempy 0.6.18 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.6.18
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">chempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>chempy.properties.debye_huckel_radii</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.properties.debye_huckel_radii</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">)</span>
+
+
+<span class="c1"># From Kielland, Individual Activity Coefficients of Ions in Aqueous Solutions, Vol. 59, 1937, 1675-1678</span>
+<span class="n">_radii_nm</span> <span class="o">=</span> <span class="p">{</span>  <span class="c1"># in nanometer, from Table I, Page 1676</span>
+    <span class="s1">&#39;H+&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">9</span><span class="p">,</span>
+    <span class="s1">&#39;Li+&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">6</span><span class="p">,</span>
+    <span class="s1">&#39;Na+&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">425</span><span class="p">,</span>
+    <span class="s1">&#39;K+&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">3</span><span class="p">,</span>
+    <span class="s1">&#39;Rb+&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">25</span><span class="p">,</span>
+    <span class="s1">&#39;Cs+&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">25</span><span class="p">,</span>
+    <span class="s1">&#39;NH4+&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">25</span><span class="p">,</span>
+    <span class="s1">&#39;Tl+&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">25</span><span class="p">,</span>
+    <span class="s1">&#39;Ag+&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">25</span><span class="p">,</span>
+    <span class="s1">&#39;Be+2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">8</span><span class="p">,</span>
+    <span class="s1">&#39;Mg+2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">8</span><span class="p">,</span>
+    <span class="s1">&#39;Ca+2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">6</span><span class="p">,</span>
+    <span class="s1">&#39;Sr+2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">5</span><span class="p">,</span>
+    <span class="s1">&#39;Ba+2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">5</span><span class="p">,</span>
+    <span class="s1">&#39;Ra+2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">5</span><span class="p">,</span>
+    <span class="s1">&#39;Cu+2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">6</span><span class="p">,</span>
+    <span class="s1">&#39;Zn+2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">6</span><span class="p">,</span>
+    <span class="s1">&#39;Cd+2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">5</span><span class="p">,</span>
+    <span class="s1">&#39;Hg+2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">5</span><span class="p">,</span>
+    <span class="s1">&#39;Pb+2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">45</span><span class="p">,</span>
+    <span class="s1">&#39;Mn+2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">6</span><span class="p">,</span>
+    <span class="s1">&#39;Fe+2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">6</span><span class="p">,</span>
+    <span class="s1">&#39;Ni+2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">6</span><span class="p">,</span>
+    <span class="s1">&#39;Co+2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">6</span><span class="p">,</span>
+    <span class="s1">&#39;Sn+2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">6</span><span class="p">,</span>
+    <span class="s1">&#39;Al+3&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">9</span><span class="p">,</span>
+    <span class="s1">&#39;Fe+3&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">9</span><span class="p">,</span>
+    <span class="s1">&#39;Cr+3&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">9</span><span class="p">,</span>
+    <span class="s1">&#39;La+3&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">9</span><span class="p">,</span>
+    <span class="s1">&#39;Ce+3&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">9</span><span class="p">,</span>
+    <span class="s1">&#39;Pr+3&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">9</span><span class="p">,</span>
+    <span class="s1">&#39;Nd+3&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">9</span><span class="p">,</span>
+    <span class="s1">&#39;Sc+3&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">9</span><span class="p">,</span>
+    <span class="s1">&#39;Sm+3&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">9</span><span class="p">,</span>
+    <span class="s1">&#39;Y+3&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">9</span><span class="p">,</span>
+    <span class="s1">&#39;In+3&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">9</span><span class="p">,</span>
+    <span class="s1">&#39;Sn+4&#39;</span><span class="p">:</span> <span class="mf">1.1</span><span class="p">,</span>
+    <span class="s1">&#39;Th+4&#39;</span><span class="p">:</span> <span class="mf">1.1</span><span class="p">,</span>
+    <span class="s1">&#39;Zr+4&#39;</span><span class="p">:</span> <span class="mf">1.1</span><span class="p">,</span>
+    <span class="s1">&#39;Ce+4&#39;</span><span class="p">:</span> <span class="mf">1.1</span><span class="p">,</span>
+    <span class="s1">&#39;F-&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">35</span><span class="p">,</span>
+    <span class="s1">&#39;Cl-&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">3</span><span class="p">,</span>
+    <span class="s1">&#39;Br-&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">3</span><span class="p">,</span>
+    <span class="s1">&#39;I-&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">3</span><span class="p">,</span>
+    <span class="s1">&#39;ClO3-&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">35</span><span class="p">,</span>
+    <span class="s1">&#39;ClO4-&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">35</span><span class="p">,</span>
+    <span class="s1">&#39;NO3-&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">3</span><span class="p">,</span>
+    <span class="s1">&#39;BrO3-&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">35</span><span class="p">,</span>
+    <span class="s1">&#39;IO3-&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">425</span><span class="p">,</span>
+    <span class="s1">&#39;HCO3-&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">425</span><span class="p">,</span>
+    <span class="s1">&#39;S-2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">5</span><span class="p">,</span>
+    <span class="s1">&#39;CO3-2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">45</span><span class="p">,</span>
+    <span class="s1">&#39;SO4-2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">4</span><span class="p">,</span>
+    <span class="s1">&#39;C2O4-2&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">45</span><span class="p">,</span>
+    <span class="s1">&#39;SCN-&#39;</span><span class="p">:</span> <span class="mf">0.35</span><span class="p">,</span>
+    <span class="s1">&#39;OH-&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">35</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="get_radii"><a class="viewcode-back" href="../../../chempy.properties.html#chempy.properties.debye_huckel_radii.get_radii">[docs]</a><span class="k">def</span> <span class="nf">get_radii</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Get Debye-Hückel radii for various ions</span>
+
+<span class="sd">    For aqueous systems</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    key: str</span>
+<span class="sd">        e.g. &#39;Fe+3&#39;, &#39;SCN-&#39;</span>
+<span class="sd">    units: object (optional)</span>
+<span class="sd">        :attr:`nm` is accessed.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    radius in nanometers</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">units</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_radii_nm</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_radii_nm</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">*</span><span class="n">units</span><span class="o">.</span><span class="n">nm</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.6.18',
+            LANGUAGE:'en',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="../../../_static/language_data.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
