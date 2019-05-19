@@ -1,9 +1,6 @@
 #!/bin/bash -xeu
 PKG_NAME=${1:-${DRONE_REPO##*/}}
 
-curl -Ls https://bootstrap.pypa.io/get-pip.py | python2 - --user
-python2 -m pip install --user --upgrade --upgrade-strategy only-if-needed .[all]
-python2 -m pytest -ra --slow --veryslow
 
 git archive -o /tmp/$PKG_NAME.zip HEAD  # test pip installable zip (symlinks break)
 python3 -m pip install --user /tmp/$PKG_NAME.zip
@@ -23,3 +20,9 @@ set +u
 ./scripts/render_notebooks.sh
 ./scripts/generate_docs.sh
 (cd examples/; for f in bokeh_*.py; do python3 -m bokeh html $f; done)
+
+# Test Python 2
+sed -i -e '/filterwarnings =/d' -e '/ignore::chempy.ChemPyDeprecationWarning/d' setup.cfg
+curl -Ls https://bootstrap.pypa.io/get-pip.py | python2 - --user
+python2 -m pip install --user --upgrade --upgrade-strategy only-if-needed .[all]
+python2 -m pytest -ra --slow --veryslow

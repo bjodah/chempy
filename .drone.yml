@@ -10,9 +10,9 @@ pipeline:
     ttl: 90  # liftetime in days
 
   build:
-    image: bjodah/bjodahimg18dev:v1.6
+    image: bjodah/bjodahimg18dev:v2.1
     environment:
-      - CPLUS_INCLUDE_PATH=/opt/boost_1_69_0/include
+      - CPLUS_INCLUDE_PATH=/opt/boost_1_70_0/include
     commands:
       - export SUN3BASE=$(pwd)/ci_cache/sundials-3.2.1
       - PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb

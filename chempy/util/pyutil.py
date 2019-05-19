@@ -200,8 +200,7 @@ def defaultnamedtuple(typename, field_names, defaults=()):
     return Tuple
 
 
-def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=None, apply_return=list,
-                        named_index=False):
+def multi_indexed_cases(od, **kwargs):
     """ Returns a list of length-2 tuples
 
     Each tuple consist of a multi-index (tuple of integers) and a dictionary.
@@ -239,6 +238,12 @@ def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=
     List of length-2 tuples, each consisting of one tuple of inidices and one dictionary (of type ``dict_``).
 
     """
+    dict_ = kwargs.get('dict_', OrderedDict)
+    apply_keys = kwargs.get('apply_keys', None)
+    apply_values = kwargs.get('apply_values', None)
+    apply_return = kwargs.get('apply_return', list)
+    named_index = kwargs.get('named_index', False)
+
     if isinstance(od, OrderedDict):
         pass
     else:

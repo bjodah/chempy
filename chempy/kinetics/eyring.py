@@ -122,7 +122,7 @@ class EyringParam(defaultnamedtuple('EyringParam', 'dH dS ref', [None])):
 
         See also
         --------
-        See :func:`chempy.eyring.eyring_equation`.
+        chempy.eyring.eyring_equation : the function used here
 
         """
         return eyring_equation(self.dH, self.dS, T, constants=constants,

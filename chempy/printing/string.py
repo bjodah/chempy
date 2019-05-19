@@ -15,7 +15,7 @@ class StrPrinter(Printer):
         coeff_fmt = self._get('Reaction_coeff_fmt', **kwargs)
         formula_fmt = self._get('Reaction_formula_fmt', **kwargs)
         substances = self._get('substances', **kwargs) or {}
-        nullstr, space = str_(''), str_(' ')
+        nullstr, space = str_(''), str_(self._get('Reaction_coeff_space'))
         reac, prod, i_reac, i_prod = [[
             (
                 ((coeff_fmt(v)+space) if v != 1 else nullstr) +
