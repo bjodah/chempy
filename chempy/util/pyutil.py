@@ -200,9 +200,8 @@ def defaultnamedtuple(typename, field_names, defaults=()):
     return Tuple
 
 
-def multi_indexed_cases(od, #*,  #<--- kw-only args once py2 no longer supported
-                        dict_=OrderedDict, apply_keys=None, apply_values=None, apply_return=list,
-                        named_index=False):
+def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=None,
+                        apply_return=list, named_index=False):
     """ Returns a list of length-2 tuples
 
     Each tuple consist of a multi-index (tuple of integers) and a dictionary.
