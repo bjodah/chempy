@@ -132,10 +132,6 @@ def least_squares_units(x, y, w=1):
     y : array_like
     w : array_like, optional
 
-    See also
-    --------
-    - :func:`least_squares`
-
     """
     x_unit, y_unit = unit_of(x), unit_of(y)
     explicit_errors = w is not 1
@@ -219,10 +215,6 @@ def irls_units(x, y, **kwargs):
     y : array_like
     \\*\\*kwargs
         Keyword arguments passed on to :func:`irls`
-
-    See also
-    --------
-    - :func:`irls`
 
     """
     x_unit, y_unit = unit_of(x), unit_of(y)
