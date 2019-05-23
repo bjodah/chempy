@@ -4,7 +4,11 @@ General utilities and exceptions.
 """
 from __future__ import (absolute_import, division, print_function)
 
-from collections import defaultdict, namedtuple, Mapping, OrderedDict, abc
+from collections import defaultdict, namedtuple, Mapping, OrderedDict
+try:
+    from collections.abc import ItemsView
+except ImportError:  # Python 2
+    ItemsView = list
 from functools import wraps
 from itertools import product
 import os
@@ -250,7 +254,7 @@ def multi_indexed_cases(od, **kwargs):
         if hasattr(od, 'items'):
             od = od.items()
 
-        if isinstance(od, (list, tuple, types.GeneratorType, abc.ItemsView)):
+        if isinstance(od, (list, tuple, types.GeneratorType, ItemsView)):
             od = OrderedDict(od)
         else:
             raise NotImplementedError("Expected an OrderedDict")
