@@ -1,13 +1,34 @@
 #!/bin/bash -e
+function quiet_unless_fail {
+    # suppresses function output unless exit status is != 0
+    OUTPUT_FILE=$(tempfile)
+    #/bin/rm --force /tmp/suppress.out 2>/dev/null
+    EXECMD=${1+"$@"}
+    $EXECMD > ${OUTPUT_FILE} 2>&1
+    EXIT_CODE=$?
+    if [ ${EXIT_CODE} -ne 0 ]; then
+	cat ${OUTPUT_FILE}
+	echo "The following command exited with exit status ${EXIT_CODE}: ${EXECMD}"
+	/bin/rm ${OUTPUT_FILE}
+    fi
+    /bin/rm ${OUTPUT_FILE}
+}
 
 if [ -f index.ipynb ]; then
     sed -i.bak0 's/ipynb/html/' index.ipynb
     sed -i.bak1 's/filepath=index.html/filepath=index.ipynb/' index.ipynb  # mybinder link fix
 fi
-SCRIPTS_PATH=$(unset CDPATH && cd "$(dirname "$0")" && echo $PWD)
+set +e
 for dir in . examples/; do
     cd $dir
-    find . -maxdepth 1 -iname "*.ipynb" | xargs -P 2 -I{} sh -c "$SCRIPTS_PATH/render_notebook.sh {}"
+    for fname in *.ipynb; do
+        echo "rendering ${fname}..."
+        quiet_unless_fail jupyter nbconvert --debug --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 "${fname}" \
+            | grep -v -e "^\[NbConvertApp\] content: {'data':.*'image/png'"
+        if [ ${EXIT_CODE} -ne 0 ]; then
+            exit ${EXIT_CODE}
+        fi
+    done
     cd -
 done
 set -e
