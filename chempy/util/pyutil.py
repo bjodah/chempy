@@ -4,7 +4,11 @@ General utilities and exceptions.
 """
 from __future__ import (absolute_import, division, print_function)
 
-from collections import defaultdict, namedtuple, Mapping, OrderedDict, abc
+from collections import defaultdict, namedtuple, Mapping, OrderedDict
+try:
+    from collections.abc import ItemsView
+except ImportError:  # Python 2
+    ItemsView = list
 from functools import wraps
 from itertools import product
 import os
@@ -200,8 +204,8 @@ def defaultnamedtuple(typename, field_names, defaults=()):
     return Tuple
 
 
-def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=None, apply_return=list,
-                        named_index=False):
+def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=None,
+                        apply_return=list, named_index=False):
     """ Returns a list of length-2 tuples
 
     Each tuple consist of a multi-index (tuple of integers) and a dictionary.
@@ -245,7 +249,7 @@ def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=
         if hasattr(od, 'items'):
             od = od.items()
 
-        if isinstance(od, (list, tuple, types.GeneratorType, abc.ItemsView)):
+        if isinstance(od, (list, tuple, types.GeneratorType, ItemsView)):
             od = OrderedDict(od)
         else:
             raise NotImplementedError("Expected an OrderedDict")

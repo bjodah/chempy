@@ -8,6 +8,7 @@ class Printer(object):
         with_name=True,
         fallback_print_fn=str,
         Reaction_param_separator='; ',
+        Reaction_coeff_space=' ',
         Reaction_around_arrow=(' ', ' '),
         magnitude_fmt=lambda x: '%.3g' % x,
     )

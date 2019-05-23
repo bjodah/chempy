@@ -9,7 +9,7 @@ from __future__ import (absolute_import, division, print_function)
 from collections import OrderedDict
 from functools import reduce, partial
 from itertools import chain
-from operator import mul
+from operator import attrgetter, mul
 import math
 import warnings
 
@@ -451,7 +451,8 @@ def chained_parameter_variation(odesys, durations, init_conc, varied_params, def
 
 
 def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_replace=lambda x: x,
-                   backend=None, SymbolicSys=None, time_symbol=None, unit_registry=None, rates_kw=None):
+                   backend=None, SymbolicSys=None, time_symbol=None, unit_registry=None, rates_kw=None,
+                   parameter_expressions=None):
     """ This will be a simpler version of get_odesys without the unit handling code.
     The motivation is to reduce complexity (the code of get_odesys is long with multiple closures).
 
@@ -476,6 +477,8 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
         e.g. ``chempy.units.SI_base_registry``
     rates_kw : dict
         Keyword arguments passed to the ``rates`` method of rsys.
+    parameter_expressions : dict
+        Optional overrides.
 
     Returns
     -------
@@ -498,17 +501,28 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
 
     if parameter_symbols is None:
         keys = []
-        for rxn in rsys.rxns:
-            uk, = rxn.param.unique_keys
-            keys.append(uk)
-            for pk in rxn.param.parameter_keys:
-                if pk not in keys:
-                    keys.append(pk)
+        for rxnpar in map(attrgetter('param'), rsys.rxns):
+            if isinstance(rxnpar, str):
+                if rxnpar in (parameter_expressions or {}):
+                    for pk in parameter_expressions[rxnpar].all_parameter_keys():
+                        keys.append(pk)
+                else:
+                    keys.append(rxnpar)
+            elif isinstance(rxnpar, Expr):
+                uk, = rxnpar.unique_keys
+                keys.append(uk)
+                for pk in rxnpar.all_parameter_keys():
+                    if pk not in keys:
+                        keys.append(pk)
+            else:
+                raise NotImplementedError("Unknown")
         if rates_kw and 'cstr_fr_fc' in rates_kw:
             flowrate_volume, feed_conc = rates_kw['cstr_fr_fc']
             keys.append(flowrate_volume)
             keys.extend(feed_conc.values())
             assert all(sk in rsys.substances for sk in feed_conc)
+        if len(keys) != len(set(keys)):
+            raise ValueError("Duplicates in keys")
         parameter_symbols = OrderedDict([(key, backend.Symbol(key)) for key in keys])
 
     if not isinstance(parameter_symbols, OrderedDict):
@@ -518,7 +532,9 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
     symbols['time'] = time_symbol or backend.Symbol('t')
     if any(symbols['time'] == v for k, v in symbols.items() if k != 'time'):
         raise ValueError("time_symbol already in use (name clash?)")
-    rates = rsys.rates(symbols, **(rates_kw or {}))
+    varbls = dict(symbols, **parameter_symbols)
+    varbls.update(parameter_expressions or {})
+    rates = rsys.rates(varbls, **(rates_kw or {}))
     compo_vecs, compo_names = rsys.composition_balance_vectors()
 
     odesys = SymbolicSys(

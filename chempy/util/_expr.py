@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 """
 This module provides a class :class:`Expr` to subclass from in order to
-describe expressions. The value of the class is that it allows straightforward
+describe expressions. The hope was that this class would allow straightforward
 interoperability between python packages handling symbolics (SymPy) and units
-(quantities) as well as working without either of those. The price one has to
-pay to allow for this is a somewhat contrived syntax.
+(quantities) as well as working without either of those. The price for this has
+been a complicated implementation and unnatural syntax.
 
 Note that this module is to be considered an implementation detail, and not
-something that should be relied upon in external code.
+something that should be relied upon in external code. Consider the ``.util._expr``
+module deprecated and aim to use SymPy expressions where possible, and handle units
+separately.
 """
 from __future__ import (absolute_import, division, print_function)
 
@@ -433,15 +435,16 @@ class Expr(object):
     def __mul__(self, other):
         if other == 1:
             return self
+        if isinstance(other, UnaryWrapper):
+            return NotImplemented  # delegate to UnaryWrapper.__rmul__
         return _MulExpr([self, _implicit_conversion(other)])
 
     def __truediv__(self, other):
         if other == 1:
             return self
+        if isinstance(other, UnaryWrapper):
+            return NotImplemented  # delegate to UnaryWrapper.__rtruediv__
         return _DivExpr([self, _implicit_conversion(other)])
-
-    def __rtruediv(self, other):
-        return _DivExpr([_implicit_conversion(other), self])
 
     def __neg__(self):
         if isinstance(self, _NegExpr):
@@ -467,13 +470,44 @@ class Expr(object):
         return _PowExpr([_implicit_conversion(other), self])
 
 
+class UnaryWrapper(Expr):
+
+    def __checks(self):
+        if self.nargs != 1:
+            raise ValueError("UnaryWrapper can only be used when nargs == 1")
+        if self.unique_keys is not None:
+            raise ValueError("UnaryWrapper can only be used when unique_keys are None")
+
+    def __mul__(self, other):
+        self.__checks()
+        arg, = self.args
+        return self.__class__([_MulExpr([arg, _implicit_conversion(other)])])
+
+    def __truediv__(self, other):
+        if other == 1:
+            return self
+        self.__checks()
+        arg, = self.args
+        return self.__class__([_DivExpr([arg, _implicit_conversion(other)])])
+
+    def __rtruediv__(self, other):
+        self.__checks()
+        arg, = self.args
+        return self.__class__([_DivExpr([_implicit_conversion(other), arg])])
+
+    @classmethod
+    def from_callback(cls, callback, attr='__call__', **kwargs):
+        Wrapper = super().from_callback(callback, attr=attr, **kwargs)
+        return lambda *args, **kw: cls(Wrapper(*args, **kw))
+
+
 class _NegExpr(Expr):
 
     def __call__(self, variables, backend=math, **kwargs):
         arg0, = self.all_args(variables, backend=backend, **kwargs)
         return -arg0
 
-    def rate_coeff(self, *args, **kwargs):
+    def rate_coeff(self, *args, **kwargs):   # <--- feature creep into base-class...
         return -self.args[0].rate_coeff(*args, **kwargs),
 
 

@@ -113,12 +113,11 @@ setup_kwargs = dict(
         'numpy>1.11.3', 'scipy>=1.0.1', 'matplotlib>=2.2.3',
         'sympy>=1.1.1,!=1.2', 'quantities>=0.12.1', 'pyneqsys>=0.5.5',
         'pyodesys>=0.12.5' if sys.version_info[0] >= 3 else 'pyodesys<0.12',
-        'pyparsing>=2.0.3', 'sym>=0.3.4', 'jupyter',
-        'pulp>=1.6.8',
-        # 'dot2tex>=2.9.0'
+        'pyparsing>=2.0.3', 'sym>=0.3.4', 'jupyter', 'pulp>=1.6.8',
+        'dot2tex>=2.11.3'
     ],
     extras_require=extras_req,
-    python_requires='>=3.5'
+    python_requires='>=3.6'
 )
 
 if __name__ == '__main__':

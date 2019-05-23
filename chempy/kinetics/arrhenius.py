@@ -198,7 +198,7 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
 
         See also
         --------
-        See :func:`chempy.arrhenius.arrhenius_equation`.
+        chempy.arrhenius.arrhenius_equation : the function called here.
 
         """
         return arrhenius_equation(self.A, self.Ea, T, constants=constants,
