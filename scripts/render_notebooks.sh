@@ -5,10 +5,10 @@ function quiet_unless_fail {
     #/bin/rm --force /tmp/suppress.out 2>/dev/null
     EXECMD=${1+"$@"}
     $EXECMD > ${OUTPUT_FILE} 2>&1
-    EXIT_CODE=$?
-    if [ ${EXIT_CODE} -ne 0 ]; then
+    export QUIET_EXIT_CODE=$?
+    if [ ${QUIET_EXIT_CODE} -ne 0 ]; then
 	cat ${OUTPUT_FILE}
-	echo "The following command exited with exit status ${EXIT_CODE}: ${EXECMD}"
+	echo "The following command exited with exit status ${QUIET_EXIT_CODE}: ${EXECMD}"
 	/bin/rm ${OUTPUT_FILE}
     fi
     /bin/rm ${OUTPUT_FILE}
@@ -25,8 +25,8 @@ for dir in . examples/; do
         echo "rendering ${fname}..."
         quiet_unless_fail jupyter nbconvert --debug --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 "${fname}" \
             | grep -v -e "^\[NbConvertApp\] content: {'data':.*'image/png'"
-        if [ ${EXIT_CODE} -ne 0 ]; then
-            exit ${EXIT_CODE}
+        if [ ${QUIET_EXIT_CODE} -ne 0 ]; then
+            exit ${QUIET_EXIT_CODE}
         fi
     done
     cd -
