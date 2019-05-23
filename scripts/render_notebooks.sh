@@ -1,11 +1,12 @@
 #!/bin/bash -e
+QUIET_EXIT_CODE=0
 function quiet_unless_fail {
     # suppresses function output unless exit status is != 0
     OUTPUT_FILE=$(tempfile)
     #/bin/rm --force /tmp/suppress.out 2>/dev/null
     EXECMD=${1+"$@"}
     $EXECMD > ${OUTPUT_FILE} 2>&1
-    export QUIET_EXIT_CODE=$?
+    QUIET_EXIT_CODE=$?
     if [ ${QUIET_EXIT_CODE} -ne 0 ]; then
 	cat ${OUTPUT_FILE}
 	echo "The following command exited with exit status ${QUIET_EXIT_CODE}: ${EXECMD}"
