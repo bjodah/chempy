@@ -14,7 +14,7 @@ pipeline:
   install:
     image: bjodah/bjodahimg18dev:v2.1
     environment:
-      - CPLUS_INCLUDE_PATH=/opt/boost_1_69_0/include
+      - CPLUS_INCLUDE_PATH=/opt/boost_1_70_0/include
     commands:
       - export SUN3BASE=$(pwd)/ci_cache/sund-3.2.1
       - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
@@ -70,7 +70,7 @@ pipeline:
       - cp -r index.* examples/ "deploy/public_html/branches/${DRONE_BRANCH}"
 
 #  conda-recipe:
-#    image: bjodah/bjodahimg18dev:v1.6
+#    image: bjodah/bjodahimg18dev:v2.1
 #    group: testing
 #    commands:
 #      - export CONDA_PKGS_DIRS=$(pwd)/ci_cache/conda_packages

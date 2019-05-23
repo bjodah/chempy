@@ -532,7 +532,9 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
     symbols['time'] = time_symbol or backend.Symbol('t')
     if any(symbols['time'] == v for k, v in symbols.items() if k != 'time'):
         raise ValueError("time_symbol already in use (name clash?)")
-    rates = rsys.rates(dict(symbols, **parameter_symbols, **(parameter_expressions or {})), **(rates_kw or {}))
+    varbls = dict(symbols, **parameter_symbols)
+    varbls.update(parameter_expressions or {})
+    rates = rsys.rates(varbls, **(rates_kw or {}))
     compo_vecs, compo_names = rsys.composition_balance_vectors()
 
     odesys = SymbolicSys(
