@@ -16,7 +16,7 @@ from operator import add
 from ..units import get_derived_unit, default_units, energy, concentration
 from ..util._dimensionality import dimension_codes, base_registry
 from ..util.pyutil import memoize, deprecated
-from ..util._expr import Expr
+from ..util._expr import Expr, UnaryWrapper
 
 
 _molar = getattr(default_units, 'molar', 1)  # makes module importable.
@@ -125,7 +125,7 @@ def mk_Radiolytic(*doserate_names):
 Radiolytic = mk_Radiolytic()
 
 
-class MassAction(RateExpr):
+class MassAction(RateExpr, UnaryWrapper):
     """ Rate-expression of mass-action type
 
     Notes
@@ -163,10 +163,6 @@ class MassAction(RateExpr):
         return self.rate_coeff(variables, backend=backend, reaction=reaction)*self.active_conc_prod(
             variables, backend=backend, reaction=reaction, **kwargs)
 
-    @classmethod
-    def from_callback(cls, callback, attr='rate_coeff', **kwargs):
-        return super(MassAction, cls).from_callback(callback, attr=attr, **kwargs)
-
     def string(self, *args, **kwargs):
         if self.args is None and len(self.unique_keys) == 1:
             return self.unique_keys[0]
@@ -183,6 +179,11 @@ class MassAction(RateExpr):
             obj = _RateExpr(*args, **kwargs)
             return cls(obj)
         return wrapper
+
+    @classmethod
+    def from_callback(cls, callback, attr='__call__', **kwargs):
+        Wrapper = RateExpr.from_callback(callback, attr=attr, **kwargs)
+        return lambda *args, **kwargs: MassAction(Wrapper(*args, **kwargs))
 
 
 class Arrhenius(Expr):

@@ -7,7 +7,8 @@ import pytest
 
 from chempy import Reaction, ReactionSystem, Substance
 from chempy.units import (
-    allclose, Backend, to_unitless, units_library, default_constants, default_units as u
+    allclose, Backend, to_unitless, units_library, patched_numpy, default_constants, simplified,
+    default_units as u
 )
 from chempy.util._expr import Expr
 from chempy.util.parsing import parsing_library
@@ -67,6 +68,7 @@ def test_RateExpr__subclass_from_callback():
 
 def test_MassAction():
     ma = MassAction([3.14], ['my_rate'])
+    assert ma.nargs == 1
     r = Reaction({'A': 2, 'B': 1}, {'C': 1}, ma, {'B': 1})
     arg1 = {'A': 11, 'B': 13, 'C': 17}
     arg2 = {'A': 11, 'B': 13, 'C': 17, 'my_rate': 2.72}
@@ -81,6 +83,44 @@ def test_MassAction():
     for key, coeff in [('A', -2), ('B', -2), ('C', 1)]:
         assert abs(rat1[key] - ref1*coeff) < 2e-12
         assert abs(rat2[key] - ref2*coeff) < 2e-12
+
+
+@requires(units_library)
+def test_MassAction__expression():
+    class GibbsExpr(Expr):
+        parameter_keys = ('temperature',)
+        argument_names = tuple("dS_over_R dCp_over_R dH_over_R Tref".split())
+
+        def __call__(self, variables, backend=patched_numpy, **kwargs):
+            am = dict(zip(self.argument_names, map(simplified, self.all_args(variables, backend=backend))))
+            T, = self.all_params(variables, backend=backend)
+            return backend.exp(am['dS_over_R']) * (T/am['Tref'])**am['dCp_over_R'] * backend.exp(-am['dH_over_R']/T)
+
+    GeNH3 = GibbsExpr(dict(
+         dS_over_R  =  18.8    * u.cal/u.K/u.mol / default_constants.molar_gas_constant,  # NOQA
+         dCp_over_R =  52      * u.cal/u.K/u.mol / default_constants.molar_gas_constant,  # NOQA
+         dH_over_R  =  -0.87e3 * u.cal/u.mol     / default_constants.molar_gas_constant,  # NOQA
+         Tref       = 298.15   * u.K                                                      # NOQA
+    ))
+    Ea = 40e3*u.J/u.mol
+    R = default_constants.molar_gas_constant
+    A, Ea_over_R = 1.2e11/u.molar**2/u.second, Ea/R
+    arrh = Arrhenius([A, Ea_over_R])
+    ama = MassAction(arrh)
+
+    ma_mul_expr = ama * GeNH3
+    ma_div_expr = ama / GeNH3
+    expr_mul_ma = GeNH3 * ama
+    expr_div_ma = GeNH3 / ama
+    assert all(isinstance(expr, MassAction) for expr in [
+        ma_mul_expr, ma_div_expr, expr_mul_ma, expr_div_ma])
+
+    varbls = {'temperature': 298.15*u.K}
+    r_ama, r_GeNH3 = ama.rate_coeff(varbls), GeNH3(varbls)
+    assert allclose(ma_mul_expr.rate_coeff(varbls), r_ama * r_GeNH3)
+    assert allclose(ma_div_expr.rate_coeff(varbls), r_ama / r_GeNH3)
+    assert allclose(expr_mul_ma.rate_coeff(varbls), r_GeNH3 * r_ama)
+    assert allclose(expr_div_ma.rate_coeff(varbls), r_GeNH3 / r_ama)
 
 
 def test_Expr__from_callback():

@@ -132,10 +132,6 @@ def least_squares_units(x, y, w=1):
     y : array_like
     w : array_like, optional
 
-    See also
-    --------
-    - :func:`least_squares`
-
     """
     x_unit, y_unit = unit_of(x), unit_of(y)
     explicit_errors = w is not 1
@@ -210,28 +206,6 @@ def least_squares(x, y, w=1):  # w == 1 => OLS, w != 1 => WLS
     return beta, vcv, R2
 
 
-def irls_units(x, y, **kwargs):
-    """ Units aware version of :func:`irls`
-
-    Parameters
-    ----------
-    x : array_like
-    y : array_like
-    \\*\\*kwargs
-        Keyword arguments passed on to :func:`irls`
-
-    See also
-    --------
-    - :func:`irls`
-
-    """
-    x_unit, y_unit = unit_of(x), unit_of(y)
-    x_ul, y_ul = to_unitless(x, x_unit), to_unitless(y, y_unit)
-    beta, vcv, info = irls(x_ul, y_ul, **kwargs)
-    beta_tup = _beta_tup(beta, x_unit, y_unit)
-    return beta_tup, vcv, info
-
-
 def irls(x, y, w_cb=lambda x, y, b, c: x**0, itermax=16, rmsdwtol=1e-8):
     """ Iteratively reweighted least squares
 
@@ -294,6 +268,24 @@ if np is not None:
     irls.exp = lambda x, y, b, c: np.exp(b[1]*x)
     irls.gaussian = lambda x, y, b, c: np.exp(-(b[1]*x)**2)  # guassian weighting
     irls.abs_residuals = lambda x, y, b, c: np.abs(b[0] + b[1]*x - y)
+
+
+def irls_units(x, y, **kwargs):
+    """ Units aware version of :func:`irls`
+
+    Parameters
+    ----------
+    x : array_like
+    y : array_like
+    \\*\\*kwargs
+        Keyword arguments passed on to :func:`irls`
+
+    """
+    x_unit, y_unit = unit_of(x), unit_of(y)
+    x_ul, y_ul = to_unitless(x, x_unit), to_unitless(y, y_unit)
+    beta, vcv, info = irls(x_ul, y_ul, **kwargs)
+    beta_tup = _beta_tup(beta, x_unit, y_unit)
+    return beta_tup, vcv, info
 
 
 def plot_avg_params(opt_params, cov_params, avg_params_result, label_cb=None, ax=None,
