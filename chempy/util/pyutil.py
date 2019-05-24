@@ -242,11 +242,14 @@ def multi_indexed_cases(od, **kwargs):
     List of length-2 tuples, each consisting of one tuple of inidices and one dictionary (of type ``dict_``).
 
     """
-    dict_ = kwargs.get('dict_', OrderedDict)
-    apply_keys = kwargs.get('apply_keys', None)
-    apply_values = kwargs.get('apply_values', None)
-    apply_return = kwargs.get('apply_return', list)
-    named_index = kwargs.get('named_index', False)
+    dict_ = kwargs.pop('dict_', OrderedDict)
+    apply_keys = kwargs.pop('apply_keys', None)
+    apply_values = kwargs.pop('apply_values', None)
+    apply_return = kwargs.pop('apply_return', list)
+    named_index = kwargs.pop('named_index', False)
+    if kwargs:
+        raise TypeError("%s got an unexpected keyword argument '%s'" % (
+            inspect.currentframe().f_code.co_name, next(iter(kwargs))))
 
     if isinstance(od, OrderedDict):
         pass
