@@ -372,7 +372,9 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
     if isinstance(param, str):
         if param.startswith("'") and param.endswith("'") and "'" not in param[1:-1]:
             from ..kinetics.rates import MassAction
-            param = MassAction(unique_keys=(param[1:-1],))
+            #param = MassAction(unique_keys=(param[1:-1],))
+            from ._expr import Symbol
+            param = MassAction(Symbol(unique_keys=(param[1:-1],)))
         else:
             param = None if globals_ is False else eval(param, globals_)
 

@@ -220,12 +220,14 @@ def test_ReactionSystem__from_string():
     assert rs2.rxns[0].ref == 'made up #hashtag'
 
 
+@requires(parsing_library)
+def test_ReactionSystem__from_string__symbolics():
     rs3 = ReactionSystem.from_string("""
 A -> B; 'kA'
 B -> C; 0
 """, substance_factory=Substance)
     rs3.rxns[1].param = 2*rs3.rxns[0].param
-    assert rs.rates(dict(A=29, B=31, kA=42)) == {'A': -29*42, 'B': 29*42 - 2*31*42, 'C': 2*31*42}
+    assert rs3.rates(dict(A=29, B=31, kA=42)) == {'A': -29*42, 'B': 29*42 - 2*31*42, 'C': 2*31*42}
 
 
 @requires(parsing_library, units_library)
@@ -266,7 +268,7 @@ def test_ReactionSystem__from_string__string_rate_const():
     assert r2.reac == {'OH-': 1, 'H+': 1}
     assert r2.prod == {'H2O': 1}
     r2str = r2.string(rsys.substances, with_param=True)
-    assert r2str.endswith('; kf')
+    assert r2str.endswith("; 'kf'")
 
 
 @requires('numpy')

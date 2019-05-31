@@ -16,7 +16,7 @@ from operator import add
 from ..units import get_derived_unit, default_units, energy, concentration
 from ..util._dimensionality import dimension_codes, base_registry
 from ..util.pyutil import memoize, deprecated
-from ..util._expr import Expr, UnaryWrapper
+from ..util._expr import Expr, UnaryWrapper, Symbol
 
 
 _molar = getattr(default_units, 'molar', 1)  # makes module importable.
@@ -142,6 +142,24 @@ class MassAction(RateExpr, UnaryWrapper):
     True
 
     """
+    def _str(self, *args, **kwargs):
+        arg, = self.args
+        if isinstance(arg, Symbol):
+            uk, = arg.unique_keys
+            return "'%s'" % uk
+        else:
+            return super(MassAction, self)._str(*args, **kwargs)
+
+    def __repr__(self):
+        return super(MassAction, self)._str(repr)
+
+    def get_named_keys(self):
+        # Symbol uses args[0] to return from variables
+        arg, = self.args
+        if isinstance(arg, Symbol):
+            return arg.args
+        else:
+            return self.unique_keys
 
     argument_names = ('rate_constant',)
 
