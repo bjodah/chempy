@@ -220,6 +220,14 @@ def test_ReactionSystem__from_string():
     assert rs2.rxns[0].ref == 'made up #hashtag'
 
 
+    rs3 = ReactionSystem.from_string("""
+A -> B; 'kA'
+B -> C; 0
+""", substance_factory=Substance)
+    rs3.rxns[1].param = 2*rs3.rxns[0].param
+    assert rs.rates(dict(A=29, B=31, kA=42)) == {'A': -29*42, 'B': 29*42 - 2*31*42, 'C': 2*31*42}
+
+
 @requires(parsing_library, units_library)
 def test_ReactionSystem__from_string__units():
     r3, = ReactionSystem.from_string('(H2O) -> e-(aq) + H+ + OH; Radiolytic(2.1e-7*mol/J)').rxns
