@@ -1242,7 +1242,7 @@ def balance_stoichiometry(reactants, products, substances=None,
                         r, p, substances=substances, substance_factory=substance_factory,
                         parametric_symbols=parametric_symbols, underdetermined=underdetermined,
                         allow_duplicates=False)
-                except Exception:
+                except ValueError:
                     continue
                 else:
                     return result

@@ -203,14 +203,20 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
             raise NotImplementedError("Currently only Expr sub classes are supported.")
 
         if isinstance(expr, MassAction):
-            arg, = expr.args
-            if isinstance(arg, Symbol):
-                uk, = arg.unique_keys
+            if expr.args is None:
+                uk, = expr.unique_keys
                 if uk not in substitutions:
                     unique[uk] = None
                     _reg_unique_unit(uk, _get_arg_dim(expr, rxn), 0)
                     return
-
+            else:
+                arg, = expr.args
+                if isinstance(arg, Symbol):
+                    uk, = arg.unique_keys
+                    if uk not in substitutions:
+                        unique[uk] = None
+                        _reg_unique_unit(uk, _get_arg_dim(expr, rxn), 0)
+                        return
 
         if expr.args is None:
             for idx, k in enumerate(expr.unique_keys):
