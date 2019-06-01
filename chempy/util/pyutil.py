@@ -248,6 +248,7 @@ def multi_indexed_cases(od, **kwargs):
     apply_return = kwargs.pop('apply_return', list)
     named_index = kwargs.pop('named_index', False)
     if kwargs:
+        import inspect
         raise TypeError("%s got an unexpected keyword argument '%s'" % (
             inspect.currentframe().f_code.co_name, next(iter(kwargs))))
 

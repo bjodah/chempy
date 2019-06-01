@@ -12,7 +12,6 @@ end {parameters}
 
 
 def _r(r, p, doserate, substmap, parmap, density=998*u.kg/u.m3, unit_conc=u.molar, unit_time=u.second):
-    _num = lambda x: '{0:<.5g}'.format(x)
     pk, = r.param.unique_keys
     if isinstance(r.param, MassAction):
         ratcoeff = to_unitless(
@@ -26,7 +25,7 @@ def _r(r, p, doserate, substmap, parmap, density=998*u.kg/u.m3, unit_conc=u.mola
             reac_stoichs = r.all_reac_stoich(all_keys)
             act_stoichs = r.active_reac_stoich(all_keys)
             rate = '*'.join([parmap[pk]] + [('%s^%d' % (substmap[k], v)) if v > 1 else substmap[k]
-                                                for k, v in zip(all_keys, act_stoichs) if v > 0])
+                                            for k, v in zip(all_keys, act_stoichs) if v > 0])
             r2 = Reaction(dict([(k, v) for k, v in zip(all_keys, reac_stoichs) if v]), r.prod)
             r_str = '{}, {}'.format(rate, r2.string(substances=substmap, with_param=False,
                                                     Reaction_arrow='\u21D2', Reaction_coeff_space=''))
@@ -71,7 +70,10 @@ def to_diffeqbiojl(arm, arm_extra, *, doserate):
 def export2julia(armor_rsys, armor_extra, *, ics, kw2=None):
     debj = to_diffeqbiojl(armor_rsys, armor_extra, **(kw2 or {}))
     export = debj['rn']
-    p_odj = lambda od: "Dict([%s])" % ", ".join(['(:%s, %.4g)' % (k, v) for k, v in od.items()])
+
+    def p_odj(od):
+        return "Dict([%s])" % ", ".join(['(:%s, %.4g)' % (k, v) for k, v in od.items()])
+
     # str(od).replace('Ordered', '').replace("',", ',').replace("'", ":")
     export += "p = %s\n" % p_odj(debj['pars'])
     export += "ics = %s\n" % p_odj(OrderedDict({debj['sbstmap'][k]: v for
