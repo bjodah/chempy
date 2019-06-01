@@ -30,7 +30,7 @@ def _implicit_conversion(obj):
     elif isinstance(obj, Expr):
         return obj
     elif isinstance(obj, str):
-        return Symbol(obj)
+        return Symbol(unique_keys=(obj,))
 
     if sympy is not None:
         if isinstance(obj, sympy.Mul):
@@ -46,7 +46,7 @@ def _implicit_conversion(obj):
         elif isinstance(obj, sympy.Float):
             return Constant(float(obj))
         elif isinstance(obj, sympy.Symbol):
-            return Symbol(obj.name)
+            return Symbol(unique_keys=(obj.name,))
 
     raise NotImplementedError(
         "Don't know how to convert %s (of type %s)" % (obj, type(obj)))
@@ -276,8 +276,8 @@ class Expr(object):
 
         if isinstance(res, str):
             res = variables[res]
-        elif isinstance(res, Symbol):
-            res = variables[res.args[0]]
+        # elif isinstance(res, Symbol):
+        #     res = variables[res.unique_keys[0]]
 
         if isinstance(res, Expr) and evaluate:
             return res(variables, backend=backend, **kwargs)
@@ -517,6 +517,9 @@ class _BinaryExpr(Expr):
     def _str(self, *args, **kwargs):
         return ("({0} %s {1})" % self._op_str).format(*[arg._str(*args, **kwargs) for arg in self.args])
 
+    def __repr__(self):
+        return super(_BinaryExpr, self)._str(repr)
+
     def __call__(self, variables, backend=math, **kwargs):
         arg0, arg1 = self.all_args(variables, backend=backend, **kwargs)
         return self._op(arg0, arg1)
@@ -564,8 +567,16 @@ class Constant(Expr):
 class Symbol(Expr):
     nargs = 1
 
+    def _str(self, *args, **kwargs):
+        uk, = self.unique_keys
+        return uk
+
+    def __repr__(self):
+        return super(Symbol, self)._str(repr)
+
     def __call__(self, variables, backend=None, **kwargs):
-        return variables[self.args[0]]
+        uk, = self.unique_keys
+        return variables[uk]
 
 
 class Function(Expr):

@@ -478,9 +478,9 @@ class Reaction(object):
         >>> from chempy.units import to_unitless, default_units as u
         >>> to_unitless(r3.param, u.hour**-1)
         3600.0
-        >>> r4 = Reaction.from_string("A -> B; 'k'", 'A B')
-        >>> r4.param.unique_keys
-        ('k',)
+        >>> r4 = Reaction.from_string("A -> 2 B; 'k'", 'A B')
+        >>> r4.rate(dict(A=3, B=5, k=7)) == {'A': -3*7, 'B': 2*3*7}
+        True
         >>> r5 = Reaction.from_string("A -> B; 1/molar/second", 'A B')
         Traceback (most recent call last):
             ...
@@ -1242,7 +1242,7 @@ def balance_stoichiometry(reactants, products, substances=None,
                         r, p, substances=substances, substance_factory=substance_factory,
                         parametric_symbols=parametric_symbols, underdetermined=underdetermined,
                         allow_duplicates=False)
-                except Exception:
+                except ValueError:
                     continue
                 else:
                     return result

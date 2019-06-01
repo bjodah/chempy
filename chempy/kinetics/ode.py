@@ -23,7 +23,7 @@ from ..units import (
     default_unit_in_registry, default_units as u
 )
 from ..util.pyutil import deprecated
-from ..util._expr import Expr
+from ..util._expr import Expr, Symbol
 from .rates import RateExpr, MassAction
 
 
@@ -201,6 +201,22 @@ def get_odesys(rsys, include_params=True, substitutions=None, SymbolicSys=None, 
     def _reg_unique(expr, rxn=None):
         if not isinstance(expr, Expr):
             raise NotImplementedError("Currently only Expr sub classes are supported.")
+
+        if isinstance(expr, MassAction):
+            if expr.args is None:
+                uk, = expr.unique_keys
+                if uk not in substitutions:
+                    unique[uk] = None
+                    _reg_unique_unit(uk, _get_arg_dim(expr, rxn), 0)
+                    return
+            else:
+                arg, = expr.args
+                if isinstance(arg, Symbol):
+                    uk, = arg.unique_keys
+                    if uk not in substitutions:
+                        unique[uk] = None
+                        _reg_unique_unit(uk, _get_arg_dim(expr, rxn), 0)
+                        return
 
         if expr.args is None:
             for idx, k in enumerate(expr.unique_keys):
@@ -509,8 +525,7 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
                 else:
                     keys.append(rxnpar)
             elif isinstance(rxnpar, Expr):
-                uk, = rxnpar.unique_keys
-                keys.append(uk)
+                keys.extend(rxnpar.all_unique_keys())
                 for pk in rxnpar.all_parameter_keys():
                     if pk not in keys:
                         keys.append(pk)
