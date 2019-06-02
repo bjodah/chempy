@@ -318,7 +318,7 @@ def test_ReactionSystem__categorize_substances():
                                                  unaffected={'Fe+3'}, nonparticipating=set())
 
 
-@requires(parsing_library)
+@requires(parsing_library, 'numpy')
 def test_ReactionSystem__split():
     a = """
     2 H2 +  O2 -> 2 H2O     ; 1e-3
