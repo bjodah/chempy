@@ -220,7 +220,7 @@ def test_ReactionSystem__from_string():
     assert rs2.rxns[0].ref == 'made up #hashtag'
 
 
-@requires(parsing_library)
+@requires(parsing_library, 'numpy')
 def test_ReactionSystem__from_string__symbolics():
     rs3 = ReactionSystem.from_string("""
 A -> B; 'kA'
