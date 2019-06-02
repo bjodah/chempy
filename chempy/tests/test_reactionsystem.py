@@ -249,6 +249,7 @@ def test_ReactionSystem__from_string__units():
     assert allclose(rs.rxns[0].param, k)
 
 
+@requires(parsing_library, 'numpy')
 def test_ReactionSystem__from_string___special_naming():
     rs = ReactionSystem.from_string("""
 H2O* + H2O -> 2 H2O
@@ -316,7 +317,7 @@ def test_ReactionSystem__identify_equilibria():
     assert rsys.identify_equilibria() == [(0, 3), (1, 2)]
 
 
-@requires(parsing_library)
+@requires(parsing_library, 'numpy')
 def test_ReactionSystem__categorize_substances():
     rsys1 = ReactionSystem.from_string("""
     2 H2 +  O2 -> 2 H2O     ; 1e-3
@@ -352,7 +353,7 @@ def test_ReactionSystem__categorize_substances():
                                                  unaffected={'Fe+3'}, nonparticipating=set())
 
 
-@requires(parsing_library)
+@requires(parsing_library, 'numpy')
 def test_ReactionSystem__split():
     a = """
     2 H2 +  O2 -> 2 H2O     ; 1e-3
