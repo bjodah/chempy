@@ -122,7 +122,7 @@ class AttributeContainer(object):
 
     Parameters
     ----------
-    d : dict
+    \\*\\*kwargs : dictionary
 
     Examples
     --------
@@ -142,6 +142,13 @@ class AttributeContainer(object):
 
     def as_dict(self):
         return self.__dict__.copy()
+
+
+class AttrDict(dict):
+    """ Subclass of dict with attribute access to keys """
+    def __init__(self, *args, **kwargs):
+        super(AttrDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self
 
 
 class defaultkeydict(defaultdict):
@@ -237,10 +244,18 @@ def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=
     (0, 0)
     >>> case_kws[0] == {'a': 1, 'b': False}
     True
+    >>> d = {'a': 'foo bar'.split(), 'b': 'baz qux'.split()}
+    >>> from chempy.util.pyutil import AttrDict
+    >>> for nidx, case in multi_indexed_cases(d, dict_=AttrDict, named_index=True):
+    ...     if case.a == 'bar' and case.b == 'baz':
+    ...         print("{} {}".format(nidx.a, nidx.b))
+    ...
+    1 0
+
 
     Returns
     -------
-    List of length-2 tuples, each consisting of one tuple of inidices and one dictionary (of type ``dict_``).
+    List of length-2 tuples, each consisting of one tuple of indices and one dictionary (of type ``dict_``).
 
     """
     if isinstance(od, OrderedDict):
