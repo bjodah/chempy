@@ -44,12 +44,13 @@ def _r(r, p, doserate, substmap, parmap, density=998*u.kg/u.m3, unit_conc=u.mola
     return r_str, pk, abs(ratcoeff)
 
 
-def to_diffeqbiojl(arm, arm_extra, *, doserate):
-    sbstmap = dict(zip(arm.substances, (chr(i) for i in range(ord('A'), ord('A')+999))))
+def to_diffeqbiojl(arm, arm_extra, *, doserate, substance_key_map=lambda i, sk: 'y%d' % i):
+    if not isinstance(substance_key_map, dict):
+        substance_key_map = {sk: substance_key_map(si, sk) for si, sk in enumerate(arm.substances)}
     parmap = dict(zip([r.param.unique_keys[0] for r in arm.rxns], ('k%d' % i for i in range(1, 999))))
     rxs, pars = [], OrderedDict()
     for r in arm.rxns:
-        rs, pk, pv = _r(r, arm_extra['params'], doserate, sbstmap, parmap)
+        rs, pk, pv = _r(r, arm_extra['params'], doserate, substance_key_map, parmap)
         rxs.append(rs)
         if pk in pars:
             raise ValueError("Are you sure (sometimes intentional)?")
@@ -61,7 +62,7 @@ def to_diffeqbiojl(arm, arm_extra, *, doserate):
             reactions='\n    '.join(rxs),
             parameters=' '.join(pars)
         ),
-        sbstmap=sbstmap,
+        substance_key_map=substance_key_map,
         parmap=parmap,
         pars=pars
     )
@@ -76,9 +77,9 @@ def export2julia(armor_rsys, armor_extra, *, ics, kw2=None):
 
     # str(od).replace('Ordered', '').replace("',", ',').replace("'", ":")
     export += "p = %s\n" % p_odj(debj['pars'])
-    export += "ics = %s\n" % p_odj(OrderedDict({debj['sbstmap'][k]: v for
+    export += "ics = %s\n" % p_odj(OrderedDict({debj['substance_key_map'][k]: v for
                                                 k, v in to_unitless(ics, u.molar).items()}))
     export += "subst_tex = Dict([%s])\n" % ", ".join(
         '(:%s, ("%s", "%s"))' % (v, k, armor_rsys.substances[k].latex_name) for
-        k, v in debj['sbstmap'].items())
+        k, v in debj['substance_key_map'].items())
     return export
