@@ -9,6 +9,7 @@ import pprint
 import subprocess
 import textwrap
 
+
 class Echo:
     """ Context maganger for echoing variable assignments (in CPython) """
     def __init__(self, msg, indent='  '):
@@ -46,6 +47,7 @@ class Notify:
         else:
             title = "Failure"
         self.notify(title, self.msg(time.time() - self.t0))
+
 
 class c:
 
