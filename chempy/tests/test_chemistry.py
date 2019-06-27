@@ -315,6 +315,10 @@ def test_balance_stoichiometry():
     assert r6 == dict(CuSCN=4, KIO3=7, HCl=14)
     assert p6 == dict(CuSO4=4, KCl=7, HCN=4, ICl=7, H2O=5)
 
+    r7, p7 = balance_stoichiometry({'Zn+2', 'e-'}, {'Zn'})
+    assert r7 == {'Zn+2': 1, 'e-': 2}
+    assert p7 == {'Zn': 1}
+
 
 @requires('sympy')
 def test_balance_stoichiometry__ordering():
