@@ -319,6 +319,10 @@ def test_balance_stoichiometry():
     assert r7 == {'Zn+2': 1, 'e-': 2}
     assert p7 == {'Zn': 1}
 
+    r8, p8 = balance_stoichiometry({'Zn'}, {'Zn+2', 'e-'})
+    assert r8 == {'Zn': 1}
+    assert p8 == {'Zn+2': 1, 'e-': 2}
+
 
 @requires('sympy')
 def test_balance_stoichiometry__ordering():

@@ -1283,12 +1283,23 @@ def balance_stoichiometry(reactants, products, substances=None,
             if substances[rk].composition.get(ck, 0) != 0:
                 break
         else:
-            raise ValueError("Component '%s' not among reactants" % ck)
+            any_pos = any(substances[pk].composition.get(ck, 0) > 0 for pk in products)
+            any_neg = any(substances[pk].composition.get(ck, 0) < 0 for pk in products)
+            if any_pos and any_neg:
+                pass  # negative and positive parts among products, no worries
+            else:
+                raise ValueError("Component '%s' not among reactants" % ck)
+
         for pk in products:
             if substances[pk].composition.get(ck, 0) != 0:
                 break
         else:
-            raise ValueError("Component '%s' not among products" % ck)
+            any_pos = any(substances[pk].composition.get(ck, 0) > 0 for pk in reactants)
+            any_neg = any(substances[pk].composition.get(ck, 0) < 0 for pk in reactants)
+            if any_pos and any_neg:
+                pass  # negative and positive parts among reactants, no worries
+            else:
+                raise ValueError("Component '%s' not among products" % ck)
 
     A = MutableDenseMatrix([[_get(ck, sk) for sk in subst_keys] for ck in cks])
     symbs = list(reversed([next(parametric_symbols) for _ in range(len(subst_keys))]))
