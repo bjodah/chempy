@@ -4,14 +4,12 @@ from chempy.kinetics.rates import MassAction, RadiolyticBase
 from chempy.units import to_unitless, default_units as u
 
 
-_diffeqbiojl_tmplt = """\
-{name} = @reaction_network begin
-    {reactions}
-end {parameters}
-"""
+def jl_dict(od):
+    return "Dict([%s])" % ", ".join(['(:%s, %.4g)' % (k, v) for k, v in od.items()])
 
 
-def _r(r, p, doserate, substmap, parmap, density=998*u.kg/u.m3, unit_conc=u.molar, unit_time=u.second):
+def _r(r, p, substmap, parmap, *, unit_conc, unit_time,
+       variables=None):
     pk, = r.param.unique_keys
     if isinstance(r.param, MassAction):
         ratcoeff = to_unitless(
@@ -31,7 +29,7 @@ def _r(r, p, doserate, substmap, parmap, density=998*u.kg/u.m3, unit_conc=u.mola
                                                     Reaction_arrow='\u21D2', Reaction_coeff_space=''))
     elif isinstance(r.param, RadiolyticBase):
         ratcoeff = to_unitless(
-            p[pk]*doserate*density,
+            p[pk]*variables['doserate']*variables['density'],
             unit_conc/unit_time
         )
         assert not r.reac and not r.inact_reac and not r.inact_prod
@@ -44,41 +42,75 @@ def _r(r, p, doserate, substmap, parmap, density=998*u.kg/u.m3, unit_conc=u.mola
     return r_str, pk, abs(ratcoeff)
 
 
-def to_diffeqbiojl(arm, arm_extra, *, doserate):
-    sbstmap = dict(zip(arm.substances, (chr(i) for i in range(ord('A'), ord('A')+999))))
-    parmap = dict(zip([r.param.unique_keys[0] for r in arm.rxns], ('k%d' % i for i in range(1, 999))))
-    rxs, pars = [], OrderedDict()
-    for r in arm.rxns:
-        rs, pk, pv = _r(r, arm_extra['params'], doserate, sbstmap, parmap)
-        rxs.append(rs)
-        if pk in pars:
-            raise ValueError("Are you sure (sometimes intentional)?")
-        pars[parmap[pk]] = pv
+class DiffEqBioJl:
+    _template_body = """\
+{name} = @{crn_macro} begin
+    {reactions}
+end {parameters}
+{post}
+"""
 
-    return dict(
-        rn=_diffeqbiojl_tmplt.format(
-            name='rn',
-            reactions='\n    '.join(rxs),
-            parameters=' '.join(pars)
-        ),
-        sbstmap=sbstmap,
-        parmap=parmap,
-        pars=pars
-    )
+    defaults = dict(unit_conc=u.molar, unit_time=u.second)
 
+    def __init__(self, *, rxs, pars, substance_key_map, parmap, **kwargs):
+        self.rxs = rxs
+        self.pars = pars
+        self.substance_key_map = substance_key_map
+        self.parmap = parmap
+        self.unit_conc = kwargs.get('unit_conc', self.defaults['unit_conc'])
+        self.unit_time = kwargs.get('unit_time', self.defaults['unit_time'])
+        self.latex_names = kwargs.get('latex_names', None)
 
-def export2julia(armor_rsys, armor_extra, *, ics, kw2=None):
-    debj = to_diffeqbiojl(armor_rsys, armor_extra, **(kw2 or {}))
-    export = debj['rn']
+    @classmethod
+    def from_rsystem(cls, rsys, par_vals, *, variables=None, substance_key_map=lambda i, sk: 'y%d' % i, **kwargs):
+        if not isinstance(substance_key_map, dict):
+            substance_key_map = {sk: substance_key_map(si, sk) for si, sk in enumerate(rsys.substances)}
+        parmap = dict([(r.param.unique_keys[0], 'p%d' % i) for i, r in enumerate(rsys.rxns)])
+        rxs, pars = [], OrderedDict()
+        for r in rsys.rxns:
+            rs, pk, pv = _r(r, par_vals, substance_key_map, parmap, variables=variables,
+                            unit_conc=kwargs.get('unit_conc', cls.defaults['unit_conc']),
+                            unit_time=kwargs.get('unit_time', cls.defaults['unit_time']))
+            rxs.append(rs)
+            if pk in pars:
+                raise ValueError("Are you sure (sometimes intentional)?")
+            pars[parmap[pk]] = pv
+        if 'latex_names' not in kwargs:
+            kwargs['latex_names'] = {k: s.latex_name for k, s in rsys.substances.items()}
+        return cls(rxs=rxs, pars=pars, substance_key_map=substance_key_map, parmap=parmap, **kwargs)
 
-    def p_odj(od):
-        return "Dict([%s])" % ", ".join(['(:%s, %.4g)' % (k, v) for k, v in od.items()])
+    def render_body(self, sparse_jac=False):
+        name = 'rn'
+        return self._template_body.format(
+            crn_macro='min_reaction_network' if sparse_jac else 'reaction_network',
+            name=name,
+            reactions='\n    '.join(self.rxs),
+            parameters=' '.join(self.pars),
+            post="addodes!({}, sparse_jac=True)".format(name) if sparse_jac else ''
+        )
 
-    # str(od).replace('Ordered', '').replace("',", ',').replace("'", ":")
-    export += "p = %s\n" % p_odj(debj['pars'])
-    export += "ics = %s\n" % p_odj(OrderedDict({debj['sbstmap'][k]: v for
-                                                k, v in to_unitless(ics, u.molar).items()}))
-    export += "subst_tex = Dict([%s])\n" % ", ".join(
-        '(:%s, ("%s", "%s"))' % (v, k, armor_rsys.substances[k].latex_name) for
-        k, v in debj['sbstmap'].items())
-    return export
+    def render_setup(self, *, ics, atol, tex=True, tspan=None):
+        export = ""
+        export += "p = %s\n" % jl_dict(self.pars)
+        export += "ics = %s\n" % jl_dict(OrderedDict({self.substance_key_map[k]: v for
+                                                      k, v in to_unitless(ics, u.molar).items()}))
+        if atol:
+            export += "abstol_d = %s\n" % jl_dict({self.substance_key_map[k]: v for
+                                                   k, v in to_unitless(atol, u.molar).items()})
+            export += "abstol = Array([get(abstol_d, k, 1e-10) for k=keys(speciesmap(rn))])"
+        if tex:
+            export += "subst_tex = Dict([%s])\n" % ", ".join(
+                '(:%s, ("%s", "%s"))' % (v, k, self.latex_names[k]) for
+                k, v in self.substance_key_map.items())
+        if tspan:
+            export += """\
+tspan = (0., %12.5g)
+u0 = Array([get(ics, k, 1e-28) for k=keys(speciesmap(rn))])
+parr = Array([p[k] for k=keys(paramsmap(rn))])
+oprob = ODEProblem(rn, u0, tspan, parr)
+"""
+        return export
+
+    def render_solve(self):
+        return ("sol = solve(oprob, reltol=1e-9, abstol=abstol, Rodas5(), "
+                "callback=PositiveDomain(ones(length(u0)), abstol=abstol))")

@@ -4,11 +4,12 @@ General utilities and exceptions.
 """
 from __future__ import (absolute_import, division, print_function)
 
-from collections import defaultdict, namedtuple, Mapping, OrderedDict
+from collections import defaultdict, namedtuple, OrderedDict
 try:
-    from collections.abc import ItemsView
+    from collections.abc import ItemsView, Mapping
 except ImportError:  # Python 2
     ItemsView = list
+    from collections import Mapping
 from functools import wraps
 from itertools import product
 import os
