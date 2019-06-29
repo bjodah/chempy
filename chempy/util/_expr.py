@@ -503,6 +503,12 @@ class UnaryWrapper(Expr):
 
 class _NegExpr(Expr):
 
+    def _str(self, *args, **kwargs):
+        return "-%s" % args[0]._str(*args, **kwargs)
+
+    def __repr__(self):
+        return super(_NegExpr, self)._str(repr)
+
     def __call__(self, variables, backend=math, **kwargs):
         arg0, = self.all_args(variables, backend=backend, **kwargs)
         return -arg0
