@@ -4,11 +4,12 @@ General utilities and exceptions.
 """
 from __future__ import (absolute_import, division, print_function)
 
-from collections import defaultdict, namedtuple, Mapping, OrderedDict
+from collections import defaultdict, namedtuple, OrderedDict
 try:
-    from collections.abc import ItemsView
+    from collections.abc import ItemsView, Mapping
 except ImportError:  # Python 2
     ItemsView = list
+    from collections import Mapping
 from functools import wraps
 from itertools import product
 import os
@@ -144,6 +145,13 @@ class AttributeContainer(object):
         return self.__dict__.copy()
 
 
+class AttrDict(dict):
+    """ Subclass of dict with attribute access to keys """
+    def __init__(self, *args, **kwargs):
+        super(AttrDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self
+
+
 class defaultkeydict(defaultdict):
     """ defaultdict where default_factory should have the signature key -> value
 
@@ -236,10 +244,18 @@ def multi_indexed_cases(od, **kwargs):
     (0, 0)
     >>> case_kws[0] == {'a': 1, 'b': False}
     True
+    >>> d = {'a': 'foo bar'.split(), 'b': 'baz qux'.split()}
+    >>> from chempy.util.pyutil import AttrDict
+    >>> for nidx, case in multi_indexed_cases(d, dict_=AttrDict, named_index=True):
+    ...     if case.a == 'bar' and case.b == 'baz':
+    ...         print("{} {}".format(nidx.a, nidx.b))
+    ...
+    1 0
+
 
     Returns
     -------
-    List of length-2 tuples, each consisting of one tuple of inidices and one dictionary (of type ``dict_``).
+    List of length-2 tuples, each consisting of one tuple of indices and one dictionary (of type ``dict_``).
 
     """
     dict_ = kwargs.pop('dict_', OrderedDict)
