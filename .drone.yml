@@ -14,7 +14,7 @@ pipeline:
   install:
     image: bjodah/bjodahimg18dev:v3.0.1
     environment:
-      - CPLUS_INCLUDE_PATH=/opt/boost_1_70_0/include
+      - CPLUS_INCLUDE_PATH=/opt/boost_1_71_0/include
     commands:
       - export SUN3BASE=$(pwd)/ci_cache/sund-3.2.1
       - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
@@ -35,7 +35,7 @@ pipeline:
     image: bjodah/bjodahimg18dev:v3.0.1
     group: testing
     environment:
-      - CPLUS_INCLUDE_PATH=/opt/boost_1_69_0/include
+      - CPLUS_INCLUDE_PATH=/opt/boost_1_71_0/include
     commands:
       - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
       - export CPATH=$(pwd)/ci_cache/sund-3.2.1/include
