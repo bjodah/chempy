@@ -183,8 +183,9 @@ def unit_registry_to_human_readable(unit_registry):
     if unit_registry is None:
         return None
     new_registry = {}
+    integer_one = 1
     for k in SI_base_registry:
-        if unit_registry[k] is 1:
+        if unit_registry[k] is integer_one:
             new_registry[k] = 1, 1
         else:
             dim_list = list(unit_registry[k].dimensionality)
@@ -333,6 +334,7 @@ def to_unitless(value, new_unit=None):
     '1e+09 1e+06'
 
     """
+    integer_one = 1
     if new_unit is None:
         new_unit = pq.dimensionless
 
@@ -347,7 +349,7 @@ def to_unitless(value, new_unit=None):
         for k in value:
             new_value[k] = to_unitless(value[k], new_unit)
         return new_value
-    elif isinstance(value, (int, float)) and new_unit is 1 or new_unit is None:
+    elif isinstance(value, (int, float)) and new_unit is integer_one or new_unit is None:
         return value
     elif isinstance(value, str):
         raise ValueError("str not supported")
