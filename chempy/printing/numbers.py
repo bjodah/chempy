@@ -98,7 +98,8 @@ def _float_str_w_uncert(x, xe, precision=2):
 def _number_to_X(number, uncertainty, unit, fmt, unit_fmt, fmt_pow_10, space=' '):
     uncertainty = uncertainty or getattr(number, 'uncertainty', None)
     unit = unit or unit_of(number)
-    if unit == 1:
+    integer_one = 1
+    if unit is integer_one:
         unit_str = ''
         mag = number
     else:
