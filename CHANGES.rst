@@ -1,3 +1,9 @@
+v0.7.9
+======
+- Fixed regression in balance_stoichiometry
+- More robust expression handling.
+- Fixed SyntaxWarning for upcoming CPython 3.8
+
 v0.7.8
 ======
 - Reaction __init__ got a new kwarg: ``dont_check``
