@@ -12,7 +12,7 @@ pipeline:
     ttl: 90  # liftetime in days
 
   install:
-    image: bjodah/bjodahimg18dev:v2.1
+    image: bjodah/bjodahimg18dev:v3.0.1
     environment:
       - CPLUS_INCLUDE_PATH=/opt/boost_1_70_0/include
     commands:
@@ -32,7 +32,7 @@ pipeline:
       - cp dist/chempy-* deploy/public_html/branches/${DRONE_BRANCH}/
 
   test-suite:
-    image: bjodah/bjodahimg18dev:v2.1
+    image: bjodah/bjodahimg18dev:v3.0.1
     group: testing
     environment:
       - CPLUS_INCLUDE_PATH=/opt/boost_1_69_0/include
@@ -54,7 +54,7 @@ pipeline:
       - bash -c "source /tmp/test_git_archive/bin/activate; pip install --cache-dir ./ci_cache/pip_cache chempy-head.zip pytest; pytest --pyargs chempy"
 
   render-notebooks:
-    image: bjodah/bjodahimg18dev:v2.1
+    image: bjodah/bjodahimg18dev:v3.0.1
     group: testing
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
@@ -70,7 +70,7 @@ pipeline:
       - cp -r index.* examples/ "deploy/public_html/branches/${DRONE_BRANCH}"
 
 #  conda-recipe:
-#    image: bjodah/bjodahimg18dev:v2.1
+#    image: bjodah/bjodahimg18dev:v3.0.1
 #    group: testing
 #    commands:
 #      - export CONDA_PKGS_DIRS=$(pwd)/ci_cache/conda_packages
@@ -80,7 +80,7 @@ pipeline:
 #      - (cd $CONDA_PKGS_DIRS; find . -maxdepth 1 -type d -not -path . -not -path .. | xargs rm -r)
 
   compile-documentation:
-    image: bjodah/bjodahimg18dev:v2.1
+    image: bjodah/bjodahimg18dev:v3.0.1
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
     commands:

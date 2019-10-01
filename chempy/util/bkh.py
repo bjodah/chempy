@@ -110,7 +110,6 @@ def integration_with_sliders(
         return {k: to_unitless(v, u) for k, v in d.items()}
 
     c0_widgets = OrderedDict()
-    integer_one = 0
     for k in rsys.substances:
         if conc_bounds is not None and k in conc_bounds:
             if k in slider_kwargs:
@@ -124,7 +123,7 @@ def integration_with_sliders(
             else:
                 slider_defaults = dict(start=_C(k)/2, end=_C(k)*2, step=_C(k)/10)
         c0_widgets[k] = Slider(
-            title=k if output_conc_unit is integer_one else k + ' / ' + output_conc_unit.dimensionality.unicode,
+            title=(k + ' / ' + output_conc_unit.dimensionality.unicode) if hasattr(output_conc_unit, 'dimensionality') else k,
             value=_C(k), **slider_kwargs.get(k, slider_defaults)
         )
 
