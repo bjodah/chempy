@@ -413,4 +413,3 @@ Author
 ------
 Björn I. Dahlgren, contact:
  - gmail address: bjodah
- - kth.se address: bda
