@@ -40,7 +40,7 @@ chemistry (mainly physical/inorganic/analytical chemistry). Currently it include
   - Arrhenius & Eyring equation
   - Einstein-Smoluchowski equation
 
-- Properties (pure python implementations from the litterature)
+- Properties (pure python implementations from the literature)
 
   - water density as function of temperature
   - water permittivity as function of temperature and pressure
@@ -369,7 +369,7 @@ Properties
 ~~~~~~~~~~
 One of the fundamental tasks in science is the careful collection of data about the world
 around us. ChemPy contains a growing collection of parametrizations from the scientific
-litterature with relevance in chemistry. Here is how you use one of these formulations:
+literature with relevance in chemistry. Here is how you use one of these formulations:
 
 .. code:: python
 
