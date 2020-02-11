@@ -5,43 +5,53 @@ from itertools import chain
 from .periodic import groups, symbols, names
 
 _anions = {
+    # Atomic anions.
+    'N-3': 'nitride',
+    'P-3': 'phosphide',
+    'As-3': 'arsenide',
+    'O-2': 'oxide',
+    'S-2': 'sulfide',
+    'Se-2': 'selenide',
+    'Te-2': 'telluride',
     'F-': 'fluoride',
     'Cl-': 'chloride',
     'Br-': 'bromide',
     'I-': 'iodide',
-    'OH-': 'hydroxide',
-    'CN-': 'cyanide',
-    'SCN-': 'thiocyanate',
-    'CO3-2': 'carbonate',
+    'BO3-3': 'borate',
+    'BiO3-': 'bismuthate(V)',
     'C2O4-2': 'oxalate',
-    'HCO3-': 'hydrogencarbonate',
-    'NO3-': 'nitrate',
-    'NO2-': 'nitrite',
-    'PO4-3': 'phospahte',
-    'HPO4-2': 'hydrogenphospahte',
-    'H2PO4-': 'dihydrogenphospahte',
-    'P-3': 'phosphide',
-    'SO4-2': 'sulphate',
-    'HSO4-': 'hydrogensulphate',
-    'SO3-2': 'sulphite',
-    'HSO3-': 'hydrogensulphite',
-    'S-2': 'sulfide',
+    'CN-': 'cyanide',
+    'CO3-2': 'carbonate',
+    'HCO3-': 'hydrogen carbonate',
     'ClO-': 'hypochlorite',
     'ClO2-': 'chlorite',
     'ClO3-': 'chlorate',
     'ClO4-': 'perchlorate',
-    'CrO4-2': 'chromate(VI)',
     'Cr2O7-2': 'dichromate(VI)',
-    'MnO4-2': 'manganate(VI)',
-    'MnO4-': 'permanganate(VII)',
+    'CrO4-2': 'chromate(VI)',
     'FeO4-2': 'ferrate(VI)',
+    'MnO4-': 'permanganate(VII)',
+    'MnO4-2': 'manganate(VI)',
+    'NO2-': 'nitrite',
+    'NO3-': 'nitrate',
+    'OH-': 'hydroxide',
     'OsO4-2': 'osmate(VI)',
-    'Bo3-3': 'borate',
-    'BiO3-': 'bismuthate(V)',
+    'PO4-3': 'phosphate',
+    'HPO4-2': 'hydrogen phosphate',
+    'H2PO4-': 'dihydrogen phosphate',
+    'SCN-': 'thiocyanate',
+    'SO3-2': 'sulphite',
+    'HSO3-': 'hydrogen sulphite',
+    'SO4-2': 'sulphate',
+    'HSO4-': 'hydrogen sulphate',
 }
+
 _cations = {
     'H3O+': 'hydronium',
+    'NH4+': 'ammonium',
+    'C7H7+': 'tropylium',
 }
+
 _cation_oxidation_states = {  # This needs to be reviewed, just from the top of my head
     'Cr': (2, 3),
     'Fe': (2, 3),
@@ -70,7 +80,8 @@ _alkali = [
 _alkaline_earth = [
     (symbols[n]+'+2', names[n].lower()) for n in groups[2]
 ]
-_all_names = dict(chain(_alkali, _alkaline_earth, _anions.items()))
+_all_names = dict(chain(_alkali, _alkaline_earth,
+                        _cations.items(), _anions.items()))
 
 
 def name(ion):
