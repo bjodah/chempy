@@ -77,7 +77,6 @@ _cations = {
 # From: Chemistry of the Elements; Greenwood, NN, Earnshaw, A; second
 # edition; Butterworth-Heinemann, 1997, page 28.
 _cation_oxidation_states = {
-    'Al': (3,),
     'Sc': (3,),
     'Ti': (4,),
     'V': (5,),
@@ -148,4 +147,10 @@ def ions_from_formula(formula):
     #True
 
     """
+    # Parse all available ions.
+    # Match available ions to subgroups in parsed formula, ignoring
+    # charge.  Branch off the easier elemental ions.
+    # Use subscripts and charge in formula with ion charges to
+    # determine if the charges are correct (the compound is actually
+    # ionic).
     pass
