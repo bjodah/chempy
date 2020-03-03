@@ -1,3 +1,7 @@
+v0.7.10
+=======
+- Added support for newer SymPy version.
+
 v0.7.9
 ======
 - Fixed regression in balance_stoichiometry
