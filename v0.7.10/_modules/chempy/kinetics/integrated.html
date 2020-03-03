@@ -1,0 +1,436 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.kinetics.integrated &mdash; chempy 0.7.10 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.7.10
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">chempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>chempy.kinetics.integrated</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.kinetics.integrated</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module collects a few analytic solutions of initial value problems (IVPs) in</span>
+<span class="sd">chemical kinetics (i.e. integrated rate expressions in closed form).</span>
+<span class="sd">The expressions are useful in e.g. regression or for comparison with numerical</span>
+<span class="sd">solution of the corresponding ODE system.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.._util</span> <span class="k">import</span> <span class="n">get_backend</span>
+
+
+<div class="viewcode-block" id="dimerization_irrev"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.integrated.dimerization_irrev">[docs]</a><span class="k">def</span> <span class="nf">dimerization_irrev</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">kf</span><span class="p">,</span> <span class="n">initial_C</span><span class="p">,</span> <span class="n">P0</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">t0</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">initial_C</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">kf</span><span class="o">*</span><span class="p">(</span><span class="n">t</span><span class="o">-</span><span class="n">t0</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="pseudo_irrev"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.integrated.pseudo_irrev">[docs]</a><span class="k">def</span> <span class="nf">pseudo_irrev</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">kf</span><span class="p">,</span> <span class="n">prod</span><span class="p">,</span> <span class="n">major</span><span class="p">,</span> <span class="n">minor</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Analytic product transient of a irreversible pseudo first order reaction.</span>
+
+<span class="sd">    Product concentration vs time from pseudo-first order irreversible kinetics.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : float, Symbol or array_like</span>
+<span class="sd">        Time.</span>
+<span class="sd">    kf : number or Symbol</span>
+<span class="sd">        Forward (bimolecular) rate constant.</span>
+<span class="sd">    kb : number or Symbol</span>
+<span class="sd">        Backward (unimolecular) rate constant.</span>
+<span class="sd">    prod : number or Symbol</span>
+<span class="sd">        Initial concentration of the complex.</span>
+<span class="sd">    major : number or Symbol</span>
+<span class="sd">        Initial concentration of the more abundant reactant.</span>
+<span class="sd">    minor : number or Symbol</span>
+<span class="sd">        Initial concentration of the less abundant reactant.</span>
+<span class="sd">    backend : module or str</span>
+<span class="sd">        Default is &#39;numpy&#39;, can also be e.g. ``sympy``.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">be</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">prod</span> <span class="o">+</span> <span class="n">minor</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">be</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">major</span><span class="o">*</span><span class="n">kf</span><span class="o">*</span><span class="n">t</span><span class="p">))</span></div>
+<span class="n">pseudo_irrev</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Pseudo first order irreversible&#39;</span>
+
+
+<div class="viewcode-block" id="pseudo_rev"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.integrated.pseudo_rev">[docs]</a><span class="k">def</span> <span class="nf">pseudo_rev</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">kf</span><span class="p">,</span> <span class="n">kb</span><span class="p">,</span> <span class="n">prod</span><span class="p">,</span> <span class="n">major</span><span class="p">,</span> <span class="n">minor</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Analytic product transient of a reversible pseudo first order reaction.</span>
+
+<span class="sd">    Product concentration vs time from pseudo-first order reversible kinetics.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : float, Symbol or array_like</span>
+<span class="sd">        Time.</span>
+<span class="sd">    kf : number or Symbol</span>
+<span class="sd">        Forward (bimolecular) rate constant.</span>
+<span class="sd">    kb : number or Symbol</span>
+<span class="sd">        Backward (unimolecular) rate constant.</span>
+<span class="sd">    prod : number or Symbol</span>
+<span class="sd">        Initial concentration of the complex.</span>
+<span class="sd">    major : number or Symbol</span>
+<span class="sd">        Initial concentration of the more abundant reactant.</span>
+<span class="sd">    minor : number or Symbol</span>
+<span class="sd">        Initial concentration of the less abundant reactant.</span>
+<span class="sd">    backend : module or str</span>
+<span class="sd">        Default is &#39;numpy&#39;, can also be e.g. ``sympy``.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">be</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="o">-</span><span class="n">kb</span><span class="o">*</span><span class="n">prod</span> <span class="o">+</span> <span class="n">kf</span><span class="o">*</span><span class="n">major</span><span class="o">*</span><span class="n">minor</span> <span class="o">+</span> <span class="p">(</span><span class="n">kb</span><span class="o">*</span><span class="n">prod</span> <span class="o">-</span> <span class="n">kf</span><span class="o">*</span><span class="n">major</span><span class="o">*</span><span class="n">minor</span><span class="p">)</span> <span class="o">*</span>
+        <span class="n">be</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="o">*</span><span class="p">(</span><span class="n">kb</span> <span class="o">+</span> <span class="n">kf</span><span class="o">*</span><span class="n">major</span><span class="p">))</span>
+    <span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">kb</span> <span class="o">+</span> <span class="n">kf</span><span class="o">*</span><span class="n">major</span><span class="p">)</span></div>
+<span class="n">pseudo_rev</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Pseudo first order reversible&#39;</span>
+
+
+<div class="viewcode-block" id="binary_irrev"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.integrated.binary_irrev">[docs]</a><span class="k">def</span> <span class="nf">binary_irrev</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">kf</span><span class="p">,</span> <span class="n">prod</span><span class="p">,</span> <span class="n">major</span><span class="p">,</span> <span class="n">minor</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Analytic product transient of a irreversible 2-to-1 reaction.</span>
+
+<span class="sd">    Product concentration vs time from second order irreversible kinetics.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : float, Symbol or array_like</span>
+<span class="sd">    kf : number or Symbol</span>
+<span class="sd">        Forward (bimolecular) rate constant.</span>
+<span class="sd">    prod : number or Symbol</span>
+<span class="sd">        Initial concentration of the complex.</span>
+<span class="sd">    major : number or Symbol</span>
+<span class="sd">        Initial concentration of the more abundant reactant.</span>
+<span class="sd">    minor : number or Symbol</span>
+<span class="sd">        Initial concentration of the less abundant reactant.</span>
+<span class="sd">    backend : module or str</span>
+<span class="sd">        Default is &#39;numpy&#39;, can also be e.g. ``sympy``.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">be</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">prod</span> <span class="o">+</span> <span class="n">major</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">be</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">kf</span><span class="o">*</span><span class="p">(</span><span class="n">major</span><span class="o">-</span><span class="n">minor</span><span class="p">)</span><span class="o">*</span><span class="n">t</span><span class="p">))</span><span class="o">/</span><span class="p">(</span>
+        <span class="n">major</span><span class="o">/</span><span class="n">minor</span> <span class="o">-</span> <span class="n">be</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">kf</span><span class="o">*</span><span class="n">t</span><span class="o">*</span><span class="p">(</span><span class="n">major</span><span class="o">-</span><span class="n">minor</span><span class="p">)))</span></div>
+<span class="n">binary_irrev</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Second order irreversible&#39;</span>
+
+
+<div class="viewcode-block" id="binary_rev"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.integrated.binary_rev">[docs]</a><span class="k">def</span> <span class="nf">binary_rev</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">kf</span><span class="p">,</span> <span class="n">kb</span><span class="p">,</span> <span class="n">prod</span><span class="p">,</span> <span class="n">major</span><span class="p">,</span> <span class="n">minor</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Analytic product transient of a reversible 2-to-1 reaction.</span>
+
+<span class="sd">    Product concentration vs time from second order reversible kinetics.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : float, Symbol or array_like</span>
+<span class="sd">        Time.</span>
+<span class="sd">    kf : number or Symbol</span>
+<span class="sd">        Forward (bimolecular) rate constant.</span>
+<span class="sd">    kb : number or Symbol</span>
+<span class="sd">        Backward (unimolecular) rate constant.</span>
+<span class="sd">    prod : number or Symbol</span>
+<span class="sd">        Initial concentration of the complex.</span>
+<span class="sd">    major : number or Symbol</span>
+<span class="sd">        Initial concentration of the more abundant reactant.</span>
+<span class="sd">    minor : number or Symbol</span>
+<span class="sd">        Initial concentration of the less abundant reactant.</span>
+<span class="sd">    backend : module or str</span>
+<span class="sd">        Default is &#39;numpy&#39;, can also be e.g. ``sympy``.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># see _integrated.ipynb for derivation</span>
+    <span class="n">be</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span> <span class="o">=</span> <span class="n">prod</span><span class="p">,</span> <span class="n">major</span><span class="p">,</span> <span class="n">minor</span>
+    <span class="n">x0</span> <span class="o">=</span> <span class="n">Y</span><span class="o">*</span><span class="n">kf</span>
+    <span class="n">x1</span> <span class="o">=</span> <span class="n">Z</span><span class="o">*</span><span class="n">kf</span>
+    <span class="n">x2</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">X</span><span class="o">*</span><span class="n">kf</span>
+    <span class="n">x3</span> <span class="o">=</span> <span class="o">-</span><span class="n">kb</span> <span class="o">-</span> <span class="n">x0</span> <span class="o">-</span> <span class="n">x1</span>
+    <span class="n">x4</span> <span class="o">=</span> <span class="o">-</span><span class="n">x2</span> <span class="o">+</span> <span class="n">x3</span>
+    <span class="n">x5</span> <span class="o">=</span> <span class="n">be</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="o">*</span><span class="n">kf</span><span class="o">*</span><span class="p">(</span><span class="n">X</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">kf</span> <span class="o">+</span> <span class="n">X</span><span class="o">*</span><span class="n">x0</span> <span class="o">+</span> <span class="n">X</span><span class="o">*</span><span class="n">x1</span> <span class="o">+</span> <span class="n">Z</span><span class="o">*</span><span class="n">x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">x4</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">x6</span> <span class="o">=</span> <span class="n">kb</span> <span class="o">+</span> <span class="n">x0</span> <span class="o">+</span> <span class="n">x1</span> <span class="o">+</span> <span class="n">x5</span>
+    <span class="n">x7</span> <span class="o">=</span> <span class="p">(</span><span class="n">x3</span> <span class="o">+</span> <span class="n">x5</span><span class="p">)</span><span class="o">*</span><span class="n">be</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="o">*</span><span class="n">x5</span><span class="p">)</span>
+    <span class="n">x8</span> <span class="o">=</span> <span class="n">x3</span> <span class="o">-</span> <span class="n">x5</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">x4</span><span class="o">*</span><span class="n">x8</span> <span class="o">+</span> <span class="n">x5</span><span class="o">*</span><span class="n">x8</span> <span class="o">+</span> <span class="n">x7</span><span class="o">*</span><span class="p">(</span><span class="n">x2</span> <span class="o">+</span> <span class="n">x6</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">kf</span><span class="o">*</span><span class="p">(</span><span class="n">x6</span> <span class="o">+</span> <span class="n">x7</span><span class="p">))</span></div>
+
+<span class="n">binary_rev</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Second order reversible&#39;</span>
+
+
+<div class="viewcode-block" id="unary_irrev_cstr"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.integrated.unary_irrev_cstr">[docs]</a><span class="k">def</span> <span class="nf">unary_irrev_cstr</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">fr</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fv</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Analytic solution for ``A -&gt; B`` in a CSTR.</span>
+
+<span class="sd">    Analytic solution for a first order process in a continuously</span>
+<span class="sd">    stirred tank reactor (CSTR).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : array_like</span>
+<span class="sd">    k : float_like</span>
+<span class="sd">        Rate constant</span>
+<span class="sd">    r : float_like</span>
+<span class="sd">        Initial concentration of reactant.</span>
+<span class="sd">    p : float_like</span>
+<span class="sd">        Initial concentration of product.</span>
+<span class="sd">    fr : float_like</span>
+<span class="sd">        Concentration of reactant in feed.</span>
+<span class="sd">    fp : float_like</span>
+<span class="sd">        Concentration of product in feed.</span>
+<span class="sd">    fv : float_like</span>
+<span class="sd">        Feed rate / tank volume ratio.</span>
+<span class="sd">    backend : module or str</span>
+<span class="sd">        Default is &#39;numpy&#39;, can also be e.g. ``sympy``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    length-2 tuple</span>
+<span class="sd">        concentrations of reactant and product</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># See _kinetics_cstr.ipynb</span>
+    <span class="n">be</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+    <span class="n">x0</span> <span class="o">=</span> <span class="n">fr</span><span class="o">*</span><span class="n">fv</span>
+    <span class="n">x1</span> <span class="o">=</span> <span class="n">fv</span> <span class="o">+</span> <span class="n">k</span>
+    <span class="n">x2</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">x1</span>
+    <span class="n">x3</span> <span class="o">=</span> <span class="n">fv</span><span class="o">*</span><span class="n">r</span> <span class="o">+</span> <span class="n">k</span><span class="o">*</span><span class="n">r</span> <span class="o">-</span> <span class="n">x0</span>
+    <span class="n">x4</span> <span class="o">=</span> <span class="n">fr</span><span class="o">*</span><span class="n">k</span>
+    <span class="n">x5</span> <span class="o">=</span> <span class="n">be</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">fv</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">x0</span><span class="o">*</span><span class="n">x2</span> <span class="o">+</span> <span class="n">x2</span><span class="o">*</span><span class="n">x3</span><span class="o">*</span><span class="n">be</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="o">*</span><span class="n">x1</span><span class="p">),</span>
+        <span class="o">-</span><span class="n">x2</span><span class="o">*</span><span class="n">x3</span><span class="o">*</span><span class="n">x5</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">+</span> <span class="n">be</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">k</span><span class="o">*</span><span class="n">t</span><span class="p">))</span> <span class="o">+</span> <span class="n">x2</span><span class="o">*</span><span class="n">x5</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="n">fp</span><span class="o">*</span><span class="n">fv</span> <span class="o">-</span> <span class="n">fp</span><span class="o">*</span><span class="n">k</span> <span class="o">+</span> <span class="n">fv</span><span class="o">*</span><span class="n">p</span> <span class="o">+</span> <span class="n">k</span><span class="o">*</span><span class="n">p</span> <span class="o">-</span> <span class="n">x4</span><span class="p">)</span> <span class="o">+</span> <span class="n">x2</span><span class="o">*</span><span class="p">(</span><span class="n">fp</span><span class="o">*</span><span class="n">x1</span> <span class="o">+</span> <span class="n">x4</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="binary_irrev_cstr"><a class="viewcode-back" href="../../../chempy.kinetics.html#chempy.kinetics.integrated.binary_irrev_cstr">[docs]</a><span class="k">def</span> <span class="nf">binary_irrev_cstr</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">fr</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fv</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Analytic solution for ``2 A -&gt; n B`` in a CSTR.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : array_like</span>
+<span class="sd">    k : float_like</span>
+<span class="sd">        Rate constant</span>
+<span class="sd">    r : float_like</span>
+<span class="sd">        Initial concentration of reactant.</span>
+<span class="sd">    p : float_like</span>
+<span class="sd">        Initial concentration of product.</span>
+<span class="sd">    fr : float_like</span>
+<span class="sd">        Concentration of reactant in feed.</span>
+<span class="sd">    fp : float_like</span>
+<span class="sd">        Concentration of product in feed.</span>
+<span class="sd">    fv : float_like</span>
+<span class="sd">        Feed rate / tank volume ratio.</span>
+<span class="sd">    n : int</span>
+<span class="sd">    backend : module or str</span>
+<span class="sd">        Default is &#39;numpy&#39;, can also be e.g. ``sympy``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    length-2 tuple</span>
+<span class="sd">        concentrations of reactant and product</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Mathematica source:</span>
+    <span class="c1"># FortranForm[</span>
+    <span class="c1"># DSolve[{Derivative[1][A][t] == a0 f - f A[t] - 2 k A[t]^2,</span>
+    <span class="c1">#   Derivative[1][B][t] == b0 f + n*k A[t]^2 - f B[t], A[0] == x,</span>
+    <span class="c1">#   B[0] == y}, {A[t], B[t]}, {t}]]</span>
+    <span class="c1"># Post processed using sympy&#39;s cse function.</span>
+    <span class="c1"># (see _derive_analytic_cstr_bireac.ipynb)</span>
+    <span class="n">be</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+    <span class="n">atanh</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">be</span><span class="p">,</span> <span class="s1">&#39;atanh&#39;</span><span class="p">,</span> <span class="n">be</span><span class="o">.</span><span class="n">arctanh</span><span class="p">)</span>
+    <span class="n">three</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="n">be</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">x0</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">k</span>
+    <span class="n">x1</span> <span class="o">=</span> <span class="n">be</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">fv</span><span class="p">)</span>
+    <span class="n">x2</span> <span class="o">=</span> <span class="mi">8</span><span class="o">*</span><span class="n">k</span>
+    <span class="n">x3</span> <span class="o">=</span> <span class="n">fr</span><span class="o">*</span><span class="n">x2</span>
+    <span class="n">x4</span> <span class="o">=</span> <span class="n">be</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">fv</span> <span class="o">+</span> <span class="n">x3</span><span class="p">)</span>
+    <span class="n">x5</span> <span class="o">=</span> <span class="n">x1</span><span class="o">*</span><span class="n">x4</span>
+    <span class="n">x6</span> <span class="o">=</span> <span class="n">x1</span><span class="o">*</span><span class="n">x4</span><span class="o">/</span><span class="mi">2</span>
+    <span class="n">x7</span> <span class="o">=</span> <span class="n">atanh</span><span class="p">((</span><span class="o">-</span><span class="n">fv</span><span class="o">**</span><span class="p">(</span><span class="n">three</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">x4</span> <span class="o">-</span> <span class="mi">4</span><span class="o">*</span><span class="n">k</span><span class="o">*</span><span class="n">r</span><span class="o">*</span><span class="n">x5</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">fv</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">fv</span><span class="o">*</span><span class="n">x3</span><span class="p">))</span>
+    <span class="n">x8</span> <span class="o">=</span> <span class="n">fv</span><span class="o">*</span><span class="n">t</span>
+    <span class="n">x9</span> <span class="o">=</span> <span class="n">fp</span><span class="o">*</span><span class="n">x2</span>
+    <span class="n">x10</span> <span class="o">=</span> <span class="mi">4</span><span class="o">*</span><span class="n">k</span><span class="o">*</span><span class="n">n</span>
+    <span class="n">x11</span> <span class="o">=</span> <span class="n">fr</span><span class="o">*</span><span class="n">x10</span>
+    <span class="n">x12</span> <span class="o">=</span> <span class="n">be</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">x8</span><span class="p">)</span>
+    <span class="n">x13</span> <span class="o">=</span> <span class="n">n</span><span class="o">*</span><span class="n">x12</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">x0</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="n">fv</span> <span class="o">+</span> <span class="n">x5</span><span class="o">*</span><span class="n">be</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">t</span><span class="o">*</span><span class="n">x6</span> <span class="o">-</span> <span class="n">x7</span><span class="p">))</span><span class="o">/</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">x0</span><span class="o">*</span><span class="p">(</span><span class="n">fv</span><span class="o">*</span><span class="n">x13</span> <span class="o">+</span> <span class="mi">8</span><span class="o">*</span><span class="n">k</span><span class="o">*</span><span class="n">p</span> <span class="o">+</span> <span class="n">r</span><span class="o">*</span><span class="n">x10</span> <span class="o">-</span> <span class="n">x1</span><span class="o">*</span><span class="n">x13</span><span class="o">*</span><span class="n">x4</span><span class="o">*</span><span class="n">be</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span>
+            <span class="n">x6</span><span class="o">*</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">x7</span><span class="o">/</span><span class="p">(</span><span class="n">x1</span><span class="o">*</span><span class="n">x4</span><span class="p">))</span>
+        <span class="p">)</span> <span class="o">+</span> <span class="n">x11</span><span class="o">*</span><span class="n">x12</span> <span class="o">-</span> <span class="n">x11</span> <span class="o">+</span> <span class="n">x12</span><span class="o">*</span><span class="n">x9</span> <span class="o">-</span> <span class="n">x9</span><span class="p">)</span><span class="o">*</span><span class="n">be</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x8</span><span class="p">)</span><span class="o">/</span><span class="mi">8</span>
+    <span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

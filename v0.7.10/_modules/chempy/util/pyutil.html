@@ -1,0 +1,486 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.util.pyutil &mdash; chempy 0.7.10 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.7.10
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">chempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>chempy.util.pyutil</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.util.pyutil</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">General utilities and exceptions.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">namedtuple</span><span class="p">,</span> <span class="n">OrderedDict</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="k">import</span> <span class="n">ItemsView</span><span class="p">,</span> <span class="n">Mapping</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>  <span class="c1"># Python 2</span>
+    <span class="n">ItemsView</span> <span class="o">=</span> <span class="nb">list</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Mapping</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">product</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">types</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">__url__</span>
+<span class="kn">from</span> <span class="nn">.deprecation</span> <span class="k">import</span> <span class="n">Deprecation</span>
+
+
+<div class="viewcode-block" id="identity"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.pyutil.identity">[docs]</a><span class="k">def</span> <span class="nf">identity</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span></div>
+
+
+<div class="viewcode-block" id="NoConvergence"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.pyutil.NoConvergence">[docs]</a><span class="k">class</span> <span class="nc">NoConvergence</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="ChemPyDeprecationWarning"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.pyutil.ChemPyDeprecationWarning">[docs]</a><span class="k">class</span> <span class="nc">ChemPyDeprecationWarning</span><span class="p">(</span><span class="ne">DeprecationWarning</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="deprecated"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.pyutil.deprecated">[docs]</a><span class="k">def</span> <span class="nf">deprecated</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Helper to :class:`Deprecation` for using ChemPyDeprecationWarning. &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">Deprecation</span><span class="p">(</span>
+        <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">issues_url</span><span class="o">=</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">__url__</span> <span class="o">+</span> <span class="s1">&#39;/issues/&#39;</span> <span class="o">+</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39;gh-&#39;</span><span class="p">),</span> <span class="n">warning</span><span class="o">=</span><span class="n">ChemPyDeprecationWarning</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHEMPY_DEPRECATION_FILTER&#39;</span><span class="p">,</span> <span class="s1">&#39;once&#39;</span><span class="p">),</span>
+                      <span class="n">ChemPyDeprecationWarning</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="DeferredImport"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.pyutil.DeferredImport">[docs]</a><span class="k">class</span> <span class="nc">DeferredImport</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modname</span><span class="p">,</span> <span class="n">arg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">decorators</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_modname</span> <span class="o">=</span> <span class="n">modname</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_arg</span> <span class="o">=</span> <span class="n">arg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_decorators</span> <span class="o">=</span> <span class="n">decorators</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_modname</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">__import__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_modname</span><span class="p">,</span> <span class="nb">globals</span><span class="p">(),</span> <span class="nb">locals</span><span class="p">(),</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_arg</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arg</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decorators</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">deco</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decorators</span><span class="p">:</span>
+                    <span class="n">obj</span> <span class="o">=</span> <span class="n">deco</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span> <span class="o">=</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span>
+
+    <span class="k">def</span> <span class="nf">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;_modname&#39;</span><span class="p">,</span> <span class="s1">&#39;_arg&#39;</span><span class="p">,</span> <span class="s1">&#39;_cache&#39;</span><span class="p">,</span> <span class="s1">&#39;cache&#39;</span><span class="p">,</span> <span class="s1">&#39;_decorators&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NameSpace"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.pyutil.NameSpace">[docs]</a><span class="k">class</span> <span class="nc">NameSpace</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; Used to wrap, e.g. modules.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    default : module</span>
+<span class="sd">        The underlying module. Acts as a fallback for attribute access.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import numpy</span>
+<span class="sd">    &gt;&gt;&gt; my_numpy = NameSpace(numpy)</span>
+<span class="sd">    &gt;&gt;&gt; my_numpy.array = lambda *args, **kwargs: list(numpy.array(*args, **kwargs))</span>
+<span class="sd">    &gt;&gt;&gt; isinstance(my_numpy.array([2, 3]), list)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; isinstance(numpy.array([2, 3]), list)</span>
+<span class="sd">    False</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_NameSpace_default</span> <span class="o">=</span> <span class="n">default</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_NameSpace_attr_store</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">attr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_NameSpace_&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NameSpace_attr_store</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_NameSpace_default</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">attr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_NameSpace_&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_NameSpace_attr_store</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+<div class="viewcode-block" id="NameSpace.as_dict"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.pyutil.NameSpace.as_dict">[docs]</a>    <span class="k">def</span> <span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NameSpace_default</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">items</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)}</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_NameSpace_attr_store</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div></div>
+
+
+<div class="viewcode-block" id="AttributeContainer"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.pyutil.AttributeContainer">[docs]</a><span class="k">class</span> <span class="nc">AttributeContainer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Used to turn e.g. a dictionary to a module-like object.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    \\*\\*kwargs : dictionary</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; def RT(T, const):</span>
+<span class="sd">    ...     return T*const.molar_gas_constant</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; from quantities import constants</span>
+<span class="sd">    &gt;&gt;&gt; RT(273.15, constants)</span>
+<span class="sd">    array(273.15) * R</span>
+<span class="sd">    &gt;&gt;&gt; my_constants = AttributeContainer(molar_gas_constant=42)</span>
+<span class="sd">    &gt;&gt;&gt; RT(273.15, my_constants)</span>
+<span class="sd">    11472.3</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AttributeContainer.as_dict"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.pyutil.AttributeContainer.as_dict">[docs]</a>    <span class="k">def</span> <span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="AttrDict"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.pyutil.AttrDict">[docs]</a><span class="k">class</span> <span class="nc">AttrDict</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Subclass of dict with attribute access to keys &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AttrDict</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span> <span class="o">=</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="defaultkeydict"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.pyutil.defaultkeydict">[docs]</a><span class="k">class</span> <span class="nc">defaultkeydict</span><span class="p">(</span><span class="n">defaultdict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; defaultdict where default_factory should have the signature key -&gt; value</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; d = defaultkeydict(lambda k: &#39;[%s]&#39; % k, {&#39;a&#39;: &#39;[a]&#39;, &#39;b&#39;: &#39;[B]&#39;})</span>
+<span class="sd">    &gt;&gt;&gt; d[&#39;a&#39;]</span>
+<span class="sd">    &#39;[a]&#39;</span>
+<span class="sd">    &gt;&gt;&gt; d[&#39;b&#39;]</span>
+<span class="sd">    &#39;[B]&#39;</span>
+<span class="sd">    &gt;&gt;&gt; d[&#39;c&#39;]</span>
+<span class="sd">    &#39;[c]&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__missing__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_factory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Missing key: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_factory</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="defaultnamedtuple"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.pyutil.defaultnamedtuple">[docs]</a><span class="k">def</span> <span class="nf">defaultnamedtuple</span><span class="p">(</span><span class="n">typename</span><span class="p">,</span> <span class="n">field_names</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="p">()):</span>
+    <span class="sd">&quot;&quot;&quot; Generates a new subclass of tuple with default values.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    typename : string</span>
+<span class="sd">        The name of the class.</span>
+<span class="sd">    field_names : str or iterable</span>
+<span class="sd">        An iterable of splitable string.</span>
+<span class="sd">    defaults : iterable</span>
+<span class="sd">        Default values for ``field_names``, counting ``[-len(defaults):]``.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; Body = defaultnamedtuple(&#39;Body&#39;, &#39;x y z density&#39;, (1.0,))</span>
+<span class="sd">    &gt;&gt;&gt; Body.__doc__</span>
+<span class="sd">    &#39;Body(x, y, z, density)&#39;</span>
+<span class="sd">    &gt;&gt;&gt; b = Body(10, z=3, y=5)</span>
+<span class="sd">    &gt;&gt;&gt; b._asdict() == dict(x=10, y=5, z=3, density=1.0)</span>
+<span class="sd">    True</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    A new tuple subclass named ``typename``</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Tuple</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="n">typename</span><span class="p">,</span> <span class="n">field_names</span><span class="p">)</span>
+    <span class="n">Tuple</span><span class="o">.</span><span class="fm">__new__</span><span class="o">.</span><span class="vm">__defaults__</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">Tuple</span><span class="o">.</span><span class="n">_fields</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">defaults</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="n">Tuple</span><span class="o">.</span><span class="fm">__new__</span><span class="o">.</span><span class="vm">__defaults__</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">Tuple</span><span class="p">(</span><span class="o">**</span><span class="n">defaults</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">nmissing</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">Tuple</span><span class="o">.</span><span class="n">_fields</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">defaults</span><span class="p">)</span>
+        <span class="n">defaults</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,)</span><span class="o">*</span><span class="n">nmissing</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">defaults</span><span class="p">)</span>
+        <span class="n">Tuple</span><span class="o">.</span><span class="fm">__new__</span><span class="o">.</span><span class="vm">__defaults__</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">Tuple</span><span class="p">(</span><span class="o">*</span><span class="n">defaults</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">Tuple</span></div>
+
+
+<div class="viewcode-block" id="multi_indexed_cases"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.pyutil.multi_indexed_cases">[docs]</a><span class="k">def</span> <span class="nf">multi_indexed_cases</span><span class="p">(</span><span class="n">od</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dict_</span><span class="o">=</span><span class="n">OrderedDict</span><span class="p">,</span> <span class="n">apply_keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">apply_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">apply_return</span><span class="o">=</span><span class="nb">list</span><span class="p">,</span> <span class="n">named_index</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns a list of length-2 tuples</span>
+
+<span class="sd">    Each tuple consist of a multi-index (tuple of integers) and a dictionary.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    od : OrderedDict</span>
+<span class="sd">        Maps each key to a number of values. Instances of ``list``, ``tuple``,</span>
+<span class="sd">        ``types.GeneratorType``, ``collections.abc.ItemsView`` are converted to ``OrderedDict``.</span>
+<span class="sd">    dict_ : type, optional</span>
+<span class="sd">        Used in the result (see ``Returns``).</span>
+<span class="sd">    apply_keys : callable, optional</span>
+<span class="sd">        Transformation of keys.</span>
+<span class="sd">    apply_values : callable, optional</span>
+<span class="sd">        Transformation of values.</span>
+<span class="sd">    apply_return : callable, optional</span>
+<span class="sd">        Applied on return value. ``None`` for generator.</span>
+<span class="sd">    named_index : bool</span>
+<span class="sd">        Tuple of indices will be a ``namedtuple`` (requires all keys to be ``str``).</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from chempy.util.pyutil import multi_indexed_cases</span>
+<span class="sd">    &gt;&gt;&gt; cases = multi_indexed_cases([(&#39;a&#39;, [1, 2, 3]), (&#39;b&#39;, [False, True])])</span>
+<span class="sd">    &gt;&gt;&gt; len(cases)</span>
+<span class="sd">    6</span>
+<span class="sd">    &gt;&gt;&gt; midxs, case_kws = zip(*cases)</span>
+<span class="sd">    &gt;&gt;&gt; midxs[0]</span>
+<span class="sd">    (0, 0)</span>
+<span class="sd">    &gt;&gt;&gt; case_kws[0] == {&#39;a&#39;: 1, &#39;b&#39;: False}</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; d = {&#39;a&#39;: &#39;foo bar&#39;.split(), &#39;b&#39;: &#39;baz qux&#39;.split()}</span>
+<span class="sd">    &gt;&gt;&gt; from chempy.util.pyutil import AttrDict</span>
+<span class="sd">    &gt;&gt;&gt; for nidx, case in multi_indexed_cases(d, dict_=AttrDict, named_index=True):</span>
+<span class="sd">    ...     if case.a == &#39;bar&#39; and case.b == &#39;baz&#39;:</span>
+<span class="sd">    ...         print(&quot;{} {}&quot;.format(nidx.a, nidx.b))</span>
+<span class="sd">    ...</span>
+<span class="sd">    1 0</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    List of length-2 tuples, each consisting of one tuple of indices and one dictionary (of type ``dict_``).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">od</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">):</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">od</span><span class="p">,</span> <span class="s1">&#39;items&#39;</span><span class="p">):</span>
+            <span class="n">od</span> <span class="o">=</span> <span class="n">od</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">od</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">GeneratorType</span><span class="p">,</span> <span class="n">ItemsView</span><span class="p">)):</span>
+            <span class="n">od</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">od</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Expected an OrderedDict&quot;</span><span class="p">)</span>
+
+    <span class="n">keys</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">apply_keys</span> <span class="ow">or</span> <span class="n">identity</span><span class="p">,</span> <span class="n">od</span><span class="o">.</span><span class="n">keys</span><span class="p">())),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">od</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">MultiIndex</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;MultiIndex&#39;</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span> <span class="k">if</span> <span class="n">named_index</span> <span class="k">else</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">_generator</span> <span class="o">=</span> <span class="p">((</span><span class="n">MultiIndex</span><span class="p">(</span><span class="o">*</span><span class="n">mi</span><span class="p">),</span> <span class="n">dict_</span><span class="p">([</span>
+        <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">apply_values</span> <span class="ow">or</span> <span class="n">identity</span><span class="p">)(</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span> <span class="k">for</span>
+        <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">mi</span><span class="p">)</span>
+    <span class="p">]))</span> <span class="k">for</span> <span class="n">mi</span> <span class="ow">in</span> <span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="nb">map</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="nb">len</span><span class="p">,</span> <span class="n">values</span><span class="p">))))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">apply_return</span> <span class="ow">or</span> <span class="n">identity</span><span class="p">)(</span><span class="n">_generator</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="memoize"><a class="viewcode-back" href="../../../chempy.util.html#chempy.util.pyutil.memoize">[docs]</a><span class="k">def</span> <span class="nf">memoize</span><span class="p">(</span><span class="n">max_nargs</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">max_nargs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_nargs</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;memoization error&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">args</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">wrapper</span><span class="o">.</span><span class="n">results</span><span class="p">:</span>
+                <span class="n">wrapper</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">args</span><span class="p">]</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">wrapper</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">args</span><span class="p">]</span>
+        <span class="n">wrapper</span><span class="o">.</span><span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">return</span> <span class="n">wrapper</span>
+    <span class="k">return</span> <span class="n">decorator</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
