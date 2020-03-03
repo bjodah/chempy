@@ -1040,6 +1040,7 @@ class Equilibrium(Reaction):
             flip = True
         else:
             flip = False
+        other = int(other)  # convert SymPy "Integer" to Pyton "int"
         reac = dict(other*ArithmeticDict(int, self.reac))
         prod = dict(other*ArithmeticDict(int, self.prod))
         inact_reac = dict(other*ArithmeticDict(int, self.inact_reac))

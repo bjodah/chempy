@@ -21,7 +21,7 @@ def broadcast_stack(*args, **kwargs):
     for arg in args:
         leading_length += arg.shape[-1]
         if arg.ndim > 1:
-            if head_shape is ():
+            if head_shape == ():
                 head_shape = arg.shape[:-1]
             else:
                 if arg.shape[:-1] != head_shape:
