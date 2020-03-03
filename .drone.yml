@@ -20,7 +20,7 @@ pipeline:
 #      - export SUNDBASE=$(pwd)/ci-cache/sund-3.2.1
       - export PYTHONUSERBASE=$(pwd)/ci-cache/pyusrb
 #      - if [ ! -d $SUNDBASE ]; then .ci/get_sundials.sh 3.2.1 $SUNDBASE -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_SIZE=32 $SUNDBASE; fi
-      - if [ ! -d $PYTHONUSERBASE ]; then mkdir $PYTHONUSERBASE; fi
+      - if [ ! -d $PYTHONUSERBASE ]; then mkdir -p $PYTHONUSERBASE; fi
       - export CPATH=$SUNDBASE/include
       - export LIBRARY_PATH=$SUNDBASE/lib
       - export LD_LIBRARY_PATH=$SUNDBASE/lib
