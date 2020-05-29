@@ -1,0 +1,321 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.henry &mdash; chempy 0.7.11 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.7.11
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">chempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>chempy.henry</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.henry</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module for dealing with constants `Henry&#39;s law</span>
+<span class="sd">&lt;https://en.wikipedia.org/wiki/Henry&#39;s_law&gt;`_.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="kn">from</span> <span class="nn">._util</span> <span class="k">import</span> <span class="n">get_backend</span>
+<span class="kn">from</span> <span class="nn">.util.pyutil</span> <span class="k">import</span> <span class="n">defaultnamedtuple</span><span class="p">,</span> <span class="n">deprecated</span>
+<span class="kn">from</span> <span class="nn">.units</span> <span class="k">import</span> <span class="n">default_units</span>
+
+
+<div class="viewcode-block" id="Henry_H_at_T"><a class="viewcode-back" href="../../chempy.html#chempy.henry.Henry_H_at_T">[docs]</a><span class="k">def</span> <span class="nf">Henry_H_at_T</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">Tderiv</span><span class="p">,</span> <span class="n">T0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Evaluate Henry&#39;s constant H at temperature T</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    T: float</span>
+<span class="sd">        Temperature (with units), assumed to be in Kelvin if ``units == None``</span>
+<span class="sd">    H: float</span>
+<span class="sd">        Henry&#39;s constant</span>
+<span class="sd">    Tderiv: float (optional)</span>
+<span class="sd">        dln(H)/d(1/T), assumed to be in Kelvin if ``units == None``.</span>
+<span class="sd">    T0: float</span>
+<span class="sd">        Reference temperature, assumed to be in Kelvin if ``units == None``</span>
+<span class="sd">        default: 298.15 K</span>
+<span class="sd">    units: object (optional)</span>
+<span class="sd">        object with attributes: kelvin (e.g. chempy.units.default_units)</span>
+<span class="sd">    backend : module (optional)</span>
+<span class="sd">        module with &quot;exp&quot;, default: numpy, math</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">be</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">units</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">Kelvin</span>
+    <span class="k">if</span> <span class="n">T0</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">T0</span> <span class="o">=</span> <span class="mf">298.15</span><span class="o">*</span><span class="n">K</span>
+    <span class="k">return</span> <span class="n">H</span> <span class="o">*</span> <span class="n">be</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">Tderiv</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">T</span> <span class="o">-</span> <span class="mi">1</span><span class="o">/</span><span class="n">T0</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Henry"><a class="viewcode-back" href="../../chempy.html#chempy.henry.Henry">[docs]</a><span class="k">class</span> <span class="nc">Henry</span><span class="p">(</span><span class="n">defaultnamedtuple</span><span class="p">(</span><span class="s1">&#39;Henry&#39;</span><span class="p">,</span> <span class="s1">&#39;Hcp Tderiv T0 ref&#39;</span><span class="p">,</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">])):</span>
+    <span class="sd">&quot;&quot;&quot; Henry&#39;s gas constant</span>
+
+<span class="sd">    Note that the reference temperature</span>
+<span class="sd">    is set by the attribute :py:attr:`T0` which defaults to</span>
+<span class="sd">    298.15 (Kelvin).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Hcp: float</span>
+<span class="sd">        Henry&#39;s constant [M/atm]</span>
+<span class="sd">    Tderiv: float</span>
+<span class="sd">        dln(kH)/d(1/T) [K]</span>
+<span class="sd">        Equivalent to $\\Delta_{soln}H / R$</span>
+<span class="sd">    ref: object</span>
+<span class="sd">        Reference for origin of parameters</span>
+<span class="sd">    units: object (optional)</span>
+<span class="sd">        object with attributes: kelvin</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; H_H2 = Henry(1.2e-3, 1800, ref=&#39;carpenter_1966&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; &#39;%.2g&#39; % H_H2(298.15)</span>
+<span class="sd">    &#39;0.0012&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Evaluates Henry&#39;s constant for provided temperature &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Henry_H_at_T</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Hcp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Tderiv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">T0</span><span class="p">,</span>
+                            <span class="n">units</span><span class="o">=</span><span class="n">units</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Henry.get_kH_at_T"><a class="viewcode-back" href="../../chempy.html#chempy.henry.Henry.get_kH_at_T">[docs]</a>    <span class="nd">@deprecated</span><span class="p">(</span><span class="s1">&#39;0.3.1&#39;</span><span class="p">,</span> <span class="s1">&#39;0.5.0&#39;</span><span class="p">,</span> <span class="fm">__call__</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">get_kH_at_T</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Henry.get_c_at_T_and_P"><a class="viewcode-back" href="../../chempy.html#chempy.henry.Henry.get_c_at_T_and_P">[docs]</a>    <span class="k">def</span> <span class="nf">get_c_at_T_and_P</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Convenience method for calculating concentration</span>
+
+<span class="sd">        Calculate what concentration is needed to achieve a given partial</span>
+<span class="sd">        pressure at a specified temperature</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        T: float</span>
+<span class="sd">            Temperature</span>
+<span class="sd">        P: float</span>
+<span class="sd">            Pressure</span>
+<span class="sd">        \\*\\*kwargs:</span>
+<span class="sd">            Keyword arguments passed on to :meth:`__call__`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">P</span> <span class="o">*</span> <span class="bp">self</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Henry.get_P_at_T_and_c"><a class="viewcode-back" href="../../chempy.html#chempy.henry.Henry.get_P_at_T_and_c">[docs]</a>    <span class="k">def</span> <span class="nf">get_P_at_T_and_c</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Convenience method for calculating concentration</span>
+
+<span class="sd">        Calculate the partial pressure for given temperature and concentration</span>
+
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        T: float</span>
+<span class="sd">            Temperature</span>
+<span class="sd">        P: float</span>
+<span class="sd">            Pressure</span>
+<span class="sd">        \\*\\*kwargs:</span>
+<span class="sd">            Keyword arguments passed on to :meth:`__call__`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">c</span> <span class="o">/</span> <span class="bp">self</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="HenryWithUnits"><a class="viewcode-back" href="../../chempy.html#chempy.henry.HenryWithUnits">[docs]</a><span class="k">class</span> <span class="nc">HenryWithUnits</span><span class="p">(</span><span class="n">Henry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Analogous to :class:`Henry`</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from chempy.units import to_unitless, default_units as u</span>
+<span class="sd">    &gt;&gt;&gt; H_CO = HenryWithUnits(9.7e-6 * u.mol/u.m**3/u.Pa, 1300*u.K, ref=&#39;sander_2015&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; &#39;%.2g&#39; % to_unitless(H_CO(298.15 * u.K), u.molar/u.bar)</span>
+<span class="sd">    &#39;0.00097&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="n">default_units</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Evaluates Henry&#39;s constant for provided temperature &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">HenryWithUnits</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">units</span><span class="p">,</span> <span class="n">backend</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
