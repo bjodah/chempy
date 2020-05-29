@@ -43,7 +43,7 @@ pipeline:
       - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
     commands:
       - export PYTHONUSERBASE=$(pwd)/ci-cache/pyusrb
-      - export CPATH=$SUNDBASE/include
+      - export CPATH=$SUNDBASE/include:$CPATH
       - export LIBRARY_PATH=$SUNDBASE/lib
       - export LD_LIBRARY_PATH=$SUNDBASE/lib
       - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
