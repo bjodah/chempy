@@ -1,3 +1,7 @@
+v0.7.11
+=======
+- Support for newer version of PuLP when running test suite.
+
 v0.7.10
 =======
 - Added support for newer SymPy version.

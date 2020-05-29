@@ -3,6 +3,7 @@ from __future__ import (absolute_import, division, print_function)
 
 from functools import reduce
 from operator import attrgetter, add
+import sys
 
 import pytest
 
@@ -14,6 +15,10 @@ from ..chemistry import (
     equilibrium_quotient, Substance, Species, Reaction,
     Equilibrium, balance_stoichiometry
 )
+
+if sys.version_info < (3, 6, 0):
+    class ModuleNotFoundError(ImportError):
+        pass
 
 
 @requires('numpy')
