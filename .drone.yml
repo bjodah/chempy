@@ -17,10 +17,11 @@ pipeline:
       - CXX=g++-10
       - CPLUS_INCLUDE_PATH=/opt/boost_1_73_p/include
       - SUNDBASE=/opt/sundials-5.3.0-klu-lapack
+      - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
     commands:
       - export PYTHONUSERBASE=$(pwd)/ci-cache/pyusrb
       - if [ ! -d $PYTHONUSERBASE ]; then mkdir -p $PYTHONUSERBASE; fi
-      - export CPATH=$SUNDBASE/include
+      - export CPATH=$SUNDBASE/include:$CPATH
       - export LIBRARY_PATH=$SUNDBASE/lib
       - export LD_LIBRARY_PATH=$SUNDBASE/lib
       - python3 -m pip install --cache-dir ./ci-cache/pip_cache --user -e .[all]
@@ -39,6 +40,7 @@ pipeline:
       - CXX=g++-10
       - CPLUS_INCLUDE_PATH=/opt/boost_1_73_p/include
       - SUNDBASE=/opt/sundials-5.3.0-klu-lapack
+      - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
     commands:
       - export PYTHONUSERBASE=$(pwd)/ci-cache/pyusrb
       - export CPATH=$SUNDBASE/include
