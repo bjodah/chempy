@@ -64,6 +64,8 @@ pipeline:
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
       - SUNDBASE=/opt/sundials-5.3.0-klu-lapack
+      - CC=gcc-10
+      - CXX=g++-10
     commands:
       - export PYTHONUSERBASE=$(pwd)/ci-cache/pyusrb
       - export CPATH=$SUNDBASE/include
