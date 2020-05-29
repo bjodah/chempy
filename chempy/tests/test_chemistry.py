@@ -340,11 +340,11 @@ def test_balance_stoichiometry__simple():
     assert p2 == {'Na2O': 1, 'CO2': 1}
 
 
-@requires('sympy')
+@requires('sympy', 'pulp')
 @pytest.mark.parametrize('underdet', [False, None, True])
 def test_balance_stoichiometry__impossible(underdet):
     try:
-        from pulp.api.core import PulpSolverError
+        from pulp import PulpSolverError
     except ModuleNotFoundError:
         from pulp.solvers import PulpSolverError  # older version of PuLP
     with pytest.raises((ValueError, PulpSolverError)):
@@ -354,7 +354,7 @@ def test_balance_stoichiometry__impossible(underdet):
 @requires('sympy', 'pulp')
 def test_balance_stoichiometry__underdetermined():
     try:
-        from pulp.api.core import PulpSolverError
+        from pulp import PulpSolverError
     except ModuleNotFoundError:
         from pulp.solvers import PulpSolverError  # older version of PuLP
 
