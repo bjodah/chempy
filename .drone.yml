@@ -3,7 +3,6 @@ pipeline:
     image: drillster/drone-volume-cache
     restore: true
     mount:
-#      - ./ci-cache/sund-3.2.1
       - ./ci-cache/pyusrb
       - ./ci-cache/conda_packages
       - ./ci-cache/pip_cache
@@ -12,14 +11,12 @@ pipeline:
     ttl: 90  # liftetime in days
 
   install:
-    image: bjodah/bjodahimg18dev:v4.0.1
+    image: bjodah/bjodahimg20dev:v1.2.0
     environment:
-      - CPLUS_INCLUDE_PATH=/opt/boost_1_72_p/include
-      - SUNDBASE=/opt/sundials-5.1.0-klu-lapack
+      - CPLUS_INCLUDE_PATH=/opt/boost_1_73_p/include
+      - SUNDBASE=/opt/sundials-5.3.0-klu-lapack
     commands:
-#      - export SUNDBASE=$(pwd)/ci-cache/sund-3.2.1
       - export PYTHONUSERBASE=$(pwd)/ci-cache/pyusrb
-#      - if [ ! -d $SUNDBASE ]; then .ci/get_sundials.sh 3.2.1 $SUNDBASE -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_SIZE=32 $SUNDBASE; fi
       - if [ ! -d $PYTHONUSERBASE ]; then mkdir -p $PYTHONUSERBASE; fi
       - export CPATH=$SUNDBASE/include
       - export LIBRARY_PATH=$SUNDBASE/lib
@@ -33,11 +30,11 @@ pipeline:
       - cp dist/chempy-* deploy/public_html/branches/${DRONE_BRANCH}/
 
   test-suite:
-    image: bjodah/bjodahimg18dev:v4.0.1
+    image: bjodah/bjodahimg20dev:v1.2.0
     group: testing
     environment:
-      - CPLUS_INCLUDE_PATH=/opt/boost_1_72_p/include
-      - SUNDBASE=/opt/sundials-5.1.0-klu-lapack
+      - CPLUS_INCLUDE_PATH=/opt/boost_1_73_p/include
+      - SUNDBASE=/opt/sundials-5.3.0-klu-lapack
     commands:
       - export PYTHONUSERBASE=$(pwd)/ci-cache/pyusrb
       - export CPATH=$SUNDBASE/include
@@ -56,11 +53,11 @@ pipeline:
       - bash -c "source /tmp/test_git_archive/bin/activate; pip install --cache-dir ./ci-cache/pip_cache chempy-head.zip pytest; pytest --pyargs chempy"
 
   render-notebooks:
-    image: bjodah/bjodahimg18dev:v4.0.1
+    image: bjodah/bjodahimg20dev:v1.2.0
     group: testing
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
-      - SUNDBASE=/opt/sundials-5.1.0-klu-lapack
+      - SUNDBASE=/opt/sundials-5.3.0-klu-lapack
     commands:
       - export PYTHONUSERBASE=$(pwd)/ci-cache/pyusrb
       - export CPATH=$SUNDBASE/include
@@ -73,7 +70,7 @@ pipeline:
       - cp -r index.* examples/ "deploy/public_html/branches/${DRONE_BRANCH}"
 
 #  conda-recipe:
-#    image: bjodah/bjodahimg18dev:v4.0.1
+#    image: bjodah/bjodahimg20dev:v1.2.0
 #    group: testing
 #    commands:
 #      - export CONDA_PKGS_DIRS=$(pwd)/ci-cache/conda_packages
@@ -83,10 +80,10 @@ pipeline:
 #      - (cd $CONDA_PKGS_DIRS; find . -maxdepth 1 -type d -not -path . -not -path .. | xargs rm -r)
 
   compile-documentation:
-    image: bjodah/bjodahimg18dev:v4.0.1
+    image: bjodah/bjodahimg20dev:v1.2.0
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
-      - SUNDBASE=/opt/sundials-5.1.0-klu-lapack
+      - SUNDBASE=/opt/sundials-5.3.0-klu-lapack
     commands:
       - export PYTHONUSERBASE=$(pwd)/ci-cache/pyusrb
       - export CPATH=$SUNDBASE/include

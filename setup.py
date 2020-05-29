@@ -73,9 +73,8 @@ classifiers = [
     'Topic :: Scientific/Engineering :: Chemistry',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.5',
-    'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
 ]
 
 with io.open(_path_under_setup(pkg_name, '__init__.py'), 'rt', encoding='utf-8') as f:
@@ -88,9 +87,9 @@ if not len(long_descr) > 100:
 _author, _author_email = open(_path_under_setup('AUTHORS'), 'rt').readline().split('<')
 
 extras_req = {
-    'integrators': ['pyodeint>=0.10.1', 'pycvodes>=0.11.9', 'pygslodeiv2>=0.9.1'],
-    'solvers': ['pykinsol>=0.1.3'],
-    'native': ['pycompilation>=0.4.3', 'pycodeexport>=0.1.2', 'appdirs'],
+    'integrators': ['pyodeint>=0.10.4', 'pycvodes>=0.13.1', 'pygslodeiv2>=0.9.4'],
+    'solvers': ['pykinsol>=0.1.5'],
+    'native': ['pycompilation>=0.4.9', 'pycodeexport>=0.1.2', 'appdirs'],
     'docs': ['Sphinx', 'sphinx_rtd_theme', 'numpydoc'],
     'plotting': ['bokeh>=0.13.0', 'ipywidgets'],
     'testing': ['pytest>=3.9', 'pytest-cov', 'pytest-flakes', 'pytest-pep8', 'rstcheck']
@@ -112,12 +111,12 @@ setup_kwargs = dict(
     install_requires=[
         'numpy>1.11.3', 'scipy>=1.0.1', 'matplotlib>=2.2.3',
         'sympy>=1.1.1,!=1.2', 'quantities>=0.12.1', 'pyneqsys>=0.5.5',
-        'pyodesys>=0.12.5' if sys.version_info[0] >= 3 else 'pyodesys<0.12',
+        'pyodesys>=0.13.1' if sys.version_info[0] >= 3 else 'pyodesys<0.12',
         'pyparsing>=2.0.3', 'sym>=0.3.4', 'jupyter', 'pulp>=1.6.8',
         'dot2tex>=2.11.3'
     ],
     extras_require=extras_req,
-    python_requires='>=3.6'
+    python_requires='>=3.7'
 )
 
 if __name__ == '__main__':

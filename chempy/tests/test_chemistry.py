@@ -343,7 +343,10 @@ def test_balance_stoichiometry__simple():
 @requires('sympy')
 @pytest.mark.parametrize('underdet', [False, None, True])
 def test_balance_stoichiometry__impossible(underdet):
-    from pulp.solvers import PulpSolverError
+    try:
+        from pulp.api.core import PulpSolverError
+    except ModuleNotFoundError:
+        from pulp.solvers import PulpSolverError  # older version of PuLP
     with pytest.raises((ValueError, PulpSolverError)):
         r1, p1 = balance_stoichiometry({'CO'}, {'CO2'}, underdetermined=underdet)
 
