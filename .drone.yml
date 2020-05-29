@@ -13,6 +13,8 @@ pipeline:
   install:
     image: bjodah/bjodahimg20dev:v1.2.0
     environment:
+      - CC=gcc-10
+      - CXX=g++-10
       - CPLUS_INCLUDE_PATH=/opt/boost_1_73_p/include
       - SUNDBASE=/opt/sundials-5.3.0-klu-lapack
     commands:
@@ -33,6 +35,8 @@ pipeline:
     image: bjodah/bjodahimg20dev:v1.2.0
     group: testing
     environment:
+      - CC=gcc-10
+      - CXX=g++-10
       - CPLUS_INCLUDE_PATH=/opt/boost_1_73_p/include
       - SUNDBASE=/opt/sundials-5.3.0-klu-lapack
     commands:
