@@ -353,7 +353,10 @@ def test_balance_stoichiometry__impossible(underdet):
 
 @requires('sympy', 'pulp')
 def test_balance_stoichiometry__underdetermined():
-    from pulp.solvers import PulpSolverError
+    try:
+        from pulp.api.core import PulpSolverError
+    except ModuleNotFoundError:
+        from pulp.solvers import PulpSolverError  # older version of PuLP
 
     with pytest.raises(ValueError):
         balance_stoichiometry({'C2H6', 'O2'}, {'H2O', 'CO2', 'CO'}, underdetermined=False)
