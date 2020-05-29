@@ -7,7 +7,7 @@ ChemPy
 .. image:: https://img.shields.io/pypi/v/chempy.svg
    :target: https://pypi.python.org/pypi/chempy
    :alt: PyPI version
-.. image:: https://img.shields.io/badge/python-3.6,3.7-blue.svg
+.. image:: https://img.shields.io/badge/python-3.7,3.8-blue.svg
    :target: https://www.python.org/
    :alt: Python version
 .. image:: https://img.shields.io/pypi/l/chempy.svg
@@ -102,8 +102,8 @@ Note that this option will install the following libraries
 
 - `pygslodeiv2 <https://github.com/bjodah/pygslodeiv2>`_: solving initial value problems, requires GSL_. (>=1.16).
 - `pyodeint <https://github.com/bjodah/pyodeint>`_: solving initial value problems, requires boost_ (>=1.65.0).
-- `pycvodes <https://github.com/bjodah/pycvodes>`_: solving initial value problems, requires SUNDIALS_ (>=2.7.0).
-- `pykinsol <https://github.com/bjodah/pykinsol>`_: solving non-linear root-finding, requires SUNDIALS_ (>=2.7.0).
+- `pycvodes <https://github.com/bjodah/pycvodes>`_: solving initial value problems, requires SUNDIALS_ (>=5.3.0).
+- `pykinsol <https://github.com/bjodah/pykinsol>`_: solving non-linear root-finding, requires SUNDIALS_ (>=5.3.0).
 - `pycompilation <https://github.com/bjodah/pycompilation>`_: python front-end for calling compilers, requires gcc/clang/icpc.
 - `pycodeexport <https://github.com/bjodah/pycodeexport>`_: package for code-generation, used when generating C++ code.
 
