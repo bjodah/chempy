@@ -74,7 +74,7 @@ pipeline:
       - ./scripts/render_notebooks.sh
       - ./.ci/grep-for-binary-data.sh
       - mv index.html index.ipynb.html
-      - (cd examples/; for f in bokeh_*.py; do python3 -m bokeh html $f; done)
+#      - (cd examples/; for f in bokeh_*.py; do python3 -m bokeh html $f; done)
       - cp -r index.* examples/ "deploy/public_html/branches/${DRONE_BRANCH}"
 
 #  conda-recipe:
