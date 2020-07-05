@@ -50,6 +50,15 @@ def test_molar_masses_of_the_elements_gh172():
     previous_mass = 0
     for symbol in symbols:
         this_mass = Substance.from_formula(symbol).mass
-        if symbol not in ('K', 'Ni', 'I', 'Pa', 'Np', 'Am'):
-            assert this_mass >= previous_mass
+        # Note that any average atomic masses of naturally occurring isotopes loose their
+        # meaning for trans-uranium elements. The numbers are almost to be considered arbitrary
+        # and the user needs to know what isotope they have at hand (and use isotopic mass).
+        if symbol in ('K', 'Ni', 'I', 'Pa', 'Np', 'Am'):
+            assert this_mass < previous_mass
+        elif symbol in ('Bk', 'Og'):
+            assert this_mass == previous_mass
+        else:
+            assert this_mass > previous_mass
         previous_mass = this_mass
+
+    assert Substance.from_formula('Hs').mass == 271
