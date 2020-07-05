@@ -1141,7 +1141,7 @@ class Equilibrium(Reaction):
 def _solve_balancing_ilp_pulp(A):
     import pulp
     x = [pulp.LpVariable('x%d' % i, lowBound=1, cat='Integer') for i in range(A.shape[1])]
-    prob = pulp.LpProblem("chempy balancing problem", pulp.LpMinimize)
+    prob = pulp.LpProblem("chempy_balancing_problem", pulp.LpMinimize)
     prob += reduce(add, x)
     for expr in [pulp.lpSum([x[i]*e for i, e in enumerate(row)]) for row in A.tolist()]:
         prob += expr == 0
