@@ -1,0 +1,550 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.properties package &mdash; chempy 0.7.12 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="chempy.thermodynamics package" href="chempy.thermodynamics.html" />
+    <link rel="prev" title="chempy.printing package" href="chempy.printing.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.7.12
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="chempy.html">chempy package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="chempy.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="chempy.electrochemistry.html">chempy.electrochemistry package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.kinetics.html">chempy.kinetics package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.printing.html">chempy.printing package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">chempy.properties package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.properties.debye_huckel_radii">chempy.properties.debye_huckel_radii module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.properties.gas_sol_electrolytes_schumpe_1993">chempy.properties.gas_sol_electrolytes_schumpe_1993 module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.properties.sulfuric_acid_density_myhre_1998">chempy.properties.sulfuric_acid_density_myhre_1998 module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.properties.water_density_tanaka_2001">chempy.properties.water_density_tanaka_2001 module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.properties.water_diffusivity_holz_2000">chempy.properties.water_diffusivity_holz_2000 module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.properties.water_permittivity_bradley_pitzer_1979">chempy.properties.water_permittivity_bradley_pitzer_1979 module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-chempy.properties.water_viscosity_korson_1969">chempy.properties.water_viscosity_korson_1969 module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.thermodynamics.html">chempy.thermodynamics package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chempy.util.html">chempy.util package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.arrhenius">chempy.arrhenius module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.chemistry">chempy.chemistry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.debye_huckel">chempy.debye_huckel module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.einstein_smoluchowski">chempy.einstein_smoluchowski module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.electrolytes">chempy.electrolytes module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.equilibria">chempy.equilibria module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.eyring">chempy.eyring module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.henry">chempy.henry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.reactionsystem">chempy.reactionsystem module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.symbolic">chempy.symbolic module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chempy.html#module-chempy.units">chempy.units module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">chempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="chempy.html">chempy package</a> &raquo;</li>
+        
+      <li>chempy.properties package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/chempy.properties.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-chempy.properties">
+<span id="chempy-properties-package"></span><h1>chempy.properties package<a class="headerlink" href="#module-chempy.properties" title="Permalink to this headline">¶</a></h1>
+<p>This package implements various parameterisations of properties from the
+litterature with relevance in chemistry.</p>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-chempy.properties.debye_huckel_radii">
+<span id="chempy-properties-debye-huckel-radii-module"></span><h2>chempy.properties.debye_huckel_radii module<a class="headerlink" href="#module-chempy.properties.debye_huckel_radii" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="chempy.properties.debye_huckel_radii.get_radii">
+<code class="sig-prename descclassname">chempy.properties.debye_huckel_radii.</code><code class="sig-name descname">get_radii</code><span class="sig-paren">(</span><em class="sig-param">key</em>, <em class="sig-param">units=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/properties/debye_huckel_radii.html#get_radii"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.properties.debye_huckel_radii.get_radii" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Debye-Hückel radii for various ions</p>
+<p>For aqueous systems</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>key: str</strong></dt><dd><p>e.g. ‘Fe+3’, ‘SCN-‘</p>
+</dd>
+<dt><strong>units: object (optional)</strong></dt><dd><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">nm</span></code> is accessed.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>radius in nanometers</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.properties.gas_sol_electrolytes_schumpe_1993">
+<span id="chempy-properties-gas-sol-electrolytes-schumpe-1993-module"></span><h2>chempy.properties.gas_sol_electrolytes_schumpe_1993 module<a class="headerlink" href="#module-chempy.properties.gas_sol_electrolytes_schumpe_1993" title="Permalink to this headline">¶</a></h2>
+<p>This module implements an expression for estimating how gas solubility in water
+is affected by dissolved non-reactive salts, the expression and parameters are from Schumpe (1993).</p>
+<dl class="function">
+<dt id="chempy.properties.gas_sol_electrolytes_schumpe_1993.lg_solubility_ratio">
+<code class="sig-prename descclassname">chempy.properties.gas_sol_electrolytes_schumpe_1993.</code><code class="sig-name descname">lg_solubility_ratio</code><span class="sig-paren">(</span><em class="sig-param">electrolytes</em>, <em class="sig-param">gas</em>, <em class="sig-param">units=None</em>, <em class="sig-param">warn=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/properties/gas_sol_electrolytes_schumpe_1993.html#lg_solubility_ratio"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.properties.gas_sol_electrolytes_schumpe_1993.lg_solubility_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the log10 value of the solubilty ratio</p>
+<p>Implements equation 16, p 156. from Schumpe (1993)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>electrolytes</strong><span class="classifier">dict</span></dt><dd><p>Mapping substance key (one in <code class="docutils literal notranslate"><span class="pre">p_ion_rM</span></code>) to concentration.</p>
+</dd>
+<dt><strong>gas</strong><span class="classifier">str</span></dt><dd><p>Substance key for the gas (one in <code class="docutils literal notranslate"><span class="pre">p_gas_rM</span></code>).</p>
+</dd>
+<dt><strong>units</strong><span class="classifier">object (optional)</span></dt><dd><p>object with attribute: molar</p>
+</dd>
+<dt><strong>warn</strong><span class="classifier">bool (default: True)</span></dt><dd><p>Emit UserWarning when ‘F-‘ among electrolytes.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.properties.sulfuric_acid_density_myhre_1998">
+<span id="chempy-properties-sulfuric-acid-density-myhre-1998-module"></span><h2>chempy.properties.sulfuric_acid_density_myhre_1998 module<a class="headerlink" href="#module-chempy.properties.sulfuric_acid_density_myhre_1998" title="Permalink to this headline">¶</a></h2>
+<p>This module implements the denisty parameterisation of aqueous sulfuric acid
+of Myhre et al. from 1998.</p>
+<dl class="function">
+<dt id="chempy.properties.sulfuric_acid_density_myhre_1998.density_from_concentration">
+<code class="sig-prename descclassname">chempy.properties.sulfuric_acid_density_myhre_1998.</code><code class="sig-name descname">density_from_concentration</code><span class="sig-paren">(</span><em class="sig-param">conc</em>, <em class="sig-param">T=None</em>, <em class="sig-param">molar_mass=None</em>, <em class="sig-param">rho_cb=&lt;function sulfuric_acid_density at 0x7fcbb4ebac10&gt;</em>, <em class="sig-param">units=None</em>, <em class="sig-param">atol=None</em>, <em class="sig-param">maxiter=10</em>, <em class="sig-param">warn=False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/properties/sulfuric_acid_density_myhre_1998.html#density_from_concentration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.properties.sulfuric_acid_density_myhre_1998.density_from_concentration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the density of a solution from its concentration</p>
+<p>Given a function which calculates the density of a solution from the mass
+fraction of the solute, this function calculates (iteratively) the density
+of said solution for a given concentration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>conc</strong><span class="classifier">float (optionally with units)</span></dt><dd><p>Concentration (mol / m³).</p>
+</dd>
+<dt><strong>T</strong><span class="classifier">float (optionally with units)</span></dt><dd><p>Passed to <code class="docutils literal notranslate"><span class="pre">rho_cb</span></code>.</p>
+</dd>
+<dt><strong>molar_mass</strong><span class="classifier">float (optionally with units)</span></dt><dd><p>Molar mass of solute.</p>
+</dd>
+<dt><strong>rho_cb</strong><span class="classifier">callback</span></dt><dd><p>Callback with signature f(w, T, units=None) -&gt; rho
+(default: <a class="reference internal" href="#chempy.properties.sulfuric_acid_density_myhre_1998.sulfuric_acid_density" title="chempy.properties.sulfuric_acid_density_myhre_1998.sulfuric_acid_density"><code class="xref py py-func docutils literal notranslate"><span class="pre">sulfuric_acid_density()</span></code></a>).</p>
+</dd>
+<dt><strong>units</strong><span class="classifier">object (optional)</span></dt><dd><p>Object with attributes: meter, kilogram, mol.</p>
+</dd>
+<dt><strong>atol</strong><span class="classifier">float (optionally with units)</span></dt><dd><p>Convergence criterion for fixed-point iteration
+(default: 1e-3 kg/m³).</p>
+</dd>
+<dt><strong>maxiter</strong><span class="classifier">int</span></dt><dd><p>Maximum number of iterations (when exceeded a NoConvergence excpetion
+is raised).</p>
+</dd>
+<dt><strong>**kwargs:</strong></dt><dd><p>Keyword arguments passed onto <code class="docutils literal notranslate"><span class="pre">rho_cb</span></code>.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Density of sulfuric acid (float of kg/m³ if T is float and units is None)</dt><dd></dd>
+</dl>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>chempy.util.NoConvergence:</dt><dd><p>When maxiter is exceeded</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">density_from_concentration</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mi">293</span><span class="p">))</span>
+<span class="go">1021</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="chempy.properties.sulfuric_acid_density_myhre_1998.sulfuric_acid_density">
+<code class="sig-prename descclassname">chempy.properties.sulfuric_acid_density_myhre_1998.</code><code class="sig-name descname">sulfuric_acid_density</code><span class="sig-paren">(</span><em class="sig-param">w</em>, <em class="sig-param">T=None</em>, <em class="sig-param">T0=None</em>, <em class="sig-param">units=None</em>, <em class="sig-param">warn=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/properties/sulfuric_acid_density_myhre_1998.html#sulfuric_acid_density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.properties.sulfuric_acid_density_myhre_1998.sulfuric_acid_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Density of sulfuric acid (kg/m³) as function of temperature (K)
+and mass fraction acid (w).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>w: float</strong></dt><dd><p>Acid mass fraction (0.1 &lt;= w &lt;= 0.9)</p>
+</dd>
+<dt><strong>T: float</strong></dt><dd><p>Temperature (in Kelvin) (273 &lt;= T &lt;= 323) (default: 298.15)</p>
+</dd>
+<dt><strong>T0: float</strong></dt><dd><p>Value of T for 0 degree Celsius (default: 273.15)</p>
+</dd>
+<dt><strong>units: object (optional)</strong></dt><dd><p>object with attributes: kelvin, meter, kilogram</p>
+</dd>
+<dt><strong>warn: bool (default: True)</strong></dt><dd><p>Emit UserWarning when outside T or w range.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Density of sulfuric acid (float of kg/m³ if T is float and units is None)</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>Cathrine E. L. Myhre , Claus J. Nielsen ,* and Ole W. Saastad</dt><dd><p>“Density and Surface Tension of Aqueous H2SO4 at Low Temperature”
+J. Chem. Eng. Data, 1998, 43 (4), pp 617–622
+<a class="reference external" href="http://pubs.acs.org/doi/abs/10.1021/je980013g">http://pubs.acs.org/doi/abs/10.1021/je980013g</a>
+DOI: 10.1021/je980013g</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">sulfuric_acid_density</span><span class="p">(</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span> <span class="mi">293</span><span class="p">))</span>
+<span class="go">1396</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.properties.water_density_tanaka_2001">
+<span id="chempy-properties-water-density-tanaka-2001-module"></span><h2>chempy.properties.water_density_tanaka_2001 module<a class="headerlink" href="#module-chempy.properties.water_density_tanaka_2001" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="chempy.properties.water_density_tanaka_2001.water_density">
+<code class="sig-prename descclassname">chempy.properties.water_density_tanaka_2001.</code><code class="sig-name descname">water_density</code><span class="sig-paren">(</span><em class="sig-param">T=None</em>, <em class="sig-param">T0=None</em>, <em class="sig-param">units=None</em>, <em class="sig-param">a=None</em>, <em class="sig-param">just_return_a=False</em>, <em class="sig-param">warn=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/properties/water_density_tanaka_2001.html#water_density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.properties.water_density_tanaka_2001.water_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Density of water (kg/m3) as function of temperature (K)
+according to VSMOW model between 0 and 40 degree Celsius.
+Fitted using Thiesen’s equation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>T</strong><span class="classifier">float</span></dt><dd><p>Temperature (in Kelvin) (default: 298.15).</p>
+</dd>
+<dt><strong>T0</strong><span class="classifier">float</span></dt><dd><p>Value of T for 0 degree Celsius (default: 273.15).</p>
+</dd>
+<dt><strong>units</strong><span class="classifier">object (optional)</span></dt><dd><p>Object with attributes: Kelvin, meter, kilogram.</p>
+</dd>
+<dt><strong>a</strong><span class="classifier">array_like (optional)</span></dt><dd><p>5 parameters to the equation.</p>
+</dd>
+<dt><strong>just_return_a</strong><span class="classifier">bool (optional, default: False)</span></dt><dd><p>Do not compute rho, just return the parameters <code class="docutils literal notranslate"><span class="pre">a</span></code>.</p>
+</dd>
+<dt><strong>warn</strong><span class="classifier">bool (default: True)</span></dt><dd><p>Emit UserWarning when outside temperature range.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Density of water (float of kg/m3 if T is float and units is None)</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>TANAKA M., GIRARD G., DAVIS R., PEUTO A. and BIGNELL N.,</dt><dd><p>“Recommanded table for the density of water between 0 °C and 40 °C
+based on recent experimental reports”,
+Metrologia, 2001, 38, 301-309.
+<a class="reference external" href="http://iopscience.iop.org/article/10.1088/0026-1394/38/4/3">http://iopscience.iop.org/article/10.1088/0026-1394/38/4/3</a>
+doi:10.1088/0026-1394/38/4/3</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%.2f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">water_density</span><span class="p">(</span><span class="mf">277.13</span><span class="p">))</span>
+<span class="go">999.97</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.properties.water_diffusivity_holz_2000">
+<span id="chempy-properties-water-diffusivity-holz-2000-module"></span><h2>chempy.properties.water_diffusivity_holz_2000 module<a class="headerlink" href="#module-chempy.properties.water_diffusivity_holz_2000" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="chempy.properties.water_diffusivity_holz_2000.water_self_diffusion_coefficient">
+<code class="sig-prename descclassname">chempy.properties.water_diffusivity_holz_2000.</code><code class="sig-name descname">water_self_diffusion_coefficient</code><span class="sig-paren">(</span><em class="sig-param">T=None</em>, <em class="sig-param">units=None</em>, <em class="sig-param">warn=True</em>, <em class="sig-param">err_mult=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/properties/water_diffusivity_holz_2000.html#water_self_diffusion_coefficient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.properties.water_diffusivity_holz_2000.water_self_diffusion_coefficient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Temperature-dependent self-diffusion coefficient of water.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>T</strong><span class="classifier">float</span></dt><dd><p>Temperature (default: in Kelvin)</p>
+</dd>
+<dt><strong>units</strong><span class="classifier">object (optional)</span></dt><dd><p>object with attributes: Kelvin, meter, kilogram</p>
+</dd>
+<dt><strong>warn</strong><span class="classifier">bool (default: True)</span></dt><dd><p>Emit UserWarning when outside temperature range.</p>
+</dd>
+<dt><strong>err_mult</strong><span class="classifier">length 2 array_like (default: None)</span></dt><dd><p>Perturb paramaters D0 and TS with err_mult[0]*dD0 and
+err_mult[1]*dTS respectively, where dD0 and dTS are the
+reported uncertainties in the fitted paramters. Useful
+for estimating error in diffusion coefficient.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>Temperature-dependent self-diffusion coefficients of water and six selected</dt><dd><p>molecular liquids for calibration in accurate 1H NMR PFG measurements
+Manfred Holz, Stefan R. Heila, Antonio Saccob;
+Phys. Chem. Chem. Phys., 2000,2, 4740-4742
+<a class="reference external" href="http://pubs.rsc.org/en/Content/ArticleLanding/2000/CP/b005319h">http://pubs.rsc.org/en/Content/ArticleLanding/2000/CP/b005319h</a>
+DOI: 10.1039/B005319H</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.properties.water_permittivity_bradley_pitzer_1979">
+<span id="chempy-properties-water-permittivity-bradley-pitzer-1979-module"></span><h2>chempy.properties.water_permittivity_bradley_pitzer_1979 module<a class="headerlink" href="#module-chempy.properties.water_permittivity_bradley_pitzer_1979" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="chempy.properties.water_permittivity_bradley_pitzer_1979.water_permittivity">
+<code class="sig-prename descclassname">chempy.properties.water_permittivity_bradley_pitzer_1979.</code><code class="sig-name descname">water_permittivity</code><span class="sig-paren">(</span><em class="sig-param">T=None</em>, <em class="sig-param">P=None</em>, <em class="sig-param">units=None</em>, <em class="sig-param">U=None</em>, <em class="sig-param">just_return_U=False</em>, <em class="sig-param">warn=True</em>, <em class="sig-param">backend=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/properties/water_permittivity_bradley_pitzer_1979.html#water_permittivity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.properties.water_permittivity_bradley_pitzer_1979.water_permittivity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Relative permittivity of water as function of temperature (K)
+and pressure (bar).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>T</strong><span class="classifier">float</span></dt><dd><p>Temperature (default: 298.15 Kelvin)</p>
+</dd>
+<dt><strong>P</strong><span class="classifier">float</span></dt><dd><p>Pressure (default: 1 bar)</p>
+</dd>
+<dt><strong>units</strong><span class="classifier">object (optional)</span></dt><dd><p>object with attributes: Kelvin, bar</p>
+</dd>
+<dt><strong>U</strong><span class="classifier">array_like (optional)</span></dt><dd><p>9 parameters to the equation.</p>
+</dd>
+<dt><strong>just_return_U</strong><span class="classifier">bool (optional, default: False)</span></dt><dd><p>Do not compute relative permittivity, just return the parameters <code class="docutils literal notranslate"><span class="pre">U</span></code>.</p>
+</dd>
+<dt><strong>warn</strong><span class="classifier">bool (default: True)</span></dt><dd><p>Emit UserWarning when outside temperature/pressure range.</p>
+</dd>
+<dt><strong>backend</strong><span class="classifier">module (default: None)</span></dt><dd><p>modules which contains “exp”, default: numpy, math</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Relative permittivity of water (dielectric constant)</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>Bradley, D.J.; Pitzer, K.S. <a href="#id1"><span class="problematic" id="id2">`</span></a>Thermodynamics of electrolytes. 12. Dielectric</dt><dd><p>properties of water and Debye–Hueckel parameters to 350/sup
+0/C and 1 kbar`, J. Phys. Chem.; Journal Volume 83 (12)
+(1979), pp. 1599-1603,
+<a class="reference external" href="http://pubs.acs.org/doi/abs/10.1021/j100475a009">http://pubs.acs.org/doi/abs/10.1021/j100475a009</a>
+DOI: 10.1021/j100475a009</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-chempy.properties.water_viscosity_korson_1969">
+<span id="chempy-properties-water-viscosity-korson-1969-module"></span><h2>chempy.properties.water_viscosity_korson_1969 module<a class="headerlink" href="#module-chempy.properties.water_viscosity_korson_1969" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="chempy.properties.water_viscosity_korson_1969.water_viscosity">
+<code class="sig-prename descclassname">chempy.properties.water_viscosity_korson_1969.</code><code class="sig-name descname">water_viscosity</code><span class="sig-paren">(</span><em class="sig-param">T=None</em>, <em class="sig-param">eta20=None</em>, <em class="sig-param">units=None</em>, <em class="sig-param">warn=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chempy/properties/water_viscosity_korson_1969.html#water_viscosity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chempy.properties.water_viscosity_korson_1969.water_viscosity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Viscosity of water (cP) as function of temperature (K)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>T</strong><span class="classifier">float</span></dt><dd><p>Temperature (in Kelvin) (default: 298.15 K)</p>
+</dd>
+<dt><strong>eta20</strong><span class="classifier">float</span></dt><dd><p>Viscosity of water at 20 degree Celsius.</p>
+</dd>
+<dt><strong>units</strong><span class="classifier">object (optional)</span></dt><dd><p>object with attributes: kelvin &amp; centipoise</p>
+</dd>
+<dt><strong>warn</strong><span class="classifier">bool</span></dt><dd><p>Emit UserWarning when outside temperature range.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Water viscosity at temperature <code class="docutils literal notranslate"><span class="pre">T</span></code>.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="chempy.thermodynamics.html" class="btn btn-neutral float-right" title="chempy.thermodynamics package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="chempy.printing.html" class="btn btn-neutral float-left" title="chempy.printing package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

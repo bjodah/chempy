@@ -1,0 +1,311 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>chempy.properties.gas_sol_electrolytes_schumpe_1993 &mdash; chempy 0.7.12 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> chempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.7.12
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../chempy.html">chempy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">chempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>chempy.properties.gas_sol_electrolytes_schumpe_1993</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for chempy.properties.gas_sol_electrolytes_schumpe_1993</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module implements an expression for estimating how gas solubility in water</span>
+<span class="sd">is affected by dissolved non-reactive salts, the expression and parameters are from Schumpe (1993).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="n">Tref_K</span> <span class="o">=</span> <span class="mf">298.2</span>  <span class="c1"># Kelvin</span>
+
+<span class="n">p_ion_rM</span> <span class="o">=</span> <span class="p">{</span>  <span class="c1"># &quot;rM&quot; === &quot;per molar&quot;</span>
+    <span class="s1">&#39;H+&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s1">&#39;Li+&#39;</span><span class="p">:</span> <span class="mf">0.0691</span><span class="p">,</span>
+    <span class="s1">&#39;Na+&#39;</span><span class="p">:</span> <span class="mf">0.1171</span><span class="p">,</span>
+    <span class="s1">&#39;K+&#39;</span><span class="p">:</span> <span class="mf">0.0959</span><span class="p">,</span>
+    <span class="s1">&#39;Rb+&#39;</span><span class="p">:</span> <span class="mf">0.0845</span><span class="p">,</span>
+    <span class="s1">&#39;Cs+&#39;</span><span class="p">:</span> <span class="mf">0.0660</span><span class="p">,</span>
+    <span class="s1">&#39;NH4+&#39;</span><span class="p">:</span> <span class="mf">0.0539</span><span class="p">,</span>
+    <span class="s1">&#39;Mg+2&#39;</span><span class="p">:</span> <span class="mf">0.1765</span><span class="p">,</span>
+    <span class="s1">&#39;Ca+2&#39;</span><span class="p">:</span> <span class="mf">0.1771</span><span class="p">,</span>
+    <span class="s1">&#39;Ba+2&#39;</span><span class="p">:</span> <span class="mf">0.2021</span><span class="p">,</span>
+    <span class="s1">&#39;Fe+2&#39;</span><span class="p">:</span> <span class="mf">0.1712</span><span class="p">,</span>
+    <span class="s1">&#39;Co+2&#39;</span><span class="p">:</span> <span class="mf">0.1983</span><span class="p">,</span>
+    <span class="s1">&#39;Ni+2&#39;</span><span class="p">:</span> <span class="mf">0.2039</span><span class="p">,</span>
+    <span class="s1">&#39;Cu+2&#39;</span><span class="p">:</span> <span class="mf">0.1810</span><span class="p">,</span>
+    <span class="s1">&#39;Mn+2&#39;</span><span class="p">:</span> <span class="mf">0.1620</span><span class="p">,</span>
+    <span class="s1">&#39;Zn+2&#39;</span><span class="p">:</span> <span class="mf">0.1712</span><span class="p">,</span>
+    <span class="s1">&#39;Cd+2&#39;</span><span class="p">:</span> <span class="mf">0.2201</span><span class="p">,</span>
+    <span class="s1">&#39;Al+3&#39;</span><span class="p">:</span> <span class="mf">0.2253</span><span class="p">,</span>
+    <span class="s1">&#39;Fe+3&#39;</span><span class="p">:</span> <span class="mf">0.0996</span><span class="p">,</span>
+    <span class="s1">&#39;Cr+3&#39;</span><span class="p">:</span> <span class="mf">0.0595</span><span class="p">,</span>
+    <span class="s1">&#39;OH-&#39;</span><span class="p">:</span> <span class="mf">0.0756</span><span class="p">,</span>
+    <span class="s1">&#39;F-&#39;</span><span class="p">:</span> <span class="mf">0.1016</span><span class="p">,</span>
+    <span class="s1">&#39;Cl-&#39;</span><span class="p">:</span> <span class="mf">0.0334</span><span class="p">,</span>
+    <span class="s1">&#39;Br-&#39;</span><span class="p">:</span> <span class="mf">0.0137</span><span class="p">,</span>
+    <span class="s1">&#39;I-&#39;</span><span class="p">:</span> <span class="mf">0.0020</span><span class="p">,</span>
+    <span class="s1">&#39;NO3-&#39;</span><span class="p">:</span> <span class="mf">0.0050</span><span class="p">,</span>
+    <span class="s1">&#39;ClO4-&#39;</span><span class="p">:</span> <span class="mf">0.0502</span><span class="p">,</span>
+    <span class="s1">&#39;IO4-&#39;</span><span class="p">:</span> <span class="mf">0.1514</span><span class="p">,</span>
+    <span class="s1">&#39;HCO3-&#39;</span><span class="p">:</span> <span class="mf">0.1372</span><span class="p">,</span>
+    <span class="s1">&#39;HSO3-&#39;</span><span class="p">:</span> <span class="mf">0.0543</span><span class="p">,</span>
+    <span class="s1">&#39;H2PO4-&#39;</span><span class="p">:</span> <span class="mf">0.1025</span><span class="p">,</span>
+    <span class="c1"># &#39;0-O-&#39;: 0.0765,</span>
+    <span class="c1"># &#39;0-OCH2COO-&#39;: 0.0119,</span>
+    <span class="s1">&#39;S2O3-2&#39;</span><span class="p">:</span> <span class="mf">0.1109</span><span class="p">,</span>
+    <span class="s1">&#39;HPO4-2&#39;</span><span class="p">:</span> <span class="mf">0.1789</span><span class="p">,</span>
+    <span class="s1">&#39;CO3-2&#39;</span><span class="p">:</span> <span class="mf">0.1666</span><span class="p">,</span>
+    <span class="s1">&#39;SO3-2&#39;</span><span class="p">:</span> <span class="mf">0.1537</span><span class="p">,</span>
+    <span class="s1">&#39;SO4-2&#39;</span><span class="p">:</span> <span class="mf">0.1185</span><span class="p">,</span>
+    <span class="s1">&#39;PO4-3&#39;</span><span class="p">:</span> <span class="mf">0.2117</span>
+<span class="p">}</span>
+
+<span class="n">p_gas_rM</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;O2&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s1">&#39;CO2&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.0183</span><span class="p">,</span>
+    <span class="s1">&#39;N2O&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.0110</span><span class="p">,</span>
+    <span class="s1">&#39;C2H2&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.0174</span><span class="p">,</span>
+    <span class="s1">&#39;C2H4&#39;</span><span class="p">:</span> <span class="mf">0.0014</span><span class="p">,</span>
+    <span class="s1">&#39;He&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.036</span><span class="p">,</span>
+    <span class="s1">&#39;Ne&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.020</span><span class="p">,</span>
+    <span class="s1">&#39;Ar&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.009</span><span class="p">,</span>
+    <span class="s1">&#39;Kr&#39;</span><span class="p">:</span> <span class="mf">0.003</span><span class="p">,</span>
+    <span class="s1">&#39;Xe&#39;</span><span class="p">:</span> <span class="mf">0.005</span><span class="p">,</span>
+    <span class="s1">&#39;Rn&#39;</span><span class="p">:</span> <span class="mf">0.015</span><span class="p">,</span>
+    <span class="s1">&#39;H2&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.024</span><span class="p">,</span>
+    <span class="s1">&#39;N2&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.008</span><span class="p">,</span>
+    <span class="s1">&#39;NO&#39;</span><span class="p">:</span> <span class="mf">0.004</span><span class="p">,</span>
+    <span class="s1">&#39;C2H6&#39;</span><span class="p">:</span> <span class="mf">0.011</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="lg_solubility_ratio"><a class="viewcode-back" href="../../../chempy.properties.html#chempy.properties.gas_sol_electrolytes_schumpe_1993.lg_solubility_ratio">[docs]</a><span class="k">def</span> <span class="nf">lg_solubility_ratio</span><span class="p">(</span><span class="n">electrolytes</span><span class="p">,</span> <span class="n">gas</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns the log10 value of the solubilty ratio</span>
+
+<span class="sd">    Implements equation 16, p 156. from Schumpe (1993)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    electrolytes : dict</span>
+<span class="sd">        Mapping substance key (one in ``p_ion_rM``) to concentration.</span>
+<span class="sd">    gas : str</span>
+<span class="sd">        Substance key for the gas (one in ``p_gas_rM``).</span>
+<span class="sd">    units : object (optional)</span>
+<span class="sd">        object with attribute: molar</span>
+<span class="sd">    warn : bool (default: True)</span>
+<span class="sd">        Emit UserWarning when &#39;F-&#39; among electrolytes.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">units</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">molar</span>
+    <span class="k">if</span> <span class="n">warn</span> <span class="ow">and</span> <span class="s1">&#39;F-&#39;</span> <span class="ow">in</span> <span class="n">electrolytes</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;In Schumpe 1993: data for fluoride uncertain.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">([(</span><span class="n">p_gas_rM</span><span class="p">[</span><span class="n">gas</span><span class="p">]</span><span class="o">/</span><span class="n">M</span><span class="o">+</span><span class="n">p_ion_rM</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">/</span><span class="n">M</span><span class="p">)</span><span class="o">*</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">electrolytes</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span></div>
+
+
+<span class="n">reference</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">doi</span><span class="o">=</span><span class="s1">&#39;10.1016/0009-2509(93)80291-W&#39;</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s1">&#39;http://www.sciencedirect.com/science/article/pii/000925099380291W&#39;</span><span class="p">,</span>
+    <span class="n">year</span><span class="o">=</span><span class="mi">1993</span><span class="p">,</span>
+    <span class="n">publisher</span><span class="o">=</span><span class="s1">&#39;Pergamon&#39;</span><span class="p">,</span>
+    <span class="n">author</span><span class="o">=</span><span class="s1">&#39;Schumpe, Adrian&#39;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s1">&#39;The estimation of gas solubilities in salt solutions&#39;</span><span class="p">,</span>
+    <span class="n">volume</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
+    <span class="n">issn</span><span class="o">=</span><span class="s1">&#39;0009-2509&#39;</span><span class="p">,</span>
+    <span class="n">abstract</span><span class="o">=</span><span class="p">(</span>
+        <span class="s1">&#39;The effects of dissolved salts on the solubilities of gases were analysed based on &#39;</span>
+        <span class="s1">&#39;a comprehensive set of literature data for the temperature of 298.2 K. A new &#39;</span>
+        <span class="s1">&#39;empirical model was suggested which, at no increase in the number of adjustable &#39;</span>
+        <span class="s1">&#39;parameters, described the data with a lower standard deviation than previously &#39;</span>
+        <span class="s1">&#39;suggested models. The parameter values evaluated for the new model allow to &#39;</span>
+        <span class="s1">&#39;estimate the effects of 20 cations and 19 anions on the solubilities of 15 gases.&#39;</span><span class="p">),</span>
+    <span class="n">pages</span><span class="o">=</span><span class="p">(</span><span class="mi">153</span><span class="p">,</span> <span class="mi">158</span><span class="p">),</span>
+    <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">journaltitle</span><span class="o">=</span><span class="s1">&#39;Chemical Engineering Science&#39;</span><span class="p">,</span>
+    <span class="n">shortjournal</span><span class="o">=</span><span class="s1">&#39;Chemical Engineering Science&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
