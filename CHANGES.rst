@@ -1,3 +1,8 @@
+v0.7.12
+=======
+- Update some heavy elements Uuo -> Og, etc.
+- Fix PuLP warning in solve stoichiometry
+
 v0.7.11
 =======
 - Support for newer version of PuLP when running test suite.
