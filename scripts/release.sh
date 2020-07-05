@@ -5,7 +5,7 @@
 #
 # or, using some host specific settings:
 #
-#    $ export PYCOMPILATION_TESTING_SUNDIALS_CFLAGS="-isystem /opt/sundials-5.3.0-rel-klu-lapack/include -isystem /usr/include/suitesparse" PYCOMPILATION_TESTING_SUNDIALS_LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,/opt/sundials-5.3.0-rel-klu-lapack/lib:/opt/openblas-0.3.9/lib -L/opt/sundials-5.3.0-rel-klu-lapack/lib -L/opt/openblas-0.3.9/lib -lopenblas"
+#    $ export PYODESYS_CVODE_FLAGS="-isystem /opt/sundials-5.3.0-rel-klu-lapack/include -isystem /usr/include/suitesparse" PYODESYS_CVODE_LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,/opt/sundials-5.3.0-rel-klu-lapack/lib:/opt/openblas-0.3.9/lib -L/opt/sundials-5.3.0-rel-klu-lapack/lib -L/opt/openblas-0.3.9/lib -lopenblas"
 #    $ ./scripts/release.sh ...
 
 if [[ $1 != v* ]]; then
