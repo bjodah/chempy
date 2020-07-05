@@ -92,10 +92,10 @@ def _get_formula_parser():
     # element = Word(alphas.upper(), alphas.lower())
     # or if you want to be more specific, use this Regex
     element = Regex(
-        r"A[cglmrstu]|B[aehikr]?|C[adeflmorsu]?|D[bsy]|E[rsu]|F[emr]?|"
-        "G[ade]|H[efgos]?|I[nr]?|Kr?|L[airu]|M[dgnot]|N[abdeiop]?|"
-        "Os?|P[abdmortu]?|R[abefghnu]|S[bcegimnr]?|T[abcehilm]|"
-        "Uu[bhopqst]|U|V|W|Xe|Yb?|Z[nr]")
+        r"A[cglmrstu]|B[aehikr]?|C[adeflmnorsu]?|D[bsy]|E[rsu]|F[elmr]?|"
+        "G[ade]|H[efgos]?|I[nr]?|Kr?|L[airuv]|M[cdgnot]|N[abdehiop]?|"
+        "O[gs]?|P[abdmortu]?|R[abefghnu]|S[bcegimnr]?|T[abcehilms]|"
+        "U|V|W|Xe|Yb?|Z[nr]")
 
     # forward declare 'formula' so it can be used in definition of 'term'
     formula = Forward()

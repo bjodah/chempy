@@ -10,7 +10,7 @@ symbols = (
     'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn',
     'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf',
     'Es', 'Fm', 'Md', 'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds',
-    'Rg', 'Cn', 'Uut', 'Fl', 'Uup', 'Lv', 'Uus', 'Uuo'
+    'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og'
 )
 
 period_lengths = (2, 8, 8, 18, 18, 32, 32)
@@ -43,8 +43,8 @@ names = (
     'Berkelium', 'Californium', 'Einsteinium', 'Fermium', 'Mendelevium',
     'Nobelium', 'Lawrencium', 'Rutherfordium', 'Dubnium', 'Seaborgium',
     'Bohrium', 'Hassium', 'Meitnerium', 'Darmstadtium', 'Roentgenium',
-    'Copernicium', '(Ununtrium)', 'Flerovium', '(Ununpentium)',
-    'Livermorium', '(Ununseptium)', '(Ununoctium)'
+    'Copernicium', 'Nihonium', 'Flerovium', 'Moscovium',
+    'Livermorium', 'Tennessine', 'Oganesson'
 )
 
 lower_names = tuple(n.lower().lstrip('(').rstrip(')') for n in names)
@@ -74,8 +74,8 @@ _relative_atomic_masses = (
     " 186.207(1) 190.23(3) 192.217(3) 195.084(9) 196.966569(5) 200.592(3)"
     " 204.38 207.2(1) 208.98040(1) [209] [210] [222] [223] [226] [227]"
     " 232.0377(4) 231.03588(2) 238.02891(3) [237] [244] [243] [247] [247]"
-    " [251] [252] [257] [258] [259] [266] [267] [268] [269] [270] [269]"
-    " [278] [281] [282] [285] [286] [289] [289] [293] [294] [294]"
+    " [251] [252] [257] [258] [259] [266] [267] [268] [269] [270] [271]"
+    " [278] [281] [282] [285] [286] [289] [290] [293] [294] [294]"
 )
 
 

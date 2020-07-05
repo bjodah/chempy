@@ -3,7 +3,7 @@ from __future__ import (absolute_import, division, print_function)
 
 import pytest
 
-from ..periodic import atomic_number, mass_from_composition, relative_atomic_masses, groups
+from ..periodic import atomic_number, mass_from_composition, relative_atomic_masses, groups, symbols
 from ..testing import requires
 from ..parsing import formula_to_composition, parsing_library
 
@@ -11,7 +11,7 @@ from ..parsing import formula_to_composition, parsing_library
 def test_atomic_number():
     assert atomic_number('U') == 92
     assert atomic_number('carbon') == 6
-    assert atomic_number('ununpentium') == 115
+    assert atomic_number('oganesson') == 118
     with pytest.raises(ValueError):
         atomic_number('unobtainium')
 
@@ -43,3 +43,22 @@ def test_mass_from_composition__formula():
 
     Fminus = mass_from_composition(formula_to_composition('F/-'))
     assert abs(Fminus - 18.998403163 - 5.489e-4) < 1e-7
+
+
+def test_molar_masses_of_the_elements_gh172():
+    from chempy import Substance
+    previous_mass = 0
+    for symbol in symbols:
+        this_mass = Substance.from_formula(symbol).mass
+        # Note that any average atomic masses of naturally occurring isotopes loose their
+        # meaning for trans-uranium elements. The numbers are almost to be considered arbitrary
+        # and the user needs to know what isotope they have at hand (and use isotopic mass).
+        if symbol in ('K', 'Ni', 'I', 'Pa', 'Np', 'Am'):
+            assert this_mass < previous_mass
+        elif symbol in ('Bk', 'Og'):
+            assert this_mass == previous_mass
+        else:
+            assert this_mass > previous_mass
+        previous_mass = this_mass
+
+    assert Substance.from_formula('Hs').mass == 271
