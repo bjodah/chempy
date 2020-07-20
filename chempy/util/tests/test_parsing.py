@@ -51,7 +51,7 @@ def test_formula_to_composition():
     assert formula_to_composition('epsilon-Zn(OH)2(s)') == {1: 2, 8: 2, 30: 1}
 
     # crystal water
-    assert formula_to_composition('Na2CO3.7H2O(s)') == {11: 2, 6: 1, 8: 10, 1: 14}
+    assert formula_to_composition('Na2CO3:7H2O(s)') == {11: 2, 6: 1, 8: 10, 1: 14}
 
 
 @requires(parsing_library)
@@ -132,8 +132,8 @@ def test_formula_to_latex():
     assert formula_to_latex('alpha-FeOOH(s)') == r'\alpha-FeOOH(s)'
     assert formula_to_latex('epsilon-Zn(OH)2(s)') == (
         r'\varepsilon-Zn(OH)_{2}(s)')
-    assert formula_to_latex('Na2CO3.7H2O(s)') == r'Na_{2}CO_{3}\cdot 7H_{2}O(s)'
-    assert formula_to_latex('Na2CO3.1H2O(s)') == r'Na_{2}CO_{3}\cdot H_{2}O(s)'
+    assert formula_to_latex('Na2CO3:7H2O(s)') == r'Na_{2}CO_{3}\cdot 7H_{2}O(s)'
+    assert formula_to_latex('Na2CO3:1H2O(s)') == r'Na_{2}CO_{3}\cdot H_{2}O(s)'
 
 
 @requires(parsing_library)
@@ -159,8 +159,8 @@ def test_formula_to_unicoce():
     assert formula_to_unicode('.NO3-2') == u'⋅NO₃²⁻'
     assert formula_to_unicode('alpha-FeOOH(s)') == u'α-FeOOH(s)'
     assert formula_to_unicode('epsilon-Zn(OH)2(s)') == u'ε-Zn(OH)₂(s)'
-    assert formula_to_unicode('Na2CO3.7H2O(s)') == u'Na₂CO₃·7H₂O(s)'
-    assert formula_to_unicode('Na2CO3.1H2O(s)') == u'Na₂CO₃·H₂O(s)'
+    assert formula_to_unicode('Na2CO3:7H2O(s)') == u'Na₂CO₃:7H₂O(s)'
+    assert formula_to_unicode('Na2CO3:1H2O(s)') == u'Na₂CO₃:H₂O(s)'
 
 
 @requires(parsing_library)
@@ -186,5 +186,5 @@ def test_formula_to_html():
     assert formula_to_html('alpha-FeOOH(s)') == r'&alpha;-FeOOH(s)'
     assert formula_to_html('epsilon-Zn(OH)2(s)') == (
         r'&epsilon;-Zn(OH)<sub>2</sub>(s)')
-    assert formula_to_html('Na2CO3.7H2O(s)') == 'Na<sub>2</sub>CO<sub>3</sub>&sdot;7H<sub>2</sub>O(s)'
-    assert formula_to_html('Na2CO3.1H2O(s)') == 'Na<sub>2</sub>CO<sub>3</sub>&sdot;H<sub>2</sub>O(s)'
+    assert formula_to_html('Na2CO3:7H2O(s)') == 'Na<sub>2</sub>CO<sub>3</sub>&#58;;7H<sub>2</sub>O(s)'
+    assert formula_to_html('Na2CO3:1H2O(s)') == 'Na<sub>2</sub>CO<sub>3</sub>&#58;;H<sub>2</sub>O(s)'
