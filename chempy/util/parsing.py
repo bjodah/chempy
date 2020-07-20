@@ -83,7 +83,7 @@ def _get_formula_parser():
     Suppress, Word, nums, Combine = _p.Suppress, _p.Word, _p.nums, _p.Combine
 
     LPAR, RPAR = map(Suppress, "()")
-    real = Combine(Word(nums) + '.' + Word(nums))
+    real = Combine(Word(nums) + Optional('.' + Word(nums)))
 
     # add parse action to convert reals to floats, to support doing addition
     # and multiplication at parse time
@@ -205,6 +205,8 @@ def _formula_to_parts(formula, prefixes, suffixes):
 def _parse_stoich(stoich):
     if stoich == 'e':  # special case, the electron is not an element
         return {}
+    #elif '.' is in stoich:
+    
     return {symbols.index(k)+1: n for k, n
             in _get_formula_parser().parseString(stoich)}
 
