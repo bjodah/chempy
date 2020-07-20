@@ -220,14 +220,17 @@ _latex_mapping = {k + '-': '\\' + k + '-' for k in _greek_letters}
 _latex_mapping['epsilon-'] = '\\varepsilon-'
 _latex_mapping['omicron-'] = 'o-'
 _latex_mapping['.'] = '^\\bullet '
-_latex_infix_mapping = {'.': '\\cdot '}
+_latex_mapping[':'] = '\\colon'
+_latex_infix_mapping = {':': '\\colon '}
 
 _unicode_mapping = {k + '-': v + '-' for k, v in zip(_greek_letters, _greek_u)}
 _unicode_mapping['.'] = u'⋅'
-_unicode_infix_mapping = {'.': u'·'}
+_unicode_mapping[':'] = u':'
+_unicode_infix_mapping = {':': u':'}
 
 _html_mapping = {k + '-': '&' + k + ';-' for k in _greek_letters}
 _html_mapping['.'] = '&sdot;'
+_html_mapping[':'] = '&#58;'
 _html_infix_mapping = _html_mapping
 
 
@@ -255,7 +258,7 @@ def formula_to_composition(formula, prefixes=None,
     formula: str
         Chemical formula, e.g. 'H2O', 'Fe+3', 'Cl-'
     prefixes: iterable strings
-        Prefixes to ignore, e.g. (':', 'alpha-')
+        Prefixes to ignore, e.g. ( 'alpha-')
     suffixes: tuple of strings
         Suffixes to ignore, e.g. ('(g)', '(s)')
 
@@ -263,7 +266,7 @@ def formula_to_composition(formula, prefixes=None,
     --------
     >>> formula_to_composition('NH4+') == {0: 1, 1: 4, 7: 1}
     True
-    >>> formula_to_composition('.NHO-(aq)') == {0: -1, 1: 1, 7: 1, 8: 1}
+    >>> formula_to_composition(':NHO-(aq)') == {0: -1, 1: 1, 7: 1, 8: 1}
     True
     >>> formula_to_composition('Na2CO3:7H2O') == {11: 2, 6: 1, 8: 10, 1: 14}
     True
