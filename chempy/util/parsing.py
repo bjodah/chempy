@@ -219,7 +219,7 @@ _greek_u = u'αβγδεζηθικλμνξοπρστυφχψω'
 _latex_mapping = {k + '-': '\\' + k + '-' for k in _greek_letters}
 _latex_mapping['epsilon-'] = '\\varepsilon-'
 _latex_mapping['omicron-'] = 'o-'
-_latex_mapping['.'] = '^\\bullet '
+_latex_mapping['.'] = '.'
 _latex_mapping[':'] = '\\colon'
 _latex_infix_mapping = {':': '\\colon '}
 
@@ -449,8 +449,8 @@ def formula_to_latex(formula, prefixes=None, infixes=None, **kwargs):
     'Fe(CN)_{6}^{2+}'
     >>> formula_to_latex('Fe(CN)6+2(aq)')
     'Fe(CN)_{6}^{2+}(aq)'
-    >>> formula_to_latex('.NHO-(aq)')
-    '^\\bullet NHO^{-}(aq)'
+    >>> formula_to_latex(':NHO-(aq)')
+    '^\\colon NHO^{-}(aq)'
     >>> formula_to_latex('alpha-FeOOH(s)')
     '\\alpha-FeOOH(s)'
 
