@@ -205,7 +205,6 @@ def _formula_to_parts(formula, prefixes, suffixes):
 def _parse_stoich(stoich):
     if stoich == 'e':  # special case, the electron is not an element
         return {}
-    #elif '.' is in stoich:
     
     return {symbols.index(k)+1: n for k, n
             in _get_formula_parser().parseString(stoich)}
