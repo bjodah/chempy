@@ -218,15 +218,15 @@ _greek_u = u'αβγδεζηθικλμνξοπρστυφχψω'
 _latex_mapping = {k + '-': '\\' + k + '-' for k in _greek_letters}
 _latex_mapping['epsilon-'] = '\\varepsilon-'
 _latex_mapping['omicron-'] = 'o-'
-_latex_mapping['.'] = '.'
-_latex_infix_mapping = {'.': '.'}
+_latex_mapping['.'] = '^\\bullet '
+_latex_infix_mapping = {'.': '\\cdot '}
 
 _unicode_mapping = {k + '-': v + '-' for k, v in zip(_greek_letters, _greek_u)}
-_unicode_mapping['.'] = u'.'
-_unicode_infix_mapping = {'.': u'.'}
+_unicode_mapping['.'] = u'⋅'
+_unicode_infix_mapping = {'.': u'·'}
 
 _html_mapping = {k + '-': '&' + k + ';-' for k in _greek_letters}
-_html_mapping['.'] = '&#46;'
+_html_mapping['.'] = '&sdot;'
 _html_infix_mapping = _html_mapping
 
 
