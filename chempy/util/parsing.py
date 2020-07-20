@@ -52,17 +52,17 @@ def _get_formula_parser():
 
     BNF for simple chemical formula (no nesting)
 
-        integer :: '0'..'9'+
+        real :: '0'..'9'+
         element :: 'A'..'Z' 'a'..'z'*
-        term :: element [integer]
+        term :: element [real]
         formula :: term+
 
 
     BNF for nested chemical formula
 
-        integer :: '0'..'9'+
+        real :: '0'..'9'+
         element :: 'A'..'Z' 'a'..'z'*
-        term :: (element | '(' formula ')') [integer]
+        term :: (element | '(' formula ')') [real]
         formula :: term+
 
     Notes
@@ -80,14 +80,14 @@ def _get_formula_parser():
     _p = __import__(parsing_library)
     Forward, Group, OneOrMore = _p.Forward, _p.Group, _p.OneOrMore
     Optional, ParseResults, Regex = _p.Optional, _p.ParseResults, _p.Regex
-    Suppress, Word, nums = _p.Suppress, _p.Word, _p.nums
+    Suppress, Word, nums, Combine = _p.Suppress, _p.Word, _p.nums, _p.Combine
 
     LPAR, RPAR = map(Suppress, "()")
-    integer = Word(nums)
+    real = Combine(Word(nums) + '.' + Word(nums))
 
-    # add parse action to convert integers to ints, to support doing addition
+    # add parse action to convert reals to floats, to support doing addition
     # and multiplication at parse time
-    integer.setParseAction(lambda t: int(t[0]))
+    real.setParseAction(lambda t: float(t[0]))
 
     # element = Word(alphas.upper(), alphas.lower())
     # or if you want to be more specific, use this Regex
@@ -101,7 +101,7 @@ def _get_formula_parser():
     formula = Forward()
 
     term = Group((element | Group(LPAR + formula + RPAR)("subgroup")) +
-                 Optional(integer, default=1)("mult"))
+                 Optional(real, default=1)("mult"))
 
     # add parse actions for parse-time processing
 
@@ -218,19 +218,19 @@ _greek_u = u'αβγδεζηθικλμνξοπρστυφχψω'
 _latex_mapping = {k + '-': '\\' + k + '-' for k in _greek_letters}
 _latex_mapping['epsilon-'] = '\\varepsilon-'
 _latex_mapping['omicron-'] = 'o-'
-_latex_mapping['.'] = '^\\bullet '
-_latex_infix_mapping = {'.': '\\cdot '}
+_latex_mapping['.'] = '.'
+_latex_infix_mapping = {'.': '.'}
 
 _unicode_mapping = {k + '-': v + '-' for k, v in zip(_greek_letters, _greek_u)}
-_unicode_mapping['.'] = u'⋅'
-_unicode_infix_mapping = {'.': u'·'}
+_unicode_mapping['.'] = u'.'
+_unicode_infix_mapping = {'.': u'.'}
 
 _html_mapping = {k + '-': '&' + k + ';-' for k in _greek_letters}
-_html_mapping['.'] = '&sdot;'
+_html_mapping['.'] = '&#46;'
 _html_infix_mapping = _html_mapping
 
 
-def _get_leading_integer(s):
+def _get_leading_coeff(s):
     m = re.findall(r'^\d+', s)
     if len(m) == 0:
         m = 1
@@ -254,7 +254,7 @@ def formula_to_composition(formula, prefixes=None,
     formula: str
         Chemical formula, e.g. 'H2O', 'Fe+3', 'Cl-'
     prefixes: iterable strings
-        Prefixes to ignore, e.g. ('.', 'alpha-')
+        Prefixes to ignore, e.g. (':', 'alpha-')
     suffixes: tuple of strings
         Suffixes to ignore, e.g. ('(g)', '(s)')
 
@@ -272,12 +272,12 @@ def formula_to_composition(formula, prefixes=None,
         prefixes = _latex_mapping.keys()
     stoich_tok, chg_tok = _formula_to_parts(formula, prefixes, suffixes)[:2]
     tot_comp = {}
-    parts = stoich_tok.split('.')
+    parts = stoich_tok.split(':')
     for idx, stoich in enumerate(parts):
         if idx == 0:
             m = 1
         else:
-            m, stoich = _get_leading_integer(stoich)
+            m, stoich = _get_leading_coeff(stoich)
         comp = _parse_stoich(stoich)
         for k, v in comp.items():
             if k not in tot_comp:
@@ -321,7 +321,7 @@ def _parse_multiplicity(strings, substance_keys=None):
         elif len(items) == 2:
             if items[1] not in result:
                 result[items[1]] = 0
-            result[items[1]] += float(items[0]) if '.' in items[0] or 'e' in items[0] else int(items[0])
+            result[items[1]] += float(items[0]) if ':' in items[0] or 'e' in items[0] else int(items[0])
         else:
             raise ValueError("To many parts in substring")
     if substance_keys is not None:
@@ -398,14 +398,14 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
 def _formula_to_format(sub, sup, formula, prefixes=None,
                        infixes=None, suffixes=('(s)', '(l)', '(g)', '(aq)')):
     parts = _formula_to_parts(formula, prefixes.keys(), suffixes)
-    stoichs = parts[0].split('.')
+    stoichs = parts[0].split(':')
     string = ''
     for idx, stoich in enumerate(stoichs):
         if idx == 0:
             m = 1
         else:
-            m, stoich = _get_leading_integer(stoich)
-            string += _subs('.', infixes)
+            m, stoich = _get_leading_coeff(stoich)
+            string += _subs(':', infixes)
         if m != 1:
             string += str(m)
         string += re.sub(r'([0-9]+)', lambda m: sub(m.group(1)), stoich)
