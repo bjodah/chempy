@@ -450,7 +450,7 @@ def formula_to_latex(formula, prefixes=None, infixes=None, **kwargs):
     >>> formula_to_latex('Fe(CN)6+2(aq)')
     'Fe(CN)_{6}^{2+}(aq)'
     >>> formula_to_latex(':NHO-(aq)')
-    '^\\colon NHO^{-}(aq)'
+    '\\colon NHO^{-}(aq)'
     >>> formula_to_latex('alpha-FeOOH(s)')
     '\\alpha-FeOOH(s)'
 
