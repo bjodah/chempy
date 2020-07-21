@@ -220,7 +220,7 @@ _latex_mapping = {k + '-': '\\' + k + '-' for k in _greek_letters}
 _latex_mapping['epsilon-'] = '\\varepsilon-'
 _latex_mapping['omicron-'] = 'o-'
 _latex_mapping['.'] = '.'
-_latex_mapping[':'] = '\\mathpunct{:}'
+_latex_mapping[':'] = '\\mathpunct{:} '
 _latex_infix_mapping = {':': '\\mathpunct{:} '}
 
 _unicode_mapping = {k + '-': v + '-' for k, v in zip(_greek_letters, _greek_u)}
