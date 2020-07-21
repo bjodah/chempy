@@ -123,17 +123,17 @@ def test_formula_to_latex():
     assert formula_to_latex('NaCl(s)') == 'NaCl(s)'
     assert formula_to_latex('e-(aq)') == 'e^{-}(aq)'
     assert formula_to_latex('Ca+2(aq)') == 'Ca^{2+}(aq)'
-    assert formula_to_latex(':NO2(g)') == r'\colon NO_{2}(g)'
-    assert formula_to_latex(':NH2') == r'\colon NH_{2}'
+    assert formula_to_latex(':NO2(g)') == r'\mathpunct{:} NO_{2}(g)'
+    assert formula_to_latex(':NH2') == r'\mathpunct{:} NH_{2}'
     assert formula_to_latex('ONOOH') == 'ONOOH'
-    assert formula_to_latex(':ONOO') == r'\colon ONOO'
-    assert formula_to_latex(':NO3/2-') == r'\colon NO_{3}^{2-}'
-    assert formula_to_latex(':NO3-2') == r'\colon NO_{3}^{2-}'
+    assert formula_to_latex(':ONOO') == r'\mathpunct{:} ONOO'
+    assert formula_to_latex(':NO3/2-') == r'\mathpunct{:} NO_{3}^{2-}'
+    assert formula_to_latex(':NO3-2') == r'\mathpunct{:} NO_{3}^{2-}'
     assert formula_to_latex('alpha-FeOOH(s)') == r'\alpha-FeOOH(s)'
     assert formula_to_latex('epsilon-Zn(OH)2(s)') == (
         r'\varepsilon-Zn(OH)_{2}(s)')
-    assert formula_to_latex('Na2CO3:7H2O(s)') == r'Na_{2}CO_{3}\colon 7H_{2}O(s)'
-    assert formula_to_latex('Na2CO3:1H2O(s)') == r'Na_{2}CO_{3}\colon H_{2}O(s)'
+    assert formula_to_latex('Na2CO3:7H2O(s)') == r'Na_{2}CO_{3}\mathpunct{:} 7H_{2}O(s)'
+    assert formula_to_latex('Na2CO3:1H2O(s)') == r'Na_{2}CO_{3}\mathpunct{:} H_{2}O(s)'
 
 
 @requires(parsing_library)
