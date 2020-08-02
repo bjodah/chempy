@@ -7,9 +7,9 @@ from chempy.units import to_unitless, default_units as u
 def jl_dict(od):
     return "Dict([%s])" % ", ".join(['(:%s, %.4g)' % (k, v) for k, v in od.items()])
 
-
 def _r(r, p, substmap, parmap, *, unit_conc, unit_time,
-       variables=None):
+       variables=None # dict(doserate=99.9*u.Gy/u.s, density=998*u.kg/u.m3)
+           ):
     pk, = r.param.unique_keys
     if isinstance(r.param, MassAction):
         ratcoeff = to_unitless(
@@ -59,7 +59,6 @@ end {parameters}
         self.parmap = parmap
         self.unit_conc = kwargs.get('unit_conc', self.defaults['unit_conc'])
         self.unit_time = kwargs.get('unit_time', self.defaults['unit_time'])
-        self.latex_names = kwargs.get('latex_names', None)
 
     @classmethod
     def from_rsystem(cls, rsys, par_vals, *, variables=None, substance_key_map=lambda i, sk: 'y%d' % i, **kwargs):
@@ -75,8 +74,6 @@ end {parameters}
             if pk in pars:
                 raise ValueError("Are you sure (sometimes intentional)?")
             pars[parmap[pk]] = pv
-        if 'latex_names' not in kwargs:
-            kwargs['latex_names'] = {k: s.latex_name for k, s in rsys.substances.items()}
         return cls(rxs=rxs, pars=pars, substance_key_map=substance_key_map, parmap=parmap, **kwargs)
 
     def render_body(self, sparse_jac=False):
@@ -96,11 +93,11 @@ end {parameters}
                                                       k, v in to_unitless(ics, u.molar).items()}))
         if atol:
             export += "abstol_d = %s\n" % jl_dict({self.substance_key_map[k]: v for
-                                                   k, v in to_unitless(atol, u.molar).items()})
+                                                      k, v in to_unitless(atol, u.molar).items()})
             export += "abstol = Array([get(abstol_d, k, 1e-10) for k=keys(speciesmap(rn))])"
         if tex:
             export += "subst_tex = Dict([%s])\n" % ", ".join(
-                '(:%s, ("%s", "%s"))' % (v, k, self.latex_names[k]) for
+                '(:%s, ("%s", "%s"))' % (v, k, armor_rsys.substances[k].latex_name) for
                 k, v in self.substance_key_map.items())
         if tspan:
             export += """\
@@ -112,5 +109,42 @@ oprob = ODEProblem(rn, u0, tspan, parr)
         return export
 
     def render_solve(self):
-        return ("sol = solve(oprob, reltol=1e-9, abstol=abstol, Rodas5(), "
-                "callback=PositiveDomain(ones(length(u0)), abstol=abstol))")
+        return "sol = solve(oprob, reltol=1e-9, abstol=abstol, Rodas5(), callback=PositiveDomain(ones(length(u0)), abstol=abstol))"
+
+
+def to_diffeqbiojl(arm, arm_extra, *, doserate, substance_key_map=lambda i, sk: 'y%d' % i):
+    if not isinstance(substance_key_map, dict):
+        substance_key_map = {sk: substance_key_map(si, sk) for si, sk in enumerate(arm.substances)}
+    parmap = dict(zip([r.param.unique_keys[0] for r in arm.rxns], ('k%d' % i for i in range(1, 999))))
+    rxs, pars = [], OrderedDict()
+    for r in arm.rxns:
+        rs, pk, pv = _r(r, arm_extra['params'], doserate, substance_key_map, parmap)
+        rxs.append(rs)
+        if pk in pars:
+            raise ValueError("Are you sure (sometimes intentional)?")
+        pars[parmap[pk]] = pv
+
+    return dict(
+        rn=_diffeqbiojl_tmplt.format(
+            name='rn',
+            reactions='\n    '.join(rxs),
+            parameters=' '.join(pars)
+        ),
+        substance_key_map=substance_key_map,
+        parmap=parmap,
+        pars=pars
+    )
+
+
+def export2julia(armor_rsys, armor_extra, *, ics, kw2=None):
+    debj = to_diffeqbiojl(armor_rsys, armor_extra, **(kw2 or {}))
+    export = debj['rn']
+
+    # str(od).replace('Ordered', '').replace("',", ',').replace("'", ":")
+    export += "p = %s\n" % jl_dict(debj['pars'])
+    export += "ics = %s\n" % jl_dict(OrderedDict({debj['substance_key_map'][k]: v for
+                                                k, v in to_unitless(ics, u.molar).items()}))
+    export += "subst_tex = Dict([%s])\n" % ", ".join(
+        '(:%s, ("%s", "%s"))' % (v, k, armor_rsys.substances[k].latex_name) for
+        k, v in debj['substance_key_map'].items())
+    return export
