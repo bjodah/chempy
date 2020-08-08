@@ -3,6 +3,10 @@
 #
 #    $ ./scripts/release.sh v1.2.3 GITHUB_USER GITHUB_REPO
 #
+# or, using some host specific settings:
+#
+#    $ export PYODESYS_CVODE_FLAGS="-isystem /opt/sundials-5.3.0-rel-klu-lapack/include -isystem /usr/include/suitesparse" PYODESYS_CVODE_LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,/opt/sundials-5.3.0-rel-klu-lapack/lib:/opt/openblas-0.3.9/lib -L/opt/sundials-5.3.0-rel-klu-lapack/lib -L/opt/openblas-0.3.9/lib -lopenblas"
+#    $ ./scripts/release.sh ...
 
 if [[ $1 != v* ]]; then
     echo "Argument does not start with 'v'"
@@ -20,7 +24,7 @@ PKG=$(find . -maxdepth 2 -name __init__.py -print0 | xargs -0 -n1 dirname | xarg
 ! grep --include "*.py" "will_be_missing_in='$VERSION'" -R $PKG/  # see deprecation()
 PKG_UPPER=$(echo $PKG | tr '[:lower:]' '[:upper:]')
 ./scripts/run_tests.sh
-env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION python setup.py sdist
+env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION python3 setup.py sdist
 env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION ./scripts/generate_docs.sh
 
 # All went well, add a tag and push it.
