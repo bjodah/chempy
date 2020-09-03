@@ -471,3 +471,14 @@ def test_uniform():
 @requires(units_library)
 def test_fold_constants():
     assert abs(fold_constants(dc.pi) - np.pi) < 1e-15
+
+
+@requires('numpy')
+def test_to_unitless___0D_array_with_object():
+    from ..util._expr import Constant
+    # b = Backend('sympy')
+    # pi = np.array(b.pi)
+    pi = np.array(Constant(np.pi))
+    one_thousand = to_unitless(pi * u.metre, u.millimeter)
+    assert get_physical_dimensionality(one_thousand) == {}
+    assert abs(magnitude(one_thousand) - np.arctan(1)*4e3) < 1e-12

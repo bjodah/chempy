@@ -14,9 +14,16 @@ from chempy.units import (
 )
 from ..testing import requires
 from ..pyutil import defaultkeydict
-from .._expr import Expr, mk_Poly, mk_PiecewisePoly, create_Piecewise, create_Poly, Log10
+from .._expr import Expr, mk_Poly, mk_PiecewisePoly, create_Piecewise, create_Poly, Log10, Constant
 from ..parsing import parsing_library
 
+
+def test_Constant():
+    c23 = Constant(2.3)
+    assert abs(2.3 - float(c23)) < 1e-15
+
+    c_div = Constant(2.3)/Constant(3.4)
+    assert abs(2.3/3.4 - float(c_div)) < 1e-15
 
 class HeatCapacity(Expr):
     parameter_keys = ('temperature',)
@@ -49,6 +56,8 @@ def test_Expr():
     cv = _get_cv()
     _ref = 0.8108020083055849
     assert abs(cv['Al']({'temperature': 273.15, 'molar_gas_constant': 8.3145}) - _ref) < 1e-14
+    with pytest.raises(Exception):
+        float(cv['Al'])
 
 
 def _poly(args, x, backend=None):
