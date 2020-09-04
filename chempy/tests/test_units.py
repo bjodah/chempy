@@ -11,7 +11,7 @@ import pytest
 
 from ..util.testing import requires
 from ..units import (
-    allclose, concatenate, concentration, fold_constants, energy, get_derived_unit, is_unitless, linspace, logspace_from_lin,
+    amount, allclose, concatenate, concentration, fold_constants, energy, get_derived_unit, is_unitless, linspace, logspace_from_lin,
     SI_base_registry, unitless_in_registry, format_string, get_physical_dimensionality,
     to_unitless, length, magnitude, mass, time, default_unit_in_registry, Backend, latex_of_unit,
     unit_of, unit_registry_to_human_readable, units_library, volume, simplified, uniform,
