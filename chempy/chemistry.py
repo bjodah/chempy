@@ -539,8 +539,12 @@ class Reaction(object):
 
     def check_consistent_units(self, throw=False):
         if is_quantity(self.param):  # This will assume mass action
+            if isinstance(self.param.item(), Expr):
+                param = self.param.item()({"temperature": 1*default_units.K})*self.param.units
+            else:
+                param = self.param
             try:
-                to_unitless(self.param/(
+                to_unitless(param/(
                     default_units.molar**(1-self.order())/default_units.s))
             except Exception:
                 if throw:

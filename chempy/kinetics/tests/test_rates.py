@@ -6,6 +6,7 @@ import math
 import pytest
 
 from chempy import Reaction, ReactionSystem, Substance
+from chempy.chemistry import Reaction, Equilibrium
 from chempy.units import (
     allclose, Backend, to_unitless, units_library, patched_numpy, default_constants, simplified,
     default_units as u
@@ -102,6 +103,10 @@ def test_MassAction__expression():
          dH_over_R  =  -0.87e3 * u.cal/u.mol     / default_constants.molar_gas_constant,  # NOQA
          Tref       = 298.15   * u.K                                                      # NOQA
     ))
+    reac_prod = {"NH3": 1, "H2O": 1}, {"NH4+": 1, "OH-": 1}
+    Equilibrium(*reac_prod, GeNH3).check_consistent_units(throw=True)
+    Equilibrium(*reac_prod[::-1], 1/GeNH3).check_consistent_units(throw=True)
+
     Ea = 40e3*u.J/u.mol
     R = default_constants.molar_gas_constant
     A, Ea_over_R = 1.2e11/u.molar**2/u.second, Ea/R
@@ -115,12 +120,17 @@ def test_MassAction__expression():
     assert all(isinstance(expr, MassAction) for expr in [
         ma_mul_expr, ma_div_expr, expr_mul_ma, expr_div_ma])
 
+    Reaction(*reac_prod, ama).check_consistent_units(throw=True)
+    Reaction(*reac_prod[::-1], 42*ma_div_expr).check_consistent_units(throw=True)
+    Reaction(*reac_prod[::-1], 42/u.M/u.s/GeNH3).check_consistent_units(throw=True)
+
     varbls = {'temperature': 298.15*u.K}
     r_ama, r_GeNH3 = ama.rate_coeff(varbls), GeNH3(varbls)
     assert allclose(ma_mul_expr.rate_coeff(varbls), r_ama * r_GeNH3)
     assert allclose(ma_div_expr.rate_coeff(varbls), r_ama / r_GeNH3)
     assert allclose(expr_mul_ma.rate_coeff(varbls), r_GeNH3 * r_ama)
     assert allclose(expr_div_ma.rate_coeff(varbls), r_GeNH3 / r_ama)
+
 
 
 def test_Expr__from_callback():

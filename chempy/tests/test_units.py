@@ -11,13 +11,18 @@ import pytest
 
 from ..util.testing import requires
 from ..units import (
-    allclose, concatenate, fold_constants, get_derived_unit, is_unitless, linspace, logspace_from_lin,
+    allclose, concatenate, concentration, fold_constants, energy, get_derived_unit, is_unitless, linspace, logspace_from_lin,
     SI_base_registry, unitless_in_registry, format_string, get_physical_dimensionality,
-    to_unitless, magnitude, default_unit_in_registry, Backend, latex_of_unit,
-    unit_of, unit_registry_to_human_readable, units_library, simplified, uniform,
+    to_unitless, length, magnitude, mass, time, default_unit_in_registry, Backend, latex_of_unit,
+    unit_of, unit_registry_to_human_readable, units_library, volume, simplified, uniform,
     unit_registry_from_human_readable, _sum, UncertainQuantity, compare_equality,
     default_units as u, patched_numpy as pnp, default_constants as dc
 )
+
+
+def test_dimensionality():
+    assert mass + 2*length - 2*time == energy
+    assert amount - 3*volume == concentration
 
 
 @requires(units_library)
