@@ -6,7 +6,7 @@ import math
 import pytest
 
 from chempy import Reaction, ReactionSystem, Substance
-from chempy.chemistry import Reaction, Equilibrium
+from chempy.chemistry import Equilibrium
 from chempy.units import (
     allclose, Backend, to_unitless, units_library, patched_numpy, default_constants, simplified,
     default_units as u
