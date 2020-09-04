@@ -22,7 +22,7 @@ from ..units import (
 
 def test_dimensionality():
     assert mass + 2*length - 2*time == energy
-    assert amount - 3*volume == concentration
+    assert amount - 3*length == concentration
 
 
 @requires(units_library)
