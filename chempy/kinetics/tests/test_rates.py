@@ -132,7 +132,6 @@ def test_MassAction__expression():
     assert allclose(expr_div_ma.rate_coeff(varbls), r_GeNH3 / r_ama)
 
 
-
 def test_Expr__from_callback():
     def rate_coeff(args, T, reaction, backend=math):
         return args[0]*backend.exp(args[1]/T)

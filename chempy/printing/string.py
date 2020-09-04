@@ -2,6 +2,7 @@ from operator import itemgetter
 from .printer import Printer
 from ..units import is_quantity
 
+
 class StrPrinter(Printer):
     _default_settings = dict(
         Printer._default_settings,

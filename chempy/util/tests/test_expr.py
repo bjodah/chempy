@@ -25,6 +25,7 @@ def test_Constant():
     c_div = Constant(2.3)/Constant(3.4)
     assert abs(2.3/3.4 - float(c_div)) < 1e-15
 
+
 class HeatCapacity(Expr):
     parameter_keys = ('temperature',)
 
