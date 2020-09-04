@@ -127,6 +127,14 @@ def is_quantity(arg):
     else:
         return False
 
+# SI Base Quantities:
+time = ArithmeticDict(int, {'time': 1})
+length = ArithmeticDict(int, {'length': 1})
+mass = ArithmeticDict(int, {'mass': 1})
+current = ArithmeticDict(int, {'current': 1})
+temperature = ArithmeticDict(int, {'temperature': 1})
+amount = ArithmeticDict(int, {'amount': 1})
+# intensity = ArithmeticDict(int, {'intensity': 1}) what's wrong with photon flux? (human eyes, bah!)
 
 energy = ArithmeticDict(int, {'mass': 1, 'length': 2, 'time': -2})
 volume = ArithmeticDict(int, {'length': 3})

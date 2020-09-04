@@ -11,13 +11,19 @@ import pytest
 
 from ..util.testing import requires
 from ..units import (
-    allclose, concatenate, fold_constants, get_derived_unit, is_unitless, linspace, logspace_from_lin,
-    SI_base_registry, unitless_in_registry, format_string, get_physical_dimensionality,
-    to_unitless, magnitude, default_unit_in_registry, Backend, latex_of_unit,
-    unit_of, unit_registry_to_human_readable, units_library, simplified, uniform,
+    amount, allclose, concatenate, concentration, fold_constants, energy, get_derived_unit, is_unitless,
+    linspace, logspace_from_lin, SI_base_registry, unitless_in_registry, format_string, get_physical_dimensionality,
+    to_unitless, length, magnitude, mass, time, default_unit_in_registry, Backend, latex_of_unit,
+    unit_of, unit_registry_to_human_readable, units_library, volume, simplified, uniform,
     unit_registry_from_human_readable, _sum, UncertainQuantity, compare_equality,
     default_units as u, patched_numpy as pnp, default_constants as dc
 )
+
+
+def test_dimensionality():
+    assert mass + 2*length - 2*time == energy
+    assert amount - 3*length == concentration
+    assert 3*length == volume
 
 
 @requires(units_library)
@@ -471,3 +477,14 @@ def test_uniform():
 @requires(units_library)
 def test_fold_constants():
     assert abs(fold_constants(dc.pi) - np.pi) < 1e-15
+
+
+@requires('numpy')
+def test_to_unitless___0D_array_with_object():
+    from ..util._expr import Constant
+    # b = Backend('sympy')
+    # pi = np.array(b.pi)
+    pi = np.array(Constant(np.pi))
+    one_thousand = to_unitless(pi * u.metre, u.millimeter)
+    assert get_physical_dimensionality(one_thousand) == {}
+    assert abs(magnitude(one_thousand) - np.arctan(1)*4e3) < 1e-12

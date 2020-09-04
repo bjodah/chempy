@@ -204,6 +204,9 @@ class Expr(object):
     def __call__(self, variables, backend=math, **kwargs):
         raise NotImplementedError("Subclass and implement __call__")
 
+    def __float__(self):
+        return float(self({}))
+
     def _all_keys(self, attr):
         _keys = getattr(self, attr)
         _all = set() if _keys is None else set(_keys)
