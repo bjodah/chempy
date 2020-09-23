@@ -14,7 +14,7 @@ from chempy.units import (
 )
 from ..testing import requires
 from ..pyutil import defaultkeydict
-from .._expr import Expr, mk_Poly, mk_PiecewisePoly, create_Piecewise, create_Poly, Log10, Constant
+from .._expr import Expr, mk_Poly, mk_PiecewisePoly, create_Piecewise, create_Poly, Log10, Constant, Symbol as _Symbol
 from ..parsing import parsing_library
 
 
@@ -550,3 +550,14 @@ def test_implicit_str():
     assert abs(expr2({'x': 3, 'u': 5}) - 5/(1 + 2*3 + 3*9)) < 1e-12
     assert expr1.all_parameter_keys() == set(['x'])
     assert expr2.all_parameter_keys() == set(['x'])
+
+
+def test_Symbol():
+    a = _Symbol.fk("a")
+    b = _Symbol.fk("b")
+    assert not a == b
+    assert not a == b*0
+    assert not a == 0*b
+    assert not a*-0.0 == b*0.0
+    assert not a*0.0 == b*-0.0
+    assert False
