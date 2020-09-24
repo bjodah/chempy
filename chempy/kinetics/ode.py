@@ -640,7 +640,7 @@ def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None, i
             expr = expr.replace(backend.log(w**v), v*backend.log(w))
             return expr
 
-    seen = [False]*len(args)
+    seen = [False]*len(conditions)
     rates = {}
     for k, v in rsys.rates(symbols).items():
         expr = transform(v)
@@ -649,7 +649,7 @@ def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None, i
         else:
             rate = None
             for term in (expr.args if hasattr(expr, 'is_Add') and expr.is_Add else (expr,)):
-                args = sorted(expr.free_symbols)
+                args = sorted(expr.free_symbols, key=lambda e: e.name)
                 values = [conditions[s.name] for s in args]
                 result = backend.lambdify(args, expr)(*values)
                 to_unitless(result, u.molar/u.second)  # raises an exception upon unit error
@@ -658,7 +658,8 @@ def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None, i
                 else:
                     rate += result
         rates[k] = rate
-        seen = [b or a in expr.free_symbols for b, a in zip(seen, args)]
+        free_symbol_names = [s.name for s in expr.free_symbols]
+        seen = [b or k in free_symbol_names for b, k in zip(seen, conditions)]
     not_seen = [a for s, a in zip(seen, args) if not s]
     for k in conditions:
         if k not in odesys.param_names and k not in odesys.names and k not in ignore:
