@@ -607,6 +607,12 @@ def _mk_unit_aware_solve(odesys, unit_registry, validate):
     return solve
 
 
+def _exact(v):
+    if hasattr(v, '_uncertainty'):
+        return v.magnitude*v.units
+    else:
+        return v
+
 def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None, ignore=('time',)):
     """ For use with create_odesys
 
@@ -651,7 +657,7 @@ def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None, i
             for term in (expr.args if hasattr(expr, 'is_Add') and expr.is_Add else (expr,)):
                 args = sorted(expr.free_symbols, key=lambda e: e.name)
                 values = [conditions[s.name] for s in args]
-                result = backend.lambdify(args, expr)(*values)
+                result = backend.lambdify(args, expr)(*map(_exact, values))
                 to_unitless(result, u.molar/u.second)  # raises an exception upon unit error
                 if rate is None:
                     rate = result
