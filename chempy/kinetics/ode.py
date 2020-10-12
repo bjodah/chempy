@@ -468,7 +468,7 @@ def chained_parameter_variation(odesys, durations, init_conc, varied_params, def
 
 def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_replace=lambda x: x,
                    backend=None, SymbolicSys=None, time_symbol=None, unit_registry=None, rates_kw=None,
-                   parameter_expressions=None):
+                   parameter_expressions=None, symbolic_kw=None):
     """ This will be a simpler version of get_odesys without the unit handling code.
     The motivation is to reduce complexity (the code of get_odesys is long with multiple closures).
 
@@ -495,6 +495,8 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
         Keyword arguments passed to the ``rates`` method of rsys.
     parameter_expressions : dict
         Optional overrides.
+    symbolic_kw : dict
+        Keyword arguments passed on to SymbolicSys.
 
     Returns
     -------
@@ -564,7 +566,8 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
         linear_invariant_names=list(map(str, compo_names)),
         backend=backend,
         dep_by_name=True,
-        par_by_name=True
+        par_by_name=True,
+        **(symbolic_kw or {})
     )
 
     validate = partial(_validate, rsys=rsys, symbols=symbols, odesys=odesys, backend=backend)
