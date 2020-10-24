@@ -616,7 +616,8 @@ def _exact(v):
     else:
         return v
 
-def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None, ignore=('time',)):
+def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None, ignore=('time',),
+              check_conditions_no_extra=False):
     """ For use with create_odesys
 
     Parameters
@@ -629,6 +630,8 @@ def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None, i
     backend : module
         Module for symbolic mathematics. (defaults to SymPy)
     transform : callable for rewriting expressions
+    check_conditions_no_extra : bool
+        When True, conditions may not contain keys not referenced in any expression.
 
     Raises
     ------
@@ -670,7 +673,8 @@ def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None, i
         free_symbol_names = [s.name for s in expr.free_symbols]
         seen = [b or k in free_symbol_names for b, k in zip(seen, conditions)]
     not_seen = [a for s, a in zip(seen, args) if not s]
-    for k in conditions:
-        if k not in odesys.param_names and k not in odesys.names and k not in ignore:
-            raise KeyError("Unknown param: %s" % k)
+    if check_conditions_no_extra:
+        for k in conditions:
+            if k not in odesys.param_names and k not in odesys.names and k not in ignore:
+                raise KeyError("Unknown param: %s" % k)
     return {'not_seen': not_seen, 'rates': rates}
