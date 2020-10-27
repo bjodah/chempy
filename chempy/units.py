@@ -288,7 +288,7 @@ def is_unitless(expr):
 
     """
     if hasattr(expr, 'dimensionality'):
-        if expr == pq.dimensionless:
+        if expr.dimensionality == pq.dimensionless:
             return True
         else:
             return expr.simplified.dimensionality == pq.dimensionless.dimensionality
