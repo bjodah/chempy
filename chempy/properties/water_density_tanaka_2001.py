@@ -79,6 +79,7 @@ def water_density(T=None, T0=None, units=None, a=None,
         warnings.warn("Temperature is outside range (0-40 degC)")
     return a[4]*(1-((t + a[0])**2*(t + a[1]))/(a[2]*(t + a[3])))
 
+
 # bibtex format (generated at doi2bib.org):
 reference = {
     'doi': '10.1088/0026-1394/38/4/3',

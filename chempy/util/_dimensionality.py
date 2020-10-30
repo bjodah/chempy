@@ -21,4 +21,5 @@ class DimensionalitySI(defaultnamedtuple('DimensionalitySIBase', dimension_codes
     def __pow__(self, exp):
         return self.__class__(*(x*exp for x in self))
 
+
 base_registry = {name: DimensionalitySI(**{name: 1}) for name in dimension_codes}

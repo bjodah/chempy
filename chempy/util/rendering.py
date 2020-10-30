@@ -23,4 +23,5 @@ class TemplateEvaluator:
             template = template.replace(self.fmt % item, str(ev))
         return template
 
+
 eval_template = TemplateEvaluator(post_procs=(fold_constants, lambda x: str(x).replace(' ', '*')))

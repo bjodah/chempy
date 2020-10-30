@@ -188,57 +188,57 @@ def B(eps_r, T, rho, b0=1, constants=None, units=None, backend=None):
     return B
 
 
-def limiting_log_gamma(I, z, A, I0=1, backend=None):
+def limiting_log_gamma(IS, z, A, I0=1, backend=None):
     """ Debye-Hyckel limiting formula """
     be = get_backend(backend)
-    one = be.pi**0
-    return -A*z**2*(I/I0)**(one/2)
+    one = be.pi ** 0
+    return -A*z**2*(IS/I0)**(one/2)
 
 
-def extended_log_gamma(I, z, a, A, B, C=0, I0=1, backend=None):
+def extended_log_gamma(IS, z, a, A, B, C=0, I0=1, backend=None):
     """ Debye-Huckel extended formula """
     be = get_backend(backend)
-    one = be.pi**0
-    I_I0 = I/I0
-    sqrt_I_I0 = (I_I0)**(one/2)
+    one = be.pi ** 0
+    I_I0 = IS / I0
+    sqrt_I_I0 = (I_I0) ** (one / 2)
     return -A*z**2 * sqrt_I_I0/(1 + B*a*sqrt_I_I0) + C*I_I0
 
 
-def davies_log_gamma(I, z, A, C=-0.3, I0=1, backend=None):
+def davies_log_gamma(IS, z, A, C=-0.3, I0=1, backend=None):
     """ Davies formula """
     be = get_backend(backend)
     one = be.pi**0
-    I_I0 = I/I0
+    I_I0 = IS/I0
     sqrt_I_I0 = (I_I0)**(one/2)
     return -A * z**2 * (sqrt_I_I0/(1 + sqrt_I_I0) + C*I_I0)
 
 
-def limiting_activity_product(I, stoich, z, T, eps_r, rho, backend=None):
+def limiting_activity_product(IS, stoich, z, T, eps_r, rho, backend=None):
     """ Product of activity coefficients based on DH limiting law. """
     be = get_backend(backend)
     Aval = A(eps_r, T, rho)
     tot = 0
     for idx, nr in enumerate(stoich):
-        tot += nr*limiting_log_gamma(I, z[idx], Aval)
+        tot += nr*limiting_log_gamma(IS, z[idx], Aval)
     return be.exp(tot)
 
 
-def extended_activity_product(I, stoich, z, a, T, eps_r, rho, C=0, backend=None):
+def extended_activity_product(IS, stoich, z, a, T, eps_r, rho, C=0, backend=None):
     be = get_backend(backend)
     Aval = A(eps_r, T, rho)
     Bval = B(eps_r, T, rho)
     tot = 0
     for idx, nr in enumerate(stoich):
-        tot += nr*extended_log_gamma(I, z[idx], a[idx], Aval, Bval, C)
+        tot += nr*extended_log_gamma(IS, z[idx], a[idx], Aval, Bval, C)
     return be.exp(tot)
 
 
-def davies_activity_product(I, stoich, z, a, T, eps_r, rho, C=-0.3, backend=None):
+def davies_activity_product(IS, stoich, z, a, T, eps_r, rho, C=-0.3, backend=None):
     be = get_backend(backend)
     Aval = A(eps_r, T, rho)
     tot = 0
     for idx, nr in enumerate(stoich):
-        tot += nr*davies_log_gamma(I, z[idx], Aval, C)
+        tot += nr*davies_log_gamma(IS, z[idx], Aval, C)
     return be.exp(tot)
 
 
@@ -246,13 +246,13 @@ class LimitingDebyeHuckelActivityProduct(_ActivityProductBase):
 
     def __call__(self, c):
         z = self.args[0]
-        I = ionic_strength(c, z)
-        return limiting_activity_product(I, self.stoich, *self.args)
+        IS = ionic_strength(c, z)
+        return limiting_activity_product(IS, self.stoich, *self.args)
 
 
 class ExtendedDebyeHuckelActivityProduct(_ActivityProductBase):
 
     def __call__(self, c):
         z = self.args[0]
-        I = ionic_strength(c, z)
-        return extended_activity_product(I, self.stoich, *self.args)
+        IS = ionic_strength(c, z)
+        return extended_activity_product(IS, self.stoich, *self.args)

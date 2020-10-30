@@ -73,6 +73,7 @@ def water_self_diffusion_coefficient(T=None, units=None, warn=True,
         warnings.warn("Temperature is outside range (0-100 degC)")
     return _D0*((T/_TS) - 1)**gamma
 
+
 # bibtex format (generated at doi2bib.org):
 reference = {
     'doi': '10.1039/b005319h',

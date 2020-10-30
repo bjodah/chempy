@@ -16,6 +16,7 @@ from ..arrhenius import (
 def test_arrhenius_equation():
     assert abs(arrhenius_equation(3, 831.4472, 100) - 3/2.7182818) < 1e-7
 
+
 _A1, _Ea1, _T1, _k1 = 1e10, 42e3, 273.15, 1e10 * math.exp(-42e3/(8.3145*273.15))
 
 

@@ -47,13 +47,13 @@ else:
 
     default_units = NameSpace(pq)
     default_units.dm = default_units.decimetre = pq.UnitQuantity(
-        'decimetre',  default_units.m / 10.0, u_symbol='dm')
+        'decimetre', default_units.m / 10.0, u_symbol='dm')
     default_units.m3 = default_units.metre**3
     default_units.dm3 = default_units.decimetre**3
     default_units.cm3 = default_units.centimetre**3
     if not hasattr(default_units, 'molar'):
         default_units.molar = pq.UnitQuantity(
-            'M',  1e3 * default_units.mole/default_units.m3,
+            'M', 1e3 * default_units.mole/default_units.m3,
             u_symbol='M')
     if not hasattr(default_units, 'millimolar'):
         default_units.millimolar = pq.UnitQuantity(
@@ -61,7 +61,7 @@ else:
             u_symbol='mM')
     if not hasattr(default_units, 'micromolar'):
         default_units.micromolar = pq.UnitQuantity(
-            'uM',  1e-3 * default_units.mole/default_units.m3,
+            'uM', 1e-3 * default_units.mole/default_units.m3,
             u_symbol='μM')
     if not hasattr(default_units, 'nanomolar'):
         default_units.nanomolar = pq.UnitQuantity(
@@ -69,7 +69,7 @@ else:
             u_symbol='nM')
     if not hasattr(default_units, 'molal'):
         default_units.molal = pq.UnitQuantity(
-            'molal',  default_units.mole / default_units.kg,
+            'molal', default_units.mole / default_units.kg,
             u_symbol='molal')
     if not hasattr(default_units, 'per100eV'):
         default_units.per100eV = pq.UnitQuantity(
@@ -78,16 +78,16 @@ else:
             u_symbol='(100eV)**-1')
     if not hasattr(default_units, 'micromole'):
         default_units.micromole = pq.UnitQuantity(
-            'micromole',  pq.mole/1e6,  u_symbol=u'μmol')
+            'micromole', pq.mole/1e6, u_symbol=u'μmol')
     if not hasattr(default_units, 'nanomole'):
         default_units.nanomole = pq.UnitQuantity(
-            'nanomole',  pq.mole/1e9,  u_symbol=u'nmol')
+            'nanomole', pq.mole/1e9, u_symbol=u'nmol')
     if not hasattr(default_units, 'kilojoule'):
         default_units.kilojoule = pq.UnitQuantity(
-            'kilojoule',  1e3*pq.joule,  u_symbol='kJ')
+            'kilojoule', 1e3*pq.joule, u_symbol='kJ')
     if not hasattr(default_units, 'kilogray'):
         default_units.kilogray = pq.UnitQuantity(
-            'kilogray',  1e3*pq.gray,  u_symbol='kGy')
+            'kilogray', 1e3*pq.gray, u_symbol='kGy')
     if not hasattr(default_units, 'perMolar_perSecond'):
         default_units.perMolar_perSecond = 1/default_units.molar/pq.s
     if not hasattr(default_units, 'umol'):
@@ -134,6 +134,7 @@ def is_quantity(arg):
         return True  # this checks works even if quantities is not installed.
     else:
         return False
+
 
 # SI Base Quantities:
 time = ArithmeticDict(int, {'time': 1})
@@ -718,6 +719,7 @@ def _wrap_numpy(k):
     def f(*args, **kwargs):
         return numpy_func(*map(to_unitless, args), **kwargs)
     return f
+
 
 if np is None:
     patched_numpy = None

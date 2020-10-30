@@ -22,6 +22,7 @@ RELEASE_VERSION = os.environ.get('%s_RELEASE_VERSION' % pkg_name.upper(), '')  #
 def _path_under_setup(*args):
     return os.path.join(os.path.dirname(__file__), *args)
 
+
 release_py_path = _path_under_setup(pkg_name, '_release.py')
 
 if len(RELEASE_VERSION) > 0:
@@ -92,7 +93,7 @@ extras_req = {
     'native': ['pycompilation>=0.4.12', 'pycodeexport>=0.1.3', 'appdirs'],
     'docs': ['Sphinx', 'sphinx_rtd_theme', 'numpydoc'],
     'plotting': ['bokeh>=0.13.0', 'ipywidgets'],
-    'testing': ['pytest>=3.9', 'pytest-cov', 'pytest-flakes', 'rstcheck']
+    'testing': ['pytest>=3.9', 'pytest-cov', 'pytest-flake8', 'rstcheck']
 }
 extras_req['all'] = list(chain(extras_req.values()))
 
@@ -125,10 +126,10 @@ if __name__ == '__main__':
             # Same commit should generate different sdist
             # depending on tagged version (set CHEMPY_RELEASE_VERSION)
             # this will ensure source distributions contain the correct version
-            shutil.move(release_py_path, release_py_path+'__temp__')
+            shutil.move(release_py_path, release_py_path + '__temp__')
             open(release_py_path, 'wt').write(
                 "__version__ = '{}'\n".format(__version__))
         setup(**setup_kwargs)
     finally:
         if TAGGED_RELEASE:
-            shutil.move(release_py_path+'__temp__', release_py_path)
+            shutil.move(release_py_path + '__temp__', release_py_path)

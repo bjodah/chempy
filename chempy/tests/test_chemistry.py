@@ -36,9 +36,9 @@ def test_Substance():
 
 
 def test_Substance__2():
-    H2O = Substance(name='H2O',  charge=0, latex_name=r'\mathrm{H_{2}O}',
+    H2O = Substance(name='H2O', charge=0, latex_name=r'\mathrm{H_{2}O}',
                     data={'pKa': 14})  # will_be_missing_in='0.8.0', use data=...
-    OH_m = Substance(name='OH-',  charge=-1, latex_name=r'\mathrm{OH^{-}}')
+    OH_m = Substance(name='OH-', charge=-1, latex_name=r'\mathrm{OH^{-}}')
     assert sorted([OH_m, H2O], key=attrgetter('name')) == [H2O, OH_m]
 
 
@@ -450,7 +450,7 @@ C + CO       -> C + CO + CO2  # suggested solution:      2 CO      -> C +      C
 C +      CO2 -> C + CO + CO2  # suggested solution:  C +      CO2 ->     2 CO
     CO + CO2 -> C + CO + CO2  # suggested solution:      2 CO      -> C +      CO2
 """
-    for prob, sol in [l.split('#') for l in cases.strip().splitlines()]:
+    for prob, sol in [line.split('#') for line in cases.strip().splitlines()]:
         tst_r = Reaction.from_string(prob)
         ref_r = Reaction.from_string(sol.split(':')[1])
         tst_bal = balance_stoichiometry(tst_r.reac, tst_r.prod,
@@ -458,8 +458,8 @@ C +      CO2 -> C + CO + CO2  # suggested solution:  C +      CO2 ->     2 CO
         assert Reaction(*tst_bal) == ref_r
 
     with pytest.raises(ValueError):
-            balance_stoichiometry({'C', 'CO', 'CO2'}, {'C', 'CO', 'CO2'},
-                                  allow_duplicates=True, underdetermined=None)
+        balance_stoichiometry({'C', 'CO', 'CO2'}, {'C', 'CO', 'CO2'},
+                              allow_duplicates=True, underdetermined=None)
 
     gh120 = {'H4P2O7', 'HPO3', 'H2O'}, {'H4P2O7', 'HPO3'}
     bal120 = balance_stoichiometry(*gh120, allow_duplicates=True, underdetermined=None)

@@ -162,5 +162,5 @@ def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False
 
     if 'p_includes' not in ns_extend:
         ns_extend['p_includes'] = set()
-    ns_extend['p_includes'] |= {"<type_traits>",  "<vector>"}
+    ns_extend['p_includes'] |= {"<type_traits>", "<vector>"}
     return native_sys[integrator].from_other(odesys, namespace_extend=ns_extend, **kw)

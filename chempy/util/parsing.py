@@ -208,6 +208,7 @@ def _parse_stoich(stoich):
     return {symbols.index(k)+1: n for k, n
             in _get_formula_parser().parseString(stoich)}
 
+
 _greek_letters = (
     'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta',
     'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'omicron', 'pi', 'rho',
