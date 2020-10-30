@@ -56,6 +56,7 @@ pipeline:
       - python3 -m virtualenv /tmp/test_sdist
       - python3 -m virtualenv /tmp/test_git_archive
       - cd deploy/public_html/branches/${DRONE_BRANCH}
+      - unset CHEMPY_SKIP_NO_TESTS  # I can't get pip to install extras when using local file...
       - bash -c "source /tmp/test_sdist/bin/activate; pip install --cache-dir ./ci_cache/pip_cache file://$(realpath $(eval ls chempy-*.tar.gz))#chempy[all] pytest; pytest --pyargs chempy"
       - bash -c "source /tmp/test_git_archive/bin/activate; pip install --cache-dir ./ci_cache/pip_cache file://$(realpath chempy-head.zip)#chempy[all] pytest; pytest --pyargs chempy"
 
