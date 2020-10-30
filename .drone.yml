@@ -3,9 +3,9 @@ pipeline:
     image: drillster/drone-volume-cache
     restore: true
     mount:
-      - ./ci-cache/pyusrb
-      - ./ci-cache/conda_packages
-      - ./ci-cache/pip_cache
+      - ./ci_cache/pyusrb
+      - ./ci_cache/conda_packages
+      - ./ci_cache/pip_cache
     volumes:
       - /tmp/cache:/cache
     ttl: 90  # liftetime in days
@@ -19,12 +19,12 @@ pipeline:
       - SUNDBASE=/opt/sundials-5.4.0-klu-lapack
       - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
     commands:
-      - export PYTHONUSERBASE=$(pwd)/ci-cache/pyusrb
+      - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
       - if [ ! -d $PYTHONUSERBASE ]; then mkdir -p $PYTHONUSERBASE; fi
       - export CPATH=$SUNDBASE/include:$CPATH
       - export LIBRARY_PATH=$SUNDBASE/lib
       - export LD_LIBRARY_PATH=$SUNDBASE/lib
-      - python3 -m pip install --cache-dir ./ci-cache/pip_cache --user -e .[all]
+      - python3 -m pip install --cache-dir ./ci_cache/pip_cache --user -e .[all]
       - python3 -c "import pycvodes; import pyodesys; import pygslodeiv2"  # debug this CI config
       - git fetch -tq
       - python3 setup.py sdist                    # test pip installable sdist (checks MANIFEST.in)
@@ -43,7 +43,7 @@ pipeline:
       - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
       - CHEMPY_SKIP_NO_TESTS=1
     commands:
-      - export PYTHONUSERBASE=$(pwd)/ci-cache/pyusrb
+      - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
       - export CPATH=$SUNDBASE/include:$CPATH
       - export LIBRARY_PATH=$SUNDBASE/lib
       - export LD_LIBRARY_PATH=$SUNDBASE/lib
@@ -56,8 +56,8 @@ pipeline:
       - python3 -m virtualenv /tmp/test_sdist
       - python3 -m virtualenv /tmp/test_git_archive
       - cd deploy/public_html/branches/${DRONE_BRANCH}
-      - bash -c "source /tmp/test_sdist/bin/activate; pip install --cache-dir ./ci-cache/pip_cache $(eval ls chempy-*.tar.gz) pytest; pytest --pyargs chempy"
-      - bash -c "source /tmp/test_git_archive/bin/activate; pip install --cache-dir ./ci-cache/pip_cache chempy-head.zip pytest; pytest --pyargs chempy"
+      - bash -c "source /tmp/test_sdist/bin/activate; pip install --cache-dir ./ci_cache/pip_cache $(eval ls chempy-*.tar.gz) pytest; pytest --pyargs chempy"
+      - bash -c "source /tmp/test_git_archive/bin/activate; pip install --cache-dir ./ci_cache/pip_cache chempy-head.zip pytest; pytest --pyargs chempy"
 
   render-notebooks:
     image: bjodah/bjodahimg20dot:2.1.0.3
@@ -68,7 +68,7 @@ pipeline:
       - CC=gcc-10
       - CXX=g++-10
     commands:
-      - export PYTHONUSERBASE=$(pwd)/ci-cache/pyusrb
+      - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
       - export CPATH=$SUNDBASE/include
       - export LIBRARY_PATH=$SUNDBASE/lib
       - export LD_LIBRARY_PATH=$SUNDBASE/lib
@@ -82,7 +82,7 @@ pipeline:
 #    image: bjodah/bjodahimg20dot:2.1.0.3
 #    group: testing
 #    commands:
-#      - export CONDA_PKGS_DIRS=$(pwd)/ci-cache/conda_packages
+#      - export CONDA_PKGS_DIRS=$(pwd)/ci_cache/conda_packages
 #      - git fetch -tq
 #      - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
 #      - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${DRONE_BRANCH}" conda-recipe
@@ -94,7 +94,7 @@ pipeline:
       - CHEMPY_DEPRECATION_FILTER=ignore
       - SUNDBASE=/opt/sundials-5.4.0-klu-lapack
     commands:
-      - export PYTHONUSERBASE=$(pwd)/ci-cache/pyusrb
+      - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
       - export CPATH=$SUNDBASE/include
       - export LIBRARY_PATH=$SUNDBASE/lib
       - export LD_LIBRARY_PATH=$SUNDBASE/lib
@@ -106,10 +106,10 @@ pipeline:
     image: drillster/drone-volume-cache
     rebuild: true
     mount:
-#      - ./ci-cache/sund-3.2.1
-      - ./ci-cache/pyusrb
-      - ./ci-cache/conda_packages
-      - ./ci-cache/pip_cache
+#      - ./ci_cache/sund-3.2.1
+      - ./ci_cache/pyusrb
+      - ./ci_cache/conda_packages
+      - ./ci_cache/pip_cache
     volumes:
       - /tmp/cache:/cache
 

@@ -75,6 +75,7 @@ classifiers = [
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
 ]
 
 with io.open(_path_under_setup(pkg_name, '__init__.py'), 'rt', encoding='utf-8') as f:
@@ -88,11 +89,11 @@ _author, _author_email = open(_path_under_setup('AUTHORS'), 'rt').readline().spl
 
 extras_req = {
     'integrators': ['pyodeint>=0.10.4', 'pycvodes>=0.13.1', 'pygslodeiv2>=0.9.4'],
-    'solvers': ['pykinsol>=0.1.5'],
-    'native': ['pycompilation>=0.4.9', 'pycodeexport>=0.1.2', 'appdirs'],
+    'solvers': ['pykinsol>=0.1.6'],
+    'native': ['pycompilation>=0.4.12', 'pycodeexport>=0.1.3', 'appdirs'],
     'docs': ['Sphinx', 'sphinx_rtd_theme', 'numpydoc'],
     'plotting': ['bokeh>=0.13.0', 'ipywidgets'],
-    'testing': ['pytest>=3.9', 'pytest-cov', 'pytest-flakes', 'pytest-pep8', 'rstcheck']
+    'testing': ['pytest>=3.9', 'pytest-cov', 'pytest-flakes', 'rstcheck']
 }
 extras_req['all'] = list(chain(extras_req.values()))
 
