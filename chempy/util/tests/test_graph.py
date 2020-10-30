@@ -11,7 +11,7 @@ import pytest
 
 from chempy import Reaction, ReactionSystem, Substance
 from ..graph import rsys2dot, rsys2graph
-from ..testing import requires
+from ..testing import requires, skipif
 
 try:
     dot_missing = subprocess.call(['dot', '-?']) != 0
@@ -28,7 +28,7 @@ def _get_rsys():
 
 
 @requires('numpy')
-@pytest.mark.skipif(dot_missing, reason='graphviz not installed? (dot command missing)')
+@skipif(dot_missing, reason='graphviz not installed? (dot command missing)')
 def test_rsys2dot():
     rsys = _get_rsys()
     assert list(map(str.strip, rsys2dot(rsys))) == [
@@ -47,7 +47,7 @@ def test_rsys2dot():
 
 @pytest.mark.slow
 @requires('numpy')
-@pytest.mark.skipif(dot_missing, reason='graphviz not installed? (dot command missing)')
+@skipif(dot_missing, reason='graphviz not installed? (dot command missing)')
 def test_rsys2graph():
     rsys = _get_rsys()
     tempdir = tempfile.mkdtemp()

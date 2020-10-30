@@ -3,8 +3,10 @@ from __future__ import (absolute_import, division, print_function)
 
 from pkg_resources import parse_requirements, parse_version
 
+import os
 from operator import lt, le, eq, ne, ge, gt
 import pytest
+import warnings
 
 _relop = dict(zip('< <= == != >= >'.split(), (lt, le, eq, ne, ge, gt)))
 
@@ -55,4 +57,16 @@ class requires(object):
             r += " Missing modules: %s." % ', '.join(self.missing)
         if self.incomp:
             r += " Incomp versions: %s." % ', '.join(self.incomp)
-        return pytest.mark.skipif(self.missing or self.incomp, reason=r)(cb)
+        if os.environ.get('CHEMPY_SKIP_NO_TESTS', '0') == '1':
+            if self.missing or self.incomp:
+                warnings.warn(r)
+            return lambda x: x
+        else:
+            return pytest.mark.skipif(self.missing or self.incomp, reason=r)(cb)
+
+
+def skipif(*args, **kwargs):
+    if os.environ.get('CHEMPY_SKIP_NO_TESTS', '0') == '1':
+        return lambda x: x
+    else:
+        return pytest.mark.skipif(*args, **kwargs)
