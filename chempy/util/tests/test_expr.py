@@ -560,4 +560,3 @@ def test_Symbol():
     assert not a == 0*b
     assert not a*-0.0 == b*0.0
     assert not a*0.0 == b*-0.0
-    assert False

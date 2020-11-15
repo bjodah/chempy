@@ -430,9 +430,10 @@ class Expr(object):
         return True
 
     def __add__(self, other):
-        if hasattr(other, "trivially_zero") and other.trivially_zero:
+        _other = _implicit_conversion(other)
+        if _other.trivially_zero:
             return self
-        return _AddExpr([self, _implicit_conversion(other)])
+        return _AddExpr([self, _other])
 
     def __sub__(self, other):
         if other == other*0:

@@ -649,11 +649,11 @@ def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None, i
         def transform(arg):
             expr = backend.logcombine(arg, force=True)
             v, w = map(backend.Wild, 'v w'.split())
-            expr = expr.replace(backend.log(w**v), v*backend.log(w))
-            return expr
+            return expr.replace(backend.log(w**v), v*backend.log(w))
 
-    seen = [False]*len(conditions)
     rates = {}
+    seen = set()
+
     for k, v in rsys.rates(symbols).items():
         expr = transform(v)
         if expr == 0:
@@ -663,18 +663,16 @@ def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None, i
             for term in (expr.args if hasattr(expr, 'is_Add') and expr.is_Add else (expr,)):
                 args = sorted(expr.free_symbols, key=lambda e: e.name)
                 values = [conditions[s.name] for s in args]
-                result = backend.lambdify(args, expr)(*map(_exact, values))
+                result = backend.lambdify(args, term)(*map(_exact, values))
                 to_unitless(result, u.molar/u.second)  # raises an exception upon unit error
                 if rate is None:
                     rate = result
                 else:
                     rate += result
         rates[k] = rate
-        free_symbol_names = [s.name for s in expr.free_symbols]
-        seen = [b or k in free_symbol_names for b, k in zip(seen, conditions)]
-    not_seen = [a for s, a in zip(seen, args) if not s]
+        seen |= set([s.name for s in expr.free_symbols])
     if check_conditions_no_extra:
         for k in conditions:
             if k not in odesys.param_names and k not in odesys.names and k not in ignore:
                 raise KeyError("Unknown param: %s" % k)
-    return {'not_seen': not_seen, 'rates': rates}
+    return {'not_seen': (set(rsys.substances) | set(conditions)) - seen, 'rates': rates}

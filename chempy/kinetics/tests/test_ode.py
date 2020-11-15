@@ -939,28 +939,29 @@ def test_create_odesys():
 
     odesys, odesys_extra = create_odesys(rsys, unit_registry=SI_base_registry)
 
-    tend = 10
-    c0 = {'A': 1e-6, 'B': 0, 'C': 1, 'P': 0}
-    p = dict(k1=3, k2=4)
+    tend_ul = 10
+    init_conc_ul = {'A': 1e-6, 'B': 0, 'C': 1}
+    params_ul = dict(k1=3, k2=4)
 
-    tend_units = tend*u.s
-    p_units = {'k1': p['k1']/u.s, 'k2': p['k2']/u.M/u.s}
-    c0_units = {k: v*u.molar for k, v in c0.items()}
+    tend = tend_ul*u.s
+    params = {'k1': params_ul['k1']/u.s, 'k2': params_ul['k2']/u.M/u.s}
+    init_conc = {k: v*u.molar for k, v in init_conc_ul.items()}
 
-    validation = odesys_extra['validate'](dict(c0_units, **p_units))
+    validation = odesys_extra['validate'](dict(init_conc, **params))
     P, = validation['not_seen']
-    assert P.name == 'P'
+    assert P == 'P'
 
-    ref_rates = {'A': -p_units['k1']*c0_units['A'], 'P': p_units['k2']*c0_units['B']*c0_units['C']}
+    ref_rates = {'A': -params['k1']*init_conc['A'], 'P': params['k2']*init_conc['B']*init_conc['C']}
     ref_rates['B'] = -ref_rates['A'] - ref_rates['P']
     ref_rates['C'] = -ref_rates['P']
     assert validation['rates'] == ref_rates
 
     result1, result1_extra = odesys_extra['unit_aware_solve'](
-        tend_units, c0_units, p_units, integrator='cvode')
+        tend, defaultdict(lambda: 0*u.molar, init_conc), params, integrator='cvode')
     assert result1.info['success']
 
-    result2 = odesys.integrate(tend, c0, p, integrator='cvode')
+    result2 = odesys.integrate(tend_ul, defaultdict(lambda: 0, init_conc_ul),
+                               params_ul, integrator='cvode')
     assert np.allclose(result2.yout[-1, :], to_unitless(result1.yout[-1, :], u.molar))
 
 
@@ -992,7 +993,7 @@ def test_create_odesys__validate__catalyst():
     p1 = dict(k_decomp=42/u.second/u.molar)
     odesys1, odesys_extra = create_odesys(rsys1)
     validation = odesys_extra['validate'](dict(ic1, **p1))
-    assert not validation['not_seen']
+    assert validation['not_seen'] == {"OH"}
 
     dedim_ctx = _mk_dedim(SI_base_registry)
     (t, c, _p), dedim_extra = dedim_ctx['dedim_tcp'](t1, [ic1[k] for k in odesys1.names], p1)
