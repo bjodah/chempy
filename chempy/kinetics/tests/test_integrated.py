@@ -3,7 +3,6 @@ from __future__ import division
 from chempy.util.testing import requires
 from ..integrated import pseudo_irrev, pseudo_rev, binary_irrev, binary_rev
 
-import pytest
 
 try:
     import sympy
