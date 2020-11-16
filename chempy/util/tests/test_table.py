@@ -43,7 +43,6 @@ Id. & Reactants &  & Products & {Rate constant} & Unit & Ref \\
 \end{table}""")
 
 
-@pytest.mark.slow
 @pytest.mark.parametrize('longtable', (True, False))
 @pytest.mark.skipif(pdflatex_missing, reason='latex not installed? (pdflatex command missing)')
 def test_rsys2pdf_table(longtable):
@@ -55,7 +54,6 @@ def test_rsys2pdf_table(longtable):
         shutil.rmtree(tempdir)
 
 
-@pytest.mark.slow
 @pytest.mark.skipif(pdflatex_missing, reason='latex not installed? (pdflatex command missing)')
 def test_rsys2pdf_table_no_output_dir():
     rsys = _get_rsys()

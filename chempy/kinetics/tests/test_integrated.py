@@ -37,7 +37,6 @@ def test_pseudo_rev():
     assert (num_dfdt - (major*kf*(minor - f) - kb*f).subs(subsd)).simplify() == 0
 
 
-@pytest.mark.slow
 @requires('sympy')
 def test_binary_irrev():
     f = binary_irrev(t, kf, prod, major, minor, backend=sympy)
@@ -46,7 +45,6 @@ def test_binary_irrev():
     assert (num_dfdt - (kf*(minor - f)*(major - f)).subs(subsd)).simplify() == 0
 
 
-@pytest.mark.slow
 @requires('sympy')
 def test_binary_rev():
     f = binary_rev(t, kf, kb, prod, major, minor, backend=sympy)

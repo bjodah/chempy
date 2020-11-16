@@ -344,7 +344,6 @@ def test_get_odesys__time_dep_rate():
     assert np.allclose(fout, ref)
 
 
-@pytest.mark.slow
 @requires('pyodesys', units_library)
 def test_get_odesys__time_dep_temperature():
     import sympy as sp
