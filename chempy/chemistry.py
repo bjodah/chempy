@@ -1149,7 +1149,7 @@ def _solve_balancing_ilp_pulp(A):
     prob += reduce(add, x)
     for expr in [pulp.lpSum([x[i]*e for i, e in enumerate(row)]) for row in A.tolist()]:
         prob += expr == 0
-    prob.solve()
+    prob.solve(pulp.PULP_CBC_CMD(msg=False))
     return [pulp.value(_) for _ in x]
 
 
