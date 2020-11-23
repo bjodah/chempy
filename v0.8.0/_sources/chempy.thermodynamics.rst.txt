@@ -1,0 +1,18 @@
+chempy.thermodynamics package
+=============================
+
+.. automodule:: chempy.thermodynamics
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+chempy.thermodynamics.expressions module
+----------------------------------------
+
+.. automodule:: chempy.thermodynamics.expressions
+   :members:
+   :undoc-members:
+   :show-inheritance:

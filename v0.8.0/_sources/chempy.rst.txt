@@ -1,0 +1,111 @@
+chempy package
+==============
+
+.. automodule:: chempy
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   chempy.electrochemistry
+   chempy.kinetics
+   chempy.printing
+   chempy.properties
+   chempy.thermodynamics
+   chempy.util
+
+Submodules
+----------
+
+chempy.arrhenius module
+-----------------------
+
+.. automodule:: chempy.arrhenius
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+chempy.chemistry module
+-----------------------
+
+.. automodule:: chempy.chemistry
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+chempy.debye\_huckel module
+---------------------------
+
+.. automodule:: chempy.debye_huckel
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+chempy.einstein\_smoluchowski module
+------------------------------------
+
+.. automodule:: chempy.einstein_smoluchowski
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+chempy.electrolytes module
+--------------------------
+
+.. automodule:: chempy.electrolytes
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+chempy.equilibria module
+------------------------
+
+.. automodule:: chempy.equilibria
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+chempy.eyring module
+--------------------
+
+.. automodule:: chempy.eyring
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+chempy.henry module
+-------------------
+
+.. automodule:: chempy.henry
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+chempy.reactionsystem module
+----------------------------
+
+.. automodule:: chempy.reactionsystem
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+chempy.symbolic module
+----------------------
+
+.. automodule:: chempy.symbolic
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+chempy.units module
+-------------------
+
+.. automodule:: chempy.units
+   :members:
+   :undoc-members:
+   :show-inheritance:

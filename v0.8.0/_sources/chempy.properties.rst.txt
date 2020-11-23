@@ -1,0 +1,66 @@
+chempy.properties package
+=========================
+
+.. automodule:: chempy.properties
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+chempy.properties.debye\_huckel\_radii module
+---------------------------------------------
+
+.. automodule:: chempy.properties.debye_huckel_radii
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+chempy.properties.gas\_sol\_electrolytes\_schumpe\_1993 module
+--------------------------------------------------------------
+
+.. automodule:: chempy.properties.gas_sol_electrolytes_schumpe_1993
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+chempy.properties.sulfuric\_acid\_density\_myhre\_1998 module
+-------------------------------------------------------------
+
+.. automodule:: chempy.properties.sulfuric_acid_density_myhre_1998
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+chempy.properties.water\_density\_tanaka\_2001 module
+-----------------------------------------------------
+
+.. automodule:: chempy.properties.water_density_tanaka_2001
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+chempy.properties.water\_diffusivity\_holz\_2000 module
+-------------------------------------------------------
+
+.. automodule:: chempy.properties.water_diffusivity_holz_2000
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+chempy.properties.water\_permittivity\_bradley\_pitzer\_1979 module
+-------------------------------------------------------------------
+
+.. automodule:: chempy.properties.water_permittivity_bradley_pitzer_1979
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+chempy.properties.water\_viscosity\_korson\_1969 module
+-------------------------------------------------------
+
+.. automodule:: chempy.properties.water_viscosity_korson_1969
+   :members:
+   :undoc-members:
+   :show-inheritance:
