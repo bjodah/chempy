@@ -46,7 +46,6 @@ def decay_get_Cref(k, y0, tout):
             min(3, len(k)+1))])
 
 
-@pytest.mark.veryslow
 @requires('pycvodes', 'pyodesys')
 @pytest.mark.parametrize('solve', [(), ('CNO',)])
 def test_get_native__first_step(solve):
@@ -86,7 +85,6 @@ def test_get_native__first_step(solve):
     assert np.allclose(yout2[:, :3], ref2, **allclose_kw)
 
 
-@pytest.mark.veryslow
 @requires('pygslodeiv2', 'pyodesys')
 @pytest.mark.parametrize('solve', [(), ('H2O',)])
 def test_get_native__a_substance_no_composition(solve):
@@ -105,7 +103,6 @@ def test_get_native__a_substance_no_composition(solve):
     assert np.allclose(yout[:, odesys.names.index('e-(aq)')], c0['e-(aq)'] + c0['H2O'] - H2O_ref)
 
 
-@pytest.mark.veryslow
 @requires('pycvodes', 'pyodesys')
 @pytest.mark.parametrize('dep_scaling', [1, 763])
 def test_get_native__named_parameter__units(dep_scaling):
@@ -153,7 +150,6 @@ def test_get_native__named_parameter__units(dep_scaling):
     assert np.allclose(to_unitless(result.named_dep('H2'), u.micromolar), ref_H2_uM)
 
 
-@pytest.mark.veryslow
 @requires('pycvodes', 'pyodesys')
 def test_get_native__conc_roots():
     M, s = u.M, u.s
@@ -178,7 +174,6 @@ def test_get_native__conc_roots():
         assert allclose(r.xout[-1], ref, rtol=1e-6)
 
 
-@pytest.mark.veryslow
 @requires('pycvodes', 'pyodesys')
 @pytest.mark.parametrize('scaling_density', [(1, False), (763, False), (1, True)])
 def test_get_native__Radiolytic__named_parameter__units(scaling_density):

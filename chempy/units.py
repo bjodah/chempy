@@ -20,6 +20,7 @@ from __future__ import (absolute_import, division, print_function)
 from functools import reduce
 from operator import mul
 import sys
+import warnings
 
 from .util.arithmeticdict import ArithmeticDict
 from .util.pyutil import NameSpace, deprecated
@@ -112,6 +113,13 @@ def magnitude(value):
         return value.magnitude
     except AttributeError:
         return value
+
+
+def uncertainty(uval):
+    uncert = uval.uncertainty
+    if not is_quantity(uncert):
+        warnings.warn(f"Handling unexpected type: {type(uval)}")
+    return uncert
 
 
 def simplified(value):
@@ -280,7 +288,7 @@ def is_unitless(expr):
 
     """
     if hasattr(expr, 'dimensionality'):
-        if expr == pq.dimensionless:
+        if expr.dimensionality == pq.dimensionless:
             return True
         else:
             return expr.simplified.dimensionality == pq.dimensionless.dimensionality
@@ -483,6 +491,11 @@ def compare_equality(a, b):
 
 def allclose(a, b, rtol=1e-8, atol=None):
     """ Analogous to ``numpy.allclose``. """
+    if a.__class__.__name__ == "UncertainQuantity":
+        return allclose(pq.Quantity(a), b, rtol=rtol, atol=atol)
+    if b.__class__.__name__ == "UncertainQuantity":
+        return allclose(a, pq.Quantity(b), rtol=rtol, atol=atol)
+
     try:
         d = abs(a - b)
     except Exception:

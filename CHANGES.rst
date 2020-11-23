@@ -1,3 +1,9 @@
+v0.8.0
+======
+- Some minor fixes.
+- Updated lowest support versions of a few dependencies.
+- Dropped pytest-pep8 for now (unmaintained).
+
 v0.7.12
 =======
 - Update some heavy elements Uuo -> Og, etc.
