@@ -114,6 +114,10 @@ class Expr(object):
     parameter_keys = ()
     nargs = None
 
+    @property
+    def trivially_zero(self):
+        return False
+
     def __init__(self, args=None, unique_keys=None):
         if isinstance(args, str):
             args = (args,)
@@ -426,9 +430,10 @@ class Expr(object):
         return True
 
     def __add__(self, other):
-        if other == other*0:
+        _other = _implicit_conversion(other)
+        if _other.trivially_zero:
             return self
-        return _AddExpr([self, _implicit_conversion(other)])
+        return _AddExpr([self, _other])
 
     def __sub__(self, other):
         if other == other*0:
@@ -552,6 +557,13 @@ class _MulExpr(_BinaryExpr):
     _op = mul
     _op_str = '*'
 
+    @property
+    def trivially_zero(self):
+        try:
+            return self.args[0].trivially_zero or self.args[1].trivially_zero
+        except Exception:
+            return False
+
 
 class _DivExpr(_BinaryExpr):
     _op = truediv
@@ -565,6 +577,10 @@ class _PowExpr(_BinaryExpr):
 
 class Constant(Expr):
     nargs = 1
+
+    @property
+    def trivially_zero(self):
+        return self.args[0] == 0
 
     def __call__(self, variables, backend=None, **kwargs):
         return self.args[0]

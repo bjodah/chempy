@@ -144,6 +144,9 @@ class AttributeContainer(object):
     def as_dict(self):
         return self.__dict__.copy()
 
+    def __repr__(self):
+        return "%s(%s)" % (self.__class__.__name__, ", ".join(set(dir(self)) - set(dir(object()))))
+
 
 class AttrDict(dict):
     """ Subclass of dict with attribute access to keys """

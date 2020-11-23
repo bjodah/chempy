@@ -468,7 +468,7 @@ def chained_parameter_variation(odesys, durations, init_conc, varied_params, def
 
 def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_replace=lambda x: x,
                    backend=None, SymbolicSys=None, time_symbol=None, unit_registry=None, rates_kw=None,
-                   parameter_expressions=None):
+                   parameter_expressions=None, symbolic_kw=None):
     """ This will be a simpler version of get_odesys without the unit handling code.
     The motivation is to reduce complexity (the code of get_odesys is long with multiple closures).
 
@@ -495,6 +495,8 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
         Keyword arguments passed to the ``rates`` method of rsys.
     parameter_expressions : dict
         Optional overrides.
+    symbolic_kw : dict
+        Keyword arguments passed on to SymbolicSys.
 
     Returns
     -------
@@ -564,7 +566,8 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
         linear_invariant_names=list(map(str, compo_names)),
         backend=backend,
         dep_by_name=True,
-        par_by_name=True
+        par_by_name=True,
+        **(symbolic_kw or {})
     )
 
     validate = partial(_validate, rsys=rsys, symbols=symbols, odesys=odesys, backend=backend)
@@ -607,7 +610,15 @@ def _mk_unit_aware_solve(odesys, unit_registry, validate):
     return solve
 
 
-def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None, ignore=('time',)):
+def _exact(v):
+    if hasattr(v, '_uncertainty'):
+        return v.magnitude*v.units
+    else:
+        return v
+
+
+def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None, ignore=('time',),
+              check_conditions_no_extra=False):
     """ For use with create_odesys
 
     Parameters
@@ -620,6 +631,8 @@ def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None, i
     backend : module
         Module for symbolic mathematics. (defaults to SymPy)
     transform : callable for rewriting expressions
+    check_conditions_no_extra : bool
+        When True, conditions may not contain keys not referenced in any expression.
 
     Raises
     ------
@@ -637,23 +650,30 @@ def _validate(conditions, rsys, symbols, odesys, backend=None, transform=None, i
         def transform(arg):
             expr = backend.logcombine(arg, force=True)
             v, w = map(backend.Wild, 'v w'.split())
-            expr = expr.replace(backend.log(w**v), v*backend.log(w))
-            return expr
+            return expr.replace(backend.log(w**v), v*backend.log(w))
 
-    args = [symbols[key] for key in conditions]
-    seen = [False]*len(args)
     rates = {}
+    seen = set()
+
     for k, v in rsys.rates(symbols).items():
         expr = transform(v)
         if expr == 0:
             rate = 0 * u.molar/u.second
         else:
-            rate = backend.lambdify(args, expr)(*conditions.values())
-            to_unitless(rate, u.molar/u.second)
+            rate = None
+            for term in (expr.args if hasattr(expr, 'is_Add') and expr.is_Add else (expr,)):
+                args = sorted(expr.free_symbols, key=lambda e: e.name)
+                values = [conditions[s.name] for s in args]
+                result = backend.lambdify(args, term)(*map(_exact, values))
+                to_unitless(result, u.molar/u.second)  # raises an exception upon unit error
+                if rate is None:
+                    rate = result
+                else:
+                    rate += result
         rates[k] = rate
-        seen = [b or a in expr.free_symbols for b, a in zip(seen, args)]
-    not_seen = [a for s, a in zip(seen, args) if not s]
-    for k in conditions:
-        if k not in odesys.param_names and k not in odesys.names and k not in ignore:
-            raise KeyError("Unknown param: %s" % k)
-    return {'not_seen': not_seen, 'rates': rates}
+        seen |= set([s.name for s in expr.free_symbols])
+    if check_conditions_no_extra:
+        for k in conditions:
+            if k not in odesys.param_names and k not in odesys.names and k not in ignore:
+                raise KeyError("Unknown param: %s" % k)
+    return {'not_seen': (set(rsys.substances) | set(conditions)) - seen, 'rates': rates}

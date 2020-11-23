@@ -172,6 +172,7 @@ def test_UncertainQuantity():
     assert (-a).uncertainty[0] == [0.1]*u.m
     assert (-a)[0] == (a*-1)[0]
     assert (-a).uncertainty[0] == (a*-1).uncertainty[0]
+    assert allclose(a, [1, 2]*u.m)
 
 
 @requires(units_library, 'sympy')
