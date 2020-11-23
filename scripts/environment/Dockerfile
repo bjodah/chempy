@@ -9,8 +9,8 @@ RUN apt-get update && \
     apt-get --quiet --assume-yes install curl git g++-8 libgmp-dev binutils-dev bzip2 make cmake sudo \
     python3-dev python3-pip libgsl-dev liblapack-dev graphviz && \
     apt-get clean && \
-    curl -LOs http://computation.llnl.gov/projects/sundials/download/sundials-5.4.0.tar.gz && \
-    tar xzf sundials-5.4.0.tar.gz && mkdir build/ && cd build/ && \
+    curl -LOs http://computation.llnl.gov/projects/sundials/download/sundials-5.5.0.tar.gz && \
+    tar xzf sundials-5.5.0.tar.gz && mkdir build/ && cd build/ && \
     cmake -DCMAKE_PREFIX_PATH=/usr/local -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_SHARED_LIBS=ON -DBUILD_STATIC_LIBS=OFF -DEXAMPLES_ENABLE=OFF -DEXAMPLES_INSTALL=OFF \
     ../sundials*/ && make install && cd - && rm -r build/ sundials* && \
