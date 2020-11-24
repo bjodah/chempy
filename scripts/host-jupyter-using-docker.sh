@@ -1,14 +1,17 @@
 #!/bin/bash -ue
 #
-# Usage:
-#
-#  $ ./scripts/host-jupyter-using-docker.sh
-#  $ ./scripts/host-jupyter-using-docker.sh . 8888 ./scripts/environment
-#  $ ./scripts/host-jupyter-using-docker.sh . 0 ./scripts/environment
+# This script requires that Docker is installed.
 #
 # Arguments: mount-path, port-number, Dockerfile-path
 #
-# If port == 0: the test suite is run
+# To host a local jupyter notebook server rung e.g.:
+#
+#  $ ./scripts/host-jupyter-using-docker.sh
+#  $ ./scripts/host-jupyter-using-docker.sh . 8888 ./scripts/environment
+#
+# To instead run the test suite, specify "0" as the port number:
+#
+#  $ ./scripts/host-jupyter-using-docker.sh . 0 ./scripts/environment
 #
 MOUNT=${1:-.}
 PORT=${2:-8888}
@@ -26,7 +29,7 @@ if [[ "$DOCKERIMAGE" == ./* ]]; then
     DOCKERIMAGE=$(sudo docker build $DOCKERIMAGE | tee /dev/tty | tail -1 | cut -d' ' -f3)
 fi
 if [[ "$PORT" == "0" ]]; then
-    LOCALCMD="pytest -rs --pyargs $PKG"
+    LOCALCMD="pytest -sv -ra --pyargs $PKG"
     PORTFWD=""
 else
     LOCALCMD="jupyter notebook --no-browser --port $PORT --ip=* index.ipynb"
