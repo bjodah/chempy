@@ -7,8 +7,6 @@ import subprocess
 import shutil
 import tempfile
 
-import pytest
-
 from chempy import Reaction, ReactionSystem, Substance
 from ..graph import rsys2dot, rsys2graph
 from ..testing import requires, skipif
