@@ -1,3 +1,7 @@
+v0.8.1
+======
+- package "jupyter" was listed as formal dependency, now removed.
+
 v0.8.0
 ======
 - Some minor fixes.
