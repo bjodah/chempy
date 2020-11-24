@@ -73,7 +73,6 @@ classifiers = [
     'Topic :: Scientific/Engineering :: Chemistry',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
 ]
@@ -117,7 +116,7 @@ setup_kwargs = dict(
         'dot2tex>=2.11.3'
     ],
     extras_require=extras_req,
-    python_requires='>=3.7'
+    python_requires='>=3.8'
 )
 
 if __name__ == '__main__':
