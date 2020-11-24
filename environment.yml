@@ -5,6 +5,7 @@ channels:
   - defaults
 dependencies:
   - python >=3.5
+  - pytest
   - setuptools
   - numpy >1.7
   - scipy >=0.16.1

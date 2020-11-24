@@ -3,6 +3,7 @@ from __future__ import (absolute_import, division, print_function)
 
 from pkg_resources import parse_requirements, parse_version
 
+import os
 from operator import lt, le, eq, ne, ge, gt
 import pytest
 
@@ -55,4 +56,11 @@ class requires(object):
             r += " Missing modules: %s." % ', '.join(self.missing)
         if self.incomp:
             r += " Incomp versions: %s." % ', '.join(self.incomp)
-        return pytest.mark.skipif(self.missing or self.incomp, reason=r)(cb)
+        return skipif(self.missing or self.incomp, reason=r)(cb)
+
+
+def skipif(predicate, *, reason):
+    if os.environ.get('CHEMPY_SKIP_NO_TESTS', '0') == '1':
+        return pytest.mark.skipif(False, reason=reason)
+    else:
+        return pytest.mark.skipif(predicate, reason=reason)

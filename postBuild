@@ -5,7 +5,8 @@ python setup.py develop --user
 # repo2docker does not use a conda environment, hence $CONDA_PREFIX is not
 # set by default. Until there is a standard way of setting compiler variables
 # we add the hardcoded conda-root path to the relevant environment variables:
-cat <<EOF >>/srv/conda/lib/python3.6/site-packages/usercustomize.py
+PY_LIB_ROOT=$(compgen -G '/srv/conda/lib/python3.*')
+cat <<EOF >>$PY_LIB_ROOT/site-packages/usercustomize.py
 import os
 ld_lib_pth = os.environ.get('LD_LIBRARY_PATH', '')
 lib_pth = os.environ.get('LIBRARY_PATH', '')

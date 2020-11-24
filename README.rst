@@ -7,7 +7,7 @@ ChemPy
 .. image:: https://img.shields.io/pypi/v/chempy.svg
    :target: https://pypi.python.org/pypi/chempy
    :alt: PyPI version
-.. image:: https://img.shields.io/badge/python-3.7,3.8-blue.svg
+.. image:: https://img.shields.io/badge/python-3.8,3.9-blue.svg
    :target: https://www.python.org/
    :alt: Python version
 .. image:: https://img.shields.io/pypi/l/chempy.svg
@@ -392,7 +392,7 @@ Using only a web-browser (and an internet connection) it is possible to explore 
 notebooks here: (by the courtesy of the people behind mybinder)
 
 .. image:: http://mybinder.org/badge.svg
-   :target: https://mybinder.org/v2/gh/bjodah/chempy/v0.6.6?filepath=index.ipynb
+   :target: https://mybinder.org/v2/gh/bjodah/chempy/f5f2546e79e165ba8fb258fc87d83a7fbdcbad64?filepath=index.ipynb
    :alt: Binder
 
 
