@@ -102,10 +102,10 @@ class BimolecularTable(_RxnTable):
         if 'substances' not in kwargs:
             kwargs['substances'] = self.substances
         ss = printer._get('substances', **kwargs)
-        header = '<th></th>' + ''.join('<th>%s</th>' % printer._print(s) for
+        header = '<th></th>' + ''.join('<th>%s</th>' % printer._print(s) for  # style="text-align: left; transform: rotate(-90deg);"
                                        s in ss.values())
         rows = ['<tr><td>%s</td>%s</tr>' % (
             printer._print(s), ''.join(self._cell_html(printer, self.idx_rxn_pairs, rowi, ci)
                                        for ci in range(len(ss)))
         ) for rowi, s in enumerate(ss.values())]
-        return '<table>%s</table>' % '\n'.join([header, '\n'.join(rows)])
+        return '<table>%s</table>' % '\n'.join([header, '\n'.join(rows)])  # cellpadding="0"
