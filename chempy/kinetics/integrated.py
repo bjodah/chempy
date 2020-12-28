@@ -38,6 +38,8 @@ def pseudo_irrev(t, kf, prod, major, minor, backend=None):
     """
     be = get_backend(backend)
     return prod + minor*(1 - be.exp(-major*kf*t))
+
+
 pseudo_irrev.name = 'Pseudo first order irreversible'
 
 
@@ -69,6 +71,8 @@ def pseudo_rev(t, kf, kb, prod, major, minor, backend=None):
         -kb*prod + kf*major*minor + (kb*prod - kf*major*minor) *
         be.exp(-t*(kb + kf*major))
     )/(kb + kf*major)
+
+
 pseudo_rev.name = 'Pseudo first order reversible'
 
 
@@ -95,6 +99,8 @@ def binary_irrev(t, kf, prod, major, minor, backend=None):
     be = get_backend(backend)
     return prod + major*(1 - be.exp(-kf*(major-minor)*t))/(
         major/minor - be.exp(-kf*t*(major-minor)))
+
+
 binary_irrev.name = 'Second order irreversible'
 
 
@@ -134,6 +140,7 @@ def binary_rev(t, kf, kb, prod, major, minor, backend=None):
     x7 = (x3 + x5)*be.exp(-t*x5)
     x8 = x3 - x5
     return (x4*x8 + x5*x8 + x7*(x2 + x6))/(2*kf*(x6 + x7))
+
 
 binary_rev.name = 'Second order reversible'
 

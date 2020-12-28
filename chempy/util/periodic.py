@@ -56,6 +56,7 @@ def atomic_number(name):
     except ValueError:
         return lower_names.index(name.lower()) + 1
 
+
 # The data in '_relative_atomic_masses' is licensed under the CC-SA license
 # https://en.wikipedia.org/w/index.php?title=List_of_elements&oldid=700476748
 _relative_atomic_masses = (
@@ -87,6 +88,7 @@ def _get_relative_atomic_masses():
             yield float(mass.split('(')[0])
         else:
             yield(float(mass))
+
 
 relative_atomic_masses = tuple(_get_relative_atomic_masses())
 

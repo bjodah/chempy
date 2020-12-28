@@ -9,6 +9,7 @@ def _html_clsname(key):
         '(', 'leftparen').replace(
         ')', 'rightparen')
 
+
 _html_semicolon = '&#59; '
 
 

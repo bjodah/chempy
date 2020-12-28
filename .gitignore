@@ -31,3 +31,5 @@ sundials-*.tar.gz
 .jupyter/*
 !.jupyter/jupyter_notebook_config.py
 tmp/
+.coverage
+htmlcov/
