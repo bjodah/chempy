@@ -1204,8 +1204,8 @@ def balance_stoichiometry(reactants, products, substances=None,
 
     Returns
     -------
-    balanced reactants : dict
-    balanced products : dict
+    balanced reactants : OrderedDict
+    balanced products : OrderedDict
 
     """
     import sympy
@@ -1409,3 +1409,13 @@ def mass_fractions(stoichiometries, substances=None, substance_factory=Substance
         substances = OrderedDict([(k, substance_factory(k)) for k in stoichiometries])
     tot_mass = sum([substances[k].mass*v for k, v in stoichiometries.items()])
     return {k: substances[k].mass*v/tot_mass for k, v in stoichiometries.items()}
+
+
+def solve_stoich_mix(reac_prop, prod):
+    """ to be documented """
+    import sympy
+    reac = list(reac.keys())
+    prop = list(prop.values())
+    bal_r, bal_p = balance_stoichiometry(reac, prod)
+    fact = sympy.Dummy()
+    eqs = [br - fact*v for br, v in zip(bal_r, prop)]

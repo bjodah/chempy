@@ -475,3 +475,8 @@ C +      CO2 -> C + CO + CO2  # suggested solution:  C +      CO2 ->     2 CO
     bal_Mn_COx = balance_stoichiometry({'C', 'CO', 'CO2', 'Mn'}, {'C', 'CO2', 'Mn'},
                                        allow_duplicates=True, underdetermined=None)
     assert bal_Mn_COx == ({'CO': 2}, {'C': 1, 'CO2': 1})
+
+def test_solve_stoich_mix():
+    res = solve_stoich_mix({'C3H8': 3.0, 'O2': 5.0}, {'CO', 'H2', 'H2O'})
+    for k, v in {'CO': 9.0, 'H2O': 1.0, 'H2': 11.0}.items():
+        assert abs(res[k] - v) < 1e-12
