@@ -37,12 +37,12 @@ def test_formula_to_composition():
     assert formula_to_composition('SO4-2(aq)') == {0: -2, 8: 4, 16: 1}
 
     # prefixes and suffixes
-    assert formula_to_composition('.NO2(g)') == {7: 1, 8: 2}
-    assert formula_to_composition('.NH2') == {1: 2, 7: 1}
+    assert formula_to_composition(':NO2(g)') == {7: 1, 8: 2}
+    assert formula_to_composition(':NH2') == {1: 2, 7: 1}
     assert formula_to_composition('ONOOH') == {1: 1, 7: 1, 8: 3}
-    assert formula_to_composition('.ONOO') == {7: 1, 8: 3}
-    assert formula_to_composition('.NO3/2-') == {0: -2, 7: 1, 8: 3}
-    assert formula_to_composition('.NO3-2') == {0: -2, 7: 1, 8: 3}
+    assert formula_to_composition(':ONOO') == {7: 1, 8: 3}
+    assert formula_to_composition(':NO3/2-') == {0: -2, 7: 1, 8: 3}
+    assert formula_to_composition(':NO3-2') == {0: -2, 7: 1, 8: 3}
 
     with pytest.raises(ValueError):
         formula_to_composition('F-F')
@@ -51,7 +51,7 @@ def test_formula_to_composition():
     assert formula_to_composition('epsilon-Zn(OH)2(s)') == {1: 2, 8: 2, 30: 1}
 
     # crystal water
-    assert formula_to_composition('Na2CO3.7H2O(s)') == {11: 2, 6: 1, 8: 10, 1: 14}
+    assert formula_to_composition('Na2CO3:7H2O(s)') == {11: 2, 6: 1, 8: 10, 1: 14}
 
 
 @requires(parsing_library)
@@ -123,17 +123,17 @@ def test_formula_to_latex():
     assert formula_to_latex('NaCl(s)') == 'NaCl(s)'
     assert formula_to_latex('e-(aq)') == 'e^{-}(aq)'
     assert formula_to_latex('Ca+2(aq)') == 'Ca^{2+}(aq)'
-    assert formula_to_latex('.NO2(g)') == r'^\bullet NO_{2}(g)'
-    assert formula_to_latex('.NH2') == r'^\bullet NH_{2}'
+    assert formula_to_latex(':NO2(g)') == r'\mathpunct{:} NO_{2}(g)'
+    assert formula_to_latex(':NH2') == r'\mathpunct{:} NH_{2}'
     assert formula_to_latex('ONOOH') == 'ONOOH'
-    assert formula_to_latex('.ONOO') == r'^\bullet ONOO'
-    assert formula_to_latex('.NO3/2-') == r'^\bullet NO_{3}^{2-}'
-    assert formula_to_latex('.NO3-2') == r'^\bullet NO_{3}^{2-}'
+    assert formula_to_latex(':ONOO') == r'\mathpunct{:} ONOO'
+    assert formula_to_latex(':NO3/2-') == r'\mathpunct{:} NO_{3}^{2-}'
+    assert formula_to_latex(':NO3-2') == r'\mathpunct{:} NO_{3}^{2-}'
     assert formula_to_latex('alpha-FeOOH(s)') == r'\alpha-FeOOH(s)'
     assert formula_to_latex('epsilon-Zn(OH)2(s)') == (
         r'\varepsilon-Zn(OH)_{2}(s)')
-    assert formula_to_latex('Na2CO3.7H2O(s)') == r'Na_{2}CO_{3}\cdot 7H_{2}O(s)'
-    assert formula_to_latex('Na2CO3.1H2O(s)') == r'Na_{2}CO_{3}\cdot H_{2}O(s)'
+    assert formula_to_latex('Na2CO3:7H2O(s)') == r'Na_{2}CO_{3}\mathpunct{:} 7H_{2}O(s)'
+    assert formula_to_latex('Na2CO3:1H2O(s)') == r'Na_{2}CO_{3}\mathpunct{:} H_{2}O(s)'
 
 
 @requires(parsing_library)
@@ -151,16 +151,16 @@ def test_formula_to_unicoce():
     assert formula_to_unicode('NaCl(s)') == u'NaCl(s)'
     assert formula_to_unicode('e-(aq)') == u'e⁻(aq)'
     assert formula_to_unicode('Ca+2(aq)') == u'Ca²⁺(aq)'
-    assert formula_to_unicode('.NO2(g)') == u'⋅NO₂(g)'
-    assert formula_to_unicode('.NH2') == u'⋅NH₂'
+    assert formula_to_unicode(':NO2(g)') == u':NO₂(g)'
+    assert formula_to_unicode(':NH2') == u':NH₂'
     assert formula_to_unicode('ONOOH') == u'ONOOH'
-    assert formula_to_unicode('.ONOO') == u'⋅ONOO'
-    assert formula_to_unicode('.NO3/2-') == u'⋅NO₃²⁻'
-    assert formula_to_unicode('.NO3-2') == u'⋅NO₃²⁻'
+    assert formula_to_unicode(':ONOO') == u':ONOO'
+    assert formula_to_unicode(':NO3/2-') == u':NO₃²⁻'
+    assert formula_to_unicode(':NO3-2') == u':NO₃²⁻'
     assert formula_to_unicode('alpha-FeOOH(s)') == u'α-FeOOH(s)'
     assert formula_to_unicode('epsilon-Zn(OH)2(s)') == u'ε-Zn(OH)₂(s)'
-    assert formula_to_unicode('Na2CO3.7H2O(s)') == u'Na₂CO₃·7H₂O(s)'
-    assert formula_to_unicode('Na2CO3.1H2O(s)') == u'Na₂CO₃·H₂O(s)'
+    assert formula_to_unicode('Na2CO3:7H2O(s)') == u'Na₂CO₃:7H₂O(s)'
+    assert formula_to_unicode('Na2CO3:1H2O(s)') == u'Na₂CO₃:H₂O(s)'
 
 
 @requires(parsing_library)
@@ -177,14 +177,14 @@ def test_formula_to_html():
     assert formula_to_html('NaCl(s)') == 'NaCl(s)'
     assert formula_to_html('e-(aq)') == 'e<sup>-</sup>(aq)'
     assert formula_to_html('Ca+2(aq)') == 'Ca<sup>2+</sup>(aq)'
-    assert formula_to_html('.NO2(g)') == r'&sdot;NO<sub>2</sub>(g)'
-    assert formula_to_html('.NH2') == r'&sdot;NH<sub>2</sub>'
+    assert formula_to_html(':NO2(g)') == r'&#58;NO<sub>2</sub>(g)'
+    assert formula_to_html(':NH2') == r'&#58;NH<sub>2</sub>'
     assert formula_to_html('ONOOH') == 'ONOOH'
-    assert formula_to_html('.ONOO') == r'&sdot;ONOO'
-    assert formula_to_html('.NO3/2-') == r'&sdot;NO<sub>3</sub><sup>2-</sup>'
-    assert formula_to_html('.NO3-2') == r'&sdot;NO<sub>3</sub><sup>2-</sup>'
+    assert formula_to_html(':ONOO') == r'&#58;ONOO'
+    assert formula_to_html(':NO3/2-') == r'&#58;NO<sub>3</sub><sup>2-</sup>'
+    assert formula_to_html(':NO3-2') == r'&#58;NO<sub>3</sub><sup>2-</sup>'
     assert formula_to_html('alpha-FeOOH(s)') == r'&alpha;-FeOOH(s)'
     assert formula_to_html('epsilon-Zn(OH)2(s)') == (
         r'&epsilon;-Zn(OH)<sub>2</sub>(s)')
-    assert formula_to_html('Na2CO3.7H2O(s)') == 'Na<sub>2</sub>CO<sub>3</sub>&sdot;7H<sub>2</sub>O(s)'
-    assert formula_to_html('Na2CO3.1H2O(s)') == 'Na<sub>2</sub>CO<sub>3</sub>&sdot;H<sub>2</sub>O(s)'
+    assert formula_to_html('Na2CO3:7H2O(s)') == 'Na<sub>2</sub>CO<sub>3</sub>&#58;7H<sub>2</sub>O(s)'
+    assert formula_to_html('Na2CO3:1H2O(s)') == 'Na<sub>2</sub>CO<sub>3</sub>&#58;H<sub>2</sub>O(s)'
