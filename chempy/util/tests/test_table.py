@@ -7,23 +7,19 @@ import tempfile
 import pytest
 
 
-from chempy.util.table import (
-    rsys2tablines, rsys2table, rsys2pdf_table
-)
+from chempy.util.table import rsys2tablines, rsys2table, rsys2pdf_table
 from .test_graph import _get_rsys
 from ..testing import skipif
 
 
 try:
-    pdflatex_missing = subprocess.call(['pdflatex', '--version']) != 0
+    pdflatex_missing = subprocess.call(["pdflatex", "--version"]) != 0
 except OSError:
     pdflatex_missing = True
 
 
 def test_rsys2tablines():
-    assert rsys2tablines(_get_rsys(), tex=False) == [
-        '1 & 2 A & -> & B & 3 & - & None'
-    ]
+    assert rsys2tablines(_get_rsys(), tex=False) == ["1 & 2 A & -> & B & 3 & - & None"]
 
 
 def test_rsys2table():
@@ -37,15 +33,16 @@ def test_rsys2table():
 \toprule
 Id. & Reactants &  & Products & {Rate constant} & Unit & Ref \\
 \midrule
-1 & \ensuremath{2 \boldsymbol{A}} & \ensuremath{\rightarrow} &""" +
-        r""" \ensuremath{\boldsymbol{B}} & \ensuremath{3} & \ensuremath{-} & None \\
+1 & \ensuremath{2 \boldsymbol{A}} & \ensuremath{\rightarrow} &"""
+        + r""" \ensuremath{\boldsymbol{B}} & \ensuremath{3} & \ensuremath{-} & None \\
 \bottomrule
 \end{tabular}
-\end{table}""")
+\end{table}"""
+    )
 
 
-@pytest.mark.parametrize('longtable', (True, False))
-@skipif(pdflatex_missing, reason='latex not installed? (pdflatex command missing)')
+@pytest.mark.parametrize("longtable", (True, False))
+@skipif(pdflatex_missing, reason="latex not installed? (pdflatex command missing)")
 def test_rsys2pdf_table(longtable):
     rsys = _get_rsys()
     tempdir = tempfile.mkdtemp()
@@ -55,7 +52,9 @@ def test_rsys2pdf_table(longtable):
         shutil.rmtree(tempdir)
 
 
-@pytest.mark.skipif(pdflatex_missing, reason='latex not installed? (pdflatex command missing)')
+@pytest.mark.skipif(
+    pdflatex_missing, reason="latex not installed? (pdflatex command missing)"
+)
 def test_rsys2pdf_table_no_output_dir():
     rsys = _get_rsys()
     rsys2pdf_table(rsys, save=False)

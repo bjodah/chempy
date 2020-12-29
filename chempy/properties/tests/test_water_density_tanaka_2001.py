@@ -27,10 +27,18 @@ def test_water_density():
     try:
         import quantities as pq
         import numpy as np
-        unit = pq.kg/pq.m**3
-        assert allclose(water_density(298.15*pq.K, units=pq),
-                        997.047021671824*unit, atol=1e-8*unit)
-        assert allclose(water_density(np.linspace(297, 299)*pq.K, units=pq),
-                        997*unit, rtol=1e-3, atol=1e-3*unit)
+
+        unit = pq.kg / pq.m ** 3
+        assert allclose(
+            water_density(298.15 * pq.K, units=pq),
+            997.047021671824 * unit,
+            atol=1e-8 * unit,
+        )
+        assert allclose(
+            water_density(np.linspace(297, 299) * pq.K, units=pq),
+            997 * unit,
+            rtol=1e-3,
+            atol=1e-3 * unit,
+        )
     except ImportError:
         pass

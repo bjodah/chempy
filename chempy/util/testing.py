@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 
 from pkg_resources import parse_requirements, parse_version
 
@@ -7,11 +7,11 @@ import os
 from operator import lt, le, eq, ne, ge, gt
 import pytest
 
-_relop = dict(zip('< <= == != >= >'.split(), (lt, le, eq, ne, ge, gt)))
+_relop = dict(zip("< <= == != >= >".split(), (lt, le, eq, ne, ge, gt)))
 
 
 class requires(object):
-    """ Conditional skipping (on requirements) of tests in pytest
+    """Conditional skipping (on requirements) of tests in pytest
 
     Examples
     --------
@@ -31,6 +31,7 @@ class requires(object):
     ...
 
     """
+
     def __init__(self, *reqs):
         self.missing = []
         self.incomp = []
@@ -51,16 +52,16 @@ class requires(object):
                             self.incomp.append(str(req))
 
     def __call__(self, cb):
-        r = 'Unfulfilled requirements.'
+        r = "Unfulfilled requirements."
         if self.missing:
-            r += " Missing modules: %s." % ', '.join(self.missing)
+            r += " Missing modules: %s." % ", ".join(self.missing)
         if self.incomp:
-            r += " Incomp versions: %s." % ', '.join(self.incomp)
+            r += " Incomp versions: %s." % ", ".join(self.incomp)
         return skipif(self.missing or self.incomp, reason=r)(cb)
 
 
 def skipif(predicate, *, reason):
-    if os.environ.get('CHEMPY_SKIP_NO_TESTS', '0') == '1':
+    if os.environ.get("CHEMPY_SKIP_NO_TESTS", "0") == "1":
         return pytest.mark.skipif(False, reason=reason)
     else:
         return pytest.mark.skipif(predicate, reason=reason)

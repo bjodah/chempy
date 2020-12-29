@@ -24,9 +24,12 @@ def test_water_permittivity():
 
 @requires(units_library)
 def test_water_permittivity__units():
-    assert allclose(water_permittivity(
-        298.15*u.K, 1*u.bar,
-        units=u), 78.38436874203077)
-    assert allclose(water_permittivity(
-        linspace(297.5, 298.65)*u.K, 1*u.bar,
-        units=u), 78, rtol=1e-2, atol=1e-2)
+    assert allclose(
+        water_permittivity(298.15 * u.K, 1 * u.bar, units=u), 78.38436874203077
+    )
+    assert allclose(
+        water_permittivity(linspace(297.5, 298.65) * u.K, 1 * u.bar, units=u),
+        78,
+        rtol=1e-2,
+        atol=1e-2,
+    )

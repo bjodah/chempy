@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 
 try:
     import numpy as np
@@ -25,8 +25,8 @@ def equilibrium_residual(rc, c0, stoich, K, activity_product=None):
         callback for calculating the activity product taking
         concentration as single parameter.
     """
-    if not hasattr(stoich, 'ndim') or stoich.ndim == 1:
-        c = c0 + stoich*rc
+    if not hasattr(stoich, "ndim") or stoich.ndim == 1:
+        c = c0 + stoich * rc
     else:
         c = c0 + np.dot(stoich, rc)
     Q = equilibrium_quotient(c, stoich)
@@ -37,7 +37,7 @@ def equilibrium_residual(rc, c0, stoich, K, activity_product=None):
 
 def _get_rc_interval(stoich, c0):
     """ get reaction coordinate interval """
-    limits = c0/stoich
+    limits = c0 / stoich
     if np.any(limits < 0):
         upper = -np.max(limits[np.argwhere(limits < 0)])
     else:
@@ -56,7 +56,8 @@ def _get_rc_interval(stoich, c0):
 
 def _solve_equilibrium_coord(c0, stoich, K, activity_product=None):
     from scipy.optimize import brentq
-    mask, = np.nonzero(stoich)
+
+    (mask,) = np.nonzero(stoich)
     stoich_m = stoich[mask]
     c0_m = c0[mask]
     lower, upper = _get_rc_interval(stoich_m, c0_m)
@@ -65,7 +66,7 @@ def _solve_equilibrium_coord(c0, stoich, K, activity_product=None):
         equilibrium_residual,
         lower,  # + delta_frac*span,
         upper,  # - delta_frac*span,
-        (c0_m, stoich_m, K, activity_product)
+        (c0_m, stoich_m, K, activity_product),
     )
 
 
@@ -90,4 +91,4 @@ def solve_equilibrium(c0, stoich, K, activity_product=None):
     stoich = np.array(stoich)
     c0 = np.array(c0)
     rc = _solve_equilibrium_coord(c0, stoich, K, activity_product)
-    return c0 + rc*stoich
+    return c0 + rc * stoich

@@ -8,14 +8,15 @@ class UnicodePrinter(StrPrinter):
 
     _default_settings = dict(
         StrPrinter._default_settings,
-        repr_name='unicode',
-        Equilibrium_arrow=u'⇌',
-        Reaction_arrow=u'→',
+        repr_name="unicode",
+        Equilibrium_arrow=u"⇌",
+        Reaction_arrow=u"→",
         magnitude_fmt=number_to_scientific_unicode,
         unit_fmt=lambda dim: (
-            dim.unicode if sys.version_info[0] > 2
-            else dim.unicode.decode(encoding='utf-8')
-        )
+            dim.unicode
+            if sys.version_info[0] > 2
+            else dim.unicode.decode(encoding="utf-8")
+        ),
     )
     _str = str if sys.version_info[0] > 2 else unicode  # noqa
 
