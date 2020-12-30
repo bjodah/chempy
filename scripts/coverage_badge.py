@@ -11,7 +11,7 @@ Usage:
 
 """
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 import os
 
 # this template was generated from shields.io on 2015-10-11
@@ -41,22 +41,23 @@ template = """
 
 
 def get_coverage(htmldir):
-    for line in open(os.path.join(htmldir, 'index.html'), 'rt'):
-        if 'pc_cov' in line:
-            return int(line.split('pc_cov')[1].split(
-                '>')[1].split('<')[0].rstrip('%'))
+    for line in open(os.path.join(htmldir, "index.html"), "rt"):
+        if "pc_cov" in line:
+            return int(line.split("pc_cov")[1].split(">")[1].split("<")[0].rstrip("%"))
     raise ValueError("Could not find pc_cov in index.html")
 
 
 def write_cov_badge_svg(path, percent):
-    colors = '#e05d44 #fe7d37 #dfb317 #a4a61d #97CA00 #4c1'.split()
+    colors = "#e05d44 #fe7d37 #dfb317 #a4a61d #97CA00 #4c1".split()
     limits_le = 50, 60, 70, 80, 90, 100
     c = next(clr for lim, clr in zip(limits_le, colors) if percent <= lim)
-    with open(path, 'wt') as f:
+    with open(path, "wt") as f:
         f.write(template.format(c, str(percent)))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import sys
+
     assert len(sys.argv) == 3
     cov_percent = get_coverage(sys.argv[1])
     write_cov_badge_svg(sys.argv[2], cov_percent)

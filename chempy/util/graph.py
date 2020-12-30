@@ -8,8 +8,16 @@ import shutil
 import tempfile
 
 
-def rsys2dot(rsys, tex=False, rprefix='r', rref0=1, nodeparams='[label="{}",shape=diamond]',
-             colors=('maroon', 'darkgreen'), penwidths=None, include_inactive=True):
+def rsys2dot(
+    rsys,
+    tex=False,
+    rprefix="r",
+    rref0=1,
+    nodeparams='[label="{}",shape=diamond]',
+    colors=("maroon", "darkgreen"),
+    penwidths=None,
+    include_inactive=True,
+):
     """
     Returns list of lines of DOT (graph description language)
     formated graph.
@@ -33,34 +41,47 @@ def rsys2dot(rsys, tex=False, rprefix='r', rref0=1, nodeparams='[label="{}",shap
 
     """
     lines = ['digraph "' + str(rsys.name) + '" {\n']
-    ind = '  '  # indentation
+    ind = "  "  # indentation
     if penwidths is None:
-        penwidths = [1.0]*rsys.nr
+        penwidths = [1.0] * rsys.nr
 
     categories = rsys.categorize_substances(checks=())
 
     def add_substance(key):
-        fc = 'black'
-        if key in categories['depleted']:
+        fc = "black"
+        if key in categories["depleted"]:
             fc = colors[0]
-        if key in categories['accumulated']:
+        if key in categories["accumulated"]:
             fc = colors[1]
-        label = ('$%s$' if tex else '%s') % getattr(rsys.substances[key], 'latex_name' if tex else 'name')
-        lines.append(ind + '"{key}" [fontcolor={fc} label="{lbl}"];\n'.format(key=key, fc=fc, lbl=label))
+        label = ("$%s$" if tex else "%s") % getattr(
+            rsys.substances[key], "latex_name" if tex else "name"
+        )
+        lines.append(
+            ind
+            + '"{key}" [fontcolor={fc} label="{lbl}"];\n'.format(
+                key=key, fc=fc, lbl=label
+            )
+        )
 
     for sk in rsys.substances:
         add_substance(sk)
 
     def add_vertex(key, num, reac, penwidth):
-        snum = str(num) if num > 1 else ''
-        fmt = ','.join(
-            ['label="{}"'.format(snum)] +
-            (['penwidth={}'.format(penwidth)] if penwidth != 1 else [])
+        snum = str(num) if num > 1 else ""
+        fmt = ",".join(
+            ['label="{}"'.format(snum)]
+            + (["penwidth={}".format(penwidth)] if penwidth != 1 else [])
         )
-        lines.append(ind + '"{}" -> "{}" [color={},fontcolor={},{}];\n'.format(
-            *((key, rid, colors[0], colors[0], fmt) if reac else
-              (rid, key, colors[1], colors[1], fmt))
-        ))
+        lines.append(
+            ind
+            + '"{}" -> "{}" [color={},fontcolor={},{}];\n'.format(
+                *(
+                    (key, rid, colors[0], colors[0], fmt)
+                    if reac
+                    else (rid, key, colors[1], colors[1], fmt)
+                )
+            )
+        )
 
     if include_inactive:
         reac_stoichs = rsys.all_reac_stoichs()
@@ -70,11 +91,11 @@ def rsys2dot(rsys, tex=False, rprefix='r', rref0=1, nodeparams='[label="{}",shap
         prod_stoichs = rsys.active_prod_stoichs()
 
     for ri, rxn in enumerate(rsys.rxns):
-        rid = rprefix + str(ri+rref0)
-        lines.append(ind + '{')
-        lines.append(ind*2 + 'node ' + nodeparams.format(rxn.name or rid))
-        lines.append(ind*2 + rid)
-        lines.append(ind + '}\n')
+        rid = rprefix + str(ri + rref0)
+        lines.append(ind + "{")
+        lines.append(ind * 2 + "node " + nodeparams.format(rxn.name or rid))
+        lines.append(ind * 2 + rid)
+        lines.append(ind + "}\n")
         for idx, key in enumerate(rsys.substances):
             num = reac_stoichs[ri, idx]
             if num == 0:
@@ -85,7 +106,7 @@ def rsys2dot(rsys, tex=False, rprefix='r', rref0=1, nodeparams='[label="{}",shap
             if num == 0:
                 continue
             add_vertex(key, num, False, penwidths[ri])
-    lines.append('}\n')
+    lines.append("}\n")
     return lines
 
 
@@ -127,24 +148,24 @@ def rsys2graph(rsys, fname, output_dir=None, prog=None, save=False, **kwargs):
             created_tempdir = True
         basename, ext = os.path.splitext(os.path.basename(fname))
         outpath = os.path.join(output_dir, fname)
-        dotpath = os.path.join(output_dir, basename + '.dot')
-        with open(dotpath, 'wt') as ofh:
+        dotpath = os.path.join(output_dir, basename + ".dot")
+        with open(dotpath, "wt") as ofh:
             ofh.writelines(lines)
-        if ext == '.tex':
-            cmds = [prog or 'dot2tex']
+        if ext == ".tex":
+            cmds = [prog or "dot2tex"]
         else:
-            cmds = [prog or 'dot', '-T'+outpath.split('.')[-1]]
-        p = subprocess.Popen(cmds + [dotpath, '-o', outpath])
+            cmds = [prog or "dot", "-T" + outpath.split(".")[-1]]
+        p = subprocess.Popen(cmds + [dotpath, "-o", outpath])
         retcode = p.wait()
         if retcode:
             fmtstr = "{}\n returned with exit status {}"
-            raise RuntimeError(fmtstr.format(' '.join(cmds), retcode))
+            raise RuntimeError(fmtstr.format(" ".join(cmds), retcode))
         return outpath
     finally:
-        if save is True or save == 'True':
+        if save is True or save == "True":
             pass
         else:
-            if save is False or save == 'False':
+            if save is False or save == "False":
                 if created_tempdir:
                     shutil.rmtree(output_dir)
             else:

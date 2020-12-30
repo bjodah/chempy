@@ -5,7 +5,7 @@ Contains functions for the `Arrhenius equation
 (:func:`arrhenius_equation`) and a convenience fitting routine
 (:func:`fit_arrhenius_equation`).
 """
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 
 from .._util import get_backend
 from ..util.regression import least_squares
@@ -33,13 +33,15 @@ def _fit(T, k, kerr, func, lin_x, lin_y, backtransfm, linearized=False):
     if kerr is None:
         lin_yerr = 1
     else:
-        lin_yerr = (abs(lin_y(k - kerr, T) - _lin_y) +
-                    abs(lin_y(k + kerr, T) - _lin_y))/2
+        lin_yerr = (
+            abs(lin_y(k - kerr, T) - _lin_y) + abs(lin_y(k + kerr, T) - _lin_y)
+        ) / 2
 
     lopt = _fit_linearized(backtransfm, lin_x(T, k), _lin_y, lin_yerr)
     if linearized:
         return lopt
     from scipy.optimize import curve_fit
+
     popt, pcov = curve_fit(func, T, k, lopt, kerr)
     return popt, pcov
 
@@ -51,7 +53,7 @@ def _get_R(constants=None, units=None):
             J = units.Joule
             K = units.Kelvin
             mol = units.mol
-            R *= J/mol/K
+            R *= J / mol / K
     else:
         R = constants.molar_gas_constant.simplified
     return R
@@ -84,14 +86,16 @@ def arrhenius_equation(A, Ea, T, constants=None, units=None, backend=None):
     be = get_backend(backend)
     R = _get_R(constants, units)
     try:
-        RT = (R*T).rescale(Ea.dimensionality)
+        RT = (R * T).rescale(Ea.dimensionality)
     except AttributeError:
-        RT = R*T
-    return A*be.exp(-Ea/RT)
+        RT = R * T
+    return A * be.exp(-Ea / RT)
 
 
-def fit_arrhenius_equation(T, k, kerr=None, linearized=False, constants=None, units=None):
-    """ Curve fitting of the Arrhenius equation to data points
+def fit_arrhenius_equation(
+    T, k, kerr=None, linearized=False, constants=None, units=None
+):
+    """Curve fitting of the Arrhenius equation to data points
 
     Parameters
     ----------
@@ -101,12 +105,20 @@ def fit_arrhenius_equation(T, k, kerr=None, linearized=False, constants=None, un
     linearized : bool
 
     """
-    return _fit(T, k, kerr, arrhenius_equation, lambda T, k: 1/T, lambda T, k: np.log(k),
-                [lambda p: np.exp(p[0]), lambda p: -p[1]*_get_R(constants, units)], linearized=linearized)
+    return _fit(
+        T,
+        k,
+        kerr,
+        arrhenius_equation,
+        lambda T, k: 1 / T,
+        lambda T, k: np.log(k),
+        [lambda p: np.exp(p[0]), lambda p: -p[1] * _get_R(constants, units)],
+        linearized=linearized,
+    )
 
 
 def _fit_arrhenius_equation(T, k, kerr=None, linearized=False):
-    """ Curve fitting of the Arrhenius equation to data points
+    """Curve fitting of the Arrhenius equation to data points
 
     Parameters
     ----------
@@ -120,23 +132,25 @@ def _fit_arrhenius_equation(T, k, kerr=None, linearized=False):
         raise ValueError("k and T needs to be of equal length.")
     from math import exp
     import numpy as np
-    p = np.polyfit(1/T, np.log(k), 1)
+
+    p = np.polyfit(1 / T, np.log(k), 1)
     R = _get_R(constants=None, units=None)
-    Ea = -R*p[0]
+    Ea = -R * p[0]
     A = exp(p[1])
     if linearized:
         return A, Ea
     from scipy.optimize import curve_fit
+
     if kerr is None:
         weights = None
     else:
-        weights = 1/kerr**2
+        weights = 1 / kerr ** 2
     popt, pcov = curve_fit(arrhenius_equation, T, k, [A, Ea], weights)
     return popt, pcov
 
 
-class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
-    """ Kinetic data in the form of an Arrhenius parameterisation
+class ArrheniusParam(defaultnamedtuple("ArrheniusParam", "A Ea ref", [None])):
+    """Kinetic data in the form of an Arrhenius parameterisation
 
     Parameters
     ----------
@@ -156,14 +170,16 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
     """
 
     def html(self, fmt):
-        return '%s exp((%s)/(RT))' % (fmt(self.A), fmt(self.Ea))
+        return "%s exp((%s)/(RT))" % (fmt(self.A), fmt(self.Ea))
 
     def unicode(self, fmt):
-        return '%s exp((%s)/(RT))' % (fmt(self.A), fmt(self.Ea))
+        return "%s exp((%s)/(RT))" % (fmt(self.A), fmt(self.Ea))
 
     @classmethod
-    def from_rateconst_at_T(cls, Ea, T_k, backend=None, constants=None, units=None, **kwargs):
-        """ Constructs an instance from a known rate constant at a given temperature.
+    def from_rateconst_at_T(
+        cls, Ea, T_k, backend=None, constants=None, units=None, **kwargs
+    ):
+        """Constructs an instance from a known rate constant at a given temperature.
 
         Parameters
         ----------
@@ -179,7 +195,7 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
         R = _get_R(constants, units)
         if backend is None:
             from chempy.units import patched_numpy as backend
-        return cls(k*backend.exp(Ea/R/T), Ea, **kwargs)
+        return cls(k * backend.exp(Ea / R / T), Ea, **kwargs)
 
     @classmethod
     def from_fit_of_data(cls, T, k, kerr=None, **kwargs):
@@ -187,7 +203,7 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
         return cls(*args, **kwargs)
 
     def __call__(self, T, constants=None, units=None, backend=None):
-        """ Evaluates the arrhenius equation for a specified state
+        """Evaluates the arrhenius equation for a specified state
 
         Parameters
         ----------
@@ -201,14 +217,16 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
         chempy.arrhenius.arrhenius_equation : the function called here.
 
         """
-        return arrhenius_equation(self.A, self.Ea, T, constants=constants,
-                                  units=units, backend=backend)
+        return arrhenius_equation(
+            self.A, self.Ea, T, constants=constants, units=units, backend=backend
+        )
 
     def Ea_over_R(self, constants, units, backend=None):
-        return self.Ea/_get_R(constants, units)
+        return self.Ea / _get_R(constants, units)
 
     def as_RateExpr(self, unique_keys=None, constants=None, units=None, backend=None):
         from .rates import Arrhenius, MassAction
+
         args = [self.A, self.Ea_over_R(constants, units)]
         return MassAction(Arrhenius(args, unique_keys))
 
@@ -217,37 +235,51 @@ class ArrheniusParam(defaultnamedtuple('ArrheniusParam', 'A Ea ref', [None])):
             str_A, str_A_unit = format_string(self.A, precision, tex)
             str_Ea, str_Ea_unit = format_string(self.Ea, precision, tex)
         except Exception:
-            str_A, str_A_unit = precision.format(self.A), '-'
-            str_Ea, str_Ea_unit = precision.format(self.Ea), '-'
+            str_A, str_A_unit = precision.format(self.A), "-"
+            str_Ea, str_Ea_unit = precision.format(self.Ea), "-"
         return (str_A, str_A_unit), (str_Ea, str_Ea_unit)
 
     def equation_as_string(self, precision, tex=False):
         (str_A, str_A_unit), (str_Ea, str_Ea_unit) = self.format(precision, tex)
         if tex:
-            return r"{}\exp \left(-\frac{{{}}}{{RT}} \right)".format(
-                str_A, str_Ea + ' ' + str_Ea_unit), str_A_unit
+            return (
+                r"{}\exp \left(-\frac{{{}}}{{RT}} \right)".format(
+                    str_A, str_Ea + " " + str_Ea_unit
+                ),
+                str_A_unit,
+            )
         else:
-            return "{}*exp(-{}/(R*T))".format(str_A, str_Ea + ' ' + str_Ea_unit), str_A_unit
+            return (
+                "{}*exp(-{}/(R*T))".format(str_A, str_Ea + " " + str_Ea_unit),
+                str_A_unit,
+            )
 
     def __str__(self):
-        return ' '.join(self.equation_as_string('%.5g'))
+        return " ".join(self.equation_as_string("%.5g"))
 
 
 class ArrheniusParamWithUnits(ArrheniusParam):
-
     @classmethod
     def from_rateconst_at_T(cls, *args, **kwargs):
-        if 'constants' not in kwargs:
-            kwargs['constants'] = default_constants
-        if 'units' not in kwargs:
-            kwargs['units'] = default_units
-        if 'backend' not in kwargs:
-            kwargs['backend'] = patched_numpy
+        if "constants" not in kwargs:
+            kwargs["constants"] = default_constants
+        if "units" not in kwargs:
+            kwargs["units"] = default_units
+        if "backend" not in kwargs:
+            kwargs["backend"] = patched_numpy
         return super(ArrheniusParamWithUnits, cls).from_rateconst_at_T(*args, **kwargs)
 
-    def __call__(self, state, constants=default_constants, units=default_units, backend=None):
+    def __call__(
+        self, state, constants=default_constants, units=default_units, backend=None
+    ):
         """ See :func:`chempy.arrhenius.arrhenius_equation`. """
-        return super(ArrheniusParamWithUnits, self).__call__(state, constants, units, backend)
+        return super(ArrheniusParamWithUnits, self).__call__(
+            state, constants, units, backend
+        )
 
-    def as_RateExpr(self, unique_keys=None, constants=default_constants, units=default_units):
-        return super(ArrheniusParamWithUnits, self).as_RateExpr(unique_keys, constants, units)
+    def as_RateExpr(
+        self, unique_keys=None, constants=default_constants, units=default_units
+    ):
+        return super(ArrheniusParamWithUnits, self).as_RateExpr(
+            unique_keys, constants, units
+        )

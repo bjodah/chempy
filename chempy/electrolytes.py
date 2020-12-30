@@ -2,7 +2,7 @@
 """
 This modules collects expressions related to ionic strenght, e.g. the Debye-Hückel expressions.
 """
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 
 from collections import OrderedDict
 import warnings
@@ -16,14 +16,20 @@ integer_one = 1
 
 def _get_b0(b0, units=None):
     if units is not None and b0 is integer_one:
-        return b0*units.molal
+        return b0 * units.molal
     else:
         return b0
 
 
-def ionic_strength(molalities, charges=None, units=None, substances=None,
-                   substance_factory=Substance.from_formula, warn=True):
-    """ Calculates the ionic strength
+def ionic_strength(
+    molalities,
+    charges=None,
+    units=None,
+    substances=None,
+    substance_factory=Substance.from_formula,
+    warn=True,
+):
+    """Calculates the ionic strength
 
     Parameters
     ----------
@@ -53,18 +59,21 @@ def ionic_strength(molalities, charges=None, units=None, substances=None,
     tot = None
     if charges is None:
         if substances is None:
-            substances = ' '.join(molalities.keys())
+            substances = " ".join(molalities.keys())
         if isinstance(substances, str):
-            substances = OrderedDict([(k, substance_factory(k)) for k
-                                      in substances.split()])
-        charges, molalities = zip(*[(substances[k].charge, v) for k, v in molalities.items()])
+            substances = OrderedDict(
+                [(k, substance_factory(k)) for k in substances.split()]
+            )
+        charges, molalities = zip(
+            *[(substances[k].charge, v) for k, v in molalities.items()]
+        )
     if len(molalities) != len(charges):
         raise ValueError("molalities and charges of different lengths")
     for b, z in zip(molalities, charges):
         if tot is None:
-            tot = b * z**2
+            tot = b * z ** 2
         else:
-            tot += b * z**2
+            tot += b * z ** 2
     if warn:
         net = None
         for b, z in zip(molalities, charges):
@@ -72,9 +81,9 @@ def ionic_strength(molalities, charges=None, units=None, substances=None,
                 net = b * z
             else:
                 net += b * z
-        if not allclose(net, tot*0, atol=tot*1e-14):
+        if not allclose(net, tot * 0, atol=tot * 1e-14):
             warnings.warn("Molalities not charge neutral: %s" % str(net))
-    return tot/2
+    return tot / 2
 
 
 class _ActivityProductBase(object):
@@ -124,21 +133,25 @@ def A(eps_r, T, rho, b0=1, constants=None, units=None, backend=None):
     """
     b0 = _get_b0(b0, units)
     be = get_backend(backend)
-    one = be.pi**0
+    one = be.pi ** 0
     if constants is None:
         combined = 132871.85866393594
         if units is not None:
             m = units.meter
             K = units.Kelvin
             mol = units.mol
-            combined *= (m*K)**(3*one/2) / mol**(one/2)
-        return combined*(rho * b0 * T**-3 * eps_r**-3)**0.5
+            combined *= (m * K) ** (3 * one / 2) / mol ** (one / 2)
+        return combined * (rho * b0 * T ** -3 * eps_r ** -3) ** 0.5
     F = constants.Faraday_constant
     NA = constants.Avogadro_constant
     eps0 = constants.vacuum_permittivity
     kB = constants.Boltzmann_constant
     pi = constants.pi
-    A = F**3/(4*pi*NA)*(rho*b0/(2*(eps0*eps_r*kB*NA*T)**3))**(one/2)
+    A = (
+        F ** 3
+        / (4 * pi * NA)
+        * (rho * b0 / (2 * (eps0 * eps_r * kB * NA * T) ** 3)) ** (one / 2)
+    )
     return A
 
 
@@ -172,19 +185,19 @@ def B(eps_r, T, rho, b0=1, constants=None, units=None, backend=None):
     """
     b0 = _get_b0(b0, units)
     be = get_backend(backend)
-    one = be.pi**0
+    one = be.pi ** 0
     if constants is None:
         combined = 15903203868.740343
         if units is not None:
             m = units.meter
             K = units.Kelvin
             mol = units.mol
-            combined *= (m*K/mol)**(one/2)
-        return combined*(rho*b0/(T*eps_r))**0.5
+            combined *= (m * K / mol) ** (one / 2)
+        return combined * (rho * b0 / (T * eps_r)) ** 0.5
     F = constants.Faraday_constant
     eps0 = constants.vacuum_permittivity
     R = constants.molar_gas_constant
-    B = F*(2*rho*b0/(eps_r*eps0*R*T))**(one/2)
+    B = F * (2 * rho * b0 / (eps_r * eps0 * R * T)) ** (one / 2)
     return B
 
 
@@ -192,7 +205,7 @@ def limiting_log_gamma(IS, z, A, I0=1, backend=None):
     """ Debye-Hyckel limiting formula """
     be = get_backend(backend)
     one = be.pi ** 0
-    return -A*z**2*(IS/I0)**(one/2)
+    return -A * z ** 2 * (IS / I0) ** (one / 2)
 
 
 def extended_log_gamma(IS, z, a, A, B, C=0, I0=1, backend=None):
@@ -201,16 +214,16 @@ def extended_log_gamma(IS, z, a, A, B, C=0, I0=1, backend=None):
     one = be.pi ** 0
     I_I0 = IS / I0
     sqrt_I_I0 = (I_I0) ** (one / 2)
-    return -A*z**2 * sqrt_I_I0/(1 + B*a*sqrt_I_I0) + C*I_I0
+    return -A * z ** 2 * sqrt_I_I0 / (1 + B * a * sqrt_I_I0) + C * I_I0
 
 
 def davies_log_gamma(IS, z, A, C=-0.3, I0=1, backend=None):
     """ Davies formula """
     be = get_backend(backend)
-    one = be.pi**0
-    I_I0 = IS/I0
-    sqrt_I_I0 = (I_I0)**(one/2)
-    return -A * z**2 * (sqrt_I_I0/(1 + sqrt_I_I0) + C*I_I0)
+    one = be.pi ** 0
+    I_I0 = IS / I0
+    sqrt_I_I0 = (I_I0) ** (one / 2)
+    return -A * z ** 2 * (sqrt_I_I0 / (1 + sqrt_I_I0) + C * I_I0)
 
 
 def limiting_activity_product(IS, stoich, z, T, eps_r, rho, backend=None):
@@ -219,7 +232,7 @@ def limiting_activity_product(IS, stoich, z, T, eps_r, rho, backend=None):
     Aval = A(eps_r, T, rho)
     tot = 0
     for idx, nr in enumerate(stoich):
-        tot += nr*limiting_log_gamma(IS, z[idx], Aval)
+        tot += nr * limiting_log_gamma(IS, z[idx], Aval)
     return be.exp(tot)
 
 
@@ -229,7 +242,7 @@ def extended_activity_product(IS, stoich, z, a, T, eps_r, rho, C=0, backend=None
     Bval = B(eps_r, T, rho)
     tot = 0
     for idx, nr in enumerate(stoich):
-        tot += nr*extended_log_gamma(IS, z[idx], a[idx], Aval, Bval, C)
+        tot += nr * extended_log_gamma(IS, z[idx], a[idx], Aval, Bval, C)
     return be.exp(tot)
 
 
@@ -238,12 +251,11 @@ def davies_activity_product(IS, stoich, z, a, T, eps_r, rho, C=-0.3, backend=Non
     Aval = A(eps_r, T, rho)
     tot = 0
     for idx, nr in enumerate(stoich):
-        tot += nr*davies_log_gamma(IS, z[idx], Aval, C)
+        tot += nr * davies_log_gamma(IS, z[idx], Aval, C)
     return be.exp(tot)
 
 
 class LimitingDebyeHuckelActivityProduct(_ActivityProductBase):
-
     def __call__(self, c):
         z = self.args[0]
         IS = ionic_strength(c, z)
@@ -251,7 +263,6 @@ class LimitingDebyeHuckelActivityProduct(_ActivityProductBase):
 
 
 class ExtendedDebyeHuckelActivityProduct(_ActivityProductBase):
-
     def __call__(self, c):
         z = self.args[0]
         IS = ionic_strength(c, z)

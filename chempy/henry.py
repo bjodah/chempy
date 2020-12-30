@@ -11,7 +11,7 @@ from .units import default_units
 
 
 def Henry_H_at_T(T, H, Tderiv, T0=None, units=None, backend=None):
-    """ Evaluate Henry's constant H at temperature T
+    """Evaluate Henry's constant H at temperature T
 
     Parameters
     ----------
@@ -36,12 +36,12 @@ def Henry_H_at_T(T, H, Tderiv, T0=None, units=None, backend=None):
     else:
         K = units.Kelvin
     if T0 is None:
-        T0 = 298.15*K
-    return H * be.exp(Tderiv*(1/T - 1/T0))
+        T0 = 298.15 * K
+    return H * be.exp(Tderiv * (1 / T - 1 / T0))
 
 
-class Henry(defaultnamedtuple('Henry', 'Hcp Tderiv T0 ref', [None, None])):
-    """ Henry's gas constant
+class Henry(defaultnamedtuple("Henry", "Hcp Tderiv T0 ref", [None, None])):
+    """Henry's gas constant
 
     Note that the reference temperature
     is set by the attribute :py:attr:`T0` which defaults to
@@ -69,15 +69,16 @@ class Henry(defaultnamedtuple('Henry', 'Hcp Tderiv T0 ref', [None, None])):
 
     def __call__(self, T, units=None, backend=None):
         """ Evaluates Henry's constant for provided temperature """
-        return Henry_H_at_T(T, self.Hcp, self.Tderiv, self.T0,
-                            units=units, backend=backend)
+        return Henry_H_at_T(
+            T, self.Hcp, self.Tderiv, self.T0, units=units, backend=backend
+        )
 
-    @deprecated('0.3.1', '0.5.0', __call__)
+    @deprecated("0.3.1", "0.5.0", __call__)
     def get_kH_at_T(self, *args, **kwargs):
         return self(*args, **kwargs)
 
     def get_c_at_T_and_P(self, T, P, **kwargs):
-        """ Convenience method for calculating concentration
+        """Convenience method for calculating concentration
 
         Calculate what concentration is needed to achieve a given partial
         pressure at a specified temperature
@@ -95,7 +96,7 @@ class Henry(defaultnamedtuple('Henry', 'Hcp Tderiv T0 ref', [None, None])):
         return P * self(T, **kwargs)
 
     def get_P_at_T_and_c(self, T, c, **kwargs):
-        """ Convenience method for calculating concentration
+        """Convenience method for calculating concentration
 
         Calculate the partial pressure for given temperature and concentration
 
@@ -113,7 +114,7 @@ class Henry(defaultnamedtuple('Henry', 'Hcp Tderiv T0 ref', [None, None])):
 
 
 class HenryWithUnits(Henry):
-    """ Analogous to :class:`Henry`
+    """Analogous to :class:`Henry`
 
     Examples
     --------
@@ -123,6 +124,7 @@ class HenryWithUnits(Henry):
     '0.00097'
 
     """
+
     def __call__(self, T, units=default_units, backend=None):
         """ Evaluates Henry's constant for provided temperature """
         return super(HenryWithUnits, self).__call__(T, units, backend)

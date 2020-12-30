@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 
 try:
     import numpy as np
@@ -8,7 +8,7 @@ except ImportError:
 
 
 def broadcast_stack(*args, **kwargs):
-    as_scalars = kwargs.pop('as_scalars', False)
+    as_scalars = kwargs.pop("as_scalars", False)
     if kwargs != {}:
         raise ValueError("Got unknown kwargs: %s" % kwargs)
     args = [np.atleast_1d(arg) for arg in args]

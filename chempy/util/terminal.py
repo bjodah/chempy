@@ -12,7 +12,8 @@ import textwrap
 
 class Echo:
     """ Context maganger for echoing variable assignments (in CPython) """
-    def __init__(self, msg, indent='  '):
+
+    def __init__(self, msg, indent="  "):
         self.msg = msg
         self.indent = indent
         self.parent_frame = inspect.currentframe().f_back
@@ -22,7 +23,11 @@ class Echo:
         self.locals_on_entry = self.parent_frame.f_locals.copy()
 
     def __exit__(self, exc_t, exc_v, tb):
-        new_locals = dict((k, v) for k, v in self.parent_frame.f_locals.items() if k not in self.locals_on_entry)
+        new_locals = dict(
+            (k, v)
+            for k, v in self.parent_frame.f_locals.items()
+            if k not in self.locals_on_entry
+        )
         print(textwrap.indent(pprint.pformat(new_locals), self.indent))
 
 
@@ -35,8 +40,8 @@ class Notify:
         pass
 
     def notify(self, title, message):
-        if os.environ.get('DISPLAY', ''):
-            subprocess.call(['notify-send', title, message])
+        if os.environ.get("DISPLAY", ""):
+            subprocess.call(["notify-send", title, message])
         else:
             print(title)
             print(message)
@@ -51,13 +56,13 @@ class Notify:
 
 class c:
 
-    ok = '\033[92m'    # green
-    fail = '\033[91m'  # red
-    endc = '\033[0m'   # reset
+    ok = "\033[92m"  # green
+    fail = "\033[91m"  # red
+    endc = "\033[0m"  # reset
 
 
 class Timed:
-    """ Utility function for timing portions of your python script
+    """Utility function for timing portions of your python script
 
     Parameters
     ----------
@@ -80,7 +85,7 @@ class Timed:
 
     counting = False
 
-    def __init__(self, msg=None, timer=time.time, fmt_s='.1f', out=sys.stdout):
+    def __init__(self, msg=None, timer=time.time, fmt_s=".1f", out=sys.stdout):
         self.msg = msg
         self.out = out
         self.fmt_s = fmt_s
@@ -100,13 +105,20 @@ class Timed:
             t = self.timer() - self.t
             if self.msg is not None:
                 if ok:
-                    status = 'ok'
+                    status = "ok"
                     color = c.ok
                 else:
-                    status = 'error'
+                    status = "error"
                     color = c.fail
-                self.out.write('%{}s\n'.format(shutil.get_terminal_size()[0] - len(self.msg)) %
-                               ('(%{fmt_s} s) [{c}%5s{r}]'.format(fmt_s=self.fmt_s, c=color, r=c.endc) % (t, status)))
+                self.out.write(
+                    "%{}s\n".format(shutil.get_terminal_size()[0] - len(self.msg))
+                    % (
+                        "(%{fmt_s} s) [{c}%5s{r}]".format(
+                            fmt_s=self.fmt_s, c=color, r=c.endc
+                        )
+                        % (t, status)
+                    )
+                )
                 self.out.flush()
             return t
         else:
@@ -121,7 +133,7 @@ class Timed:
 
 @contextmanager
 def limit_logging(max_lvl=logging.CRITICAL):
-    """ Contextmanager for silencing logging messages.
+    """Contextmanager for silencing logging messages.
 
     Examples
     --------

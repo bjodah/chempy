@@ -2,7 +2,7 @@
 """
 Convenience functions for presenting reaction systems in tables.
 """
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 
 
 import os
@@ -15,8 +15,8 @@ from ..kinetics.rates import RadiolyticBase
 from ..units import to_unitless, get_derived_unit
 
 tex_templates = {
-    'document': {
-        'default': r"""
+    "document": {
+        "default": r"""
 \documentclass[a4paper,9pt]{article}
 \pagestyle{empty}
 \usepackage[paper=a4paper,margin=1cm]{geometry}
@@ -41,8 +41,8 @@ tex_templates = {
 \end{document}
 """
     },
-    'table': {
-        'default': r"""
+    "table": {
+        "default": r"""
 \begin{%(table_env)s}
 \centering
 \label{tab:%(label)s}
@@ -55,7 +55,7 @@ tex_templates = {
 \bottomrule
 \end{tabular}
 \end{%(table_env)s}""",
-        'longtable': r"""
+        "longtable": r"""
 \begin{%(table_env)s}{%(alignment)s}
 \caption[%(short_cap)s]{%(long_cap)s
 \label{tab:%(label)s}}\\
@@ -64,13 +64,13 @@ tex_templates = {
 \midrule
 %(body)s
 \bottomrule
-\end{%(table_env)s}"""
-    }
+\end{%(table_env)s}""",
+    },
 }
 
 
 def render_tex_to_pdf(contents, texfname, pdffname, output_dir, save):
-    """ Generates a pdf from a tex file by calling pdflatex
+    """Generates a pdf from a tex file by calling pdflatex
 
     Parameters
     ----------
@@ -88,28 +88,25 @@ def render_tex_to_pdf(contents, texfname, pdffname, output_dir, save):
             created_tempdir = True
         texpath = os.path.join(output_dir, texfname)
         pdfpath = os.path.join(output_dir, pdffname)
-        cmds = ['pdflatex', '-halt-on-error', '-interaction',
-                'batchmode', texfname]
-        with open(texpath, 'wt') as ofh:
+        cmds = ["pdflatex", "-halt-on-error", "-interaction", "batchmode", texfname]
+        with open(texpath, "wt") as ofh:
             ofh.write(contents)
             ofh.flush()
-        with open(pdfpath + '.out', 'wb') as logfile:
-            p = subprocess.Popen(cmds, cwd=output_dir,
-                                 stdout=logfile, stderr=logfile)
+        with open(pdfpath + ".out", "wb") as logfile:
+            p = subprocess.Popen(cmds, cwd=output_dir, stdout=logfile, stderr=logfile)
             retcode = p.wait()
-            p = subprocess.Popen(cmds, cwd=output_dir,
-                                 stdout=logfile, stderr=logfile)
+            p = subprocess.Popen(cmds, cwd=output_dir, stdout=logfile, stderr=logfile)
             retcode += p.wait()
         if retcode:
             fmtstr = "{}\n returned with exit status {}"
-            raise RuntimeError(fmtstr.format(' '.join(cmds), retcode))
+            raise RuntimeError(fmtstr.format(" ".join(cmds), retcode))
         else:
             return pdfpath
     finally:
-        if save is True or save == 'True':
+        if save is True or save == "True":
             pass
         else:
-            if save is False or save == 'False':
+            if save is False or save == "False":
                 if created_tempdir:
                     shutil.rmtree(output_dir)
             else:
@@ -118,9 +115,16 @@ def render_tex_to_pdf(contents, texfname, pdffname, output_dir, save):
                     shutil.copy(pdfpath, save)
 
 
-def rsys2tablines(rsys, rref0=1, coldelim=' & ',
-                  tex=True, ref_fmt=None,
-                  unit_registry=None, unit_fmt='{}', k_fmt='%.4g'):
+def rsys2tablines(
+    rsys,
+    rref0=1,
+    coldelim=" & ",
+    tex=True,
+    ref_fmt=None,
+    unit_registry=None,
+    unit_fmt="{}",
+    k_fmt="%.4g",
+):
     """
     Generates a table representation of a ReactionSystem.
 
@@ -139,22 +143,23 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
         optional (default: None)
     """
     if ref_fmt is None:
+
         def _doi(s):
-            return r'\texttt{\href{http://dx.doi.org/'+s+'}{doi:'+s+'}}'
+            return r"\texttt{\href{http://dx.doi.org/" + s + "}{doi:" + s + "}}"
 
         def ref_fmt(s):
             if s is None:
-                return 'None'
+                return "None"
             if tex:
                 if isinstance(s, dict):
-                    return _doi(s['doi'])
-                if s.startswith('doi:'):
+                    return _doi(s["doi"])
+                if s.startswith("doi:"):
                     return _doi(s[4:])
             return s
 
     def _wrap(s):
         if tex:
-            return '\\ensuremath{' + s + '}'
+            return "\\ensuremath{" + s + "}"
         else:
             return s
 
@@ -163,48 +168,65 @@ def rsys2tablines(rsys, rref0=1, coldelim=' & ',
         rxn_ref = rxn.ref
         if isinstance(rxn.param, RadiolyticBase):
             if unit_registry is not None:
-                kunit = get_derived_unit(unit_registry, 'radiolytic_yield')
+                kunit = get_derived_unit(unit_registry, "radiolytic_yield")
                 k = k_fmt % to_unitless(rxn.param.args[0], kunit)
-                k_unit_str = (kunit.dimensionality.latex.strip('$') if tex
-                              else kunit.dimensionality)
+                k_unit_str = (
+                    kunit.dimensionality.latex.strip("$")
+                    if tex
+                    else kunit.dimensionality
+                )
         else:
             if unit_registry is not None:
-                kunit = (get_derived_unit(unit_registry,
-                                          'concentration')**(1-rxn.order()) /
-                         get_derived_unit(unit_registry, 'time'))
+                kunit = get_derived_unit(unit_registry, "concentration") ** (
+                    1 - rxn.order()
+                ) / get_derived_unit(unit_registry, "time")
                 try:
                     k = k_fmt % to_unitless(rxn.param, kunit)
-                    k_unit_str = (kunit.dimensionality.latex.strip('$') if tex
-                                  else kunit.dimensionality)
+                    k_unit_str = (
+                        kunit.dimensionality.latex.strip("$")
+                        if tex
+                        else kunit.dimensionality
+                    )
                 except Exception:
                     k, k_unit_str = rxn.param.equation_as_string(k_fmt, tex)
             else:
-                k_unit_str = '-'
+                k_unit_str = "-"
                 if isinstance(k_fmt, str):
                     k = k_fmt % rxn.param
                 else:
                     k = k_fmt(rxn.param)
         latex_kw = dict(with_param=False, with_name=False)
         if tex:
-            latex_kw['substances'] = rsys.substances
-            latex_kw['Reaction_around_arrow'] = ('}}' + coldelim + '\\ensuremath{{',
-                                                 '}}' + coldelim + '\\ensuremath{{')
+            latex_kw["substances"] = rsys.substances
+            latex_kw["Reaction_around_arrow"] = (
+                "}}" + coldelim + "\\ensuremath{{",
+                "}}" + coldelim + "\\ensuremath{{",
+            )
         else:
-            latex_kw['Reaction_around_arrow'] = (coldelim,)*2
-            latex_kw['Reaction_arrow'] = '->'
-        lines.append(coldelim.join([
-            str(rref0+ri),
-            ('\\ensuremath{%s}' if tex else '%s') % latex(rxn, **latex_kw),
-            _wrap(k),
-            unit_fmt.format(_wrap(k_unit_str)),
-            ref_fmt(rxn_ref) if callable(ref_fmt) else ref_fmt.format(rxn_ref)
-        ]))
+            latex_kw["Reaction_around_arrow"] = (coldelim,) * 2
+            latex_kw["Reaction_arrow"] = "->"
+        lines.append(
+            coldelim.join(
+                [
+                    str(rref0 + ri),
+                    ("\\ensuremath{%s}" if tex else "%s") % latex(rxn, **latex_kw),
+                    _wrap(k),
+                    unit_fmt.format(_wrap(k_unit_str)),
+                    ref_fmt(rxn_ref) if callable(ref_fmt) else ref_fmt.format(rxn_ref),
+                ]
+            )
+        )
 
     return lines
 
 
-def rsys2table(rsys, table_template=None, table_template_dict=None,
-               param_name='Rate constant', **kwargs):
+def rsys2table(
+    rsys,
+    table_template=None,
+    table_template_dict=None,
+    param_name="Rate constant",
+    **kwargs
+):
     r"""
     Renders user provided table_template with table_template_dict which
     also has 'body' entry generated from `rsys2tablines`.
@@ -225,19 +247,18 @@ def rsys2table(rsys, table_template=None, table_template_dict=None,
         passed onto rsys2tablines
 
     """
-    siunitx = kwargs.pop('siunitx', False)
-    line_term = r' \\'
+    siunitx = kwargs.pop("siunitx", False)
+    line_term = r" \\"
     defaults = {
-        'table_env': 'longtable' if kwargs.pop(
-            'longtable', False) else 'table',
-        'alignment': 'llllSll' if siunitx else 'lllllll',
-        'header': kwargs.get('coldelim', ' & ').join([
-            'Id.', 'Reactants', '', 'Products', '{%s}' % param_name,
-            'Unit', 'Ref'
-        ]) + line_term,
-        'short_cap': rsys.name,
-        'long_cap': rsys.name,
-        'label': (rsys.name or 'None').lower()
+        "table_env": "longtable" if kwargs.pop("longtable", False) else "table",
+        "alignment": "llllSll" if siunitx else "lllllll",
+        "header": kwargs.get("coldelim", " & ").join(
+            ["Id.", "Reactants", "", "Products", "{%s}" % param_name, "Unit", "Ref"]
+        )
+        + line_term,
+        "short_cap": rsys.name,
+        "long_cap": rsys.name,
+        "label": (rsys.name or "None").lower(),
     }
 
     if table_template_dict is None:
@@ -247,26 +268,32 @@ def rsys2table(rsys, table_template=None, table_template_dict=None,
             if k not in table_template_dict:
                 table_template_dict[k] = v
 
-    if 'body' in table_template_dict:
+    if "body" in table_template_dict:
         raise KeyError("There is already a 'body' key in table_template_dict")
-    if 'k_fmt' not in kwargs:
-        kwargs['k_fmt'] = r'\num{%.4g}' if siunitx else '%.4g'
-    table_template_dict['body'] = (line_term + '\n').join(rsys2tablines(
-        rsys, **kwargs)
+    if "k_fmt" not in kwargs:
+        kwargs["k_fmt"] = r"\num{%.4g}" if siunitx else "%.4g"
+    table_template_dict["body"] = (line_term + "\n").join(
+        rsys2tablines(rsys, **kwargs)
     ) + line_term
 
     if table_template is None:
-        if table_template_dict['table_env'] == 'longtable':
-            table_template = tex_templates['table']['longtable']
+        if table_template_dict["table_env"] == "longtable":
+            table_template = tex_templates["table"]["longtable"]
         else:
-            table_template = tex_templates['table']['default']
+            table_template = tex_templates["table"]["default"]
 
     return table_template % table_template_dict
 
 
-def rsys2pdf_table(rsys, output_dir=None, doc_template=None,
-                   doc_template_dict=None, save=True, landscape=False,
-                   **kwargs):
+def rsys2pdf_table(
+    rsys,
+    output_dir=None,
+    doc_template=None,
+    doc_template_dict=None,
+    save=True,
+    landscape=False,
+    **kwargs
+):
     """
     Convenience function to render a ReactionSystem as
     e.g. a pdf using e.g. pdflatex.
@@ -287,21 +314,28 @@ def rsys2pdf_table(rsys, output_dir=None, doc_template=None,
         passed on to `rsys2table`
     """
     if doc_template is None:
-        doc_template = tex_templates['document']['default']
-    lscape = ['pdflscape' if landscape == 'pdf' else 'lscape'] if landscape else []
+        doc_template = tex_templates["document"]["default"]
+    lscape = ["pdflscape" if landscape == "pdf" else "lscape"] if landscape else []
     _pkgs = [
-        'booktabs', 'amsmath', ('pdftex,colorlinks,unicode=True', 'hyperref')
+        "booktabs",
+        "amsmath",
+        ("pdftex,colorlinks,unicode=True", "hyperref"),
     ] + lscape
-    if kwargs.get('longtable', False):
-        _pkgs += ['longtable']
-    if kwargs.get('siunitx', False):
-        _pkgs += ['siunitx']
-    _envs = ['tiny'] + (['landscape'] if landscape else [])
+    if kwargs.get("longtable", False):
+        _pkgs += ["longtable"]
+    if kwargs.get("siunitx", False):
+        _pkgs += ["siunitx"]
+    _envs = ["tiny"] + (["landscape"] if landscape else [])
     defaults = {
-        'usepkg': '\n'.join([(r'\usepackage' + (
-            '[%s]' if isinstance(pkg, tuple) else '') + '{%s}') % pkg for pkg in _pkgs]),
-        'begins': '\n'.join([r'\begin{%s}' % env for env in _envs]),
-        'ends': '\n'.join([r'\end{%s}' % env for env in _envs[::-1]])
+        "usepkg": "\n".join(
+            [
+                (r"\usepackage" + ("[%s]" if isinstance(pkg, tuple) else "") + "{%s}")
+                % pkg
+                for pkg in _pkgs
+            ]
+        ),
+        "begins": "\n".join([r"\begin{%s}" % env for env in _envs]),
+        "ends": "\n".join([r"\end{%s}" % env for env in _envs[::-1]]),
     }
 
     if doc_template_dict is None:
@@ -311,16 +345,16 @@ def rsys2pdf_table(rsys, output_dir=None, doc_template=None,
             if k not in doc_template_dict:
                 doc_template_dict[k] = v
 
-    if 'table' in doc_template_dict:
+    if "table" in doc_template_dict:
         raise KeyError("There is already a 'table' key in doc_template_dict")
-    doc_template_dict['table'] = rsys2table(rsys, **kwargs)
+    doc_template_dict["table"] = rsys2table(rsys, **kwargs)
 
     contents = doc_template % doc_template_dict
 
-    if isinstance(save, str) and save.endswith('.pdf'):
-        texfname = save.rstrip('.pdf') + '.tex'
+    if isinstance(save, str) and save.endswith(".pdf"):
+        texfname = save.rstrip(".pdf") + ".tex"
         pdffname = save
     else:
-        texfname = 'output.tex'
-        pdffname = 'output.pdf'
+        texfname = "output.tex"
+        pdffname = "output.pdf"
     return render_tex_to_pdf(contents, texfname, pdffname, output_dir, save)

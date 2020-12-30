@@ -7,11 +7,11 @@ class LatexPrinter(StrPrinter):
 
     _default_settings = dict(
         StrPrinter._default_settings,
-        repr_name='latex',
-        Equilibrium_arrow=r'\rightleftharpoons',
-        Reaction_arrow=r'\rightarrow',
+        repr_name="latex",
+        Equilibrium_arrow=r"\rightleftharpoons",
+        Reaction_arrow=r"\rightarrow",
         magnitude_fmt=number_to_scientific_latex,
-        unit_fmt=_latex_from_dimensionality
+        unit_fmt=_latex_from_dimensionality,
     )
 
     def _print_Substance(self, substance, **kwargs):

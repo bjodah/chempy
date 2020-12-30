@@ -74,11 +74,11 @@ var chempy_tabs = document.querySelectorAll('table.chempy_%(rsys_id)d');
 def _js_rsys(cls_names_substances, substance_row_cls_irrel, rsys_id):
     # from https://stackoverflow.com/a/12786869/790973
     if cls_names_substances is None:
-        return ''
+        return ""
     return _js_rsys_template % dict(
         cls_names_substances=json.dumps(cls_names_substances),
         substance_row_cls_irrel=json.dumps(substance_row_cls_irrel),
-        rsys_id=rsys_id
+        rsys_id=rsys_id,
     )
 
 
@@ -88,15 +88,19 @@ class JSPrinter(CSSPrinter):
     def _print_ReactionSystem(self, rsys, **kwargs):
         tab = super(JSPrinter, self)._print_ReactionSystem(rsys, **kwargs)
         _script_tag = '<script type="text/javascript">%s</script>'
-        substances = self._get('substances', **kwargs)
+        substances = self._get("substances", **kwargs)
         cls_names_substances = list(map(_html_clsname, substances))
         return tab + _script_tag % _js_rsys(
             cls_names_substances=cls_names_substances,
-            substance_row_cls_irrel={cns: [  # reactions not involving sk
-                self._tr_id(rsys, i) for i in range(rsys.nr) if
-                i not in rsys.substance_participation(sk)
-            ] for cns, sk in zip(cls_names_substances, substances)},
-            rsys_id=id(rsys)
+            substance_row_cls_irrel={
+                cns: [  # reactions not involving sk
+                    self._tr_id(rsys, i)
+                    for i in range(rsys.nr)
+                    if i not in rsys.substance_participation(sk)
+                ]
+                for cns, sk in zip(cls_names_substances, substances)
+            },
+            rsys_id=id(rsys),
         )
 
 
