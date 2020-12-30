@@ -11,7 +11,7 @@ pipeline:
     ttl: 90  # liftetime in days
 
   install:
-    image: bjodah/bjodahimg20dot:2.1.0.3
+    image: bjodah/bjodahimg20dot:2.1.1.2
     environment:
       - CC=gcc-10
       - CXX=g++-10
@@ -33,7 +33,7 @@ pipeline:
       - cp dist/chempy-* deploy/public_html/branches/${DRONE_BRANCH}/
 
   test-suite:
-    image: bjodah/bjodahimg20dot:2.1.0.3
+    image: bjodah/bjodahimg20dot:2.1.1.2
     group: testing
     environment:
       - CC=gcc-10
@@ -61,7 +61,7 @@ pipeline:
       - bash -c "source /tmp/test_git_archive/bin/activate; pip install --cache-dir ./ci_cache/pip_cache file://$(realpath chempy-head.zip)#chempy[all] pytest; pytest --pyargs chempy"
 
   render-notebooks:
-    image: bjodah/bjodahimg20dot:2.1.0.3
+    image: bjodah/bjodahimg20dot:2.1.1.2
     group: testing
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
@@ -81,7 +81,7 @@ pipeline:
       - cp -r index.* examples/ "deploy/public_html/branches/${DRONE_BRANCH}"
 
 #  conda-recipe:
-#    image: bjodah/bjodahimg20dot:2.1.0.3
+#    image: bjodah/bjodahimg20dot:2.1.1.2
 #    group: testing
 #    commands:
 #      - export CONDA_PKGS_DIRS=$(pwd)/ci_cache/conda_packages
@@ -91,7 +91,7 @@ pipeline:
 #      - (cd $CONDA_PKGS_DIRS; find . -maxdepth 1 -type d -not -path . -not -path .. | xargs rm -r)
 
   compile-documentation:
-    image: bjodah/bjodahimg20dot:2.1.0.3
+    image: bjodah/bjodahimg20dot:2.1.1.2
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
       - SUNDBASE=/opt/sundials-5.4.0-klu-lapack

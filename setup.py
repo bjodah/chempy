@@ -93,7 +93,7 @@ extras_req = {
     'native': ['pycompilation>=0.4.12', 'pycodeexport>=0.1.3', 'appdirs'],
     'docs': ['Sphinx', 'sphinx_rtd_theme', 'numpydoc'],
     'plotting': ['bokeh>=0.13.0', 'ipywidgets'],
-    'testing': ['pytest>=3.9', 'pytest-cov', 'pytest-flake8', 'rstcheck']
+    'testing': ['black', 'pytest>=3.9', 'pytest-cov', 'pytest-flake8', 'rstcheck']
 }
 extras_req['all'] = list(chain(extras_req.values()))
 
