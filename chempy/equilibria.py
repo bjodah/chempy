@@ -9,7 +9,6 @@ equilibria.
   break without a deprecation cycle.
 
 """
-from __future__ import division, absolute_import
 
 import warnings
 

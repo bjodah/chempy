@@ -4,7 +4,6 @@ Contains rudimentary tools for regression: (iteratively) (weighted) least square
 and functions for plotting the fit from the regression analysis.
 """
 
-from __future__ import absolute_import, division, print_function
 
 try:
     import numpy as np

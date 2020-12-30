@@ -5,7 +5,6 @@ Contains functions for the `Arrhenius equation
 (:func:`arrhenius_equation`) and a convenience fitting routine
 (:func:`fit_arrhenius_equation`).
 """
-from __future__ import absolute_import, division, print_function
 
 from .._util import get_backend
 from ..util.regression import least_squares

@@ -4,7 +4,6 @@ Non-public API (expect changes without notice).
 
 Helper functions for using native code generation together with pyodesys.
 """
-from __future__ import print_function, absolute_import, division
 
 from collections import OrderedDict
 

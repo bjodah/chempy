@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function
 
 
 def electrical_mobility_from_D(D, charge, T, constants=None, units=None):

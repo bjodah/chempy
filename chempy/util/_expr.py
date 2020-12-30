@@ -11,7 +11,6 @@ something that should be relied upon in external code. Consider the ``.util._exp
 module deprecated and aim to use SymPy expressions where possible, and handle units
 separately.
 """
-from __future__ import absolute_import, division, print_function
 
 import math
 from itertools import chain

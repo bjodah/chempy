@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function
 
 
 # From Kielland, Individual Activity Coefficients of Ions in Aqueous Solutions, Vol. 59, 1937, 1675-1678

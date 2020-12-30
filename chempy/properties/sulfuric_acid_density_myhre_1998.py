@@ -3,7 +3,6 @@
 This module implements the denisty parameterisation of aqueous sulfuric acid
 of Myhre et al. from 1998.
 """
-from __future__ import absolute_import, division, print_function
 
 import numpy as np
 import warnings

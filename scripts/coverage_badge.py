@@ -11,7 +11,6 @@ Usage:
 
 """
 
-from __future__ import absolute_import, division, print_function
 import os
 
 # this template was generated from shields.io on 2015-10-11

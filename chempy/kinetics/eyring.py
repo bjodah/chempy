@@ -3,7 +3,6 @@
 Contains functions for the `Eyring equation
 <https://en.wikipedia.org/wiki/Eyring_equation>`_.
 """
-from __future__ import absolute_import, division, print_function
 
 import math
 

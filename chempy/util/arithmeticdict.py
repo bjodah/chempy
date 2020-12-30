@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import division
 
 from collections import defaultdict
 from itertools import chain
@@ -139,7 +138,6 @@ class ArithmeticDict(defaultdict):
             self.default_factory, {k: other // v for k, v in self.items()}
         )
 
-    __div__ = __truediv__  # Py2 compatibility (or: import division from __future__)
     __idiv__ = __itruediv__  # Py2 compatibility
     __rdiv__ = __rtruediv__  # Py2 compatibility
 

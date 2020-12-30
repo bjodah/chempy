@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function
 
 from ..regression import least_squares, irls
 from ..testing import requires

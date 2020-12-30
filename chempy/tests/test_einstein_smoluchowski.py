@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function
 
 from ..einstein_smoluchowski import electrical_mobility_from_D
 from ..units import default_units, allclose, default_constants

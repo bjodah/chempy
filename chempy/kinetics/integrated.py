@@ -4,7 +4,6 @@ chemical kinetics (i.e. integrated rate expressions in closed form).
 The expressions are useful in e.g. regression or for comparison with numerical
 solution of the corresponding ODE system.
 """
-from __future__ import absolute_import, division, print_function
 
 from .._util import get_backend
 

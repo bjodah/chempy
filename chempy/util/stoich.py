@@ -3,7 +3,6 @@
 Utility functions related to stoichiometry.
 """
 
-from __future__ import absolute_import, division, print_function
 
 import numpy as np
 from chempy.units import unit_of, to_unitless

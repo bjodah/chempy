@@ -3,7 +3,6 @@
 ChemPy is a Python package useful for solving problems in chemistry.
 """
 
-from __future__ import absolute_import, division, print_function
 
 from ._url import __url__
 from ._release import __version__

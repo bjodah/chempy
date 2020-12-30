@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """ Functions for chemical formulae and reactions """
 
-from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict
 

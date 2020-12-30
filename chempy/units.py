@@ -15,7 +15,6 @@ rely on any attributes of the ``Quantity`` instances (and rather use
 getter & setter functions in `chempy.units`).
 
 """
-from __future__ import absolute_import, division, print_function
 
 from functools import reduce
 from operator import mul

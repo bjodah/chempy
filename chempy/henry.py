@@ -3,7 +3,6 @@
 Module for dealing with constants `Henry's law
 <https://en.wikipedia.org/wiki/Henry's_law>`_.
 """
-from __future__ import absolute_import, division, print_function
 
 from ._util import get_backend
 from .util.pyutil import defaultnamedtuple, deprecated
