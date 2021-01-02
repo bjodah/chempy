@@ -4,7 +4,6 @@ Contains rudimentary tools for regression: (iteratively) (weighted) least square
 and functions for plotting the fit from the regression analysis.
 """
 
-from __future__ import (absolute_import, division, print_function)
 
 try:
     import numpy as np
@@ -15,10 +14,22 @@ from ..units import latex_of_unit, is_unitless, to_unitless, unit_of
 from ..printing import number_to_scientific_latex
 
 
-def plot_fit(x, y, beta, yerr=None, vcv_beta=None, r2=None, kw_data=None,
-             kw_fit=None, fit_label_cb=None, ax=True,
-             x_unit=1, y_unit=1, nsigma=1):
-    """ Plot the result of a fit
+def plot_fit(
+    x,
+    y,
+    beta,
+    yerr=None,
+    vcv_beta=None,
+    r2=None,
+    kw_data=None,
+    kw_fit=None,
+    fit_label_cb=None,
+    ax=True,
+    x_unit=1,
+    y_unit=1,
+    nsigma=1,
+):
+    """Plot the result of a fit
 
     Parameters
     ----------
@@ -45,47 +56,49 @@ def plot_fit(x, y, beta, yerr=None, vcv_beta=None, r2=None, kw_data=None,
     y_ul = to_unitless(y, y_unit)
     if ax is True:
         import matplotlib.pyplot as plt
+
         ax = plt.subplot(1, 1, 1)
     kw_data, kw_fit = kw_data or {}, kw_fit or {}
-    if fit_label_cb is not None and 'label' not in kw_fit:
-        kw_fit['label'] = fit_label_cb(beta, vcv_beta, r2)
+    if fit_label_cb is not None and "label" not in kw_fit:
+        kw_fit["label"] = fit_label_cb(beta, vcv_beta, r2)
 
     if yerr is None:
         ax.plot(x_ul, y_ul, **kw_data)
     else:
-        ax.errorbar(x_ul, y_ul, yerr=to_unitless(yerr*nsigma, y_unit), **kw_data)
+        ax.errorbar(x_ul, y_ul, yerr=to_unitless(yerr * nsigma, y_unit), **kw_data)
 
     xlim = [np.min(x_ul), np.max(x_ul)]
-    if 'marker' not in kw_fit:
-        kw_fit['marker'] = 'None'
+    if "marker" not in kw_fit:
+        kw_fit["marker"] = "None"
 
-    beta_ul = [to_unitless(elem, y_unit*x_unit**-i) for i, elem in enumerate(beta)]
-    yfit_ul = [sum([b*x_elem**i for i, b in enumerate(beta_ul)]) for x_elem in xlim]
+    beta_ul = [to_unitless(elem, y_unit * x_unit ** -i) for i, elem in enumerate(beta)]
+    yfit_ul = [sum([b * x_elem ** i for i, b in enumerate(beta_ul)]) for x_elem in xlim]
 
     ax.plot(xlim, yfit_ul, **kw_fit)
-    if 'label' in kw_fit:
-        ax.legend(loc='best')
+    if "label" in kw_fit:
+        ax.legend(loc="best")
 
     if is_unitless(x_unit):
-        ax.set_xlabel('$x$')
+        ax.set_xlabel("$x$")
     else:
-        ax.set_xlabel('$x / %s$' % latex_of_unit(x_unit))
+        ax.set_xlabel("$x / %s$" % latex_of_unit(x_unit))
 
     if is_unitless(y_unit):
-        ax.set_ylabel('$y$')
+        ax.set_ylabel("$y$")
     else:
-        ax.set_ylabel('$y / %s$' % latex_of_unit(y_unit))
+        ax.set_ylabel("$y / %s$" % latex_of_unit(y_unit))
 
     return ax
 
 
 def _beta_tup(beta, x_unit, y_unit):
-    return tuple(coeff*y_unit/x_unit**i for i, coeff in enumerate(beta))
+    return tuple(coeff * y_unit / x_unit ** i for i, coeff in enumerate(beta))
 
 
-def plot_least_squares_fit(x, y, beta_vcv_r2, yerr=None, plot_cb=None,
-                           plot_cb_kwargs=None, x_unit=1, y_unit=1):
-    """ Performs Least-squares fit and plots data and fitted line
+def plot_least_squares_fit(
+    x, y, beta_vcv_r2, yerr=None, plot_cb=None, plot_cb_kwargs=None, x_unit=1, y_unit=1
+):
+    """Performs Least-squares fit and plots data and fitted line
 
     Parameters
     ----------
@@ -104,27 +117,27 @@ def plot_least_squares_fit(x, y, beta_vcv_r2, yerr=None, plot_cb=None,
     """
     plot_cb_kwargs = plot_cb_kwargs or {}
     if plot_cb is None:
-        kw_data = plot_cb_kwargs.get('kw_data', {})
-        if 'marker' not in kw_data and len(x) < 40:
-            kw_data['marker'] = 'd'
-        if 'ls' not in kw_data and 'linestyle' not in kw_data and len(x) < 40:
-            kw_data['ls'] = 'None'
-        plot_cb_kwargs['kw_data'] = kw_data
-        if 'fit_label_cb' not in plot_cb_kwargs:
-            plot_cb_kwargs['fit_label_cb'] = lambda b, v, r2: (
-                '$y(x) = %s + %s \\cdot x$' % tuple(map(number_to_scientific_latex, b))
+        kw_data = plot_cb_kwargs.get("kw_data", {})
+        if "marker" not in kw_data and len(x) < 40:
+            kw_data["marker"] = "d"
+        if "ls" not in kw_data and "linestyle" not in kw_data and len(x) < 40:
+            kw_data["ls"] = "None"
+        plot_cb_kwargs["kw_data"] = kw_data
+        if "fit_label_cb" not in plot_cb_kwargs:
+            plot_cb_kwargs["fit_label_cb"] = lambda b, v, r2: (
+                "$y(x) = %s + %s \\cdot x$" % tuple(map(number_to_scientific_latex, b))
             )
         plot_cb = plot_fit
-    if 'x_unit' not in plot_cb_kwargs:
-        plot_cb_kwargs['x_unit'] = x_unit
-    if 'y_unit' not in plot_cb_kwargs:
-        plot_cb_kwargs['y_unit'] = y_unit
+    if "x_unit" not in plot_cb_kwargs:
+        plot_cb_kwargs["x_unit"] = x_unit
+    if "y_unit" not in plot_cb_kwargs:
+        plot_cb_kwargs["y_unit"] = y_unit
 
     plot_cb(x, y, beta_vcv_r2[0], yerr, **plot_cb_kwargs)
 
 
 def least_squares_units(x, y, w=1):
-    """ Units-aware least-squares (w or w/o weights) fit to data series.
+    """Units-aware least-squares (w or w/o weights) fit to data series.
 
     Parameters
     ----------
@@ -137,8 +150,8 @@ def least_squares_units(x, y, w=1):
     integer_one = 1
     explicit_errors = w is not integer_one
     if explicit_errors:
-        if unit_of(w) == y_unit**-2:
-            _w = to_unitless(w, y_unit**-2)
+        if unit_of(w) == y_unit ** -2:
+            _w = to_unitless(w, y_unit ** -2)
         elif unit_of(w) == unit_of(1):
             _w = w
         else:
@@ -153,7 +166,7 @@ def least_squares_units(x, y, w=1):
 
 
 def least_squares(x, y, w=1):  # w == 1 => OLS, w != 1 => WLS
-    """ Least-squares (w or w/o weights) fit to data series.
+    """Least-squares (w or w/o weights) fit to data series.
 
     Linear regression (unweighted or weighted).
 
@@ -194,21 +207,21 @@ def least_squares(x, y, w=1):  # w == 1 => OLS, w != 1 => WLS
     _x = np.asarray(x)
     X = np.ones((_x.size, 2))
     X[:, 1] = x
-    if hasattr(sqrtw, 'ndim') and sqrtw.ndim == 1:
+    if hasattr(sqrtw, "ndim") and sqrtw.ndim == 1:
         sqrtw = sqrtw.reshape((sqrtw.size, 1))
     X *= sqrtw
 
-    beta = np.linalg.lstsq(X, Y, rcond=2e-16*_x.size)[0]
+    beta = np.linalg.lstsq(X, Y, rcond=2e-16 * _x.size)[0]
     eps = X.dot(beta) - Y
     SSR = eps.T.dot(eps)  # sum of squared residuals
-    vcv = SSR/(_x.size - 2)*np.linalg.inv(X.T.dot(X))
+    vcv = SSR / (_x.size - 2) * np.linalg.inv(X.T.dot(X))
     TSS = np.sum(np.square(Y - np.mean(Y)))  # total sum of squares
-    R2 = 1 - SSR/TSS
+    R2 = 1 - SSR / TSS
     return beta, vcv, R2
 
 
-def irls(x, y, w_cb=lambda x, y, b, c: x**0, itermax=16, rmsdwtol=1e-8):
-    """ Iteratively reweighted least squares
+def irls(x, y, w_cb=lambda x, y, b, c: x ** 0, itermax=16, rmsdwtol=1e-8):
+    """Iteratively reweighted least squares
 
     Parameters
     ----------
@@ -260,19 +273,19 @@ def irls(x, y, w_cb=lambda x, y, b, c: x**0, itermax=16, rmsdwtol=1e-8):
         rmsdw = np.sqrt(np.mean(np.square(w - old_w)))
         ii += 1
 
-    return beta, cov, {'weights': weights, 'niter': ii, 'success': ii < itermax}
+    return beta, cov, {"weights": weights, "niter": ii, "success": ii < itermax}
 
 
 irls.ones = lambda x, y, b, c: 1
 
 if np is not None:
-    irls.exp = lambda x, y, b, c: np.exp(b[1]*x)
-    irls.gaussian = lambda x, y, b, c: np.exp(-(b[1]*x)**2)  # guassian weighting
-    irls.abs_residuals = lambda x, y, b, c: np.abs(b[0] + b[1]*x - y)
+    irls.exp = lambda x, y, b, c: np.exp(b[1] * x)
+    irls.gaussian = lambda x, y, b, c: np.exp(-((b[1] * x) ** 2))  # guassian weighting
+    irls.abs_residuals = lambda x, y, b, c: np.abs(b[0] + b[1] * x - y)
 
 
 def irls_units(x, y, **kwargs):
-    """ Units aware version of :func:`irls`
+    """Units aware version of :func:`irls`
 
     Parameters
     ----------
@@ -289,9 +302,19 @@ def irls_units(x, y, **kwargs):
     return beta_tup, vcv, info
 
 
-def plot_avg_params(opt_params, cov_params, avg_params_result, label_cb=None, ax=None,
-                    title=False, xlabel=False, ylabel=False, flip=False, nsigma=1):
-    """ Calculates the average parameters from a set of regression parameters
+def plot_avg_params(
+    opt_params,
+    cov_params,
+    avg_params_result,
+    label_cb=None,
+    ax=None,
+    title=False,
+    xlabel=False,
+    ylabel=False,
+    flip=False,
+    nsigma=1,
+):
+    """Calculates the average parameters from a set of regression parameters
 
     Parameters
     ----------
@@ -320,6 +343,7 @@ def plot_avg_params(opt_params, cov_params, avg_params_result, label_cb=None, ax
     """
     avg_beta, var_avg_beta = avg_params_result
     import matplotlib.pyplot as plt
+
     if label_cb is not None:
         lbl = label_cb(avg_beta, var_avg_beta)
     else:
@@ -330,31 +354,42 @@ def plot_avg_params(opt_params, cov_params, avg_params_result, label_cb=None, ax
     opt_params = np.asarray(opt_params)
     cov_params = np.asarray(cov_params)
     var_beta = np.vstack((cov_params[:, 0, 0], cov_params[:, 1, 1])).T
-    ax.errorbar(opt_params[:, xidx], opt_params[:, yidx], marker='s', ls='None',
-                xerr=nsigma*var_beta[:, xidx]**0.5,
-                yerr=nsigma*var_beta[:, yidx]**0.5)
+    ax.errorbar(
+        opt_params[:, xidx],
+        opt_params[:, yidx],
+        marker="s",
+        ls="None",
+        xerr=nsigma * var_beta[:, xidx] ** 0.5,
+        yerr=nsigma * var_beta[:, yidx] ** 0.5,
+    )
     if xlabel:
         if xlabel is True:
-            xlabel = r'$\beta_%d$' % xidx
+            xlabel = r"$\beta_%d$" % xidx
         ax.set_xlabel(xlabel)
     if ylabel:
         if ylabel is True:
-            xlabel = r'$\beta_%d$' % yidx
+            xlabel = r"$\beta_%d$" % yidx
         ax.set_ylabel(ylabel)
     if title:
         if title is True:
-            title = r'$y(x) = \beta_0 + \beta_1 \cdot x$'
+            title = r"$y(x) = \beta_0 + \beta_1 \cdot x$"
         ax.set_title(title)
-    ax.errorbar(avg_beta[xidx],
-                avg_beta[yidx],
-                xerr=nsigma*var_avg_beta[xidx]**0.5,
-                yerr=nsigma*var_avg_beta[yidx]**0.5, marker='o', c='r',
-                linewidth=2, markersize=10, label=lbl)
+    ax.errorbar(
+        avg_beta[xidx],
+        avg_beta[yidx],
+        xerr=nsigma * var_avg_beta[xidx] ** 0.5,
+        yerr=nsigma * var_avg_beta[yidx] ** 0.5,
+        marker="o",
+        c="r",
+        linewidth=2,
+        markersize=10,
+        label=lbl,
+    )
     ax.legend(numpoints=1)
 
 
 def avg_params(opt_params, cov_params):
-    """ Calculates the average parameters from a set of regression parameters.
+    """Calculates the average parameters from a set of regression parameters.
 
     Parameters
     ----------
@@ -372,6 +407,10 @@ def avg_params(opt_params, cov_params):
     opt_params = np.asarray(opt_params)
     cov_params = np.asarray(cov_params)
     var_beta = np.vstack((cov_params[:, 0, 0], cov_params[:, 1, 1])).T
-    avg_beta, sum_of_weights = np.average(opt_params, axis=0, weights=1/var_beta, returned=True)
-    var_avg_beta = np.sum(np.square(opt_params - avg_beta)/var_beta, axis=0)/((avg_beta.shape[0] - 1) * sum_of_weights)
+    avg_beta, sum_of_weights = np.average(
+        opt_params, axis=0, weights=1 / var_beta, returned=True
+    )
+    var_avg_beta = np.sum(np.square(opt_params - avg_beta) / var_beta, axis=0) / (
+        (avg_beta.shape[0] - 1) * sum_of_weights
+    )
     return avg_beta, var_avg_beta

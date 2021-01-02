@@ -2,9 +2,9 @@
 """
 General utilities and exceptions.
 """
-from __future__ import (absolute_import, division, print_function)
 
 from collections import defaultdict, namedtuple, OrderedDict
+
 try:
     from collections.abc import ItemsView, Mapping
 except ImportError:  # Python 2
@@ -35,12 +35,16 @@ class ChemPyDeprecationWarning(DeprecationWarning):
 def deprecated(*args, **kwargs):
     """ Helper to :class:`Deprecation` for using ChemPyDeprecationWarning. """
     return Deprecation(
-        *args, issues_url=lambda s: __url__ + '/issues/' +
-        s.lstrip('gh-'), warning=ChemPyDeprecationWarning, **kwargs)
+        *args,
+        issues_url=lambda s: __url__ + "/issues/" + s.lstrip("gh-"),
+        warning=ChemPyDeprecationWarning,
+        **kwargs
+    )
 
 
-warnings.simplefilter(os.environ.get('CHEMPY_DEPRECATION_FILTER', 'once'),
-                      ChemPyDeprecationWarning)
+warnings.simplefilter(
+    os.environ.get("CHEMPY_DEPRECATION_FILTER", "once"), ChemPyDeprecationWarning
+)
 
 
 class DeferredImport(object):
@@ -56,7 +60,10 @@ class DeferredImport(object):
             if self._arg is None:
                 obj = __import__(self._modname)
             else:
-                obj = getattr(__import__(self._modname, globals(), locals(), [self._arg]), self._arg)
+                obj = getattr(
+                    __import__(self._modname, globals(), locals(), [self._arg]),
+                    self._arg,
+                )
             if self._decorators is not None:
                 for deco in self._decorators:
                     obj = deco(obj)
@@ -64,7 +71,7 @@ class DeferredImport(object):
         return self._cache
 
     def __getattribute__(self, attr):
-        if attr in ('_modname', '_arg', '_cache', 'cache', '_decorators'):
+        if attr in ("_modname", "_arg", "_cache", "cache", "_decorators"):
             return object.__getattribute__(self, attr)
         else:
             return getattr(self.cache, attr)
@@ -74,7 +81,7 @@ class DeferredImport(object):
 
 
 class NameSpace:
-    """ Used to wrap, e.g. modules.
+    """Used to wrap, e.g. modules.
 
     Parameters
     ----------
@@ -98,7 +105,7 @@ class NameSpace:
         self._NameSpace_attr_store = {}
 
     def __getattr__(self, attr):
-        if attr.startswith('_NameSpace_'):
+        if attr.startswith("_NameSpace_"):
             return self.__dict__[attr]
         else:
             try:
@@ -107,20 +114,20 @@ class NameSpace:
                 return getattr(self._NameSpace_default, attr)
 
     def __setattr__(self, attr, val):
-        if attr.startswith('_NameSpace_'):
+        if attr.startswith("_NameSpace_"):
             self.__dict__[attr] = val
         else:
             self._NameSpace_attr_store[attr] = val
 
     def as_dict(self):
         items = self._NameSpace_default.__dict__.items()
-        result = {k: v for k, v in items if not k.startswith('_')}
+        result = {k: v for k, v in items if not k.startswith("_")}
         result.update(self._NameSpace_attr_store)
         return result
 
 
 class AttributeContainer(object):
-    """ Used to turn e.g. a dictionary to a module-like object.
+    """Used to turn e.g. a dictionary to a module-like object.
 
     Parameters
     ----------
@@ -139,6 +146,7 @@ class AttributeContainer(object):
     11472.3
 
     """
+
     def __init__(self, **kwargs):
         self.__dict__.update(**kwargs)
 
@@ -146,18 +154,22 @@ class AttributeContainer(object):
         return self.__dict__.copy()
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, ", ".join(set(dir(self)) - set(dir(object()))))
+        return "%s(%s)" % (
+            self.__class__.__name__,
+            ", ".join(set(dir(self)) - set(dir(object()))),
+        )
 
 
 class AttrDict(dict):
     """ Subclass of dict with attribute access to keys """
+
     def __init__(self, *args, **kwargs):
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self
 
 
 class defaultkeydict(defaultdict):
-    """ defaultdict where default_factory should have the signature key -> value
+    """defaultdict where default_factory should have the signature key -> value
 
     Examples
     --------
@@ -180,7 +192,7 @@ class defaultkeydict(defaultdict):
 
 
 def defaultnamedtuple(typename, field_names, defaults=()):
-    """ Generates a new subclass of tuple with default values.
+    """Generates a new subclass of tuple with default values.
 
     Parameters
     ----------
@@ -211,14 +223,21 @@ def defaultnamedtuple(typename, field_names, defaults=()):
         Tuple.__new__.__defaults__ = tuple(Tuple(**defaults))
     else:
         nmissing = len(Tuple._fields) - len(defaults)
-        defaults = (None,)*nmissing + tuple(defaults)
+        defaults = (None,) * nmissing + tuple(defaults)
         Tuple.__new__.__defaults__ = tuple(Tuple(*defaults))
     return Tuple
 
 
-def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=None,
-                        apply_return=list, named_index=False):
-    """ Returns a list of length-2 tuples
+def multi_indexed_cases(
+    od,
+    *,
+    dict_=OrderedDict,
+    apply_keys=None,
+    apply_values=None,
+    apply_return=list,
+    named_index=False
+):
+    """Returns a list of length-2 tuples
 
     Each tuple consist of a multi-index (tuple of integers) and a dictionary.
 
@@ -266,7 +285,7 @@ def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=
     if isinstance(od, OrderedDict):
         pass
     else:
-        if hasattr(od, 'items'):
+        if hasattr(od, "items"):
             od = od.items()
 
         if isinstance(od, (list, tuple, types.GeneratorType, ItemsView)):
@@ -275,11 +294,21 @@ def multi_indexed_cases(od, *, dict_=OrderedDict, apply_keys=None, apply_values=
             raise NotImplementedError("Expected an OrderedDict")
 
     keys, values = tuple(map(apply_keys or identity, od.keys())), tuple(od.values())
-    MultiIndex = namedtuple('MultiIndex', keys) if named_index else lambda *args: tuple(args)
-    _generator = ((MultiIndex(*mi), dict_([
-        (k, (apply_values or identity)(v[i])) for
-        k, v, i in zip(keys, values, mi)
-    ])) for mi in product(*map(range, map(len, values))))
+    MultiIndex = (
+        namedtuple("MultiIndex", keys) if named_index else lambda *args: tuple(args)
+    )
+    _generator = (
+        (
+            MultiIndex(*mi),
+            dict_(
+                [
+                    (k, (apply_values or identity)(v[i]))
+                    for k, v, i in zip(keys, values, mi)
+                ]
+            ),
+        )
+        for mi in product(*map(range, map(len, values)))
+    )
     return (apply_return or identity)(_generator)
 
 
@@ -292,6 +321,8 @@ def memoize(max_nargs=0):
             if args not in wrapper.results:
                 wrapper.results[args] = func(*args)
             return wrapper.results[args]
+
         wrapper.results = {}
         return wrapper
+
     return decorator

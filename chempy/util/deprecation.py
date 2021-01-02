@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function)
 
 import warnings
 
 
 class Deprecation(object):
-    """ Decorator factory for deprecating functions or classes.
+    """Decorator factory for deprecating functions or classes.
 
     This class represent deprecations of functions or classes and is designed
     to be used with the ``warnings`` library.
@@ -70,12 +69,20 @@ class Deprecation(object):
 
     _deprecations = {}
 
-    def __init__(self, last_supported_version=None, will_be_missing_in=None,
-                 use_instead=None, issue=None, issues_url=None,
-                 warning=DeprecationWarning):
-        if last_supported_version is not None and\
-           not isinstance(last_supported_version, (str, tuple, list)) and\
-           callable(last_supported_version):
+    def __init__(
+        self,
+        last_supported_version=None,
+        will_be_missing_in=None,
+        use_instead=None,
+        issue=None,
+        issues_url=None,
+        warning=DeprecationWarning,
+    ):
+        if (
+            last_supported_version is not None
+            and not isinstance(last_supported_version, (str, tuple, list))
+            and callable(last_supported_version)
+        ):
             raise ValueError("last_supported_version not str, tuple or list")
 
         self.last_supported_version = last_supported_version
@@ -92,40 +99,43 @@ class Deprecation(object):
         return cls._deprecations[obj]
 
     def _warning_message_template(self):
-        msg = '%(func_name)s is deprecated'
+        msg = "%(func_name)s is deprecated"
         if self.last_supported_version is not None:
-            msg += ' since (not including) % s' % self.last_supported_version
+            msg += " since (not including) % s" % self.last_supported_version
         if self.will_be_missing_in is not None:
-            msg += ', it will be missing in %s' % self.will_be_missing_in
+            msg += ", it will be missing in %s" % self.will_be_missing_in
         if self.issue is not None:
             if self.issues_url is not None:
                 msg += self.issues_url(self.issue)
             else:
-                msg += ' (see issue %s)' % self.issue
+                msg += " (see issue %s)" % self.issue
         if self.use_instead is not None:
             try:
-                msg += '. Use %s instead' % self.use_instead.__name__
+                msg += ". Use %s instead" % self.use_instead.__name__
             except AttributeError:
-                msg += '. Use %s instead' % self.use_instead
-        return msg + '.'
+                msg += ". Use %s instead" % self.use_instead
+        return msg + "."
 
     def __call__(self, wrapped):
         """ Decorates function to be deprecated """
-        msg = self.warning_message % {'func_name': wrapped.__name__}
-        wrapped_doc = wrapped.__doc__ or ''
-        if hasattr(wrapped, '__mro__'):  # wrapped is a class
+        msg = self.warning_message % {"func_name": wrapped.__name__}
+        wrapped_doc = wrapped.__doc__ or ""
+        if hasattr(wrapped, "__mro__"):  # wrapped is a class
+
             class _Wrapper(wrapped):
-                __doc__ = msg + '\n\n' + wrapped_doc
+                __doc__ = msg + "\n\n" + wrapped_doc
 
                 def __init__(_self, *args, **kwargs):
                     warnings.warn(msg, self.warning, stacklevel=2)
                     wrapped.__init__(_self, *args, **kwargs)
 
         else:  # wrapped is a function
+
             def _Wrapper(*args, **kwargs):
                 warnings.warn(msg, self.warning, stacklevel=2)
                 return wrapped(*args, **kwargs)
-            _Wrapper.__doc__ = msg + '\n\n' + wrapped_doc
+
+            _Wrapper.__doc__ = msg + "\n\n" + wrapped_doc
 
         self._deprecations[_Wrapper] = self
         _Wrapper.__name__ = wrapped.__name__

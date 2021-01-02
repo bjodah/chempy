@@ -4,7 +4,7 @@ from ..units import fold_constants
 
 
 class TemplateEvaluator:
-    def __init__(self, pattern=r'\${(.*?)}', fmt='${%s}', globals_=None, post_procs=()):
+    def __init__(self, pattern=r"\${(.*?)}", fmt="${%s}", globals_=None, post_procs=()):
         self.mark = re.compile(pattern)
         self.fmt = fmt
         if globals_ is None:
@@ -24,4 +24,6 @@ class TemplateEvaluator:
         return template
 
 
-eval_template = TemplateEvaluator(post_procs=(fold_constants, lambda x: str(x).replace(' ', '*')))
+eval_template = TemplateEvaluator(
+    post_procs=(fold_constants, lambda x: str(x).replace(" ", "*"))
+)

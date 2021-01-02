@@ -4,7 +4,6 @@ Non-public API (expect changes without notice).
 
 Helper functions for using native code generation together with pyodesys.
 """
-from __future__ import print_function, absolute_import, division
 
 from collections import OrderedDict
 
@@ -78,7 +77,9 @@ _constr_special_settings = r"""
     } else {
          // std::cerr << __FILE__ << ":" << __LINE__ << ": using special_settings:" << m_special_settings[0] << "\n";
     }
-""" % {'factor': '1e2'}
+""" % {
+    "factor": "1e2"
+}
 
 
 def _get_comp_conc(rsys, odesys, comp_keys, skip_keys):
@@ -107,28 +108,38 @@ def _get_subst_comp(rsys, odesys, comp_keys, skip_keys):
     return subst_comp
 
 
-def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False, conc_roots=None):
-    comp_keys = Substance.composition_keys(rsys.substances.values(), skip_keys=skip_keys)
+def get_native(
+    rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False, conc_roots=None
+):
+    comp_keys = Substance.composition_keys(
+        rsys.substances.values(), skip_keys=skip_keys
+    )
     if PartiallySolvedSystem is None:
         raise ValueError("Failed to import 'native_sys' from 'pyodesys.native'")
     elif isinstance(odesys, PartiallySolvedSystem):
-        init_conc = '&m_p[%d]' % (len(odesys.params) - len(odesys.original_dep))
+        init_conc = "&m_p[%d]" % (len(odesys.params) - len(odesys.original_dep))
     else:
-        init_conc = 'y'
+        init_conc = "y"
 
-    kw = dict(namespace_override={
-        'p_get_dx_max': True,
-    })
+    kw = dict(
+        namespace_override={
+            "p_get_dx_max": True,
+        }
+    )
     if all(subst.composition is None for subst in rsys.substances.values()):
         pass
     else:
-        kw['namespace_override']['p_anon'] = render_mako(
-            _anon, odesys=odesys, ncomp=len(comp_keys),
+        kw["namespace_override"]["p_anon"] = render_mako(
+            _anon,
+            odesys=odesys,
+            ncomp=len(comp_keys),
             comp_conc=_get_comp_conc(rsys, odesys, comp_keys, skip_keys),
-            subst_comp=_get_subst_comp(rsys, odesys, comp_keys, skip_keys))
-        kw['namespace_override']['p_first_step'] = render_mako(
-            _first_step, init_conc=init_conc, odesys=odesys)
-    ns_extend = kw.get('namespace_extend', {})
+            subst_comp=_get_subst_comp(rsys, odesys, comp_keys, skip_keys),
+        )
+        kw["namespace_override"]["p_first_step"] = render_mako(
+            _first_step, init_conc=init_conc, odesys=odesys
+        )
+    ns_extend = kw.get("namespace_extend", {})
 
     if steady_state_root or conc_roots:
         if not native_sys[integrator]._NativeCode._support_roots:
@@ -137,30 +148,35 @@ def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False
             raise ValueError("roots already set")
     if steady_state_root:
         assert conc_roots is None
-        kw['namespace_override']['p_nroots'] = ' return 1; '
-        kw['namespace_override']['p_roots'] = _roots_ss
-        if 'p_constructor' not in ns_extend:
-            ns_extend['p_constructor'] = []
-        ns_extend['p_constructor'] += [_constr_special_settings]
+        kw["namespace_override"]["p_nroots"] = " return 1; "
+        kw["namespace_override"]["p_roots"] = _roots_ss
+        if "p_constructor" not in ns_extend:
+            ns_extend["p_constructor"] = []
+        ns_extend["p_constructor"] += [_constr_special_settings]
     elif conc_roots:
         # This could (with some effort) be rewritten to take limits as parameters and have a
         # preprocessor in odesys.pre_processors do the dedimensionalization.
         assert not steady_state_root
         assert all(k in odesys.names and k in rsys.substances for k in conc_roots)
-        kw['namespace_override']['p_nroots'] = ' return %d; ' % len(conc_roots)
-        kw['namespace_override']['p_roots'] = (
-            ''.join(['    out[%(i)d] = y[%(j)d] - m_special_settings[%(i)d];\n' %
-                     dict(i=i, j=odesys.names.index(k)) for i, k in enumerate(conc_roots)]) +
-            '    return AnyODE::Status::success;\n'
+        kw["namespace_override"]["p_nroots"] = " return %d; " % len(conc_roots)
+        kw["namespace_override"]["p_roots"] = (
+            "".join(
+                [
+                    "    out[%(i)d] = y[%(j)d] - m_special_settings[%(i)d];\n"
+                    % dict(i=i, j=odesys.names.index(k))
+                    for i, k in enumerate(conc_roots)
+                ]
+            )
+            + "    return AnyODE::Status::success;\n"
         )
-        if 'p_constructor' not in ns_extend:
-            ns_extend['p_constructor'] = []
-        ns_extend['p_constructor'] += [
-            'if (m_special_settings.size() != %d) throw std::runtime_error("special_settings missing");' %
-            len(conc_roots)
+        if "p_constructor" not in ns_extend:
+            ns_extend["p_constructor"] = []
+        ns_extend["p_constructor"] += [
+            'if (m_special_settings.size() != %d) throw std::runtime_error("special_settings missing");'
+            % len(conc_roots)
         ]
 
-    if 'p_includes' not in ns_extend:
-        ns_extend['p_includes'] = set()
-    ns_extend['p_includes'] |= {"<type_traits>", "<vector>"}
+    if "p_includes" not in ns_extend:
+        ns_extend["p_includes"] = set()
+    ns_extend["p_includes"] |= {"<type_traits>", "<vector>"}
     return native_sys[integrator].from_other(odesys, namespace_extend=ns_extend, **kw)

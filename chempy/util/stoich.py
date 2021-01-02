@@ -3,7 +3,6 @@
 Utility functions related to stoichiometry.
 """
 
-from __future__ import (absolute_import, division, print_function)
 
 import numpy as np
 from chempy.units import unit_of, to_unitless
@@ -34,7 +33,7 @@ def get_coeff_mtx(substances, stoichs):
 
 
 def decompose_yields(yields, rxns, atol=1e-10):
-    """ Decomposes yields into mass-action reactions
+    """Decomposes yields into mass-action reactions
 
     This function offers a way to express a reaction with non-integer
     stoichiometric coefficients as a linear combination of production reactions
@@ -78,6 +77,7 @@ def decompose_yields(yields, rxns, atol=1e-10):
 
     """
     from chempy import ReactionSystem
+
     # Sanity check:
     rxn_keys = set.union(*(rxn.keys() for rxn in rxns))
     for key in yields.keys():
@@ -88,8 +88,11 @@ def decompose_yields(yields, rxns, atol=1e-10):
     b = list(yields.values())
     unit = unit_of(b[0])
     x, residuals, rank, s = np.linalg.lstsq(
-        np.asarray(A.T, dtype=np.float64), to_unitless(b, unit), rcond=2e-16*max(A.shape))
+        np.asarray(A.T, dtype=np.float64),
+        to_unitless(b, unit),
+        rcond=2e-16 * max(A.shape),
+    )
     if len(residuals) > 0:
         if np.any(residuals > atol):
             raise ValueError("atol not satisfied")
-    return x*unit
+    return x * unit

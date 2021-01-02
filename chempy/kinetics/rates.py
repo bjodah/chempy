@@ -6,7 +6,6 @@ it tries to be compatible with pure python, SymPy and the underlying
 units library of ChemPy (``quantities``). Consider the API to be provisional.
 """
 
-from __future__ import (absolute_import, division, print_function)
 
 from collections import OrderedDict
 from functools import reduce
@@ -19,7 +18,7 @@ from ..util.pyutil import memoize, deprecated
 from ..util._expr import Expr, UnaryWrapper, Symbol
 
 
-_molar = getattr(default_units, 'molar', 1)  # makes module importable.
+_molar = getattr(default_units, "molar", 1)  # makes module importable.
 
 
 class RateExpr(Expr):
@@ -28,7 +27,7 @@ class RateExpr(Expr):
     @classmethod
     @deprecated(use_instead=Expr.from_callback)
     def subclass_from_callback(cls, cb, cls_attrs=None):
-        """ Override RateExpr.__call__
+        """Override RateExpr.__call__
 
         Parameters
         ----------
@@ -52,10 +51,13 @@ class RateExpr(Expr):
         22.186
 
         """
-        class _RateExpr(cls):
 
+        class _RateExpr(cls):
             def __call__(self, variables, backend=math, **kwargs):
-                return cb(variables, self.all_args(variables), backend=backend, **kwargs)
+                return cb(
+                    variables, self.all_args(variables), backend=backend, **kwargs
+                )
+
         for k, v in (cls_attrs or {}).items():
             setattr(_RateExpr, k, v)
         return _RateExpr
@@ -67,7 +69,7 @@ class RadiolyticBase(RateExpr):
 
 @memoize(None)
 def mk_Radiolytic(*doserate_names):
-    """ Create a Radiolytic rate expression
+    """Create a Radiolytic rate expression
 
     Note that there is no mass-action dependence in the resulting
     class, i.e. the rates does not depend on any concentrations.
@@ -93,32 +95,50 @@ def mk_Radiolytic(*doserate_names):
 
     """
     if len(doserate_names) == 0:
-        doserate_names = ('',)
+        doserate_names = ("",)
 
     class _Radiolytic(RadiolyticBase):
-        argument_names = tuple('radiolytic_yield{0}'.format('' if drn == '' else '_' + drn)
-                               for drn in doserate_names)  # [amount/energy]
-        parameter_keys = ('density',) + tuple('doserate{0}'.format('' if drn == '' else '_' + drn)
-                                              for drn in doserate_names)
+        argument_names = tuple(
+            "radiolytic_yield{0}".format("" if drn == "" else "_" + drn)
+            for drn in doserate_names
+        )  # [amount/energy]
+        parameter_keys = ("density",) + tuple(
+            "doserate{0}".format("" if drn == "" else "_" + drn)
+            for drn in doserate_names
+        )
 
         def args_dimensionality(self, reaction):
-            N = base_registry['amount']
-            E = get_derived_unit(base_registry, 'energy')
-            return (dict(zip(dimension_codes, N/E)),)*self.nargs
+            N = base_registry["amount"]
+            E = get_derived_unit(base_registry, "energy")
+            return (dict(zip(dimension_codes, N / E)),) * self.nargs
 
         def g_values(self, *args, **kwargs):
-            return OrderedDict(zip(self.parameter_keys[1:], self.all_args(*args, **kwargs)))
+            return OrderedDict(
+                zip(self.parameter_keys[1:], self.all_args(*args, **kwargs))
+            )
 
-        @deprecated(use_instead='Radiolytic.all_args')
+        @deprecated(use_instead="Radiolytic.all_args")
         def g_value(self, variables, backend=math, **kwargs):
-            g_val, = self.all_args(variables, backend=backend, **kwargs)
+            (g_val,) = self.all_args(variables, backend=backend, **kwargs)
             return g_val
 
         def __call__(self, variables, backend=math, reaction=None, **kwargs):
-            return variables['density']*reduce(add, [variables[k]*gval for k, gval in zip(
-                self.parameter_keys[1:], self.all_args(variables, backend=backend, **kwargs))])
+            return variables["density"] * reduce(
+                add,
+                [
+                    variables[k] * gval
+                    for k, gval in zip(
+                        self.parameter_keys[1:],
+                        self.all_args(variables, backend=backend, **kwargs),
+                    )
+                ],
+            )
 
-    _Radiolytic.__name__ = 'Radiolytic' if doserate_names == ('',) else ('Radiolytic_' + '_'.join(doserate_names))
+    _Radiolytic.__name__ = (
+        "Radiolytic"
+        if doserate_names == ("",)
+        else ("Radiolytic_" + "_".join(doserate_names))
+    )
     return _Radiolytic
 
 
@@ -126,7 +146,7 @@ Radiolytic = mk_Radiolytic()
 
 
 class MassAction(RateExpr, UnaryWrapper):
-    """ Rate-expression of mass-action type
+    """Rate-expression of mass-action type
 
     Notes
     -----
@@ -142,10 +162,11 @@ class MassAction(RateExpr, UnaryWrapper):
     True
 
     """
+
     def _str(self, *args, **kwargs):
-        arg, = self.args
+        (arg,) = self.args
         if isinstance(arg, Symbol):
-            uk, = arg.unique_keys
+            (uk,) = arg.unique_keys
             return "'%s'" % uk
         else:
             return super(MassAction, self)._str(*args, **kwargs)
@@ -155,31 +176,34 @@ class MassAction(RateExpr, UnaryWrapper):
 
     def get_named_keys(self):
         # Symbol uses args[0] to return from variables
-        arg, = self.args
+        (arg,) = self.args
         if isinstance(arg, Symbol):
             return arg.args
         else:
             return self.unique_keys
 
-    argument_names = ('rate_constant',)
+    argument_names = ("rate_constant",)
 
     def args_dimensionality(self, reaction):
         order = reaction.order()
-        return ({'time': -1, 'amount': 1-order, 'length': 3*(order - 1)},)
+        return ({"time": -1, "amount": 1 - order, "length": 3 * (order - 1)},)
 
     def active_conc_prod(self, variables, backend=math, reaction=None):
         result = 1
         for k, v in reaction.reac.items():
-            result *= variables[k]**v
+            result *= variables[k] ** v
         return result
 
     def rate_coeff(self, variables, backend=math, **kwargs):
-        rat_c, = self.all_args(variables, backend=backend, **kwargs)
+        (rat_c,) = self.all_args(variables, backend=backend, **kwargs)
         return rat_c
 
     def __call__(self, variables, backend=math, reaction=None, **kwargs):
-        return self.rate_coeff(variables, backend=backend, reaction=reaction)*self.active_conc_prod(
-            variables, backend=backend, reaction=reaction, **kwargs)
+        return self.rate_coeff(
+            variables, backend=backend, reaction=reaction
+        ) * self.active_conc_prod(
+            variables, backend=backend, reaction=reaction, **kwargs
+        )
 
     def string(self, *args, **kwargs):
         if self.args is None and len(self.unique_keys) == 1:
@@ -188,24 +212,27 @@ class MassAction(RateExpr, UnaryWrapper):
             return super(MassAction, self).string(*args, **kwargs)
 
     @classmethod
-    @deprecated(use_instead='MassAction.from_callback')
+    @deprecated(use_instead="MassAction.from_callback")
     def subclass_from_callback(cls, cb, cls_attrs=None):
         """ Override MassAction.__call__ """
-        _RateExpr = super(MassAction, cls).subclass_from_callback(cb, cls_attrs=cls_attrs)
+        _RateExpr = super(MassAction, cls).subclass_from_callback(
+            cb, cls_attrs=cls_attrs
+        )
 
         def wrapper(*args, **kwargs):
             obj = _RateExpr(*args, **kwargs)
             return cls(obj)
+
         return wrapper
 
     @classmethod
-    def from_callback(cls, callback, attr='__call__', **kwargs):
+    def from_callback(cls, callback, attr="__call__", **kwargs):
         Wrapper = RateExpr.from_callback(callback, attr=attr, **kwargs)
         return lambda *args, **kwargs: MassAction(Wrapper(*args, **kwargs))
 
 
 class Arrhenius(Expr):
-    """ Rate expression for a Arrhenius-type of rate: c0*exp(-c1/T)
+    """Rate expression for a Arrhenius-type of rate: c0*exp(-c1/T)
 
     Examples
     --------
@@ -221,15 +248,15 @@ class Arrhenius(Expr):
     True
 
     """
-    argument_names = ('A', 'Ea_over_R')
-    parameter_keys = ('temperature',)
+
+    argument_names = ("A", "Ea_over_R")
+    parameter_keys = ("temperature",)
 
     def args_dimensionality(self, reaction):
         order = reaction.order()
         return (
-            {'time': -1,
-             'amount': 1-order, 'length': 3*(order - 1)},
-            {'temperature': 1},
+            {"time": -1, "amount": 1 - order, "length": 3 * (order - 1)},
+            {"temperature": 1},
         )
 
     def __call__(self, variables, backend=math, **kwargs):
@@ -238,73 +265,88 @@ class Arrhenius(Expr):
             Ea_over_R = Ea_over_R.simplified
         except AttributeError:
             pass
-        return A*backend.exp(-Ea_over_R/variables['temperature'])
+        return A * backend.exp(-Ea_over_R / variables["temperature"])
 
 
 class Eyring(Expr):
-    """ Rate expression for Eyring eq: c0*T*exp(-c1/T)
+    """Rate expression for Eyring eq: c0*T*exp(-c1/T)
 
     Note that choice of standard state (c^0) will matter for order > 1.
     """
 
-    argument_names = ('kB_h_times_exp_dS_R', 'dH_over_R', 'conc0')
-    argument_defaults = (1*_molar,)
-    parameter_keys = ('temperature',)
+    argument_names = ("kB_h_times_exp_dS_R", "dH_over_R", "conc0")
+    argument_defaults = (1 * _molar,)
+    parameter_keys = ("temperature",)
 
     def args_dimensionality(self, reaction):
         order = reaction.order()
         return (
-            {'time': -1, 'temperature': -1,
-             'amount': 1-order, 'length': 3*(order - 1)},
-            {'temperature': 1},
-            concentration
+            {
+                "time": -1,
+                "temperature": -1,
+                "amount": 1 - order,
+                "length": 3 * (order - 1),
+            },
+            {"temperature": 1},
+            concentration,
         )
 
     def __call__(self, variables, backend=math, **kwargs):
         c0, c1, conc0 = self.all_args(variables, backend=backend, **kwargs)
-        T = variables['temperature']
-        return c0*T*backend.exp(-c1/T)*conc0**(1-kwargs['reaction'].order())
+        T = variables["temperature"]
+        return c0 * T * backend.exp(-c1 / T) * conc0 ** (1 - kwargs["reaction"].order())
 
 
 class EyringHS(Expr):
-    argument_names = ('dH', 'dS', 'c0')
-    argument_defaults = (1*_molar,)
-    parameter_keys = ('temperature', 'molar_gas_constant',
-                      'Boltzmann_constant', 'Planck_constant')
+    argument_names = ("dH", "dS", "c0")
+    argument_defaults = (1 * _molar,)
+    parameter_keys = (
+        "temperature",
+        "molar_gas_constant",
+        "Boltzmann_constant",
+        "Planck_constant",
+    )
 
     def args_dimensionality(self, **kwargs):
         return (
-            energy + {'amount': -1},
-            energy + {'amount': -1, 'temperature': -1},
-            concentration
+            energy + {"amount": -1},
+            energy + {"amount": -1, "temperature": -1},
+            concentration,
         )
 
     def __call__(self, variables, backend=math, reaction=None, **kwargs):
         dH, dS, c0 = self.all_args(variables, backend=backend, **kwargs)
         T, R, kB, h = [variables[k] for k in self.parameter_keys]
-        return kB/h*T*backend.exp(-(dH-T*dS)/(R*T))*c0**(1-reaction.order())
+        return (
+            kB
+            / h
+            * T
+            * backend.exp(-(dH - T * dS) / (R * T))
+            * c0 ** (1 - reaction.order())
+        )
 
 
 class RampedTemp(Expr):
     """ Ramped temperature, pass as substitution to e.g. ``get_odesys`` """
-    argument_names = ('T0', 'dTdt')
-    parameter_keys = ('time',)  # consider e.g. a parameter such as 'init_time'
+
+    argument_names = ("T0", "dTdt")
+    parameter_keys = ("time",)  # consider e.g. a parameter such as 'init_time'
 
     def args_dimensionality(self, **kwargs):
-        return ({'temperature': 1}, {'temperature': 1, 'time': -1})
+        return ({"temperature": 1}, {"temperature": 1, "time": -1})
 
     def __call__(self, variables, backend=None, **kwargs):
         T0, dTdt = self.all_args(variables, backend=backend, **kwargs)
-        return T0 + dTdt*variables['time']
+        return T0 + dTdt * variables["time"]
 
 
 class SinTemp(Expr):
-    argument_names = ('Tbase', 'Tamp', 'angvel', 'phase')
-    parameter_keys = ('time',)
+    argument_names = ("Tbase", "Tamp", "angvel", "phase")
+    parameter_keys = ("time",)
 
     def args_dimensionality(self, **kwargs):
-        return ({'temperature': 1}, {'temperature': 1}, {'time': -1}, {})
+        return ({"temperature": 1}, {"temperature": 1}, {"time": -1}, {})
 
     def __call__(self, variables, backend=math, **kwargs):
         Tbase, Tamp, angvel, phase = self.all_args(variables, backend=backend, **kwargs)
-        return Tbase + Tamp*backend.sin(angvel*variables['time'] + phase)
+        return Tbase + Tamp * backend.sin(angvel * variables["time"] + phase)

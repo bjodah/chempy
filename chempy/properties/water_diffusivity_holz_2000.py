@@ -5,12 +5,14 @@ import warnings
 try:
     from numpy import any as _any
 except ImportError:
+
     def _any(arg):
         if arg is True:
             return True
         if arg is False:
             return False
         return any(arg)
+
 
 # Parameters from paper (SI-units):
 
@@ -24,8 +26,7 @@ low_t_bound = 273.15  # 0 deg C, (m.p. at ambient pressure)
 high_t_bound = 373.15  # 100 deg C, (b.p. at ambient pressure)
 
 
-def water_self_diffusion_coefficient(T=None, units=None, warn=True,
-                                     err_mult=None):
+def water_self_diffusion_coefficient(T=None, units=None, warn=True, err_mult=None):
     """
     Temperature-dependent self-diffusion coefficient of water.
 
@@ -61,31 +62,33 @@ def water_self_diffusion_coefficient(T=None, units=None, warn=True,
         m = units.meter
         s = units.second
     if T is None:
-        T = 298.15*K
-    _D0 = D0 * m**2 * s**-1
+        T = 298.15 * K
+    _D0 = D0 * m ** 2 * s ** -1
     _TS = TS * K
     if err_mult is not None:
-        _dD0 = dD0 * m**2 * s**-1
+        _dD0 = dD0 * m ** 2 * s ** -1
         _dTS = dTS * K
-        _D0 += err_mult[0]*_dD0
-        _TS += err_mult[1]*_dTS
-    if warn and (_any(T < low_t_bound*K) or _any(T > high_t_bound*K)):
+        _D0 += err_mult[0] * _dD0
+        _TS += err_mult[1] * _dTS
+    if warn and (_any(T < low_t_bound * K) or _any(T > high_t_bound * K)):
         warnings.warn("Temperature is outside range (0-100 degC)")
-    return _D0*((T/_TS) - 1)**gamma
+    return _D0 * ((T / _TS) - 1) ** gamma
 
 
 # bibtex format (generated at doi2bib.org):
 reference = {
-    'doi': '10.1039/b005319h',
-    'url': 'http://dx.doi.org/10.1039/B005319H',
-    'year ': 2000,
-    'publisher': 'Royal Society of Chemistry ({RSC})',
-    'volume': 2,
-    'number': 20,
-    'pages': (4740, 4742),
-    'author': 'Manfred Holz and Stefan R. Heil and Antonio Sacco',
-    'title': ('Temperature-dependent self-diffusion coefficients of water and'
-              ' six selected molecular liquids for calibration in accurate 1H'
-              ' {NMR} {PFG} measurements'),
-    'journal': 'Phys. Chem. Chem. Phys.'
+    "doi": "10.1039/b005319h",
+    "url": "http://dx.doi.org/10.1039/B005319H",
+    "year ": 2000,
+    "publisher": "Royal Society of Chemistry ({RSC})",
+    "volume": 2,
+    "number": 20,
+    "pages": (4740, 4742),
+    "author": "Manfred Holz and Stefan R. Heil and Antonio Sacco",
+    "title": (
+        "Temperature-dependent self-diffusion coefficients of water and"
+        " six selected molecular liquids for calibration in accurate 1H"
+        " {NMR} {PFG} measurements"
+    ),
+    "journal": "Phys. Chem. Chem. Phys.",
 }

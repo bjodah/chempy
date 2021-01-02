@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function)
 import math
 
 
-def nernst_potential(ion_conc_out, ion_conc_in, charge, T,
-                     constants=None, units=None, backend=math):
+def nernst_potential(
+    ion_conc_out, ion_conc_in, charge, T, constants=None, units=None, backend=math
+):
     """
     Calculates the Nernst potential using the Nernst equation for a particular
     ion.

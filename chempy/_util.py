@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function)
 
 from functools import reduce
 from operator import mul, add
@@ -17,9 +16,11 @@ try:
 
         """
         exponents = np.asarray(exponents)
-        return np.multiply.reduce(bases**exponents, axis=-1)
+        return np.multiply.reduce(bases ** exponents, axis=-1)
+
 
 except ImportError:  # no NumPy available
+
     def _any(arg):
         if arg is True:
             return True
@@ -39,7 +40,7 @@ except ImportError:  # no NumPy available
         for row in exponents:
             res = 1
             for b, e in zip(bases, row):
-                res *= b**e
+                res *= b ** e
             result.append(res)
         return result
 
@@ -56,7 +57,7 @@ def get_backend(backend):
 
 
 def intdiv(p, q):
-    """ Integer divsions which rounds toward zero
+    """Integer divsions which rounds toward zero
 
     Examples
     --------
@@ -69,7 +70,7 @@ def intdiv(p, q):
 
     """
     r = p // q
-    if r < 0 and q*r != p:
+    if r < 0 and q * r != p:
         r += 1
     return r
 
@@ -89,8 +90,9 @@ def mat_dot_vec(iter_mat, iter_vec, iter_term=None):  # pure python (slow)
         return [vec_dot_vec(row, iter_vec) for row in iter_mat]
     else:
         # daxpy
-        return [vec_dot_vec(row, iter_vec) + term for row, term
-                in zip(iter_mat, iter_term)]
+        return [
+            vec_dot_vec(row, iter_vec) + term for row, term in zip(iter_mat, iter_term)
+        ]
 
 
 # def composition_balance(substances, concs, composition_number):

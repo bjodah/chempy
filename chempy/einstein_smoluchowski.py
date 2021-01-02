@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function)
 
 
 def electrical_mobility_from_D(D, charge, T, constants=None, units=None):
@@ -38,4 +37,4 @@ def electrical_mobility_from_D(D, charge, T, constants=None, units=None):
     else:
         kB = constants.Boltzmann_constant
         e = constants.elementary_charge
-    return D*charge*e/(kB*T)
+    return D * charge * e / (kB * T)

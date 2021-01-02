@@ -4,17 +4,16 @@ chemical kinetics (i.e. integrated rate expressions in closed form).
 The expressions are useful in e.g. regression or for comparison with numerical
 solution of the corresponding ODE system.
 """
-from __future__ import (absolute_import, division, print_function)
 
 from .._util import get_backend
 
 
 def dimerization_irrev(t, kf, initial_C, P0=1, t0=0):
-    return 1/(1/initial_C + 2*kf*(t-t0))
+    return 1 / (1 / initial_C + 2 * kf * (t - t0))
 
 
 def pseudo_irrev(t, kf, prod, major, minor, backend=None):
-    """ Analytic product transient of a irreversible pseudo first order reaction.
+    """Analytic product transient of a irreversible pseudo first order reaction.
 
     Product concentration vs time from pseudo-first order irreversible kinetics.
 
@@ -37,14 +36,14 @@ def pseudo_irrev(t, kf, prod, major, minor, backend=None):
 
     """
     be = get_backend(backend)
-    return prod + minor*(1 - be.exp(-major*kf*t))
+    return prod + minor * (1 - be.exp(-major * kf * t))
 
 
-pseudo_irrev.name = 'Pseudo first order irreversible'
+pseudo_irrev.name = "Pseudo first order irreversible"
 
 
 def pseudo_rev(t, kf, kb, prod, major, minor, backend=None):
-    """ Analytic product transient of a reversible pseudo first order reaction.
+    """Analytic product transient of a reversible pseudo first order reaction.
 
     Product concentration vs time from pseudo-first order reversible kinetics.
 
@@ -68,16 +67,17 @@ def pseudo_rev(t, kf, kb, prod, major, minor, backend=None):
     """
     be = get_backend(backend)
     return (
-        -kb*prod + kf*major*minor + (kb*prod - kf*major*minor) *
-        be.exp(-t*(kb + kf*major))
-    )/(kb + kf*major)
+        -kb * prod
+        + kf * major * minor
+        + (kb * prod - kf * major * minor) * be.exp(-t * (kb + kf * major))
+    ) / (kb + kf * major)
 
 
-pseudo_rev.name = 'Pseudo first order reversible'
+pseudo_rev.name = "Pseudo first order reversible"
 
 
 def binary_irrev(t, kf, prod, major, minor, backend=None):
-    """ Analytic product transient of a irreversible 2-to-1 reaction.
+    """Analytic product transient of a irreversible 2-to-1 reaction.
 
     Product concentration vs time from second order irreversible kinetics.
 
@@ -97,15 +97,16 @@ def binary_irrev(t, kf, prod, major, minor, backend=None):
 
     """
     be = get_backend(backend)
-    return prod + major*(1 - be.exp(-kf*(major-minor)*t))/(
-        major/minor - be.exp(-kf*t*(major-minor)))
+    return prod + major * (1 - be.exp(-kf * (major - minor) * t)) / (
+        major / minor - be.exp(-kf * t * (major - minor))
+    )
 
 
-binary_irrev.name = 'Second order irreversible'
+binary_irrev.name = "Second order irreversible"
 
 
 def binary_rev(t, kf, kb, prod, major, minor, backend=None):
-    """ Analytic product transient of a reversible 2-to-1 reaction.
+    """Analytic product transient of a reversible 2-to-1 reaction.
 
     Product concentration vs time from second order reversible kinetics.
 
@@ -130,23 +131,23 @@ def binary_rev(t, kf, kb, prod, major, minor, backend=None):
     # see _integrated.ipynb for derivation
     be = get_backend(backend)
     X, Y, Z = prod, major, minor
-    x0 = Y*kf
-    x1 = Z*kf
-    x2 = 2*X*kf
+    x0 = Y * kf
+    x1 = Z * kf
+    x2 = 2 * X * kf
     x3 = -kb - x0 - x1
     x4 = -x2 + x3
-    x5 = be.sqrt(-4*kf*(X**2*kf + X*x0 + X*x1 + Z*x0) + x4**2)
+    x5 = be.sqrt(-4 * kf * (X ** 2 * kf + X * x0 + X * x1 + Z * x0) + x4 ** 2)
     x6 = kb + x0 + x1 + x5
-    x7 = (x3 + x5)*be.exp(-t*x5)
+    x7 = (x3 + x5) * be.exp(-t * x5)
     x8 = x3 - x5
-    return (x4*x8 + x5*x8 + x7*(x2 + x6))/(2*kf*(x6 + x7))
+    return (x4 * x8 + x5 * x8 + x7 * (x2 + x6)) / (2 * kf * (x6 + x7))
 
 
-binary_rev.name = 'Second order reversible'
+binary_rev.name = "Second order reversible"
 
 
 def unary_irrev_cstr(t, k, r, p, fr, fp, fv, backend=None):
-    """ Analytic solution for ``A -> B`` in a CSTR.
+    """Analytic solution for ``A -> B`` in a CSTR.
 
     Analytic solution for a first order process in a continuously
     stirred tank reactor (CSTR).
@@ -177,20 +178,22 @@ def unary_irrev_cstr(t, k, r, p, fr, fp, fv, backend=None):
     """
     # See _kinetics_cstr.ipynb
     be = get_backend(backend)
-    x0 = fr*fv
+    x0 = fr * fv
     x1 = fv + k
-    x2 = 1/x1
-    x3 = fv*r + k*r - x0
-    x4 = fr*k
-    x5 = be.exp(-fv*t)
+    x2 = 1 / x1
+    x3 = fv * r + k * r - x0
+    x4 = fr * k
+    x5 = be.exp(-fv * t)
     return (
-        x0*x2 + x2*x3*be.exp(-t*x1),
-        -x2*x3*x5*(-1 + be.exp(-k*t)) + x2*x5*(-fp*fv - fp*k + fv*p + k*p - x4) + x2*(fp*x1 + x4)
+        x0 * x2 + x2 * x3 * be.exp(-t * x1),
+        -x2 * x3 * x5 * (-1 + be.exp(-k * t))
+        + x2 * x5 * (-fp * fv - fp * k + fv * p + k * p - x4)
+        + x2 * (fp * x1 + x4),
     )
 
 
 def binary_irrev_cstr(t, k, r, p, fr, fp, fv, n=1, backend=None):
-    """ Analytic solution for ``2 A -> n B`` in a CSTR.
+    """Analytic solution for ``2 A -> n B`` in a CSTR.
 
     Parameters
     ----------
@@ -225,26 +228,36 @@ def binary_irrev_cstr(t, k, r, p, fr, fp, fv, n=1, backend=None):
     # Post processed using sympy's cse function.
     # (see _derive_analytic_cstr_bireac.ipynb)
     be = get_backend(backend)
-    atanh = getattr(be, 'atanh', be.arctanh)
-    three = 3*be.cos(0)
+    atanh = getattr(be, "atanh", be.arctanh)
+    three = 3 * be.cos(0)
 
-    x0 = 1/k
+    x0 = 1 / k
     x1 = be.sqrt(fv)
-    x2 = 8*k
-    x3 = fr*x2
+    x2 = 8 * k
+    x3 = fr * x2
     x4 = be.sqrt(fv + x3)
-    x5 = x1*x4
-    x6 = x1*x4/2
-    x7 = atanh((-fv**(three/2)*x4 - 4*k*r*x5)/(fv**2 + fv*x3))
-    x8 = fv*t
-    x9 = fp*x2
-    x10 = 4*k*n
-    x11 = fr*x10
+    x5 = x1 * x4
+    x6 = x1 * x4 / 2
+    x7 = atanh((-(fv ** (three / 2)) * x4 - 4 * k * r * x5) / (fv ** 2 + fv * x3))
+    x8 = fv * t
+    x9 = fp * x2
+    x10 = 4 * k * n
+    x11 = fr * x10
     x12 = be.exp(x8)
-    x13 = n*x12
+    x13 = n * x12
     return (
-        x0*(-fv + x5*be.tanh(t*x6 - x7))/4,
-        x0*(fv*x13 + 8*k*p + r*x10 - x1*x13*x4*be.tanh(
-            x6*(t - 2*x7/(x1*x4))
-        ) + x11*x12 - x11 + x12*x9 - x9)*be.exp(-x8)/8
+        x0 * (-fv + x5 * be.tanh(t * x6 - x7)) / 4,
+        x0
+        * (
+            fv * x13
+            + 8 * k * p
+            + r * x10
+            - x1 * x13 * x4 * be.tanh(x6 * (t - 2 * x7 / (x1 * x4)))
+            + x11 * x12
+            - x11
+            + x12 * x9
+            - x9
+        )
+        * be.exp(-x8)
+        / 8,
     )
