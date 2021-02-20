@@ -405,3 +405,14 @@ def test_ReactionSystem__concatenate():
     sr, = skipped.rxns
     assert sr.name == 'rs2a'
     assert rs.rxns[-1].name == 'rs2b'
+
+def test_ReactionSystem__eliminiate_substances_by_assuming_constant_conc():
+    rs1 = ReactionSystem.from_string("""
+    H2O -> H+ + OH-; 1.23/s; 'fwd'
+    H+ + OH- -> H2O; 4.56/M/s; 'rev'
+    """)
+    for zero_conc in [0, 0*u.molar]:
+        noW = rs1.eliminiate_by_const_conc('H2O', 0)
+        assert rs1.keys() == sorted("H+ OH- H2O".split())
+        assert noW.keys() == sorted("H+ OH-".split())
+        assert noW['fwd'].param

@@ -4,6 +4,7 @@ from __future__ import (absolute_import, division, print_function)
 import math
 
 from collections import OrderedDict, defaultdict
+from copy import deepcopy
 from itertools import chain
 
 from .chemistry import Reaction, Substance
@@ -818,17 +819,20 @@ class ReactionSystem(object):
                     break
         return eq
 
-    def eliminiate_substances_by_assuming_constant_conc(self, sk, conc):
+    def eliminiate_by_const_conc(self, sk, conc):
+        """ Returns a new ReactionSystem where any reference to substance 'sk'
+        is removed by adjusting rate constant with `conc`. """
         new_rxns = []
-        for r in self.rxns:
+        for r in map(deepcopy, self.rxns):
             if sk in r.reac:
-                print(str(r), magnitude(conc), magnitude(conc) == 0)###DO-NOT-MERGE!!!
                 if magnitude(conc) == 0:
                     continue
                 r.param = r.param * conc**r.reac.pop(sk)
             for cont in (r.inact_reac, r.inact_prod, r.prod):
-                cont.pop(sk, None)
+                if sk in cont:
+                    cont.pop(sk)
             if r.keys():  # no point in adding the reaction "Nothing -> Nothing"
                 new_rxns.append(r)
-        self.rxns = new_rxns
-        self.substances.pop(sk, None)
+        return ReactionSystem(new_rxns, OrderedDict([
+            (k, v) for k, v in self.substances.items() if k != sk
+        ]))
