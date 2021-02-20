@@ -7,7 +7,7 @@ from collections import OrderedDict, defaultdict
 from itertools import chain
 
 from .chemistry import Reaction, Substance
-from .units import to_unitless
+from .units import to_unitless, magnitude
 from .util.pyutil import deprecated
 
 
@@ -817,3 +817,18 @@ class ReactionSystem(object):
                     eq.append((ri1, ri2))
                     break
         return eq
+
+    def eliminiate_substances_by_assuming_constant_conc(self, sk, conc):
+        new_rxns = []
+        for r in self.rxns:
+            if sk in r.reac:
+                print(str(r), magnitude(conc), magnitude(conc) == 0)###DO-NOT-MERGE!!!
+                if magnitude(conc) == 0:
+                    continue
+                r.param = r.param * conc**r.reac.pop(sk)
+            for cont in (r.inact_reac, r.inact_prod, r.prod):
+                cont.pop(sk, None)
+            if r.keys():  # no point in adding the reaction "Nothing -> Nothing"
+                new_rxns.append(r)
+        self.rxns = new_rxns
+        self.substances.pop(sk, None)
