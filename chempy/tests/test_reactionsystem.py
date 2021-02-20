@@ -414,16 +414,20 @@ def test_ReactionSystem__const_conc_simplify():
     """)
     u = default_units
     for zero_conc in [0, 0*u.molar]:
-        noW = rs1.const_conc_simplify('H2O', 0)
+        noW = rs1.const_conc_simplify({'H2O': zero_conc})
         assert sorted(rs1.substances) == sorted("H+ OH- H2O".split())
         assert sorted(noW.substances) == sorted("H+ OH-".split())
         assert allclose(noW['rev'].param, 4.56/u.M/u.s)
         with pytest.raises(KeyError):
             noW['fwd']
 
-    constW = rs1.const_conc_simplify('H2O', 55.4*u.molar)
+    constW = rs1.const_conc_simplify({'H2O': 55.4*u.molar})
     assert allclose(constW['rev'].param, 4.56/u.M/u.s)
     assert allclose(constW['fwd'].param, 1.23*55.4*u.M/u.s)
     assert sorted(constW.substances) == sorted("H+ OH-".split())
     assert len(constW['fwd'].reac) == 0
     assert len(constW['rev'].prod) == 0
+
+    empty = rs1.const_conc_simplify({'H2O': 0*u.molar, 'H+': 0*u.molar})
+    assert len(empty.rxns) == 0
+    assert list(empty.substances) == ['OH-']

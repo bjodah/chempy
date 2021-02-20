@@ -819,30 +819,32 @@ class ReactionSystem(object):
                     break
         return eq
 
-    def const_conc_simplify(self, sk, conc, kw_rs=None):
+    def const_conc_simplify(self, concs, kw_rs=None):
         """ Returns a new ReactionSystem where any reference to substance 'sk'
         is removed by adjusting rate constant with `conc`.
 
         Parameters
         ----------
-        sk: string
-            Substance key.
-        conc: scalar (possibly with unit)
-            Assumed constant concentration, zero will remove reactions whose rates depend it.
+        concs: dict
+            Dictionary mapping substance keys to constant concentration (possibly with unit).
+            A concentration of zero will remove reactions whose rates depend it.
         kw_rs: dict
             Keyword arguments passed to `ReactionSystem`. default: dont_check={'balance'}
         """
         new_rxns = []
         for r in map(deepcopy, self.rxns):
-            if sk in r.reac:
-                if magnitude(conc) == 0:
-                    continue
-                r.param = r.param * conc**r.reac.pop(sk)
-            for cont in (r.inact_reac, r.inact_prod, r.prod):
-                if sk in cont:
-                    cont.pop(sk)
-            if r.keys():  # no point in adding the reaction "Nothing -> Nothing"
+            skip_r = False
+            for sk, conc in concs.items():
+                if sk in r.reac:
+                    if magnitude(conc) == 0:
+                        skip_r = True
+                        break
+                    r.param = r.param * conc**r.reac.pop(sk)
+                for cont in (r.inact_reac, r.inact_prod, r.prod):
+                    if sk in cont:
+                        cont.pop(sk)
+            if r.keys() and not skip_r:  # no point in adding the reaction "Nothing -> Nothing"
                 new_rxns.append(r)
         return ReactionSystem(new_rxns, OrderedDict([
-            (k, v) for k, v in self.substances.items() if k != sk
+            (k, v) for k, v in self.substances.items() if k not in concs
         ]), **(dict(dont_check={'balance'}) if kw_rs is None else kw_rs))
