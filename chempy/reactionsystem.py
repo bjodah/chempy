@@ -465,6 +465,24 @@ class ReactionSystem(object):
             raise ValueError("Need an iterable of Reaction instances")
         return self.__class__(chain(self.rxns, other_rxns), substances, checks=())
 
+    def __isub__(self, other):
+        if isinstance(other, str):
+            yes, no, keys = [], [], set()
+            for r in self.rxns:
+                if r.name == other:
+                    no.append(r)
+                else:
+                    yes.append(r)
+                    keys |= r.keys()
+            if not no:
+                raise KeyError(f"No reaction with name {other}")
+            self.rxns = yes
+            for k in set(self.substances) - keys:
+                self.substances.pop(k)
+        else:
+            raise NotImplementedError(f"Not yet supported type: {type(other)}")
+        return self
+
     def __eq__(self, other):
         if self is other:
             return True
