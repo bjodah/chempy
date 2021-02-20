@@ -406,13 +406,24 @@ def test_ReactionSystem__concatenate():
     assert sr.name == 'rs2a'
     assert rs.rxns[-1].name == 'rs2b'
 
-def test_ReactionSystem__eliminiate_substances_by_assuming_constant_conc():
+
+def test_ReactionSystem__const_conc_simplify():
     rs1 = ReactionSystem.from_string("""
-    H2O -> H+ + OH-; 1.23/s; 'fwd'
-    H+ + OH- -> H2O; 4.56/M/s; 'rev'
+    H2O -> H+ + OH-; 1.23/s; name='fwd'
+    H+ + OH- -> H2O; 4.56/M/s; name='rev'
     """)
+    u = default_units
     for zero_conc in [0, 0*u.molar]:
-        noW = rs1.eliminiate_by_const_conc('H2O', 0)
-        assert rs1.keys() == sorted("H+ OH- H2O".split())
-        assert noW.keys() == sorted("H+ OH-".split())
-        assert noW['fwd'].param
+        noW = rs1.const_conc_simplify('H2O', 0)
+        assert sorted(rs1.substances) == sorted("H+ OH- H2O".split())
+        assert sorted(noW.substances) == sorted("H+ OH-".split())
+        assert allclose(noW['rev'].param, 4.56/u.M/u.s)
+        with pytest.raises(KeyError):
+            noW['fwd']
+
+    constW = rs1.const_conc_simplify('H2O', 55.4*u.molar)
+    assert allclose(constW['rev'].param, 4.56/u.M/u.s)
+    assert allclose(constW['fwd'].param, 1.23*55.4*u.M/u.s)
+    assert sorted(constW.substances) == sorted("H+ OH-".split())
+    assert len(constW['fwd'].reac) == 0
+    assert len(constW['rev'].prod) == 0

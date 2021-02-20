@@ -819,9 +819,19 @@ class ReactionSystem(object):
                     break
         return eq
 
-    def eliminiate_by_const_conc(self, sk, conc):
+    def const_conc_simplify(self, sk, conc, kw_rs=None):
         """ Returns a new ReactionSystem where any reference to substance 'sk'
-        is removed by adjusting rate constant with `conc`. """
+        is removed by adjusting rate constant with `conc`.
+
+        Parameters
+        ----------
+        sk: string
+            Substance key.
+        conc: scalar (possibly with unit)
+            Assumed constant concentration, zero will remove reactions whose rates depend it.
+        kw_rs: dict
+            Keyword arguments passed to `ReactionSystem`. default: dont_check={'balance'}
+        """
         new_rxns = []
         for r in map(deepcopy, self.rxns):
             if sk in r.reac:
@@ -835,4 +845,4 @@ class ReactionSystem(object):
                 new_rxns.append(r)
         return ReactionSystem(new_rxns, OrderedDict([
             (k, v) for k, v in self.substances.items() if k != sk
-        ]))
+        ]), **(dict(dont_check={'balance'}) if kw_rs is None else kw_rs))
