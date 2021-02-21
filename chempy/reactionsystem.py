@@ -837,7 +837,7 @@ class ReactionSystem(object):
                     break
         return eq
 
-    def const_conc_simplify(self, concs, kw_rs=None):
+    def const_conc_simplify(self, concs, kw_rs=None, keep_substances=False):
         """ Returns a new ReactionSystem where any reference to substance 'sk'
         is removed by adjusting rate constant with `conc`.
 
@@ -863,6 +863,9 @@ class ReactionSystem(object):
                         cont.pop(sk)
             if r.keys() and not skip_r:  # no point in adding the reaction "Nothing -> Nothing"
                 new_rxns.append(r)
-        return ReactionSystem(new_rxns, OrderedDict([
+        if kw_rs is None:
+            kw_rs = dict(dont_check={'balance'})
+        new_substances = self.substances if keep_substances else OrderedDict([
             (k, v) for k, v in self.substances.items() if k not in concs
-        ]), **(dict(dont_check={'balance'}) if kw_rs is None else kw_rs))
+        ])
+        return ReactionSystem(new_rxns, new_substances, **kw_rs)
