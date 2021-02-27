@@ -553,9 +553,10 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
     varbls.update(parameter_expressions or {})
     rates = rsys.rates(varbls, **(rates_kw or {}))
     compo_vecs, compo_names = rsys.composition_balance_vectors()
-
+    zero = (backend.Symbol('x')**0) * 0
     odesys = SymbolicSys(
-        zip([substance_symbols[key] for key in rsys.substances], [rates[key] for key in rsys.substances]),
+        zip([substance_symbols[key] for key in rsys.substances],
+            [rates.get(key, zero) for key in rsys.substances]),
         symbols['time'],
         parameter_symbols.values(),
         names=list(rsys.substances.keys()),

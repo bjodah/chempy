@@ -467,18 +467,15 @@ class ReactionSystem(object):
 
     def __isub__(self, other):
         if isinstance(other, str):
-            yes, no, keys = [], [], set()
+            yes, no = [], []
             for r in self.rxns:
                 if r.name == other:
                     no.append(r)
                 else:
                     yes.append(r)
-                    keys |= r.keys()
             if not no:
                 raise KeyError(f"No reaction with name {other}")
             self.rxns = yes
-            for k in set(self.substances) - keys:
-                self.substances.pop(k)
         else:
             raise NotImplementedError(f"Not yet supported type: {type(other)}")
         return self
@@ -487,6 +484,13 @@ class ReactionSystem(object):
         if self is other:
             return True
         return self.rxns == other.rxns and self.substances == other.substances
+
+    def prune_substances(self):
+        keys = set()
+        for r in self.rxns:
+            keys |= r.keys()
+        for k in set(self.substances) - keys:
+            self.substances.pop(k)
 
     def substance_names(self):
         """ Returns a tuple of the substances' names """

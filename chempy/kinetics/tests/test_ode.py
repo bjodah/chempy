@@ -983,6 +983,26 @@ def test_create_odesys__Radiolytic():
 
 
 @requires('pycvodes', 'sym', units_library)
+@pytest.mark.parametrize('simplify', [False, True])
+def test_create_odesys__bystander(simplify):
+    rsys1 = ReactionSystem.from_string("""
+    A + (1 B) -> C + B; 'k'
+    """, checks=(), substance_factory=Substance)
+    ic1 = {'A': 2.0, 'B': 3.0, 'C': 4.0}
+    if simplify:
+        rsys1 = rsys1.const_conc_simplify({'B': ic1['B']}, keep_substances=True)
+    t1 = 5
+    p1 = dict(k=0.42)
+    odesys1, odesys_extra = create_odesys(rsys1)
+    result1 = odesys1.integrate(t1, ic1, p1)
+    yref1 = ic1['A']*np.exp(-result1.xout*p1['k'])
+    assert list(rsys1.substances) == "A B C".split()
+    assert np.allclose(result1.yout[:, 0], yref1)
+    assert np.allclose(result1.yout[:, 1], ic1['B'])
+    assert np.allclose(result1.yout[:, 2], ic1['C'] + ic1['A'] - yref1)
+
+
+@requires('pycvodes', 'sym', units_library)
 def test_create_odesys__validate__catalyst():
     rsys1 = ReactionSystem.from_string("""
     H2O2 + Pt -> 2 OH + Pt; 'k_decomp'
