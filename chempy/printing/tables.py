@@ -3,19 +3,20 @@ class _RxnTable(object):
 
     _rsys_meth = None
 
-    def __init__(self, idx_rxn_pairs, substances, colors=None, missing=None, missing_color='eee8aa'):
+    def __init__(self, idx_rxn_pairs, substances, colors=None, missing=None, missing_color='eee8aa', prefer_name=True):
         self.idx_rxn_pairs = idx_rxn_pairs
         self.substances = substances
         self.colors = colors or {}
         self.missing = missing or []
         self.missing_color = missing_color
+        self.prefer_name = prefer_name
 
     @classmethod
-    def from_ReactionSystem(cls, rsys, color_categories=True):
+    def from_ReactionSystem(cls, rsys, color_categories=True, **kwargs):
         idx_rxn_pairs, unconsidered_ri = getattr(rsys, cls._rsys_meth)()
         colors = rsys._category_colors() if color_categories else {}
         missing = [not rsys.substance_participation(sk) for sk in rsys.substances]
-        return cls(idx_rxn_pairs, rsys.substances, colors=colors, missing=missing), unconsidered_ri
+        return cls(idx_rxn_pairs, rsys.substances, colors=colors, missing=missing, **kwargs), unconsidered_ri
 
     def _repr_html_(self):
         from .web import css
@@ -24,7 +25,8 @@ class _RxnTable(object):
     def _cell_label_html(self, printer, ori_idx, rxn):
         """ Reaction formatting callback. (reaction index -> string) """
         pretty = rxn.unicode(self.substances, with_param=True, with_name=False)
-        return '<a title="%d: %s">%s</a>' % (ori_idx, pretty, printer._print(rxn.name or rxn.param))
+        return '<a title="%d: %s">%s</a>' % (ori_idx, pretty, printer._print(
+            (rxn.name or rxn.param) if self.prefer_name else rxn.param))
 
     def _cell_html(self, printer, A, ri, ci=None):
         args = []

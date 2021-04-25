@@ -483,6 +483,8 @@ class ReactionSystem(object):
     def __eq__(self, other):
         if self is other:
             return True
+        if not isinstance(other, self.__class__):
+            return False
         return self.rxns == other.rxns and self.substances == other.substances
 
     def prune_substances(self):
