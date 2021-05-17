@@ -107,7 +107,7 @@ def _get_subst_comp(rsys, odesys, comp_keys, skip_keys):
     return subst_comp
 
 
-def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False, conc_roots=None):
+def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False, conc_roots=None, **kw):
     comp_keys = Substance.composition_keys(rsys.substances.values(), skip_keys=skip_keys)
     if PartiallySolvedSystem is None:
         raise ValueError("Failed to import 'native_sys' from 'pyodesys.native'")
@@ -116,9 +116,10 @@ def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False
     else:
         init_conc = 'y'
 
-    kw = dict(namespace_override={
+    assert 'namespace_override' not in kw
+    kw['namespace_override'] = {
         'p_get_dx_max': True,
-    })
+    }
     if all(subst.composition is None for subst in rsys.substances.values()):
         pass
     else:
