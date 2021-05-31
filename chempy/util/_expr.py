@@ -16,7 +16,9 @@ from __future__ import (absolute_import, division, print_function)
 import math
 from itertools import chain
 from operator import add, mul, truediv, sub, pow
+from ..units import is_quantity
 from .pyutil import defaultkeydict, deprecated
+
 
 try:
     import sympy
@@ -25,7 +27,7 @@ except ImportError:
 
 
 def _implicit_conversion(obj):
-    if isinstance(obj, (int, float)):
+    if isinstance(obj, (int, float)) or is_quantity(obj):
         return Constant(obj)
     elif isinstance(obj, Expr):
         return obj
