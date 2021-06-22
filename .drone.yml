@@ -19,12 +19,13 @@ pipeline:
       - SUNDBASE=/opt/sundials-5.4.0-klu-lapack
       - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
     commands:
-      - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
+      - export CACHE_ROOT=$(pwd)/ci_cache
+      - export PYTHONUSERBASE=$CACHE_ROOT/pyusrb
       - if [ ! -d $PYTHONUSERBASE ]; then mkdir -p $PYTHONUSERBASE; fi
       - export CPATH=$SUNDBASE/include:$CPATH
       - export LIBRARY_PATH=$SUNDBASE/lib
       - export LD_LIBRARY_PATH=$SUNDBASE/lib
-      - python3 -m pip install --cache-dir ./ci_cache/pip_cache --user -e .[all]
+      - python3 -m pip install --cache-dir $CACHE_ROOT/pip_cache --user -e .[all]
       - python3 -c "import pycvodes; import pyodesys; import pygslodeiv2"  # debug this CI config
       - git fetch -tq
       - python3 setup.py sdist                    # test pip installable sdist (checks MANIFEST.in)
@@ -43,7 +44,8 @@ pipeline:
       - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
       - CHEMPY_SKIP_NO_TESTS=1
     commands:
-      - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
+      - export CACHE_ROOT=$(pwd)/ci_cache
+      - export PYTHONUSERBASE=$CACHE_ROOT/pyusrb
       - export CPATH=$SUNDBASE/include:$CPATH
       - export LIBRARY_PATH=$SUNDBASE/lib
       - export LD_LIBRARY_PATH=$SUNDBASE/lib
@@ -57,8 +59,8 @@ pipeline:
       - python3 -m virtualenv /tmp/test_git_archive
       - cd deploy/public_html/branches/${DRONE_BRANCH}
       - unset CHEMPY_SKIP_NO_TESTS  # I can't get pip to install extras when using local file...
-      - bash -c "source /tmp/test_sdist/bin/activate; pip install --cache-dir ./ci_cache/pip_cache file://$(realpath $(eval ls chempy-*.tar.gz))#chempy[all] pytest; pytest --pyargs chempy"
-      - bash -c "source /tmp/test_git_archive/bin/activate; pip install --cache-dir ./ci_cache/pip_cache file://$(realpath chempy-head.zip)#chempy[all] pytest; pytest --pyargs chempy"
+      - bash -c "source /tmp/test_sdist/bin/activate; pip install --cache-dir $CACHE_ROOT/pip_cache file://$(realpath $(eval ls chempy-*.tar.gz))#chempy[all] pytest; pytest --pyargs chempy"
+      - bash -c "source /tmp/test_git_archive/bin/activate; pip install --cache-dir $CACHE_ROOT/pip_cache file://$(realpath chempy-head.zip)#chempy[all] pytest; pytest --pyargs chempy"
 
   render-notebooks:
     image: bjodah/bjodahimg20dot:2.1.1.2
