@@ -3,23 +3,23 @@ pipeline:
     image: drillster/drone-volume-cache
     restore: true
     mount:
-      - ./ci_cache/pyusrb
-      - ./ci_cache/conda_packages
-      - ./ci_cache/pip_cache
+      - ./cache-ci/pyusrb
+      - ./cache-ci/conda_packages
+      - ./cache-ci/pip_cache
     volumes:
       - /tmp/cache:/cache
     ttl: 90  # liftetime in days
 
   install:
-    image: bjodah/bjodahimg20dot:2.1.1.2
+    image: bjodah/bjodahimg20dot:21.7.b
     environment:
       - CC=gcc-10
       - CXX=g++-10
-      - CPLUS_INCLUDE_PATH=/opt/boost_1_74_p/include
-      - SUNDBASE=/opt/sundials-5.4.0-klu-lapack
+      - CPLUS_INCLUDE_PATH=/opt/boost-1.76.0/include
+      - SUNDBASE=/opt/sundials-5.7.0-release
       - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
     commands:
-      - export CACHE_ROOT=$(pwd)/ci_cache
+      - export CACHE_ROOT=$(pwd)/cache-ci
       - export PYTHONUSERBASE=$CACHE_ROOT/pyusrb
       - if [ ! -d $PYTHONUSERBASE ]; then mkdir -p $PYTHONUSERBASE; fi
       - export CPATH=$SUNDBASE/include:$CPATH
@@ -34,17 +34,17 @@ pipeline:
       - cp dist/chempy-* deploy/public_html/branches/${DRONE_BRANCH}/
 
   test-suite:
-    image: bjodah/bjodahimg20dot:2.1.1.2
+    image: bjodah/bjodahimg20dot:21.7.b
     group: testing
     environment:
       - CC=gcc-10
       - CXX=g++-10
-      - CPLUS_INCLUDE_PATH=/opt/boost_1_74_p/include
-      - SUNDBASE=/opt/sundials-5.4.0-klu-lapack
+      - CPLUS_INCLUDE_PATH=/opt/boost-1.76.0/include
+      - SUNDBASE=/opt/sundials-5.7.0-release
       - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
       - CHEMPY_SKIP_NO_TESTS=1
     commands:
-      - export CACHE_ROOT=$(pwd)/ci_cache
+      - export CACHE_ROOT=$(pwd)/cache-ci
       - export PYTHONUSERBASE=$CACHE_ROOT/pyusrb
       - export CPATH=$SUNDBASE/include:$CPATH
       - export LIBRARY_PATH=$SUNDBASE/lib
@@ -63,16 +63,16 @@ pipeline:
       - bash -c "source /tmp/test_git_archive/bin/activate; pip install --cache-dir $CACHE_ROOT/pip_cache file://$(realpath chempy-head.zip)#chempy[all] pytest; pytest --pyargs chempy"
 
   render-notebooks:
-    image: bjodah/bjodahimg20dot:2.1.1.2
+    image: bjodah/bjodahimg20dot:21.7.b
     group: testing
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
-      - SUNDBASE=/opt/sundials-5.4.0-klu-lapack
+      - SUNDBASE=/opt/sundials-5.7.0-release
       - CC=gcc-10
       - CXX=g++-10
       - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
     commands:
-      - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
+      - export PYTHONUSERBASE=$(pwd)/cache-ci/pyusrb
       - export CPATH=$SUNDBASE/include:$CPATH
       - export LIBRARY_PATH=$SUNDBASE/lib
       - export LD_LIBRARY_PATH=$SUNDBASE/lib
@@ -83,22 +83,22 @@ pipeline:
       - cp -r index.* examples/ "deploy/public_html/branches/${DRONE_BRANCH}"
 
 #  conda-recipe:
-#    image: bjodah/bjodahimg20dot:2.1.1.2
+#    image: bjodah/bjodahimg20dot:21.7.b
 #    group: testing
 #    commands:
-#      - export CONDA_PKGS_DIRS=$(pwd)/ci_cache/conda_packages
+#      - export CONDA_PKGS_DIRS=$(pwd)/cache-ci/conda_packages
 #      - git fetch -tq
 #      - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
 #      - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${DRONE_BRANCH}" conda-recipe
 #      - (cd $CONDA_PKGS_DIRS; find . -maxdepth 1 -type d -not -path . -not -path .. | xargs rm -r)
 
   compile-documentation:
-    image: bjodah/bjodahimg20dot:2.1.1.2
+    image: bjodah/bjodahimg20dot:21.7.b
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
-      - SUNDBASE=/opt/sundials-5.4.0-klu-lapack
+      - SUNDBASE=/opt/sundials-5.7.0-release
     commands:
-      - export PYTHONUSERBASE=$(pwd)/ci_cache/pyusrb
+      - export PYTHONUSERBASE=$(pwd)/cache-ci/pyusrb
       - export CPATH=$SUNDBASE/include
       - export LIBRARY_PATH=$SUNDBASE/lib
       - export LD_LIBRARY_PATH=$SUNDBASE/lib
@@ -110,10 +110,10 @@ pipeline:
     image: drillster/drone-volume-cache
     rebuild: true
     mount:
-#      - ./ci_cache/sund-3.2.1
-      - ./ci_cache/pyusrb
-      - ./ci_cache/conda_packages
-      - ./ci_cache/pip_cache
+#      - ./cache-ci/sund-3.2.1
+      - ./cache-ci/pyusrb
+      - ./cache-ci/conda_packages
+      - ./cache-ci/pip_cache
     volumes:
       - /tmp/cache:/cache
 
