@@ -11,10 +11,10 @@ pipeline:
     ttl: 90  # liftetime in days
 
   install:
-    image: bjodah/bjodahimg20dot:21.7.b
+    image: bjodah/bjodahimg20dot:21.7.c
     environment:
-      - CC=gcc-10
-      - CXX=g++-10
+      - CC=gcc-11
+      - CXX=g++-11
       - CPLUS_INCLUDE_PATH=/opt/boost-1.76.0/include
       - SUNDBASE=/opt/sundials-5.7.0-release
       - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
@@ -34,11 +34,11 @@ pipeline:
       - cp dist/chempy-* deploy/public_html/branches/${DRONE_BRANCH}/
 
   test-suite:
-    image: bjodah/bjodahimg20dot:21.7.b
+    image: bjodah/bjodahimg20dot:21.7.c
     group: testing
     environment:
-      - CC=gcc-10
-      - CXX=g++-10
+      - CC=gcc-11
+      - CXX=g++-11
       - CPLUS_INCLUDE_PATH=/opt/boost-1.76.0/include
       - SUNDBASE=/opt/sundials-5.7.0-release
       - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
@@ -63,13 +63,13 @@ pipeline:
       - bash -c "source /tmp/test_git_archive/bin/activate; pip install --cache-dir $CACHE_ROOT/pip_cache file://$(realpath chempy-head.zip)#chempy[all] pytest; pytest --pyargs chempy"
 
   render-notebooks:
-    image: bjodah/bjodahimg20dot:21.7.b
+    image: bjodah/bjodahimg20dot:21.7.c
     group: testing
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
       - SUNDBASE=/opt/sundials-5.7.0-release
-      - CC=gcc-10
-      - CXX=g++-10
+      - CC=gcc-11
+      - CXX=g++-11
       - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
     commands:
       - export PYTHONUSERBASE=$(pwd)/cache-ci/pyusrb
@@ -83,7 +83,7 @@ pipeline:
       - cp -r index.* examples/ "deploy/public_html/branches/${DRONE_BRANCH}"
 
 #  conda-recipe:
-#    image: bjodah/bjodahimg20dot:21.7.b
+#    image: bjodah/bjodahimg20dot:21.7.c
 #    group: testing
 #    commands:
 #      - export CONDA_PKGS_DIRS=$(pwd)/cache-ci/conda_packages
@@ -93,7 +93,7 @@ pipeline:
 #      - (cd $CONDA_PKGS_DIRS; find . -maxdepth 1 -type d -not -path . -not -path .. | xargs rm -r)
 
   compile-documentation:
-    image: bjodah/bjodahimg20dot:21.7.b
+    image: bjodah/bjodahimg20dot:21.7.c
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
       - SUNDBASE=/opt/sundials-5.7.0-release
