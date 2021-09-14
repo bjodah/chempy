@@ -131,7 +131,7 @@ def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False
             subst_comp=_get_subst_comp(rsys, odesys, comp_keys, skip_keys))
         native_code_kw['namespace_override']['p_first_step'] = render_mako(
             _first_step, init_conc=init_conc, odesys=odesys)
-    ns_extend = native_code_kw.get('namespace_extend', {})
+    ns_extend = native_code_kw.get('namespace_extend', {}).copy()
 
     if steady_state_root or conc_roots:
         if not native_sys[integrator]._NativeCode._support_roots:
