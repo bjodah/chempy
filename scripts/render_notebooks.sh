@@ -34,4 +34,4 @@ for dir in . examples/; do
 done
 set -e
 cd examples/
-../scripts/render_index.sh *.html
+# ../scripts/render_index.sh *.html

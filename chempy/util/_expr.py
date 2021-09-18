@@ -179,7 +179,7 @@ class Expr(object):
 
     @classmethod
     def fk(cls, *args):
-        """ Alternative constructor "from keys", \\*args is used as ``unique_keys``. """
+        """Alternative constructor "from keys", \\*args is used as ``unique_keys``."""
         return cls(unique_keys=args)
 
     @classmethod

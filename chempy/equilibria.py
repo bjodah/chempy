@@ -107,7 +107,7 @@ class EqSystem(ReactionSystem):
         ]
 
     def dissolved(self, concs):
-        """ Return dissolved concentrations """
+        """Return dissolved concentrations"""
         new_concs = concs.copy()
         for r in self.rxns:
             if r.has_precipitates(self.substances):

@@ -11,7 +11,7 @@ import textwrap
 
 
 class Echo:
-    """ Context maganger for echoing variable assignments (in CPython) """
+    """Context maganger for echoing variable assignments (in CPython)"""
 
     def __init__(self, msg, indent="  "):
         self.msg = msg

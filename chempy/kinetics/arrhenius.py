@@ -271,7 +271,7 @@ class ArrheniusParamWithUnits(ArrheniusParam):
     def __call__(
         self, state, constants=default_constants, units=default_units, backend=None
     ):
-        """ See :func:`chempy.arrhenius.arrhenius_equation`. """
+        """See :func:`chempy.arrhenius.arrhenius_equation`."""
         return super(ArrheniusParamWithUnits, self).__call__(
             state, constants, units, backend
         )

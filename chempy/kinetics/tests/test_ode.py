@@ -273,7 +273,7 @@ def test_get_ode__Radiolytic__units__multi():
 
 
 class Density(Expr):
-    """ Arguments: rho0 drhodT T0 """
+    """Arguments: rho0 drhodT T0"""
 
     parameter_keys = ("temperature",)
     kw = {}

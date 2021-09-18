@@ -255,7 +255,7 @@ def test_mk_Poly():
 
 def test_Expr__nargs():
     class Linear(Expr):
-        """ Arguments: p0, p1 """
+        """Arguments: p0, p1"""
 
         nargs = 2
         parameter_keys = ("x",)

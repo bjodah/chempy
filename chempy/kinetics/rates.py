@@ -22,7 +22,7 @@ _molar = getattr(default_units, "molar", 1)  # makes module importable.
 
 
 class RateExpr(Expr):
-    """ Baseclass for rate expressions, see source code of e.g. MassAction & Radiolytic. """
+    """Baseclass for rate expressions, see source code of e.g. MassAction & Radiolytic."""
 
     @classmethod
     @deprecated(use_instead=Expr.from_callback)
@@ -214,7 +214,7 @@ class MassAction(RateExpr, UnaryWrapper):
     @classmethod
     @deprecated(use_instead="MassAction.from_callback")
     def subclass_from_callback(cls, cb, cls_attrs=None):
-        """ Override MassAction.__call__ """
+        """Override MassAction.__call__"""
         _RateExpr = super(MassAction, cls).subclass_from_callback(
             cb, cls_attrs=cls_attrs
         )
@@ -327,7 +327,7 @@ class EyringHS(Expr):
 
 
 class RampedTemp(Expr):
-    """ Ramped temperature, pass as substitution to e.g. ``get_odesys`` """
+    """Ramped temperature, pass as substitution to e.g. ``get_odesys``"""
 
     argument_names = ("T0", "dTdt")
     parameter_keys = ("time",)  # consider e.g. a parameter such as 'init_time'

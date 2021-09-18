@@ -95,7 +95,7 @@ class Deprecation(object):
 
     @classmethod
     def inspect(cls, obj):
-        """ Get the :class:`Deprecation` instance of a deprecated function. """
+        """Get the :class:`Deprecation` instance of a deprecated function."""
         return cls._deprecations[obj]
 
     def _warning_message_template(self):
@@ -117,7 +117,7 @@ class Deprecation(object):
         return msg + "."
 
     def __call__(self, wrapped):
-        """ Decorates function to be deprecated """
+        """Decorates function to be deprecated"""
         msg = self.warning_message % {"func_name": wrapped.__name__}
         wrapped_doc = wrapped.__doc__ or ""
         if hasattr(wrapped, "__mro__"):  # wrapped is a class

@@ -41,7 +41,7 @@ class MassActionEq(Expr):
 
 @deprecated(use_instead=MassActionEq)
 class EqExpr(Expr):
-    """ Baseclass for equilibrium expressions """
+    """Baseclass for equilibrium expressions"""
 
     kw = {"eq": None, "ref": None}
 

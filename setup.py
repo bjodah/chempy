@@ -128,7 +128,7 @@ setup_kwargs = dict(
         "sympy>=1.1.1,!=1.2",
         "quantities>=0.12.1",
         "pyneqsys>=0.5.5",
-        "pyodesys>=0.14.0" if sys.version_info[0] >= 3 else "pyodesys<0.12",
+        "pyodesys>=0.14.1" if sys.version_info[0] >= 3 else "pyodesys<0.12",
         "pyparsing>=2.0.3",
         "sym>=0.3.4",
         "pulp>=1.6.8",

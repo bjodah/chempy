@@ -67,7 +67,7 @@ class Henry(defaultnamedtuple("Henry", "Hcp Tderiv T0 ref", [None, None])):
     """
 
     def __call__(self, T, units=None, backend=None):
-        """ Evaluates Henry's constant for provided temperature """
+        """Evaluates Henry's constant for provided temperature"""
         return Henry_H_at_T(
             T, self.Hcp, self.Tderiv, self.T0, units=units, backend=backend
         )
@@ -125,5 +125,5 @@ class HenryWithUnits(Henry):
     """
 
     def __call__(self, T, units=default_units, backend=None):
-        """ Evaluates Henry's constant for provided temperature """
+        """Evaluates Henry's constant for provided temperature"""
         return super(HenryWithUnits, self).__call__(T, units, backend)
