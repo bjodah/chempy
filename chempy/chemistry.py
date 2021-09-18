@@ -100,7 +100,7 @@ class Substance(object):
 
     @property
     def charge(self):
-        """ Convenience property for accessing ``composition[0]`` """
+        """Convenience property for accessing ``composition[0]``"""
         return self.composition.get(0, 0)  # electron (net) deficiency
 
     @property
@@ -205,7 +205,7 @@ class Substance(object):
 
     @staticmethod
     def composition_keys(substance_iter, skip_keys=()):
-        """ Occuring :attr:`composition` keys among a series of substances """
+        """Occuring :attr:`composition` keys among a series of substances"""
         keys = set()
         for s in substance_iter:
             if s.composition is None:
@@ -236,7 +236,7 @@ class Species(Substance):
     @property
     @deprecated(last_supported_version="0.3.0", will_be_missing_in="0.8.0")
     def precipitate(self):
-        """ deprecated attribute, provided for compatibility for now """
+        """deprecated attribute, provided for compatibility for now"""
         return self.phase_idx > 0
 
     @classmethod
@@ -541,7 +541,7 @@ class Reaction(object):
         return self.__class__(**kwargs)
 
     def check_any_effect(self, throw=False):
-        """ Checks if the reaction has any effect """
+        """Checks if the reaction has any effect"""
         if not any(self.net_stoich(self.keys())):
             if throw:
                 raise ValueError(
@@ -552,7 +552,7 @@ class Reaction(object):
         return True
 
     def check_all_positive(self, throw=False):
-        """ Checks if all stoichiometric coefficients are positive """
+        """Checks if all stoichiometric coefficients are positive"""
         for nam, cont in [
             (nam, getattr(self, nam))
             for nam in "reac prod inact_reac inact_prod".split()
@@ -568,7 +568,7 @@ class Reaction(object):
         return True
 
     def check_all_integral(self, throw=False):
-        """ Checks if all stoichiometric coefficents are integers """
+        """Checks if all stoichiometric coefficents are integers"""
         for nam, cont in [
             (nam, getattr(self, nam))
             for nam in "reac prod inact_reac inact_prod".split()
@@ -630,7 +630,7 @@ class Reaction(object):
         )
 
     def order(self):
-        """ Sum of (active) reactant stoichiometries """
+        """Sum of (active) reactant stoichiometries"""
         return sum(self.reac.values())
 
     def keys(self):
@@ -644,7 +644,7 @@ class Reaction(object):
         )
 
     def net_stoich(self, substance_keys):
-        """ Per substance net stoichiometry tuple (active & inactive) """
+        """Per substance net stoichiometry tuple (active & inactive)"""
         return tuple(
             self.prod.get(k, 0)
             - self.reac.get(k, 0)
@@ -654,23 +654,23 @@ class Reaction(object):
         )
 
     def all_reac_stoich(self, substances):
-        """ Per substance reactant stoichiometry tuple (active & inactive) """
+        """Per substance reactant stoichiometry tuple (active & inactive)"""
         return tuple(
             self.reac.get(k, 0) + self.inact_reac.get(k, 0) for k in substances
         )
 
     def active_reac_stoich(self, substances):
-        """ Per substance reactant stoichiometry tuple (active) """
+        """Per substance reactant stoichiometry tuple (active)"""
         return tuple(self.reac.get(k, 0) for k in substances)
 
     def all_prod_stoich(self, substances):
-        """ Per substance product stoichiometry tuple (active & inactive) """
+        """Per substance product stoichiometry tuple (active & inactive)"""
         return tuple(
             self.prod.get(k, 0) + self.inact_prod.get(k, 0) for k in substances
         )
 
     def active_prod_stoich(self, substances):
-        """ Per substance product stoichiometry tuple (active) """
+        """Per substance product stoichiometry tuple (active)"""
         return tuple(self.prod.get(k, 0) for k in substances)
 
     def _xprecipitate_stoich(self, substances, xor):
@@ -687,7 +687,7 @@ class Reaction(object):
         )
 
     def precipitate_stoich(self, substances):
-        """ Only stoichiometry of precipitates """
+        """Only stoichiometry of precipitates"""
         net = self._xprecipitate_stoich(substances, True)
         found1 = -1
         for idx in range(len(net)):
@@ -699,7 +699,7 @@ class Reaction(object):
         return net, net[found1], found1
 
     def non_precipitate_stoich(self, substances):
-        """ Only stoichiometry of non-precipitates """
+        """Only stoichiometry of non-precipitates"""
         return self._xprecipitate_stoich(substances, False)
 
     def has_precipitates(self, substances):
@@ -1149,7 +1149,7 @@ class Equilibrium(Reaction):
         return self.equilibrium_constant(*args, **kwargs)
 
     def Q(self, substances, concs):
-        """ Calculates the equilibrium qoutient """
+        """Calculates the equilibrium qoutient"""
         stoich = self.non_precipitate_stoich(substances)
         return equilibrium_quotient(concs, stoich)
 

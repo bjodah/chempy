@@ -86,7 +86,7 @@ def ionic_strength(
 
 
 class _ActivityProductBase(object):
-    """ Baseclass for activity products """
+    """Baseclass for activity products"""
 
     def __init__(self, stoich, *args):
         self.stoich = stoich
@@ -201,14 +201,14 @@ def B(eps_r, T, rho, b0=1, constants=None, units=None, backend=None):
 
 
 def limiting_log_gamma(IS, z, A, I0=1, backend=None):
-    """ Debye-Hyckel limiting formula """
+    """Debye-Hyckel limiting formula"""
     be = get_backend(backend)
     one = be.pi ** 0
     return -A * z ** 2 * (IS / I0) ** (one / 2)
 
 
 def extended_log_gamma(IS, z, a, A, B, C=0, I0=1, backend=None):
-    """ Debye-Huckel extended formula """
+    """Debye-Huckel extended formula"""
     be = get_backend(backend)
     one = be.pi ** 0
     I_I0 = IS / I0
@@ -217,7 +217,7 @@ def extended_log_gamma(IS, z, a, A, B, C=0, I0=1, backend=None):
 
 
 def davies_log_gamma(IS, z, A, C=-0.3, I0=1, backend=None):
-    """ Davies formula """
+    """Davies formula"""
     be = get_backend(backend)
     one = be.pi ** 0
     I_I0 = IS / I0
@@ -226,7 +226,7 @@ def davies_log_gamma(IS, z, A, C=-0.3, I0=1, backend=None):
 
 
 def limiting_activity_product(IS, stoich, z, T, eps_r, rho, backend=None):
-    """ Product of activity coefficients based on DH limiting law. """
+    """Product of activity coefficients based on DH limiting law."""
     be = get_backend(backend)
     Aval = A(eps_r, T, rho)
     tot = 0

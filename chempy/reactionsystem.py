@@ -124,7 +124,7 @@ class ReactionSystem(object):
             self.sort_substances_inplace()
 
     def split(self, **kwargs):
-        """ Splits the reaction system into multiple disjoint reaction systems. """
+        """Splits the reaction system into multiple disjoint reaction systems."""
         groups = []  # tuples of (list, set) -- list of reactions, set of substance keys
         for i, r in enumerate(self.rxns):
             for gr, gs in groups:  # check if reaction is part of group, break out
@@ -225,7 +225,7 @@ class ReactionSystem(object):
         )
 
     def sort_substances_inplace(self, key=lambda kv: kv[0]):
-        """ Sorts the OrderedDict attribute ``substances`` """
+        """Sorts the OrderedDict attribute ``substances``"""
         self.substances = OrderedDict(sorted(self.substances.items(), key=key))
 
     def _category_colors(self, checks=()):
@@ -282,7 +282,7 @@ class ReactionSystem(object):
         return self.html(print_fn=javascript)
 
     def check_duplicate(self, throw=False):
-        """ Raies ValueError if there are duplicates in ``self.rxns`` """
+        """Raies ValueError if there are duplicates in ``self.rxns``"""
         for i1, rxn1 in enumerate(self.rxns):
             for i2, rxn2 in enumerate(self.rxns[i1 + 1 :], i1 + 1):
                 if rxn1 == rxn2:
@@ -354,14 +354,14 @@ class ReactionSystem(object):
         return True
 
     def obeys_mass_balance(self):
-        """ Returns True if all reactions obeys mass balance, else False. """
+        """Returns True if all reactions obeys mass balance, else False."""
         for rxn in self.rxns:
             if rxn.mass_balance_violation(self.substances) != 0:
                 return False
         return True
 
     def obeys_charge_neutrality(self):
-        """ Returns False if any reaction violate charge neutrality. """
+        """Returns False if any reaction violate charge neutrality."""
         for rxn in self.rxns:
             if rxn.charge_neutrality_violation(self.substances) != 0:
                 return False
@@ -520,7 +520,7 @@ class ReactionSystem(object):
         return self.rxns == other.rxns and self.substances == other.substances
 
     def substance_names(self):
-        """ Returns a tuple of the substances' names """
+        """Returns a tuple of the substances' names"""
         return tuple(substance.name for substance in self.substances.values())
 
     def substance_participation(self, substance_key):
@@ -549,16 +549,16 @@ class ReactionSystem(object):
 
     @property
     def nr(self):
-        """ Number of reactions """
+        """Number of reactions"""
         return len(self.rxns)
 
     @property
     def ns(self):
-        """ Number of substances """
+        """Number of substances"""
         return len(self.substances)
 
     def params(self):
-        """ Returns list of per reaction ``param`` value """
+        """Returns list of per reaction ``param`` value"""
         return [rxn.param for rxn in self.rxns]
 
     def as_per_substance_array(
@@ -597,7 +597,7 @@ class ReactionSystem(object):
         return dict(zip(self.substances.keys(), arr))
 
     def as_substance_index(self, substance_key):
-        """ Returns the index of a Substance in the system"""
+        """Returns the index of a Substance in the system"""
         if isinstance(substance_key, int):
             return substance_key
         else:
@@ -728,7 +728,7 @@ class ReactionSystem(object):
         return self._stoichs("active_prod_stoich", keys)
 
     def stoichs(self, non_precip_rids=()):  # TODO: rename to cond_stoichs
-        """ Conditional stoichiometries depending on precipitation status """
+        """Conditional stoichiometries depending on precipitation status"""
         # dtype: see https://github.com/sympy/sympy/issues/10295
         import numpy as np
 

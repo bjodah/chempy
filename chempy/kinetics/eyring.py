@@ -185,7 +185,7 @@ class EyringParamWithUnits(EyringParam):
     def __call__(
         self, state, constants=default_constants, units=default_units, backend=None
     ):
-        """ See :func:`chempy.eyring.eyring_equation`. """
+        """See :func:`chempy.eyring.eyring_equation`."""
         if backend is None:
             backend = Backend()
         return super(EyringParamWithUnits, self).__call__(

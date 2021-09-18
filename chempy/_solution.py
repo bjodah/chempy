@@ -102,14 +102,14 @@ class QuantityDict(ArithmeticDict):
         return a
 
     def __rtruediv__(self, other):
-        """ other / self """
+        """other / self"""
         return self.__class__(
             getattr(other, "units", 1) / self.units,
             {k: other / v for k, v in self.items()},
         )
 
     def __rfloordiv__(self, other):
-        """ other // self """
+        """other // self"""
         return self.__class__(
             getattr(other, "units", 1) / self.units,
             {k: other // v for k, v in self.items()},

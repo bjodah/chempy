@@ -14,7 +14,7 @@ parsing_library = "pyparsing"  # info used for selective testing.
 
 
 def get_parsing_context():
-    """ returns the default dictionary for parsing strings in chempy """
+    """returns the default dictionary for parsing strings in chempy"""
     import chempy
     from chempy.kinetics import rates
     from chempy.units import default_units, default_constants, to_unitless

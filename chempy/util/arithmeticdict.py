@@ -113,7 +113,7 @@ class ArithmeticDict(defaultdict):
         return a
 
     def __rtruediv__(self, other):
-        """ other / self """
+        """other / self"""
         return self.__class__(
             self.default_factory, {k: other / v for k, v in self.items()}
         )
@@ -133,7 +133,7 @@ class ArithmeticDict(defaultdict):
         return a
 
     def __rfloordiv__(self, other):
-        """ other // self """
+        """other // self"""
         return self.__class__(
             self.default_factory, {k: other // v for k, v in self.items()}
         )

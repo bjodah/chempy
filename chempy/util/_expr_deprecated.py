@@ -50,7 +50,7 @@ def _mk_Poly(parameter_name, reciprocal=False, shift_name="shift"):
     """
 
     class Poly(Expr):
-        """ Args: shift, p0, p1, ... """
+        """Args: shift, p0, p1, ..."""
 
         argument_names = (shift_name, Ellipsis)
         parameter_keys = (parameter_name,)
@@ -66,10 +66,10 @@ def _mk_Poly(parameter_name, reciprocal=False, shift_name="shift"):
 
 
 def _mk_PiecewisePoly(parameter, reciprocal=False):
-    """ Class factory of Expr subclass for piecewise (shifted) polynomial """
+    """Class factory of Expr subclass for piecewise (shifted) polynomial"""
 
     class PiecewisePoly(Expr):
-        """ Args: npolys, ncoeff0, lower0, upper0, ncoeff1, ..., shift0, p0_0, p0_1, ... shiftn, p0_n, p1_n, ... """
+        """Args: npolys, ncoeff0, lower0, upper0, ncoeff1, ..., shift0, p0_0, p0_1, ... shiftn, p0_n, p1_n, ..."""
 
         argument_names = ("npolys", Ellipsis)
         parameter_keys = (parameter,)

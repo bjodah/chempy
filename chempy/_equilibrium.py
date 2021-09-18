@@ -35,7 +35,7 @@ def equilibrium_residual(rc, c0, stoich, K, activity_product=None):
 
 
 def _get_rc_interval(stoich, c0):
-    """ get reaction coordinate interval """
+    """get reaction coordinate interval"""
     limits = c0 / stoich
     if np.any(limits < 0):
         upper = -np.max(limits[np.argwhere(limits < 0)])

@@ -33,7 +33,7 @@ class ChemPyDeprecationWarning(DeprecationWarning):
 
 
 def deprecated(*args, **kwargs):
-    """ Helper to :class:`Deprecation` for using ChemPyDeprecationWarning. """
+    """Helper to :class:`Deprecation` for using ChemPyDeprecationWarning."""
     return Deprecation(
         *args,
         issues_url=lambda s: __url__ + "/issues/" + s.lstrip("gh-"),
@@ -161,7 +161,7 @@ class AttributeContainer(object):
 
 
 class AttrDict(dict):
-    """ Subclass of dict with attribute access to keys """
+    """Subclass of dict with attribute access to keys"""
 
     def __init__(self, *args, **kwargs):
         super(AttrDict, self).__init__(*args, **kwargs)

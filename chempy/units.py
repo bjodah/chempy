@@ -206,7 +206,7 @@ def get_derived_unit(registry, key):
 
 
 def unit_registry_to_human_readable(unit_registry):
-    """ Serialization of a unit registry. """
+    """Serialization of a unit registry."""
     if unit_registry is None:
         return None
     new_registry = {}
@@ -267,7 +267,7 @@ def html_of_unit(quant):
 
 
 def unit_registry_from_human_readable(unit_registry):
-    """ Deserialization of unit_registry. """
+    """Deserialization of unit_registry."""
     if unit_registry is None:
         return None
     new_registry = {}
@@ -509,7 +509,7 @@ def compare_equality(a, b):
 
 
 def allclose(a, b, rtol=1e-8, atol=None):
-    """ Analogous to ``numpy.allclose``. """
+    """Analogous to ``numpy.allclose``."""
     if a.__class__.__name__ == "UncertainQuantity":
         return allclose(pq.Quantity(a), b, rtol=rtol, atol=atol)
     if b.__class__.__name__ == "UncertainQuantity":
@@ -693,7 +693,7 @@ def concatenate(arrays, **kwargs):
 
 
 def tile(array, *args, **kwargs):
-    """ Patched version of numpy.tile (with support for units) """
+    """Patched version of numpy.tile (with support for units)"""
     try:
         elem = array[0, ...]
     except TypeError:
