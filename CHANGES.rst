@@ -1,3 +1,7 @@
+v0.8.2
+======
+- changed version of dependency "pyodesys"
+
 v0.8.1
 ======
 - package "jupyter" was listed as formal dependency, now removed.
