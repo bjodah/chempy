@@ -59,8 +59,8 @@ class EinsteinSolid(HeatCapacity):
 
 def _get_cv(kelvin=1, gram=1, mol=1):
 
-    Al = Substance.from_formula("Al", data={"DebyeT": 428 * kelvin})
-    Be = Substance.from_formula("Be", data={"DebyeT": 1440 * kelvin})
+    Al = Substance.from_formula("Al", data={"DebyeT": 428 * kelvin, "mass": 26.9815385})
+    Be = Substance.from_formula("Be", data={"DebyeT": 1440 * kelvin, "mass": 9.0121831})
 
     def einT(s):
         return 0.806 * s.data["DebyeT"]
