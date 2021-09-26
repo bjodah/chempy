@@ -1,7 +1,7 @@
 ChemPy
 ======
 
-.. image:: http://hera.physchem.kth.se:8080/api/badges/bjodah/chempy/status.svg
+.. image:: http://hera.physchem.kth.se:8080/api/badges/bjodah/chempy/status.svg?ref=refs/heads/master
    :target: http://hera.physchem.kth.se:8080/bjodah/chempy
    :alt: Build status
 .. image:: https://img.shields.io/pypi/v/chempy.svg
@@ -42,12 +42,12 @@ chemistry (mainly physical/inorganic/analytical chemistry). Currently it include
 
 - Properties (pure python implementations from the literature)
 
-  - water density as function of temperature
-  - water permittivity as function of temperature and pressure
-  - water diffusivity as function of temperature
-  - water viscosity as function of temperature
-  - sulfuric acid density as function of temperature & weight fraction H₂SO₄
-  - More to come... (and contributions are most welcome!)
+  - `water density <https://github.com/bjodah/chempy/blob/master/chempy/properties/water_density_tanaka_2001.py>`_ as function of temperature
+  - `water permittivity <https://github.com/bjodah/chempy/blob/master/chempy/properties/water_permittivity_bradley_pitzer_1979.py>`_ as function of temperature and pressure
+  - `water diffusivity <https://github.com/bjodah/chempy/blob/master/chempy/properties/water_diffusivity_holz_2000.py>`_ as function of temperature
+  - `water viscosity <https://github.com/bjodah/chempy/blob/master/chempy/properties/water_viscosity_korson_1969.py>`_ as function of temperature
+  - `sulfuric acid density <https://github.com/bjodah/chempy/blob/master/chempy/properties/sulfuric_acid_density_myhre_1998.py>`_ as function of temperature & weight fraction H₂SO₄
+  - `More <https://github.com/bjodah/chempy/tree/master/chempy/properties>`_ to come... (and contributions are most welcome!)
 
 
 Documentation
@@ -64,7 +64,7 @@ Installation
 Simplest way to install ChemPy and its (optional) dependencies is to use the
 `conda package manager <https://conda.pydata.org/docs/>`_::
 
-   $ conda install -c bjodah chempy pytest
+   $ conda install -c conda-forge chempy pytest
    $ pytest -rs -W ignore::chempy.ChemPyDeprecationWarning --pyargs chempy
 
 currently conda packages are only provided for Linux. On Windows and OS X
@@ -76,11 +76,6 @@ you will need to use ``pip`` instead::
 there will a few tests which will be skipped due to some missing optional
 backends in addition to those in SciPy (used for solving systems of non-linear
 equations and ordinary differential equations).
-
-If you are still using Python 2 you can use the long-term-support 0.6.x branch
-of ChemPy which will continue to receive bugfixes::
-
-   $ python2 -m pip install "chempy<0.7"
 
 
 Optional dependencies
