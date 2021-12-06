@@ -132,6 +132,28 @@ class _NumSys(object):
             eq_params = None  # use those of eqsys
         return params[:self.eqsys.ns], eq_params
 
+    @staticmethod
+    def _pivot(exprs, x):
+        import sympy as sp
+        j = sp.Matrix(1, len(exprs), lambda _, k: exprs[k]).jacobian(x)
+        piv = []
+        for ir in range(min(j.rows, j.cols)):
+            if j[ir, ir] != 0:
+                piv.append(ir)
+                continue
+            for ir2 in range(ir+1, j.rows):
+                if j[ir2, ir] != 0:
+                    piv.append(ir2)
+                    j.row_swap(ir, ir2)
+                    break
+            else:
+                raise ValueError("No pivot found")
+        for i, j in enumerate(piv):
+            tmp = exprs[i]
+            exprs[i] = exprs[j]
+            exprs[j] = tmp
+        return exprs
+
 
 class NumSysLin(_NumSys):
 
@@ -149,7 +171,7 @@ class NumSysLin(_NumSys):
         B, comp_nrs = self.eqsys.composition_balance_vectors()
         f_preserv = linear_exprs(B, yvec, mat_dot_vec(B, init_concs),
                                  rref=self.rref_preserv)
-        return f_equil + f_preserv
+        return self._pivot(f_equil + f_preserv, yvec)
 
 
 class _NumSysLinNegPenalty(NumSysLin):
@@ -245,4 +267,4 @@ class NumSysLog(_NumSys):
         f_preserv = linear_exprs(B, list(map(self.backend.exp, yvec)),
                                  mat_dot_vec(B, init_concs),
                                  rref=self.rref_preserv)
-        return f_equil + f_preserv
+        return self._pivot(f_equil + f_preserv, yvec)
