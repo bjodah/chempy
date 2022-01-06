@@ -137,17 +137,23 @@ class _NumSys(object):
         import sympy as sp
         j = sp.Matrix(1, len(exprs), lambda _, k: exprs[k]).jacobian(x)
         piv = []
-        for ir in range(min(j.rows, j.cols)):
-            if j[ir, ir] != 0:
-                piv.append(ir)
-                continue
-            for ir2 in range(ir+1, j.rows):
-                if j[ir2, ir] != 0:
-                    piv.append(ir2)
-                    j.row_swap(ir, ir2)
-                    break
-            else:
+        min_dim = min(j.rows, j.cols)
+        w = [sum(j[ri, ci] == 0 for ri in range(j.rows)) for ci in range(j.cols)]
+        for ii in range(min_dim):
+            candidates = {}  # prefer to pivot with rows which has a zero in it's diagonal element.
+            for ir2 in range(ii, j.rows):
+                has_target = j[ir2, ii] != 0
+                if has_target:
+                    #will_have_diag = ir2 >= j.cols or j[ir2, ir2] != 0
+                    weighted_number_of_zeros = sum(ic3*ic3*w[ic3]*(j[ir2, ic3] == 0) for ic3 in range(ii, j.cols))
+                    candidates[ir2] = (#will_have_diag,
+                        weighted_number_of_zeros)
+            if not candidates:
                 raise ValueError("No pivot found")
+            ir_piv, _ = sorted(candidates.items(), key=lambda kv: kv[1])[-1]
+            piv.append(ir_piv)
+            j.row_swap(ii, ir_piv)
+
         for i, j in enumerate(piv):
             tmp = exprs[i]
             exprs[i] = exprs[j]

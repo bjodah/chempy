@@ -21,7 +21,7 @@ def _get_b0(b0, units=None):
         return b0
 
 
-def ionic_strength(molalities, charges=None, units=None, substances=None,
+def ionic_strength(molalities, charges=None, substances=None,
                    substance_factory=Substance.from_formula, warn=True):
     """ Calculates the ionic strength
 
@@ -32,8 +32,6 @@ def ionic_strength(molalities, charges=None, units=None, substances=None,
         when dict: mapping substance key to molality.
     charges: array_like
         Charge of respective ion, taken for substances when None.
-    units: object (optional, default: None)
-        Attributes accessed: molal.
     substances: dict, optional
         Mapping of substance keys to Substance instances (used when molalities
         is a dict).
@@ -132,14 +130,15 @@ def A(eps_r, T, rho, b0=1, constants=None, units=None, backend=None):
             K = units.Kelvin
             mol = units.mol
             combined *= (m*K)**(3*one/2) / mol**(one/2)
-        return combined*(rho * b0 * T**-3 * eps_r**-3)**0.5
-    F = constants.Faraday_constant
-    NA = constants.Avogadro_constant
-    eps0 = constants.vacuum_permittivity
-    kB = constants.Boltzmann_constant
-    pi = constants.pi
-    A = F**3/(4*pi*NA)*(rho*b0/(2*(eps0*eps_r*kB*NA*T)**3))**(one/2)
-    return A
+        return combined*(rho * b0 * T**-3 * eps_r**-3)**(one/2)
+    else:
+        F = constants.Faraday_constant
+        NA = constants.Avogadro_constant
+        eps0 = constants.vacuum_permittivity
+        kB = constants.Boltzmann_constant
+        pi = constants.pi
+        A = F**3/(4*pi*NA)*(rho*b0/(2*(eps0*eps_r*kB*NA*T)**3))**(one/2)
+        return A
 
 
 def B(eps_r, T, rho, b0=1, constants=None, units=None, backend=None):
@@ -180,7 +179,7 @@ def B(eps_r, T, rho, b0=1, constants=None, units=None, backend=None):
             K = units.Kelvin
             mol = units.mol
             combined *= (m*K/mol)**(one/2)
-        return combined*(rho*b0/(T*eps_r))**0.5
+        return combined*(rho*b0/(T*eps_r))**(one/2)
     F = constants.Faraday_constant
     eps0 = constants.vacuum_permittivity
     R = constants.molar_gas_constant
@@ -196,7 +195,19 @@ def limiting_log_gamma(I, z, A, I0=1, backend=None):
 
 
 def extended_log_gamma(I, z, a, A, B, C=0, I0=1, backend=None):
-    """ Debye-Huckel extended formula """
+    """Debye-Huckel extended formula.
+
+    Parameters
+    ----------
+    I : ionic strength (scalar)
+    z : per species charge
+    a : per species ionic radius
+    A : Debye-Hückel A-parameter
+    B : Debye-Hückel A-parameter
+    C : Debye-Hückel C-parameter (from linearization of permittivity response/empirical fitting factor)
+    I0 : reference ionic strength (e.g. 1 mol/kg)
+    backend : symbolic/numeric backend
+    """
     be = get_backend(backend)
     one = be.pi**0
     I_I0 = I/I0
@@ -213,23 +224,25 @@ def davies_log_gamma(I, z, A, C=-0.3, I0=1, backend=None):
     return -A * z**2 * (sqrt_I_I0/(1 + sqrt_I_I0) + C*I_I0)
 
 
-def limiting_activity_product(I, stoich, z, T, eps_r, rho, backend=None):
+def limiting_activity_product(I, stoich, z, T, eps_r, rho, units=None, backend=None):
     """ Product of activity coefficients based on DH limiting law. """
     be = get_backend(backend)
-    Aval = A(eps_r, T, rho)
+    Aval = A(eps_r, T, rho, units=units)
     tot = 0
     for idx, nr in enumerate(stoich):
         tot += nr*limiting_log_gamma(I, z[idx], Aval)
     return be.exp(tot)
 
 
-def extended_activity_product(I, stoich, z, a, T, eps_r, rho, C=0, backend=None):
+def extended_activity_product(I, stoich, z, a, T, eps_r, rho, C=0, units=None, backend=None):
     be = get_backend(backend)
-    Aval = A(eps_r, T, rho)
-    Bval = B(eps_r, T, rho)
+    Aval = A(eps_r, T, rho, units=units, backend=backend)
+    Bval = B(eps_r, T, rho, units=units, backend=backend)
     tot = 0
     for idx, nr in enumerate(stoich):
-        tot += nr*extended_log_gamma(I, z[idx], a[idx], Aval, Bval, C)
+        if nr == 0 or z[idx] == 0:
+            continue
+        tot += nr*extended_log_gamma(I, z[idx], a[idx], Aval, Bval, C, backend=backend)
     return be.exp(tot)
 
 

@@ -1141,6 +1141,23 @@ class Equilibrium(Reaction):
             candidate = min(candidate, r, key=abs)
         return candidate
 
+    def Kcorr_activity(self, *, molalities, substances, kw, method="Debye-Hückel"):
+        # TODO, this API is quite terrible, need to rework it at some point.
+        if method.lower().replace('ü', 'u') == "debye-huckel":
+            from .electrolytes import extended_activity_product, ionic_strength
+            I = ionic_strength(molalities, substances=substances, warn=False)
+            stoich, z, a = [], [], []
+            for sk, sv in substances.items():
+                stoich.append(self.reac.get(sk, 0) - self.prod.get(sk, 0))
+                if sv.charge:
+                    z.append(sv.charge)
+                    a.append(sv.data["ionic_radius"])
+                else:
+                    z.append(0)
+                    a.append(0)
+            return extended_activity_product(I=I, stoich=stoich, z=z, a=a, **kw)
+        else:
+            raise NotImplementedError(f"unknown method {method}")
 
 def _solve_balancing_ilp_pulp(A):
     import pulp
