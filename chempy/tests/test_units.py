@@ -12,7 +12,7 @@ import pytest
 from ..util.testing import requires
 from ..units import (
     amount, allclose, concatenate, concentration, fold_constants, energy, get_derived_unit, is_unitless,
-    linspace, logspace_from_lin, SI_base_registry, unitless_in_registry, format_string, get_physical_dimensionality,
+    linspace, linlogspace, logspace_from_lin, SI_base_registry, unitless_in_registry, format_string, get_physical_dimensionality,
     to_unitless, length, magnitude, mass, time, default_unit_in_registry, Backend, latex_of_unit,
     unit_of, unit_registry_to_human_readable, units_library, volume, simplified, uniform,
     unit_registry_from_human_readable, _sum, UncertainQuantity, compare_equality,
@@ -194,6 +194,16 @@ def test_logspace_from_lin():
     ls = logspace_from_lin(2*u.second, 3*u.second)
     assert abs(to_unitless(ls[0], u.hour) - 2/3600.) < 1e-15
     assert abs(to_unitless(ls[-1], u.hour) - 3/3600.) < 1e-15
+
+@requires(units_library)
+def test_linlogspace():
+    lls = linlogspace(1*u.second, 10*u.second, num=20)
+    lg1p5 = np.log10(1.5)
+    lg9p5 = np.log10(9.5)
+    ref = sorted(list(range(1, 11)) + list(10.0**np.linspace(lg1p5, lg9p5, 10)))*u.s
+    assert len(ref) == 20
+    assert lls.shape == (20,)
+    assert allclose(ref, lls)
 
 
 @requires(units_library)
