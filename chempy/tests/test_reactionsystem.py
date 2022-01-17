@@ -111,7 +111,7 @@ def test_ReactionSystem__html_tables():
     bt, bnc = rs.bimolecular_html_table()
     assert bnc == {1}
     assert html(bt, with_name=False) == (
-        u'<table><th></th><th>A</th>\n<tr><td>A</td><td ><a title="0: 2 A → A">R1</a></td></tr></table>')
+        u'<table><th></th><th>A</th>\n<tr><td>A</td><td style="background-color: #c6f3d5;"><a title="0: 2 A → A">R1</a></td></tr></table>')
 
 
 @requires(parsing_library, 'numpy')
