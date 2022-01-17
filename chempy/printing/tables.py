@@ -28,10 +28,24 @@ class _RxnTable(object):
         return '<a title="%d: %s">%s</a>' % (ori_idx, pretty, printer._print(
             (rxn.name or rxn.param) if self.prefer_name else rxn.param))
 
+    @staticmethod
+    def _cell_color(ri, ci, scale=1.0):
+        if ci is None:
+            return []
+        else:
+            colors = {
+                (0, 0): (180,221,194),
+                (0, 1): (180,214,221),
+                (1, 0): (165,211,183),
+                (1, 1): (165,193,201),
+            }
+            return ['style="background-color: #%x%x%x;"' % tuple(map(lambda c: min(255, int(c*scale)), colors[ri%2, ci%2]))]
+
     def _cell_html(self, printer, A, ri, ci=None):
         args = []
         if ci is not None and ri > ci:
             r = '-'
+            args.extend(self._cell_color(ri, ci, scale=0.9))
         else:
             if ci is None:  # A is a vector
                 c = A[ri]
@@ -47,6 +61,8 @@ class _RxnTable(object):
 
             if is_missing:
                 args.append('style="background-color: #%s;"' % self.missing_color)
+            else:
+                args.extend(self._cell_color(ri, ci, scale=1.1))
 
         return '<td %s>%s</td>' % (' '.join(args), r)
 

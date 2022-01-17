@@ -198,9 +198,9 @@ def test_logspace_from_lin():
 @requires(units_library)
 def test_linlogspace():
     lls = linlogspace(1*u.second, 10*u.second, num=20)
-    lg1p5 = np.log10(1.5)
-    lg9p5 = np.log10(9.5)
-    ref = sorted(list(range(1, 11)) + list(10.0**np.linspace(lg1p5, lg9p5, 10)))*u.s
+    linsp = np.linspace(1, 10, 12)[1:-1]
+    logsp = 10.0**np.linspace(0, 1, 10)
+    ref = sorted(linsp.tolist() + logsp.tolist())*u.s
     assert len(ref) == 20
     assert lls.shape == (20,)
     assert allclose(ref, lls)

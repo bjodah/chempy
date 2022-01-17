@@ -557,17 +557,20 @@ def logspace_from_lin(start, stop, num=50):
 
 def linlogspace(start, stop, num=50):
     """Sorted combination of linspace and logspace."""
-    if num < 8:
-        raise ValueError("This function requires num >= 8")
+    if num < 4:
+        raise ValueError("This function requires num >= 4")
     n1 = num//2
     n2 = num-n1
     unit = unit_of(start)
     start_ = to_unitless(start, unit)
     stop_ = to_unitless(stop, unit)
-    lin = np.linspace(start_, stop_, n1)
-    start2, stop2 = 0.5*sum(lin[:2]), 0.5*sum(lin[-2:])
-    log = np.exp2(np.linspace(np.log2(start2), np.log2(stop2), n2))
-    vals = np.sort(np.concatenate((lin, log)))
+    if start_ <= 0:
+        raise ValueError("start must be strictly positive (nonzero)")
+    if start_ >= stop_:
+        raise ValueError("stop needs to be strictly larger than start")
+    logsp = np.exp2(np.linspace(np.log2(start_), np.log2(stop_), n2))
+    linsp = np.linspace(start_, stop_, n1+2)[1:-1]
+    vals = np.sort(np.concatenate((logsp, linsp)))
     assert vals.shape == (num,)
     return vals*unit
 
