@@ -14,29 +14,114 @@ from ..testing import requires
 
 
 @requires(parsing_library)
-def test_formula_to_composition():
-    assert formula_to_composition("H2O") == {1: 2, 8: 1}
-    assert formula_to_composition("Fe/3+") == {0: 3, 26: 1}
-    assert formula_to_composition("Fe+3") == {0: 3, 26: 1}
-    assert formula_to_composition("Na/+") == {0: 1, 11: 1}
-    assert formula_to_composition("Na+1") == {0: 1, 11: 1}
-    assert formula_to_composition("Na+") == {0: 1, 11: 1}
-    assert formula_to_composition("Cl/-") == {0: -1, 17: 1}
+def test_formula_to_composition_ions():
     assert formula_to_composition("Cl-") == {0: -1, 17: 1}
-    assert formula_to_composition("NaCl") == {11: 1, 17: 1}
-    assert formula_to_composition("NaCl(s)") == {11: 1, 17: 1}
-    assert formula_to_composition("Fe(SCN)2/+") == {0: 1, 6: 2, 7: 2, 16: 2, 26: 1}
+    assert formula_to_composition("Cl/-") == {0: -1, 17: 1}
     assert formula_to_composition("Fe(SCN)2+") == {0: 1, 6: 2, 7: 2, 16: 2, 26: 1}
     assert formula_to_composition("Fe(SCN)2+1") == {0: 1, 6: 2, 7: 2, 16: 2, 26: 1}
-    assert formula_to_composition("((H2O)2OH)12") == {1: 60, 8: 36}
-
-    # Special case: solvated electron:
-    assert formula_to_composition("e-") == {0: -1}
-    assert formula_to_composition("e-1") == {0: -1}
-    assert formula_to_composition("e-(aq)") == {0: -1}
+    assert formula_to_composition("Fe(SCN)2/+") == {0: 1, 6: 2, 7: 2, 16: 2, 26: 1}
+    assert formula_to_composition("Fe+3") == {0: 3, 26: 1}
+    assert formula_to_composition("Fe/3+") == {0: 3, 26: 1}
+    assert formula_to_composition("NH4+") == {0: 1, 1: 4, 7: 1}
+    assert formula_to_composition("Na+") == {0: 1, 11: 1}
+    assert formula_to_composition("Na+1") == {0: 1, 11: 1}
+    assert formula_to_composition("Na/+") == {0: 1, 11: 1}
+    assert formula_to_composition("OH-") == {0: -1, 1: 1, 8: 1}
     assert formula_to_composition("SO4-2(aq)") == {0: -2, 8: 4, 16: 1}
 
-    # prefixes and suffixes
+
+@requires(parsing_library)
+def test_formula_to_composition_ionic_compounds():
+    # With and without water of hydration.
+    assert formula_to_composition("BaCl2") == {17: 2, 56: 1}
+    assert formula_to_composition("BaCl2(s)") == {17: 2, 56: 1}
+    assert formula_to_composition("BaCl2.2H2O(s)") == {1: 4, 8: 2, 17: 2, 56: 1}
+    assert formula_to_composition("Na2CO3.7H2O(s)") == {11: 2, 6: 1, 8: 10, 1: 14}
+    assert formula_to_composition("NaCl") == {11: 1, 17: 1}
+    assert formula_to_composition("NaCl(s)") == {11: 1, 17: 1}
+
+
+@requires(parsing_library)
+def test_formula_to_composition_complexes():
+    # With and without water of hydration.
+    assert formula_to_composition("Al2(SO4)3") == {8: 12, 13: 2, 16: 3}
+    assert formula_to_composition("Al2(SO4)3(s)") == {8: 12, 13: 2, 16: 3}
+    assert formula_to_composition("Al2(SO4)3(aq)") == {8: 12, 13: 2, 16: 3}
+    assert formula_to_composition("K4[Fe(CN)6]") == {6: 6, 7: 6, 19: 4, 26: 1}
+    assert formula_to_composition("K4[Fe(CN)6](s)") == {6: 6, 7: 6, 19: 4, 26: 1}
+    assert formula_to_composition("K4[Fe(CN)6](aq)") == {6: 6, 7: 6, 19: 4, 26: 1}
+    assert formula_to_composition("[Fe(H2O)6][Fe(CN)6].19H2O") == {
+        1: 50,
+        6: 6,
+        7: 6,
+        8: 25,
+        19: 4,
+        26: 2,
+    }
+    assert formula_to_composition("[Fe(H2O)6][Fe(CN)6].19H2O(s)") == {
+        1: 50,
+        6: 6,
+        7: 6,
+        8: 25,
+        19: 4,
+        26: 2,
+    }
+    assert formula_to_composition("[Fe(H2O)6][Fe(CN)6].19H2O(aq)") == {
+        1: 50,
+        6: 6,
+        7: 6,
+        8: 25,
+        19: 4,
+        26: 2,
+    }
+
+
+@requires(parsing_library)
+def test_formula_to_composition_fractional_subscripts():
+    assert formula_to_composition("Ca2.832Fe0.6285Mg5.395(CO3)6") == {
+        6: 6,
+        8: 18,
+        12: 5.395,
+        20: 2.832,
+        26: 0.6285,
+    }
+    assert formula_to_composition("Ca2.832Fe0.6285Mg5.395(CO3)6(s)") == {
+        6: 6,
+        8: 18,
+        12: 5.395,
+        20: 2.832,
+        26: 0.6285,
+    }
+
+
+@requires(parsing_library)
+def test_formula_to_composition_solvated_electrons():
+    assert formula_to_composition("e-") == {0: -1}
+    assert formula_to_composition("e/-") == {0: -1}
+    assert formula_to_composition("e-1") == {0: -1}
+    assert formula_to_composition("e-(aq)") == {0: -1}
+    assert formula_to_composition("e/-(aq)") == {0: -1}
+
+
+@requires(parsing_library)
+def test_formula_to_composition_covalent_compounds():
+    assert formula_to_composition("H2O") == {1: 2, 8: 1}
+    assert formula_to_composition("((H2O)2OH)12") == {1: 60, 8: 36}
+    assert formula_to_composition("PCl5") == {15: 1, 17: 5}
+
+
+@requires(parsing_library)
+def test_formula_to_composition_organic_compounds():
+    assert formula_to_composition("CH4(g)") == {1: 4, 6: 1}
+    assert formula_to_composition("CH3CH3(g)") == {1: 6, 6: 2}
+    # Many ways to write benzene.
+    assert formula_to_composition("C6H6(l)") == {1: 6, 6: 6}
+    assert formula_to_composition("(CH)6(l)") == {1: 6, 6: 6}
+    assert formula_to_composition("CHCHCHCHCHCH(l)") == {1: 6, 6: 6}
+
+
+@requires(parsing_library)
+def test_formula_to_composition_radicals():
     assert formula_to_composition(".NO2(g)") == {7: 1, 8: 2}
     assert formula_to_composition(".NH2") == {1: 2, 7: 1}
     assert formula_to_composition("ONOOH") == {1: 1, 7: 1, 8: 3}
@@ -44,14 +129,17 @@ def test_formula_to_composition():
     assert formula_to_composition(".NO3/2-") == {0: -2, 7: 1, 8: 3}
     assert formula_to_composition(".NO3-2") == {0: -2, 7: 1, 8: 3}
 
+
+@requires(parsing_library)
+def test_formula_to_composition_structural_formulas():
     with pytest.raises(ValueError):
         formula_to_composition("F-F")
 
+
+@requires(parsing_library)
+def test_formula_to_composition_crystal_phases():
     assert formula_to_composition("alpha-FeOOH(s)") == {1: 1, 8: 2, 26: 1}
     assert formula_to_composition("epsilon-Zn(OH)2(s)") == {1: 2, 8: 2, 30: 1}
-
-    # crystal water
-    assert formula_to_composition("Na2CO3.7H2O(s)") == {11: 2, 6: 1, 8: 10, 1: 14}
 
 
 @requires(parsing_library)
