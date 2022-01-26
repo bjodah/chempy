@@ -77,6 +77,39 @@ def _get_formula_parser():
         the code is licensed under 'CC-WIKI'.
         (see: http://blog.stackoverflow.com/2009/06/attribution-required/)
 
+    Documentation for the desired product.  Original documentation
+    above.
+
+    Create a chemical formula parser.
+
+    Parse a chemical formula, including elements, nested ions,
+    complexes, charges (ions), hydrates, and state symbols.
+
+    BNF for nested chemical formula with complexes
+
+        count :: ( '1'..'9'? | '1'..'9'' '0'..'9'+ )
+        element :: 'A'..'Z' 'a'..'z'*
+        charge :: ( '-' | '+' ) ( '1'..'9'? | '1'..'9'' '0'..'9'+ )
+        term :: (element | '(' formula ')' | '[' formula ']' ) count charge?
+        formula :: term+
+        hydrate :: '.' count? formula
+        state :: '(' ( 's' | 'l' | 'g' | 'aq' | 'cr' ) ')'
+        compound :: count formula hydrate? state?
+
+    Parse a chemical formula, including elements, non-integer
+    subscripts, nested ions, complexes, charges (ions), hydrates, and
+    state symbols.
+
+    BNF for nested chemical formula with complexes
+
+        count :: ( '1'..'9'? | '1'..'9'' '0'..'9'+ )
+        element :: 'A'..'Z' 'a'..'z'*
+        charge :: ( '-' | '+' ) ( '1'..'9'? | '1'..'9'' '0'..'9'+ )
+        term :: (element | '(' formula ')' | '[' formula ']' ) count charge?
+        formula :: term+
+        hydrate :: '.' count? formula
+        state :: '(' ( 's' | 'l' | 'g' | 'aq' | 'cr' ) ')'
+        compound :: count formula hydrate? state?
     """
     _p = __import__(parsing_library)
     Forward, Group, OneOrMore = _p.Forward, _p.Group, _p.OneOrMore
@@ -92,12 +125,33 @@ def _get_formula_parser():
 
     # element = Word(alphas.upper(), alphas.lower())
     # or if you want to be more specific, use this Regex
+    # Elements, 1-118, official symbols.
     element = Regex(
-        r"A[cglmrstu]|B[aehikr]?|C[adeflmnorsu]?|D[bsy]|E[rsu]|F[elmr]?|"
-        "G[ade]|H[efgos]?|I[nr]?|Kr?|L[airuv]|M[cdgnot]|N[abdehiop]?|"
-        "O[gs]?|P[abdmortu]?|R[abefghnu]|S[bcegimnr]?|T[abcehilms]|"
-        "U|V|W|Xe|Yb?|Z[nr]"
-    )
+        r"A[cglmrstu]"
+        "|B[aehikr]?"
+        "|C[adeflmnorsu]?"
+        "|D[bsy]"
+        "|E[rsu]"
+        "|F[elmr]?"
+        "|G[ade]"
+        "|H[efgos]?"
+        "|I[nr]?"
+        "|Kr?"
+        "|L[airuv]"
+        "|M[cdgnot]"
+        "|N[abdehiop]?"
+        "|O[gs]?"
+        "|P[abdmortu]?"
+        "|R[abefghnu]"
+        "|S[bcegimnr]?"
+        "|T[abcehilms]"
+        "|U"
+        "|V"
+        "|W"
+        "|Xe"
+        "|Yb?"
+        "|Z[nr]"
+    ).setResultsName("element", listAllMatches=True)
 
     # forward declare 'formula' so it can be used in definition of 'term'
     formula = Forward()
