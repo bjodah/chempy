@@ -209,19 +209,15 @@ def _get_charge(chgstr):
         if token in chgstr:
             if anti in chgstr:
                 raise ValueError("Invalid charge description (+ & - present)")
+
             before, after = chgstr.split(token)
+
             if len(before) > 0 and len(after) > 0:
                 raise ValueError("Values both before and after charge token")
-            if len(before) > 0:
-                # will_be_missing_in='0.8.0'
-                warnings.warn(
-                    "'Fe/3+' deprecated, use e.g. 'Fe+3'",
-                    ChemPyDeprecationWarning,
-                    stacklevel=3,
-                )
-                return sign * int(1 if before == "" else before)
+
             if len(after) > 0:
                 return sign * int(1 if after == "" else after)
+
     raise ValueError("Invalid charge description (+ or - missing)")
 
 
@@ -239,22 +235,10 @@ def _formula_to_parts(formula, prefixes, suffixes):
 
     # Extract charge
     if "/" in formula:
-        # will_be_missing_in='0.8.0'
-        warnings.warn(
-            "/ depr. (before 0.5.0): use 'Fe+3' over 'Fe/3+'",
-            ChemPyDeprecationWarning,
-            stacklevel=3,
+        raise ValueError(
+            "Slashes ('/') in charge strings are deprecated."
+            "  Use `Fe+3` instead of `Fe/3+`."
         )
-        parts = formula.split("/")
-
-        if "+" in parts[0] or "-" in parts[0]:
-            raise ValueError("Charge needs to be separated with a /")
-        if parts[1] is not None:
-            wo_pm = parts[1].replace("+", "").replace("-", "")
-            if wo_pm != "" and not str.isdigit(wo_pm):
-                raise ValueError("Non-digits in charge specifier")
-        if len(parts) > 2:
-            raise ValueError("At most one '/' allowed in formula")
     else:
         for token in "+-":
             if token in formula:
