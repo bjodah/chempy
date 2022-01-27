@@ -132,6 +132,9 @@ def _get_formula_parser():
     LP = Suppress(Regex(r"\("))
     RP = Suppress(Regex(r"\)"))
 
+    # Define and suppress the caged symbol.
+    caged = Suppress(Regex(r"\@"))
+
     # Primes/stars for marking special species in reactions.
     primes = Suppress(Regex(r"[*']+"))
 
@@ -176,6 +179,7 @@ def _get_formula_parser():
             | Group(LP + formula + RP)("subgroup")
             | Group(LSB + formula + RSB)("subgroup")
             | Group(LCB + formula + RCB)("subgroup")
+            | Group(caged + formula)("subgroup")
         )
         + Optional(count, default=1)("mult")
         + Optional(primes)("primes")

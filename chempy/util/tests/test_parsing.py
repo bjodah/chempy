@@ -32,6 +32,14 @@ def test_formula_to_composition_primes():
 
 
 @requires(parsing_library)
+def test_formula_to_composition_caged():
+    """Should parse cage species."""
+    assert formula_to_composition("Li@C60") == {3: 1, 6: 60}
+    assert formula_to_composition("Li@C60Cl") == {3: 1, 6: 60, 17: 1}
+    assert formula_to_composition("Na@C60") == {11: 1, 6: 60}
+
+
+@requires(parsing_library)
 def test_formula_to_composition_fail():
     """Should raise an exception."""
     with pytest.raises(ParseException):
@@ -374,6 +382,13 @@ def test_formula_to_latex_braces():
 
 
 @requires(parsing_library)
+def test_formula_to_latex_caged():
+    """Should produce LaTeX for cage species."""
+    assert formula_to_latex("Li@C60") == r"Li@C_{60}"
+    assert formula_to_latex("Na@C60") == r"Na@C_{60}"
+
+
+@requires(parsing_library)
 def test_formula_to_unicode():
     assert formula_to_unicode("NH4+") == u"NH₄⁺"
     assert formula_to_unicode("H2O") == u"H₂O"
@@ -417,6 +432,13 @@ def test_formula_to_unicode():
     )
     assert formula_to_unicode("[Fe(CN)6]-3") == r"[Fe(CN)₆]³⁻"
     assert formula_to_unicode("[Fe(CN)6]-3(aq)") == r"[Fe(CN)₆]³⁻(aq)"
+
+
+@requires(parsing_library)
+def test_formula_to_unicode_caged():
+    """Should produce LaTeX for cage species."""
+    assert formula_to_unicode("Li@C60") == r"Li@C₆₀"
+    assert formula_to_unicode("Na@C60") == r"Na@C₆₀"
 
 
 @requires(parsing_library)
@@ -482,3 +504,10 @@ def test_formula_to_html():
     assert (
         formula_to_html("[Fe(CN)6]-3(aq)") == r"[Fe(CN)<sub>6</sub>]<sup>3-</sup>(aq)"
     )
+
+
+@requires(parsing_library)
+def test_formula_to_html_caged():
+    """Should produce HTML for cage species."""
+    assert formula_to_html("Li@C60") == r"Li@C<sub>60</sub>"
+    assert formula_to_html("Na@C60") == r"Na@C<sub>60</sub>"
