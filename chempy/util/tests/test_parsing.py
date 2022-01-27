@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
+from pyparsing import ParseException
 
 from ..parsing import (
     formula_to_composition,
@@ -75,7 +76,6 @@ def test_formula_to_composition_complexes():
         6: 6,
         7: 6,
         8: 25,
-        19: 4,
         26: 2,
     }
     assert formula_to_composition("[Fe(H2O)6][Fe(CN)6].19H2O(s)") == {
@@ -83,7 +83,6 @@ def test_formula_to_composition_complexes():
         6: 6,
         7: 6,
         8: 25,
-        19: 4,
         26: 2,
     }
     assert formula_to_composition("[Fe(H2O)6][Fe(CN)6].19H2O(aq)") == {
@@ -91,9 +90,32 @@ def test_formula_to_composition_complexes():
         6: 6,
         7: 6,
         8: 25,
-        19: 4,
         26: 2,
     }
+    assert formula_to_composition("[Fe(CN)6]-3") == {
+        0: -3,
+        6: 6,
+        7: 6,
+        26: 1,
+    }
+    assert formula_to_composition("[Fe(CN)6]-3(aq)") == {
+        0: -3,
+        6: 6,
+        7: 6,
+        26: 1,
+    }
+
+
+@requires(parsing_library)
+def test_formula_to_composition_bad_complexes():
+    with pytest.raises(ParseException):
+        formula_to_composition("[Fe(CN)6)-3")
+
+    with pytest.raises(ParseException):
+        formula_to_composition("(Fe(CN)6]-3")
+
+    with pytest.raises(ParseException):
+        formula_to_composition("[Fe(CN]6]-3")
 
 
 @requires(parsing_library)
@@ -245,13 +267,10 @@ def test_to_reaction():
 def test_formula_to_latex():
     assert formula_to_latex("H2O") == "H_{2}O"
     # assert formula_to_latex("C6H6/+") == "C_{6}H_{6}^{+}"
-    # assert formula_to_latex("Fe(CN)6/3-") == "Fe(CN)_{6}^{3-}"
     assert formula_to_latex("C6H6+") == "C_{6}H_{6}^{+}"
-    assert formula_to_latex("Fe(CN)6-3") == "Fe(CN)_{6}^{3-}"
     # assert formula_to_latex("C18H38/2+") == "C_{18}H_{38}^{2+}"
     # assert formula_to_latex("C18H38/+2") == "C_{18}H_{38}^{2+}"
     assert formula_to_latex("C18H38+2") == "C_{18}H_{38}^{2+}"
-    assert formula_to_latex("((H2O)2OH)12") == "((H_{2}O)_{2}OH)_{12}"
     assert formula_to_latex("NaCl") == "NaCl"
     assert formula_to_latex("NaCl(s)") == "NaCl(s)"
     assert formula_to_latex("e-(aq)") == "e^{-}(aq)"
@@ -266,10 +285,42 @@ def test_formula_to_latex():
     assert formula_to_latex("epsilon-Zn(OH)2(s)") == (r"\varepsilon-Zn(OH)_{2}(s)")
     assert formula_to_latex("Na2CO3.7H2O(s)") == r"Na_{2}CO_{3}\cdot 7H_{2}O(s)"
     assert formula_to_latex("Na2CO3.1H2O(s)") == r"Na_{2}CO_{3}\cdot H_{2}O(s)"
+    assert formula_to_latex("K4[Fe(CN)6]") == r"K_{4}[Fe(CN)_{6}]"
+    assert formula_to_latex("K4[Fe(CN)6](s)") == r"K_{4}[Fe(CN)_{6}](s)"
+    assert formula_to_latex("K4[Fe(CN)6](aq)") == r"K_{4}[Fe(CN)_{6}](aq)"
+    assert (
+        formula_to_latex("[Fe(H2O)6][Fe(CN)6].19H2O")
+        == r"[Fe(H_{2}O)_{6}][Fe(CN)_{6}]\cdot 19H_{2}O"
+    )
+    assert (
+        formula_to_latex("[Fe(H2O)6][Fe(CN)6].19H2O(s)")
+        == r"[Fe(H_{2}O)_{6}][Fe(CN)_{6}]\cdot 19H_{2}O(s)"
+    )
+    assert (
+        formula_to_latex("[Fe(H2O)6][Fe(CN)6].19H2O(aq)")
+        == r"[Fe(H_{2}O)_{6}][Fe(CN)_{6}]\cdot 19H_{2}O(aq)"
+    )
+    assert formula_to_latex("[Fe(CN)6]-3") == r"[Fe(CN)_{6}]^{3-}"
+    assert formula_to_latex("[Fe(CN)6]-3(aq)") == r"[Fe(CN)_{6}]^{3-}(aq)"
 
 
 @requires(parsing_library)
-def test_formula_to_unicoce():
+def test_formula_to_latex_braces():
+    # Parentheses.
+    assert formula_to_latex("Fe(CN)6-3") == "Fe(CN)_{6}^{3-}"
+    assert formula_to_latex("((H2O)2OH)12") == "((H_{2}O)_{2}OH)_{12}"
+
+    # Square brackets.
+    assert formula_to_latex("Fe[CN]6-3") == "Fe[CN]_{6}^{3-}"
+    assert formula_to_latex("[(H2O)2OH]12") == "[(H_{2}O)_{2}OH]_{12}"
+
+    # Curly braces.
+    assert formula_to_latex("Fe{CN}6-3") == r"Fe\{CN\}_{6}^{3-}"
+    assert formula_to_latex("{(H2O)2OH}12") == r"\{(H_{2}O)_{2}OH\}_{12}"
+
+
+@requires(parsing_library)
+def test_formula_to_unicode():
     assert formula_to_unicode("NH4+") == u"NH₄⁺"
     assert formula_to_unicode("H2O") == u"H₂O"
     # assert formula_to_unicode("C6H6/+") == u"C₆H₆⁺"
@@ -280,6 +331,8 @@ def test_formula_to_unicoce():
     # assert formula_to_unicode("C18H38/+2") == u"C₁₈H₃₈²⁺"
     assert formula_to_unicode("C18H38+2") == u"C₁₈H₃₈²⁺"
     assert formula_to_unicode("((H2O)2OH)12") == u"((H₂O)₂OH)₁₂"
+    assert formula_to_unicode("[(H2O)2OH]12") == u"[(H₂O)₂OH]₁₂"
+    assert formula_to_unicode("{(H2O)2OH}12") == u"{(H₂O)₂OH}₁₂"
     assert formula_to_unicode("NaCl") == u"NaCl"
     assert formula_to_unicode("NaCl(s)") == u"NaCl(s)"
     assert formula_to_unicode("e-(aq)") == u"e⁻(aq)"
@@ -294,6 +347,22 @@ def test_formula_to_unicoce():
     assert formula_to_unicode("epsilon-Zn(OH)2(s)") == u"ε-Zn(OH)₂(s)"
     assert formula_to_unicode("Na2CO3.7H2O(s)") == u"Na₂CO₃·7H₂O(s)"
     assert formula_to_unicode("Na2CO3.1H2O(s)") == u"Na₂CO₃·H₂O(s)"
+    assert formula_to_unicode("K4[Fe(CN)6]") == r"K₄[Fe(CN)₆]"
+    assert formula_to_unicode("K4[Fe(CN)6](s)") == r"K₄[Fe(CN)₆](s)"
+    assert formula_to_unicode("K4[Fe(CN)6](aq)") == r"K₄[Fe(CN)₆](aq)"
+    assert (
+        formula_to_unicode("[Fe(H2O)6][Fe(CN)6].19H2O") == r"[Fe(H₂O)₆][Fe(CN)₆]·19H₂O"
+    )
+    assert (
+        formula_to_unicode("[Fe(H2O)6][Fe(CN)6].19H2O(s)")
+        == r"[Fe(H₂O)₆][Fe(CN)₆]·19H₂O(s)"
+    )
+    assert (
+        formula_to_unicode("[Fe(H2O)6][Fe(CN)6].19H2O(aq)")
+        == r"[Fe(H₂O)₆][Fe(CN)₆]·19H₂O(aq)"
+    )
+    assert formula_to_unicode("[Fe(CN)6]-3") == r"[Fe(CN)₆]³⁻"
+    assert formula_to_unicode("[Fe(CN)6]-3(aq)") == r"[Fe(CN)₆]³⁻(aq)"
 
 
 @requires(parsing_library)
@@ -309,6 +378,14 @@ def test_formula_to_html():
     assert (
         formula_to_html("((H2O)2OH)12")
         == "((H<sub>2</sub>O)<sub>2</sub>OH)<sub>12</sub>"
+    )
+    assert (
+        formula_to_html("[(H2O)2OH]12")
+        == "[(H<sub>2</sub>O)<sub>2</sub>OH]<sub>12</sub>"
+    )
+    assert (
+        formula_to_html("{(H2O)2OH}12")
+        == "{(H<sub>2</sub>O)<sub>2</sub>OH}<sub>12</sub>"
     )
     assert formula_to_html("NaCl") == "NaCl"
     assert formula_to_html("NaCl(s)") == "NaCl(s)"
@@ -329,4 +406,25 @@ def test_formula_to_html():
     assert (
         formula_to_html("Na2CO3.1H2O(s)")
         == "Na<sub>2</sub>CO<sub>3</sub>&sdot;H<sub>2</sub>O(s)"
+    )
+    assert formula_to_html("K4[Fe(CN)6]") == r"K<sub>4</sub>[Fe(CN)<sub>6</sub>]"
+    assert formula_to_html("K4[Fe(CN)6](s)") == r"K<sub>4</sub>[Fe(CN)<sub>6</sub>](s)"
+    assert (
+        formula_to_html("K4[Fe(CN)6](aq)") == r"K<sub>4</sub>[Fe(CN)<sub>6</sub>](aq)"
+    )
+    assert (
+        formula_to_html("[Fe(H2O)6][Fe(CN)6].19H2O")
+        == r"[Fe(H<sub>2</sub>O)<sub>6</sub>][Fe(CN)<sub>6</sub>]&sdot;19H<sub>2</sub>O"
+    )
+    assert (
+        formula_to_html("[Fe(H2O)6][Fe(CN)6].19H2O(s)")
+        == r"[Fe(H<sub>2</sub>O)<sub>6</sub>][Fe(CN)<sub>6</sub>]&sdot;19H<sub>2</sub>O(s)"
+    )
+    assert (
+        formula_to_html("[Fe(H2O)6][Fe(CN)6].19H2O(aq)")
+        == r"[Fe(H<sub>2</sub>O)<sub>6</sub>][Fe(CN)<sub>6</sub>]&sdot;19H<sub>2</sub>O(aq)"
+    )
+    assert formula_to_html("[Fe(CN)6]-3") == r"[Fe(CN)<sub>6</sub>]<sup>3-</sup>"
+    assert (
+        formula_to_html("[Fe(CN)6]-3(aq)") == r"[Fe(CN)<sub>6</sub>]<sup>3-</sup>(aq)"
     )

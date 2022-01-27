@@ -116,7 +116,15 @@ def _get_formula_parser():
     Optional, ParseResults, Regex = _p.Optional, _p.ParseResults, _p.Regex
     Suppress, Word, nums = _p.Suppress, _p.Word, _p.nums
 
-    LPAR, RPAR = map(Suppress, "()")
+    # LPAR, RPAR = map(Suppress, "()")
+    # Suppress punctuation.
+    LCB = Suppress(Regex(r"\{"))
+    RCB = Suppress(Regex(r"\}"))
+    LSB = Suppress(Regex(r"\["))
+    RSB = Suppress(Regex(r"\]"))
+    LP = Suppress(Regex(r"\("))
+    RP = Suppress(Regex(r"\)"))
+
     integer = Word(nums)
 
     # add parse action to convert integers to ints, to support doing addition
@@ -157,7 +165,12 @@ def _get_formula_parser():
     formula = Forward()
 
     term = Group(
-        (element | Group(LPAR + formula + RPAR)("subgroup"))
+        (
+            element
+            | Group(LP + formula + RP)("subgroup")
+            | Group(LSB + formula + RSB)("subgroup")
+            | Group(LCB + formula + RCB)("subgroup")
+        )
         + Optional(integer, default=1)("mult")
     )
 
@@ -292,7 +305,11 @@ _latex_mapping = {k + "-": "\\" + k + "-" for k in _greek_letters}
 _latex_mapping["epsilon-"] = "\\varepsilon-"
 _latex_mapping["omicron-"] = "o-"
 _latex_mapping["."] = "^\\bullet "
+# _latex_mapping["{"] = "\\{"
+# _latex_mapping["}"] = "\\}"
 _latex_infix_mapping = {".": "\\cdot "}
+_latex_infix_mapping["{"] = "\\{"
+_latex_infix_mapping["}"] = "\\}"
 
 _unicode_mapping = {k + "-": v + "-" for k, v in zip(_greek_letters, _greek_u)}
 _unicode_mapping["."] = u"⋅"
@@ -521,7 +538,7 @@ def formula_to_latex(formula, prefixes=None, infixes=None, **kwargs):
     formula: str
         Chemical formula, e.g. 'H2O', 'Fe+3', 'Cl-'
     prefixes: dict
-        Prefix transofmrations, default: greek letters and .
+        Prefix transformations, default: greek letters and .
     infixes: dict
         Infix transformations, default: .
     suffixes: iterable of str
@@ -548,7 +565,8 @@ def formula_to_latex(formula, prefixes=None, infixes=None, **kwargs):
     return _formula_to_format(
         lambda x: "_{%s}" % x,
         lambda x: "^{%s}" % x,
-        formula,
+        # formula,
+        re.sub(r"([{}])", r"\\\1", formula) if re.search(r"[{}]", formula) else formula,
         prefixes,
         infixes,
         **kwargs
