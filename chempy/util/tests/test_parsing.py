@@ -11,7 +11,41 @@ from ..parsing import (
     parsing_library,
     to_reaction,
 )
+from ..parsing import _get_formula_parser
 from ..testing import requires
+
+
+@requires(parsing_library)
+def test_formula_to_composition_primes():
+    """Should parse special species."""
+    assert formula_to_composition("H2O*") == {1: 2, 8: 1}
+    assert formula_to_composition("H2O'") == {1: 2, 8: 1}
+    assert formula_to_composition("H2O''") == {1: 2, 8: 1}
+    assert formula_to_composition("H2O'''") == {1: 2, 8: 1}
+    assert formula_to_composition("Na*") == {11: 1}
+    assert formula_to_composition("Na'") == {11: 1}
+    assert formula_to_composition("Na''") == {11: 1}
+    assert formula_to_composition("Na*(g)") == {11: 1}
+    assert formula_to_composition("Na*+") == {0: 1, 11: 1}
+    assert formula_to_composition("Na2CO3*") == {11: 2, 6: 1, 8: 3}
+    assert formula_to_composition("Na2CO3.7H2O*(s)") == {11: 2, 6: 1, 8: 10, 1: 14}
+
+
+@requires(parsing_library)
+def test_formula_to_composition_fail():
+    """Should raise an exception."""
+    with pytest.raises(ParseException):
+        formula_to_composition("ch3oh")
+
+    with pytest.raises(ParseException):
+        print(_get_formula_parser().parseString("Ch3OH"))
+        formula_to_composition("Ch3OH")
+
+    with pytest.raises(ParseException):
+        formula_to_composition("ch3oh")
+
+    with pytest.raises(ParseException):
+        formula_to_composition("Ch3OH(l)")
 
 
 @requires(parsing_library)

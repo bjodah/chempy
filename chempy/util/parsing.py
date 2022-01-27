@@ -116,8 +116,7 @@ def _get_formula_parser():
     Optional, ParseResults, Regex = _p.Optional, _p.ParseResults, _p.Regex
     Suppress, Word, nums = _p.Suppress, _p.Word, _p.nums
 
-    # LPAR, RPAR = map(Suppress, "()")
-    # Suppress punctuation.
+    # Define and suppress the grouping symbols.
     LCB = Suppress(Regex(r"\{"))
     RCB = Suppress(Regex(r"\}"))
     LSB = Suppress(Regex(r"\["))
@@ -125,14 +124,15 @@ def _get_formula_parser():
     LP = Suppress(Regex(r"\("))
     RP = Suppress(Regex(r"\)"))
 
+    # Primes/stars for marking special species in reactions.
+    primes = Suppress(Regex(r"[*']+"))
+
     integer = Word(nums)
 
     # add parse action to convert integers to ints, to support doing addition
     # and multiplication at parse time
     integer.setParseAction(lambda t: int(t[0]))
 
-    # element = Word(alphas.upper(), alphas.lower())
-    # or if you want to be more specific, use this Regex
     # Elements, 1-118, official symbols.
     element = Regex(
         r"A[cglmrstu]"
@@ -172,6 +172,7 @@ def _get_formula_parser():
             | Group(LCB + formula + RCB)("subgroup")
         )
         + Optional(integer, default=1)("mult")
+        + Optional(primes)("primes")
     )
 
     # add parse actions for parse-time processing
@@ -269,7 +270,8 @@ def _parse_stoich(stoich):
     if stoich == "e":  # special case, the electron is not an element
         return {}
     return {
-        symbols.index(k) + 1: n for k, n in _get_formula_parser().parseString(stoich)
+        symbols.index(k) + 1: n
+        for k, n in _get_formula_parser().parseString(stoich, parseAll=True)
     }
 
 
@@ -305,11 +307,7 @@ _latex_mapping = {k + "-": "\\" + k + "-" for k in _greek_letters}
 _latex_mapping["epsilon-"] = "\\varepsilon-"
 _latex_mapping["omicron-"] = "o-"
 _latex_mapping["."] = "^\\bullet "
-# _latex_mapping["{"] = "\\{"
-# _latex_mapping["}"] = "\\}"
 _latex_infix_mapping = {".": "\\cdot "}
-_latex_infix_mapping["{"] = "\\{"
-_latex_infix_mapping["}"] = "\\}"
 
 _unicode_mapping = {k + "-": v + "-" for k, v in zip(_greek_letters, _greek_u)}
 _unicode_mapping["."] = u"⋅"
