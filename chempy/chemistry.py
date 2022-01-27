@@ -1377,6 +1377,7 @@ def balance_stoichiometry(
         zeros,
         linsolve,
         numbered_symbols,
+        nsimplify,
         Wild,
         Symbol,
         Integer,
@@ -1495,8 +1496,14 @@ def balance_stoichiometry(
                 raise ValueError("Component '%s' not among products" % ck)
 
     A = MutableDenseMatrix([[_get(ck, sk) for sk in subst_keys] for ck in cks])
+    A = nsimplify(A)
     symbs = list(reversed([next(parametric_symbols) for _ in range(len(subst_keys))]))
     (sol,) = linsolve((A, zeros(len(cks), 1)), symbs)
+    try:
+        sol = nsimplify(sol)
+    except (AttributeError):
+        pass
+
     wi = Wild("wi", properties=[lambda k: not k.has(Symbol)])
     cd = reduce(
         gcd,
@@ -1562,6 +1569,8 @@ def balance_stoichiometry(
     fact = gcd(sol)
     sol = MutableDenseMatrix([e / fact for e in sol]).reshape(len(sol), 1)
     sol /= reduce(gcd, sol)
+    sol = nsimplify(sol)
+
     if 0 in sol:
         raise ValueError("Superfluous species given.")
     if underdetermined:

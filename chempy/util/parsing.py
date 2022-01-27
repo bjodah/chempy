@@ -90,7 +90,11 @@ def _get_formula_parser():
         count :: ( '1'..'9'? | '1'..'9'' '0'..'9'+ )
         element :: 'A'..'Z' 'a'..'z'*
         charge :: ( '-' | '+' ) ( '1'..'9'? | '1'..'9'' '0'..'9'+ )
-        term :: (element | '(' formula ')' | '[' formula ']' ) count charge?
+        prime :: ( "*" | "'" )*
+        term :: (element
+                 | '(' formula ')'
+                 | '{' formula '}'
+                 | '[' formula ']' ) count prime charge?
         formula :: term+
         hydrate :: '.' count? formula
         state :: '(' ( 's' | 'l' | 'g' | 'aq' | 'cr' ) ')'
@@ -102,12 +106,16 @@ def _get_formula_parser():
 
     BNF for nested chemical formula with complexes
 
-        count :: ( '1'..'9'? | '1'..'9'' '0'..'9'+ )
+        count :: ( '1'..'9'? | '1'..'9'' '0'..'9'+ | '0'..'9'+ '.' '0'..'9'+ )
         element :: 'A'..'Z' 'a'..'z'*
         charge :: ( '-' | '+' ) ( '1'..'9'? | '1'..'9'' '0'..'9'+ )
-        term :: (element | '(' formula ')' | '[' formula ']' ) count charge?
+        prime :: ( "*" | "'" )*
+        term :: (element
+                 | '(' formula ')'
+                 | '{' formula '}'
+                 | '[' formula ']' ) count prime charge?
         formula :: term+
-        hydrate :: '.' count? formula
+        hydrate :: '..' count? formula
         state :: '(' ( 's' | 'l' | 'g' | 'aq' | 'cr' ) ')'
         compound :: count formula hydrate? state?
     """
@@ -127,11 +135,9 @@ def _get_formula_parser():
     # Primes/stars for marking special species in reactions.
     primes = Suppress(Regex(r"[*']+"))
 
-    integer = Word(nums)
-
-    # add parse action to convert integers to ints, to support doing addition
-    # and multiplication at parse time
-    integer.setParseAction(lambda t: int(t[0]))
+    # Parse counts (subscripts and coefficients).
+    count = Regex(r"(\d+\.\d+|\d*)")
+    count.setParseAction(lambda t: 1 if t[0] == "" else float(t[0]))
 
     # Elements, 1-118, official symbols.
     element = Regex(
@@ -171,7 +177,7 @@ def _get_formula_parser():
             | Group(LSB + formula + RSB)("subgroup")
             | Group(LCB + formula + RCB)("subgroup")
         )
-        + Optional(integer, default=1)("mult")
+        + Optional(count, default=1)("mult")
         + Optional(primes)("primes")
     )
 
@@ -307,15 +313,16 @@ _latex_mapping = {k + "-": "\\" + k + "-" for k in _greek_letters}
 _latex_mapping["epsilon-"] = "\\varepsilon-"
 _latex_mapping["omicron-"] = "o-"
 _latex_mapping["."] = "^\\bullet "
-_latex_infix_mapping = {".": "\\cdot "}
+_latex_infix_mapping = {"..": "\\cdot "}
 
 _unicode_mapping = {k + "-": v + "-" for k, v in zip(_greek_letters, _greek_u)}
 _unicode_mapping["."] = u"⋅"
-_unicode_infix_mapping = {".": u"·"}
+_unicode_infix_mapping = {"..": u"·"}
 
 _html_mapping = {k + "-": "&" + k + ";-" for k in _greek_letters}
 _html_mapping["."] = "&sdot;"
-_html_infix_mapping = _html_mapping
+# _html_infix_mapping = _html_mapping
+_html_infix_mapping = {"..": "&sdot;"}
 
 
 def _get_leading_integer(s):
@@ -361,7 +368,8 @@ def formula_to_composition(
         prefixes = _latex_mapping.keys()
     stoich_tok, chg_tok = _formula_to_parts(formula, prefixes, suffixes)[:2]
     tot_comp = {}
-    parts = stoich_tok.split(".")
+    # parts = stoich_tok.split(".")
+    parts = stoich_tok.split("..")
     for idx, stoich in enumerate(parts):
         if idx == 0:
             m = 1
@@ -503,17 +511,17 @@ def _formula_to_format(
     suffixes=("(s)", "(l)", "(g)", "(aq)"),
 ):
     parts = _formula_to_parts(formula, prefixes.keys(), suffixes)
-    stoichs = parts[0].split(".")
+    stoichs = parts[0].split("..")
     string = ""
     for idx, stoich in enumerate(stoichs):
         if idx == 0:
             m = 1
         else:
             m, stoich = _get_leading_integer(stoich)
-            string += _subs(".", infixes)
+            string += _subs("..", infixes)
         if m != 1:
             string += str(m)
-        string += re.sub(r"([0-9]+)", lambda m: sub(m.group(1)), stoich)
+        string += re.sub(r"([0-9]+\.[0-9]+|[0-9]+)", lambda m: sub(m.group(1)), stoich)
 
     if parts[1] is not None:
         chg = _get_charge(parts[1])

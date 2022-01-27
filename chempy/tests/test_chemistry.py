@@ -3,6 +3,7 @@
 from functools import reduce
 from operator import attrgetter, add
 import sys
+from sympy import nsimplify
 
 import pytest
 
@@ -340,8 +341,12 @@ def test_balance_stoichiometry():
     substances = dict(zip(formulas, map(Substance.from_formula, formulas)))
     compositions = {k: ArithmeticDict(int, substances[k].composition) for k in formulas}
     r5, p5 = balance_stoichiometry(a5, b5)
-    compo_reac = dict(reduce(add, [compositions[k] * v for k, v in r5.items()]))
-    compo_prod = dict(reduce(add, [compositions[k] * v for k, v in p5.items()]))
+    compo_reac = nsimplify(
+        dict(reduce(add, [compositions[k] * v for k, v in r5.items()]))
+    )
+    compo_prod = nsimplify(
+        dict(reduce(add, [compositions[k] * v for k, v in p5.items()]))
+    )
     assert compo_reac == compo_prod
 
     a6, b6 = map(
