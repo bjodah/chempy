@@ -94,6 +94,12 @@ def test_formula_to_composition_deprecated_charge():
 
 
 @requires(parsing_library)
+def test_formula_to_composition_bad_charges():
+    with pytest.raises(ValueError):
+        formula_to_composition("Na+Cl-")
+
+
+@requires(parsing_library)
 def test_formula_to_composition_ionic_compounds():
     # With and without water of hydration.
     assert formula_to_composition("BaCl2") == {17: 2, 56: 1}
@@ -145,6 +151,23 @@ def test_formula_to_composition_complexes():
         6: 6,
         7: 6,
         26: 1,
+    }
+    assert formula_to_composition("Ag[NH3]+") == {
+        0: 1,
+        1: 3,
+        7: 1,
+        47: 1,
+    }
+    assert formula_to_composition("[Ni(NH3)6]+2") == {
+        0: 2,
+        1: 18,
+        7: 6,
+        28: 1,
+    }
+    assert formula_to_composition("[PtCl6]-2") == {
+        0: -2,
+        17: 6,
+        78: 1,
     }
 
 
