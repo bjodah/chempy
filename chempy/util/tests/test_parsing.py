@@ -36,7 +36,9 @@ def test_formula_to_composition_caged():
     """Should parse cage species."""
     assert formula_to_composition("Li@C60") == {3: 1, 6: 60}
     assert formula_to_composition("Li@C60Cl") == {3: 1, 6: 60, 17: 1}
+    assert formula_to_composition("(Li@C60)+") == {0: 1, 3: 1, 6: 60}
     assert formula_to_composition("Na@C60") == {11: 1, 6: 60}
+    assert formula_to_composition("(Na@C60)+") == {0: 1, 11: 1, 6: 60}
 
 
 @requires(parsing_library)
@@ -108,6 +110,9 @@ def test_formula_to_composition_ionic_compounds():
     assert formula_to_composition("Na2CO3..7H2O(s)") == {11: 2, 6: 1, 8: 10, 1: 14}
     assert formula_to_composition("NaCl") == {11: 1, 17: 1}
     assert formula_to_composition("NaCl(s)") == {11: 1, 17: 1}
+    assert formula_to_composition("Ni") == {28: 1}
+    assert formula_to_composition("NI") == {7: 1, 53: 1}
+    assert formula_to_composition("KF") == {9: 1, 19: 1}
 
 
 @requires(parsing_library)
@@ -408,7 +413,9 @@ def test_formula_to_latex_braces():
 def test_formula_to_latex_caged():
     """Should produce LaTeX for cage species."""
     assert formula_to_latex("Li@C60") == r"Li@C_{60}"
+    assert formula_to_latex("(Li@C60)+") == r"(Li@C_{60})^{+}"
     assert formula_to_latex("Na@C60") == r"Na@C_{60}"
+    assert formula_to_latex("(Na@C60)+") == r"(Na@C_{60})^{+}"
 
 
 @requires(parsing_library)
@@ -461,7 +468,9 @@ def test_formula_to_unicode():
 def test_formula_to_unicode_caged():
     """Should produce LaTeX for cage species."""
     assert formula_to_unicode("Li@C60") == r"Li@C₆₀"
+    assert formula_to_unicode("(Li@C60)+") == r"(Li@C₆₀)⁺"
     assert formula_to_unicode("Na@C60") == r"Na@C₆₀"
+    assert formula_to_unicode("(Na@C60)+") == r"(Na@C₆₀)⁺"
 
 
 @requires(parsing_library)
@@ -533,4 +542,6 @@ def test_formula_to_html():
 def test_formula_to_html_caged():
     """Should produce HTML for cage species."""
     assert formula_to_html("Li@C60") == r"Li@C<sub>60</sub>"
+    assert formula_to_html("(Li@C60)+") == r"(Li@C<sub>60</sub>)<sup>+</sup>"
     assert formula_to_html("Na@C60") == r"Na@C<sub>60</sub>"
+    assert formula_to_html("(Na@C60)+") == r"(Na@C<sub>60</sub>)<sup>+</sup>"
