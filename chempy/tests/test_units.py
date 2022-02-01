@@ -452,6 +452,12 @@ def test_tile():
 
 
 @requires(units_library)
+def test_array_like():
+    a = [2*u.m, 3*u.km]
+    assert allclose(pnp.sum(a), [3002]*u.m)
+
+
+@requires(units_library)
 def test_simplified():
     assert allclose(simplified(dc.molar_gas_constant), 8.314*u.J/u.mol/u.K, rtol=2e-3)
     assert simplified(2.0) == 2.0

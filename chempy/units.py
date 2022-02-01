@@ -17,7 +17,7 @@ getter & setter functions in `chempy.units`).
 """
 from __future__ import (absolute_import, division, print_function)
 
-from functools import reduce
+from functools import reduce, wraps
 from operator import mul
 import sys
 import warnings
@@ -693,6 +693,7 @@ def concatenate(arrays, **kwargs):
     return result*unit
 
 
+
 def tile(array, *args, **kwargs):
     """ Patched version of numpy.tile (with support for units) """
     try:
@@ -726,18 +727,29 @@ def polyval(p, x):
     return _y*u_y
 
 
-def _wrap_numpy(k):
+def _wrap_numpy_array_like(k):
     numpy_func = getattr(np, k)
-    if sys.version_info[0] > 2:
-        from functools import wraps
-    else:
-        def wraps(_meta_fun):
-            return lambda x: x  # py2: numpy.ufunc lacks "__module__"
+
+    @wraps(numpy_func)
+    def f(array_like, *args, **kwargs):
+        try:
+            elem = array_like[0, ...]
+        except TypeError:
+            elem = array_like[0]
+        unit = unit_of(elem)
+        result = numpy_func(to_unitless(array_like, unit), *args, **kwargs)
+        return result*unit
+    return f
+
+
+def _wrap_numpy_transcendental(k):
+    numpy_func = getattr(np, k)
 
     @wraps(numpy_func)
     def f(*args, **kwargs):
         return numpy_func(*map(to_unitless, args), **kwargs)
     return f
+
 
 if np is None:
     patched_numpy = None
@@ -746,11 +758,12 @@ else:
     patched_numpy.allclose = allclose
     patched_numpy.concatenate = concatenate
     patched_numpy.linspace = linspace
-    patched_numpy.tile = tile
     patched_numpy.polyfit = polyfit
     patched_numpy.polyval = polyval
+    for k in 'tile sum'.split():
+        setattr(patched_numpy, k, _wrap_numpy_array_like(k))
     for k in 'log log10 log2 log1p exp expm1 logaddexp logaddexp2'.split():
-        setattr(patched_numpy, k, _wrap_numpy(k))
+        setattr(patched_numpy, k, _wrap_numpy_transcendental(k))
 
 
 def fold_constants(arg):
