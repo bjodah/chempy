@@ -246,7 +246,7 @@ def _get_charge(chgstr):
 
 
 def _formula_to_parts(formula, prefixes, suffixes):
-    # Drop prefixes and suffixes
+    # Drop prefixes and suffixes.
     drop_pref, drop_suff = [], []
     for ign in prefixes:
         if formula.startswith(ign):
@@ -257,7 +257,7 @@ def _formula_to_parts(formula, prefixes, suffixes):
             drop_suff.append(ign)
             formula = formula[: -len(ign)]
 
-    # Extract charge
+    # Extract charge.
     if "/" in formula:
         raise ValueError(
             "Slashes ('/') in charge strings are deprecated."
@@ -273,16 +273,26 @@ def _formula_to_parts(formula, prefixes, suffixes):
                 break
         else:
             parts = [formula, None]
+
     return parts + [tuple(drop_pref), tuple(drop_suff[::-1])]
 
 
 def _parse_stoich(stoich):
-    if stoich == "e":  # special case, the electron is not an element
+    # Special case:  the electron is not an element.
+    if stoich == "e":
         return {}
-    return {
-        symbols.index(k) + 1: n
-        for k, n in _get_formula_parser().parseString(stoich, parseAll=True)
-    }
+
+    comp = {}
+    for k, n in _get_formula_parser().parseString(stoich, parseAll=True):
+        # Only use rational subscripts if necessary as
+        # ``sympy.linsolve()`` does not like non-integers when
+        # balancing reactions.
+        if n == int(n):
+            comp[symbols.index(k) + 1] = int(n)
+        else:
+            comp[symbols.index(k) + 1] = n
+
+    return comp
 
 
 _greek_letters = (
@@ -311,7 +321,7 @@ _greek_letters = (
     "psi",
     "omega",
 )
-_greek_u = u"αβγδεζηθικλμνξοπρστυφχψω"
+_greek_u = "αβγδεζηθικλμνξοπρστυφχψω"
 
 _latex_mapping = {k + "-": "\\" + k + "-" for k in _greek_letters}
 _latex_mapping["epsilon-"] = "\\varepsilon-"
@@ -320,8 +330,8 @@ _latex_mapping["."] = "^\\bullet "
 _latex_infix_mapping = {"..": "\\cdot "}
 
 _unicode_mapping = {k + "-": v + "-" for k, v in zip(_greek_letters, _greek_u)}
-_unicode_mapping["."] = u"⋅"
-_unicode_infix_mapping = {"..": u"·"}
+_unicode_mapping["."] = "⋅"
+_unicode_infix_mapping = {"..": "·"}
 
 _html_mapping = {k + "-": "&" + k + ";-" for k in _greek_letters}
 _html_mapping["."] = "&sdot;"
@@ -370,10 +380,11 @@ def formula_to_composition(
     """
     if prefixes is None:
         prefixes = _latex_mapping.keys()
+
     stoich_tok, chg_tok = _formula_to_parts(formula, prefixes, suffixes)[:2]
     tot_comp = {}
-    # parts = stoich_tok.split(".")
     parts = stoich_tok.split("..")
+
     for idx, stoich in enumerate(parts):
         if idx == 0:
             m = 1
@@ -385,14 +396,17 @@ def formula_to_composition(
                 tot_comp[k] = m * v
             else:
                 tot_comp[k] += m * v
+
     if chg_tok is not None:
         tot_comp[0] = _get_charge(chg_tok)
+
     return tot_comp
 
 
 def _subs(string, patterns):
     for patt, repl in patterns.items():
         string = string.replace(patt, repl)
+
     return string
 
 
@@ -585,20 +599,20 @@ def formula_to_latex(formula, prefixes=None, infixes=None, **kwargs):
 
 _unicode_sub = {}
 
-for k, v in enumerate(u"₀₁₂₃₄₅₆₇₈₉"):
+for k, v in enumerate("₀₁₂₃₄₅₆₇₈₉"):
     _unicode_sub[str(k)] = v
 
 _unicode_sup = {
-    "+": u"⁺",
-    "-": u"⁻",
+    "+": "⁺",
+    "-": "⁻",
 }
 
-for k, v in enumerate(u"⁰¹²³⁴⁵⁶⁷⁸⁹"):
+for k, v in enumerate("⁰¹²³⁴⁵⁶⁷⁸⁹"):
     _unicode_sup[str(k)] = v
 
 
 def formula_to_unicode(formula, prefixes=None, infixes=None, **kwargs):
-    u"""Convert formula string to unicode string representation
+    """Convert formula string to unicode string representation
 
     Parameters
     ----------
@@ -640,7 +654,7 @@ def formula_to_unicode(formula, prefixes=None, infixes=None, **kwargs):
 
 
 def formula_to_html(formula, prefixes=None, infixes=None, **kwargs):
-    u"""Convert formula string to html string representation
+    """Convert formula string to html string representation
 
     Parameters
     ----------
