@@ -380,7 +380,7 @@ def to_unitless(value, new_unit=None):
                     raise
             else:
                 if result.ndim == 0:
-                    return float(result)
+                    return result.item()
                 else:
                     return np.asarray(result)
         except TypeError:

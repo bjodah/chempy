@@ -16,7 +16,7 @@ from __future__ import (absolute_import, division, print_function)
 import math
 from itertools import chain
 from operator import add, mul, truediv, sub, pow
-from ..units import is_quantity
+from ..units import is_quantity, unit_of, to_unitless, is_quantity
 from .pyutil import defaultkeydict, deprecated
 
 
@@ -661,6 +661,18 @@ def create_Piecewise(parameter_name, nan_fallback=False):
         upper = [bounds_exprs[2*(i+1)] for i in range(n_exprs)]
         exprs = [bounds_exprs[2*i + 1] for i in range(n_exprs)]
 
+
+        if is_quantity(x):
+            xunit = unit_of(x)
+            def ulx(arg):
+                return to_unitless(arg, xunit)
+            lower = list(map(ulx, lower))
+            upper = list(map(ulx, upper))
+        else:
+            # xunit = 1
+            def ulx(arg):
+                return arg
+
         try:
             pw = backend.Piecewise
         except AttributeError:
@@ -671,7 +683,7 @@ def create_Piecewise(parameter_name, nan_fallback=False):
                 raise ValueError("not within any bounds: %s" % x)
         else:
             _NAN = backend.Symbol('NAN')
-            return pw(*([(ex, backend.And(lo <= x, x <= up)) for lo, up, ex in zip(lower, upper, exprs)] +
+            return pw(*([(ex, backend.And(lo <= ulx(x), ulx(x) <= up)) for lo, up, ex in zip(lower, upper, exprs)] +
                         ([(_NAN, True)] if nan_fallback else [])))
 
     return Expr.from_callback(_pw, parameter_keys=(parameter_name,))
@@ -716,12 +728,12 @@ def create_Poly(parameter_name, reciprocal=False, shift=None, name=None):
             if res is None:
                 res = coeff*cur
             else:
-                res += coeff*cur
+                res = res + coeff*cur
 
             if reciprocal:
-                cur /= x0
+                cur = cur / x0
             else:
-                cur *= x0
+                cur = cur * x0
         return res
 
     if shift is None:
