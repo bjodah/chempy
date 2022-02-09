@@ -79,7 +79,7 @@ def test_Species():
 @requires(parsing_library)
 def test_Species_default_phase_none():
     with pytest.raises(ValueError):
-        Species.from_formula('CO2(aq)', default_phase_idx=None)
+        Species.from_formula("CO2(aq)", default_phase_idx=None)
 
 
 def test_Solute():
