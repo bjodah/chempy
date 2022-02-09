@@ -5,9 +5,8 @@
 from collections import defaultdict
 
 import re
-import warnings
 
-from .pyutil import ChemPyDeprecationWarning, memoize
+from .pyutil import memoize
 from .periodic import symbols
 
 parsing_library = "pyparsing"  # info used for selective testing.
@@ -122,7 +121,7 @@ def _get_formula_parser():
     _p = __import__(parsing_library)
     Forward, Group, OneOrMore = _p.Forward, _p.Group, _p.OneOrMore
     Optional, ParseResults, Regex = _p.Optional, _p.ParseResults, _p.Regex
-    Suppress, Word, nums = _p.Suppress, _p.Word, _p.nums
+    Suppress = _p.Suppress
 
     # Define and suppress the grouping symbols.
     LCB = Suppress(Regex(r"\{"))
@@ -141,6 +140,9 @@ def _get_formula_parser():
     # Parse counts (subscripts and coefficients).
     count = Regex(r"(\d+\.\d+|\d*)")
     count.setParseAction(lambda t: 1 if t[0] == "" else float(t[0]))
+
+    # Parse states.
+    state = Suppress(Regex(r"\((s|l|g|aq|cr)\)"))
 
     # Elements, 1-118, official symbols.
     element = Regex(
@@ -182,6 +184,7 @@ def _get_formula_parser():
             | Group(caged + formula)("subgroup")
         )
         + Optional(count, default=1)("mult")
+        + Optional(state)("state")
         + Optional(primes)("primes")
     )
 

@@ -76,6 +76,12 @@ def test_Species():
     assert uranyl_ads.phase_idx == 1
 
 
+@requires(parsing_library)
+def test_Species_default_phase_none():
+    with pytest.raises(ValueError):
+        Species.from_formula('CO2(aq)', default_phase_idx=None)
+
+
 def test_Solute():
     from ..chemistry import Solute
     from ..util.pyutil import ChemPyDeprecationWarning
@@ -376,6 +382,14 @@ def test_balance_stoichiometry__ordering():
 
 @requires("sympy")
 def test_balance_stoichiometry__simple():
+    # 4 NH4ClO4 -> 2 N2 + 4 HCl + 6H2O + 5O2
+    # 4 Al + 3O2 -> 2Al2O3
+    # ---------------------------------------
+    # 6 NH4ClO4 + 10 Al + -> 3 N2 + 6 HCl + 9 H2O + 5 Al2O3
+    reac, prod = balance_stoichiometry({"NH4ClO4", "Al"}, {"Al2O3", "HCl", "H2O", "N2"})
+    assert reac == {"NH4ClO4": 6, "Al": 10}
+    assert prod == {"Al2O3": 5, "HCl": 6, "H2O": 9, "N2": 3}
+
     r2, p2 = balance_stoichiometry({"Na2CO3"}, {"Na2O", "CO2"})
     assert r2 == {"Na2CO3": 1}
     assert p2 == {"Na2O": 1, "CO2": 1}

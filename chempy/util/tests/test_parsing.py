@@ -32,6 +32,32 @@ def test_formula_to_composition_primes():
 
 
 @requires(parsing_library)
+def test_formula_to_composition_state_in_suffixes():
+    """Should parse species with state in suffixes."""
+    assert formula_to_composition(
+        "CO2(g)",
+        suffixes=("(g)", "(l)", "(s)"),
+    ) == {6: 1, 8: 2}
+    assert formula_to_composition(
+        "CO2(l)",
+        suffixes=("(g)", "(l)", "(s)"),
+    ) == {6: 1, 8: 2}
+    assert formula_to_composition(
+        "CO2(s)",
+        suffixes=("(g)", "(l)", "(s)"),
+    ) == {6: 1, 8: 2}
+
+
+@requires(parsing_library)
+def test_formula_to_composition_state_not_in_suffixes():
+    """Should parse species without state in suffixes."""
+    assert formula_to_composition(
+        "CO2(aq)",
+        suffixes=("(g)", "(l)", "(s)"),
+    ) == {6: 1, 8: 2}
+
+
+@requires(parsing_library)
 def test_formula_to_composition_caged():
     """Should parse cage species."""
     assert formula_to_composition("Li@C60") == {3: 1, 6: 60}
