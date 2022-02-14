@@ -502,6 +502,7 @@ def test_to_unitless___0D_array_with_object():
     # b = Backend('sympy')
     # pi = np.array(b.pi)
     pi = np.array(Constant(np.pi))
-    one_thousand = to_unitless(pi * u.metre, u.millimeter)
-    assert get_physical_dimensionality(one_thousand) == {}
-    assert abs(magnitude(one_thousand) - np.arctan(1)*4e3) < 1e-12
+    one_thousand_pi = to_unitless(pi * u.metre, u.millimeter)
+    assert get_physical_dimensionality(one_thousand_pi) == {}
+    abs_delta = abs(magnitude(one_thousand_pi) - np.arctan(1)*4e3)
+    assert abs_delta < 1e-12

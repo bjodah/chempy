@@ -435,31 +435,36 @@ class Expr(object):
         _other = _implicit_conversion(other)
         if _other.trivially_zero:
             return self
-        return _AddExpr([self, _other])
+        return _AddExpr.make(self, _other)
 
     def __sub__(self, other):
         if other == other*0:
             return self
-        return _SubExpr([self, _implicit_conversion(other)])
+        return _SubExpr.make(self, _implicit_conversion(other))
 
     def __mul__(self, other):
         if other == 1:
             return self
         if isinstance(other, UnaryWrapper):
             return NotImplemented  # delegate to UnaryWrapper.__rmul__
-        return _MulExpr([self, _implicit_conversion(other)])
+        return _MulExpr.make(self, _implicit_conversion(other))
 
     def __truediv__(self, other):
         if other == 1:
             return self
         if isinstance(other, UnaryWrapper):
             return NotImplemented  # delegate to UnaryWrapper.__rtruediv__
-        return _DivExpr([self, _implicit_conversion(other)])
+        return _DivExpr.make(self, _implicit_conversion(other))
 
     def __neg__(self):
         if isinstance(self, _NegExpr):
             return self.args[0]
-        return _NegExpr((self,))
+        return _NegExpr.make(self)
+
+    def __abs__(self):
+        if isinstance(self, _AbsExpr):
+            return self
+        return _AbsExpr.make(self)
 
     def __radd__(self, other):
         return self+other
@@ -471,13 +476,13 @@ class Expr(object):
         return (-self) + other
 
     def __rtruediv__(self, other):
-        return _DivExpr([_implicit_conversion(other), self])
+        return _DivExpr.make(_implicit_conversion(other), self)
 
     def __pow__(self, other):
-        return _PowExpr([self, _implicit_conversion(other)])
+        return _PowExpr.make(self, _implicit_conversion(other))
 
     def __rpow__(self, other):
-        return _PowExpr([_implicit_conversion(other), self])
+        return _PowExpr.make(_implicit_conversion(other), self)
 
 
 class UnaryWrapper(Expr):
@@ -511,7 +516,22 @@ class UnaryWrapper(Expr):
         return lambda *args, **kw: cls(Wrapper(*args, **kw))
 
 
-class _NegExpr(Expr):
+class _UnaryExpr(Expr):
+    _op = None
+
+    @classmethod
+    def make(cls, arg, *args, **kwargs):
+        assert not isinstance(arg, (tuple, list))
+        if isinstance(arg, Constant) and isinstance(arg.args[0], (float, int)):
+            inner_arg = arg.args[0]
+            new_args = cls._op(inner_arg),
+            return Constant(new_args)
+        else:
+            return cls((arg,), *args, **kwargs)
+
+class _NegExpr(_UnaryExpr):
+
+    _op = lambda x: -x
 
     def _str(self, *args, **kwargs):
         return "-%s" % args[0]._str(*args, **kwargs)
@@ -527,8 +547,31 @@ class _NegExpr(Expr):
         return -self.args[0].rate_coeff(*args, **kwargs),
 
 
+class _AbsExpr(_UnaryExpr):
+    _op = abs
+
+    def _str(self, *args, **kwargs):
+        return "abs(%s)" % args[0]._str(*args, **kwargs)
+
+    def __repr__(self):
+        return super(_AbsExpr, self)._str(repr)
+
+    def __call__(self, variables, backend=math, **kwargs):
+        arg0, = self.all_args(variables, backend=backend, **kwargs)
+        return abs(arg0)
+
+
 class _BinaryExpr(Expr):
     _op = None
+
+    @classmethod
+    def make(cls, a1, a2, *args, **kwargs):
+        assert not isinstance(a1, (tuple, list))
+        assert not isinstance(a2, (tuple, list))
+        if all(isinstance(arg, Constant) and isinstance(arg.args[0], (float, int)) for arg in [a1, a2]):
+            return Constant(cls._op(a1.args[0], a2.args[0]), *args, **kwargs)
+        else:
+            return cls((a1, a2), *args, **kwargs)
 
     def _str(self, *args, **kwargs):
         return ("({0} %s {1})" % self._op_str).format(*[arg._str(*args, **kwargs) for arg in self.args])
@@ -589,6 +632,15 @@ class Constant(Expr):
 
     def rate_coeff(self, *args, **kwargs):
         return self.args[0]
+
+    def __lt__(self, other):
+        if isinstance(other, (float, int)) and isinstance(self.args[0], (float, int)):
+            return self.args[0] < other
+        elif isinstance(other, Constant):
+            return self < other.args[0]
+        else:
+            return NotImplemented
+
 
 
 class Symbol(Expr):
