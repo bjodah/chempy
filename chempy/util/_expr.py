@@ -735,8 +735,12 @@ def create_Piecewise(parameter_name, nan_fallback=False):
                 raise ValueError("not within any bounds: %s" % x)
         else:
             _NAN = backend.Symbol('NAN')
-            return pw(*([(ex, backend.And(lo <= ulx(x), ulx(x) <= up)) for lo, up, ex in zip(lower, upper, exprs)] +
-                        ([(_NAN, True)] if nan_fallback else [])))
+            return pw(
+                *([(ex, backend.And(lo <= ulx(x), ulx(x) <= up)) for
+                   lo, up, ex in zip(lower, upper, exprs)] +
+                  ([(_NAN, True)] if nan_fallback else []))
+                , evaluate=False
+            )
 
     return Expr.from_callback(_pw, parameter_keys=(parameter_name,))
 
