@@ -11,283 +11,396 @@ from ..parsing import (
     parsing_library,
     to_reaction,
 )
-from ..parsing import _get_formula_parser
 from ..testing import requires
 
 
 @requires(parsing_library)
-def test_formula_to_composition_primes():
+@pytest.mark.parametrize(
+    "species, composition",
+    [
+        ("H2O*", {1: 2, 8: 1}),
+        ("H2O'", {1: 2, 8: 1}),
+        ("H2O''", {1: 2, 8: 1}),
+        ("H2O'''", {1: 2, 8: 1}),
+        ("Na", {11: 1}),
+        ("Na*", {11: 1}),
+        ("Na'", {11: 1}),
+        ("Na''", {11: 1}),
+        ("Na'''", {11: 1}),
+        ("Na(g)", {11: 1}),
+        ("Na*(g)", {11: 1}),
+        ("Na'(g)", {11: 1}),
+        ("Na''(g)", {11: 1}),
+        ("Na'''(g)", {11: 1}),
+        ("Na+", {0: 1, 11: 1}),
+        ("Na*+", {0: 1, 11: 1}),
+        ("Na'+", {0: 1, 11: 1}),
+        ("Na''+", {0: 1, 11: 1}),
+        ("Na'''+", {0: 1, 11: 1}),
+        ("Na+(g)", {0: 1, 11: 1}),
+        ("Na*+(g)", {0: 1, 11: 1}),
+        ("Na'+(g)", {0: 1, 11: 1}),
+        ("Na''+(g)", {0: 1, 11: 1}),
+        ("Na'''+(g)", {0: 1, 11: 1}),
+        ("Na2CO3*", {11: 2, 6: 1, 8: 3}),
+        ("Na2CO3..7H2O*(s)", {11: 2, 6: 1, 8: 10, 1: 14}),
+    ],
+)
+def test_formula_to_composition_primes(species, composition):
     """Should parse special species."""
-    assert formula_to_composition("H2O*") == {1: 2, 8: 1}
-    assert formula_to_composition("H2O'") == {1: 2, 8: 1}
-    assert formula_to_composition("H2O''") == {1: 2, 8: 1}
-    assert formula_to_composition("H2O'''") == {1: 2, 8: 1}
-    assert formula_to_composition("Na*") == {11: 1}
-    assert formula_to_composition("Na'") == {11: 1}
-    assert formula_to_composition("Na''") == {11: 1}
-    assert formula_to_composition("Na*(g)") == {11: 1}
-    assert formula_to_composition("Na*+") == {0: 1, 11: 1}
-    assert formula_to_composition("Na2CO3*") == {11: 2, 6: 1, 8: 3}
-    assert formula_to_composition("Na2CO3..7H2O*(s)") == {11: 2, 6: 1, 8: 10, 1: 14}
+    assert formula_to_composition(species) == composition
 
 
+@pytest.mark.parametrize(
+    "species, composition",
+    [
+        ("CO2(g)", {6: 1, 8: 2}),
+        ("CO2(l)", {6: 1, 8: 2}),
+        ("CO2(s)", {6: 1, 8: 2}),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_composition_state_in_suffixes():
+def test_formula_to_composition_state_in_suffixes(species, composition):
     """Should parse species with state in suffixes."""
     assert (
         formula_to_composition(
-            "CO2(g)",
+            species,
             suffixes=("(g)", "(l)", "(s)"),
         )
-        == {6: 1, 8: 2}
-    )
-    assert (
-        formula_to_composition(
-            "CO2(l)",
-            suffixes=("(g)", "(l)", "(s)"),
-        )
-        == {6: 1, 8: 2}
-    )
-    assert (
-        formula_to_composition(
-            "CO2(s)",
-            suffixes=("(g)", "(l)", "(s)"),
-        )
-        == {6: 1, 8: 2}
+        == composition
     )
 
 
+@pytest.mark.parametrize(
+    "species, composition",
+    [
+        ("CO2(aq)", {6: 1, 8: 2}),
+        ("H2O(aq)", {1: 2, 8: 1}),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_composition_state_not_in_suffixes():
+def test_formula_to_composition_state_not_in_suffixes(species, composition):
     """Should parse species without state in suffixes."""
     assert (
         formula_to_composition(
-            "CO2(aq)",
+            species,
             suffixes=("(g)", "(l)", "(s)"),
         )
-        == {6: 1, 8: 2}
+        == composition
     )
 
 
+@pytest.mark.parametrize(
+    "species, composition",
+    [
+        ("Li@C60", {3: 1, 6: 60}),
+        ("Li@C60Cl", {3: 1, 6: 60, 17: 1}),
+        ("(Li@C60)+", {0: 1, 3: 1, 6: 60}),
+        ("Na@C60", {11: 1, 6: 60}),
+        ("(Na@C60)+", {0: 1, 11: 1, 6: 60}),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_composition_caged():
+def test_formula_to_composition_caged(species, composition):
     """Should parse cage species."""
-    assert formula_to_composition("Li@C60") == {3: 1, 6: 60}
-    assert formula_to_composition("Li@C60Cl") == {3: 1, 6: 60, 17: 1}
-    assert formula_to_composition("(Li@C60)+") == {0: 1, 3: 1, 6: 60}
-    assert formula_to_composition("Na@C60") == {11: 1, 6: 60}
-    assert formula_to_composition("(Na@C60)+") == {0: 1, 11: 1, 6: 60}
+    assert formula_to_composition(species) == composition
 
 
+@pytest.mark.parametrize(
+    "species",
+    [
+        ("ch3oh"),
+        ("Ch3oh"),
+        ("Ch3OH"),
+        ("ch3OH(l)"),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_composition_fail():
+def test_formula_to_composition_fail(species):
     """Should raise an exception."""
     with pytest.raises(ParseException):
-        formula_to_composition("ch3oh")
-
-    with pytest.raises(ParseException):
-        print(_get_formula_parser().parseString("Ch3OH"))
-        formula_to_composition("Ch3OH")
-
-    with pytest.raises(ParseException):
-        formula_to_composition("ch3oh")
-
-    with pytest.raises(ParseException):
-        formula_to_composition("Ch3OH(l)")
+        formula_to_composition(species)
 
 
+@pytest.mark.parametrize(
+    "species, composition",
+    [
+        ("Cl-", {0: -1, 17: 1}),
+        ("Fe(SCN)2+", {0: 1, 6: 2, 7: 2, 16: 2, 26: 1}),
+        ("Fe(SCN)2+1", {0: 1, 6: 2, 7: 2, 16: 2, 26: 1}),
+        ("Fe+3", {0: 3, 26: 1}),
+        ("NH4+", {0: 1, 1: 4, 7: 1}),
+        ("Na+", {0: 1, 11: 1}),
+        ("Na+1", {0: 1, 11: 1}),
+        ("OH-", {0: -1, 1: 1, 8: 1}),
+        ("SO4-2(aq)", {0: -2, 8: 4, 16: 1}),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_composition_ions():
-    assert formula_to_composition("Cl-") == {0: -1, 17: 1}
-    assert formula_to_composition("Fe(SCN)2+") == {0: 1, 6: 2, 7: 2, 16: 2, 26: 1}
-    assert formula_to_composition("Fe(SCN)2+1") == {0: 1, 6: 2, 7: 2, 16: 2, 26: 1}
-    assert formula_to_composition("Fe+3") == {0: 3, 26: 1}
-    assert formula_to_composition("NH4+") == {0: 1, 1: 4, 7: 1}
-    assert formula_to_composition("Na+") == {0: 1, 11: 1}
-    assert formula_to_composition("Na+1") == {0: 1, 11: 1}
-    assert formula_to_composition("OH-") == {0: -1, 1: 1, 8: 1}
-    assert formula_to_composition("SO4-2(aq)") == {0: -2, 8: 4, 16: 1}
-    # Deprecated charges as of 0.8.0.
-    # assert formula_to_composition("Fe/3+") == {0: 3, 26: 1}
-    # assert formula_to_composition("Na/+") == {0: 1, 11: 1}
-    # assert formula_to_composition("Cl/-") == {0: -1, 17: 1}
-    # assert formula_to_composition("Fe(SCN)2/+") == {0: 1, 6: 2, 7: 2, 16: 2, 26: 1}
+def test_formula_to_composition_ions(species, composition):
+    assert formula_to_composition(species) == composition
 
 
-@requires(parsing_library)
-def test_formula_to_composition_deprecated_charge():
-    with pytest.raises(ValueError):
+@pytest.mark.parametrize(
+    "species",
+    [
         # Ions.
-        formula_to_composition("Cl/-")
-        formula_to_composition("Cl/-(aq)")
-        formula_to_composition("Fe(SCN)2/+")
-        formula_to_composition("Fe(SCN)2/+(aq)")
-        formula_to_composition("Fe/3+")
-        formula_to_composition("Fe/3+(aq)")
-        formula_to_composition("Na/+")
-        formula_to_composition("Na/+(aq)")
+        ("Cl/-"),
+        ("Cl/-(aq)"),
+        ("Fe(SCN)2/+"),
+        ("Fe(SCN)2/+(aq)"),
+        ("Fe/3+"),
+        ("Fe/3+(aq)"),
+        ("Na/+"),
+        ("Na/+(aq)"),
         # Electrons.
-        formula_to_composition("e/-")
-        formula_to_composition("e/-(aq)")
+        ("e/-"),
+        ("e/-(aq)"),
         # Radicals.
-        formula_to_composition(".NO3/2-")
-
-
+        (".NO3/2-"),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_composition_bad_charges():
+def test_formula_to_composition_deprecated_charge(species):
     with pytest.raises(ValueError):
-        formula_to_composition("Na+Cl-")
+        formula_to_composition(species)
 
 
+@pytest.mark.parametrize(
+    "species",
+    [
+        ("Na+Cl-"),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_composition_ionic_compounds():
-    # With and without water of hydration.
-    assert formula_to_composition("BaCl2") == {17: 2, 56: 1}
-    assert formula_to_composition("BaCl2(s)") == {17: 2, 56: 1}
-    assert formula_to_composition("BaCl2..2H2O(s)") == {1: 4, 8: 2, 17: 2, 56: 1}
-    assert formula_to_composition("Na2CO3..7H2O(s)") == {11: 2, 6: 1, 8: 10, 1: 14}
-    assert formula_to_composition("NaCl") == {11: 1, 17: 1}
-    assert formula_to_composition("NaCl(s)") == {11: 1, 17: 1}
-    assert formula_to_composition("Ni") == {28: 1}
-    assert formula_to_composition("NI") == {7: 1, 53: 1}
-    assert formula_to_composition("KF") == {9: 1, 19: 1}
+def test_formula_to_composition_bad_charges(species):
+    with pytest.raises(ValueError):
+        formula_to_composition(species)
 
 
+@pytest.mark.parametrize(
+    "species, composition",
+    [
+        # With and without water of hydration.
+        ("BaCl2", {17: 2, 56: 1}),
+        ("BaCl2(s)", {17: 2, 56: 1}),
+        ("BaCl2..2H2O(s)", {1: 4, 8: 2, 17: 2, 56: 1}),
+        ("Na2CO3..7H2O(s)", {11: 2, 6: 1, 8: 10, 1: 14}),
+        ("NaCl", {11: 1, 17: 1}),
+        ("NaCl(s)", {11: 1, 17: 1}),
+        ("Ni", {28: 1}),
+        ("NI", {7: 1, 53: 1}),
+        ("KF", {9: 1, 19: 1}),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_composition_complexes():
-    # With and without water of hydration.
-    assert formula_to_composition("Al2(SO4)3") == {8: 12, 13: 2, 16: 3}
-    assert formula_to_composition("Al2(SO4)3(s)") == {8: 12, 13: 2, 16: 3}
-    assert formula_to_composition("Al2(SO4)3(aq)") == {8: 12, 13: 2, 16: 3}
-    assert formula_to_composition("K4[Fe(CN)6]") == {6: 6, 7: 6, 19: 4, 26: 1}
-    assert formula_to_composition("K4[Fe(CN)6](s)") == {6: 6, 7: 6, 19: 4, 26: 1}
-    assert formula_to_composition("K4[Fe(CN)6](aq)") == {6: 6, 7: 6, 19: 4, 26: 1}
-    assert formula_to_composition("[Fe(H2O)6][Fe(CN)6]..19H2O") == {
-        1: 50,
-        6: 6,
-        7: 6,
-        8: 25,
-        26: 2,
-    }
-    assert formula_to_composition("[Fe(H2O)6][Fe(CN)6]..19H2O(s)") == {
-        1: 50,
-        6: 6,
-        7: 6,
-        8: 25,
-        26: 2,
-    }
-    assert formula_to_composition("[Fe(H2O)6][Fe(CN)6]..19H2O(aq)") == {
-        1: 50,
-        6: 6,
-        7: 6,
-        8: 25,
-        26: 2,
-    }
-    assert formula_to_composition("[Fe(CN)6]-3") == {
-        0: -3,
-        6: 6,
-        7: 6,
-        26: 1,
-    }
-    assert formula_to_composition("[Fe(CN)6]-3(aq)") == {
-        0: -3,
-        6: 6,
-        7: 6,
-        26: 1,
-    }
-    assert formula_to_composition("Ag[NH3]+") == {
-        0: 1,
-        1: 3,
-        7: 1,
-        47: 1,
-    }
-    assert formula_to_composition("[Ni(NH3)6]+2") == {
-        0: 2,
-        1: 18,
-        7: 6,
-        28: 1,
-    }
-    assert formula_to_composition("[PtCl6]-2") == {
-        0: -2,
-        17: 6,
-        78: 1,
-    }
+def test_formula_to_composition_ionic_compounds(species, composition):
+    assert formula_to_composition(species) == composition
 
 
+@pytest.mark.parametrize(
+    "species, composition",
+    [
+        # With and without water of hydration.
+        ("Al2(SO4)3", {8: 12, 13: 2, 16: 3}),
+        ("Al2(SO4)3(s)", {8: 12, 13: 2, 16: 3}),
+        ("Al2(SO4)3(aq)", {8: 12, 13: 2, 16: 3}),
+        ("K4[Fe(CN)6]", {6: 6, 7: 6, 19: 4, 26: 1}),
+        ("K4[Fe(CN)6](s)", {6: 6, 7: 6, 19: 4, 26: 1}),
+        ("K4[Fe(CN)6](aq)", {6: 6, 7: 6, 19: 4, 26: 1}),
+        (
+            "[Fe(H2O)6][Fe(CN)6]..19H2O",
+            {
+                1: 50,
+                6: 6,
+                7: 6,
+                8: 25,
+                26: 2,
+            },
+        ),
+        (
+            "[Fe(H2O)6][Fe(CN)6]..19H2O(s)",
+            {
+                1: 50,
+                6: 6,
+                7: 6,
+                8: 25,
+                26: 2,
+            },
+        ),
+        (
+            "[Fe(H2O)6][Fe(CN)6]..19H2O(aq)",
+            {
+                1: 50,
+                6: 6,
+                7: 6,
+                8: 25,
+                26: 2,
+            },
+        ),
+        (
+            "[Fe(CN)6]-3",
+            {
+                0: -3,
+                6: 6,
+                7: 6,
+                26: 1,
+            },
+        ),
+        (
+            "[Fe(CN)6]-3(aq)",
+            {
+                0: -3,
+                6: 6,
+                7: 6,
+                26: 1,
+            },
+        ),
+        (
+            "Ag[NH3]+",
+            {
+                0: 1,
+                1: 3,
+                7: 1,
+                47: 1,
+            },
+        ),
+        (
+            "[Ni(NH3)6]+2",
+            {
+                0: 2,
+                1: 18,
+                7: 6,
+                28: 1,
+            },
+        ),
+        (
+            "[PtCl6]-2",
+            {
+                0: -2,
+                17: 6,
+                78: 1,
+            },
+        ),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_composition_bad_complexes():
+def test_formula_to_composition_complexes(species, composition):
+    assert formula_to_composition(species) == composition
+
+
+@pytest.mark.parametrize(
+    "species",
+    [
+        ("[Fe(CN)6)-3"),
+        ("(Fe(CN)6]-3"),
+        ("[Fe(CN]6]-3"),
+    ],
+)
+@requires(parsing_library)
+def test_formula_to_composition_bad_complexes(species):
     with pytest.raises(ParseException):
-        formula_to_composition("[Fe(CN)6)-3")
-
-    with pytest.raises(ParseException):
-        formula_to_composition("(Fe(CN)6]-3")
-
-    with pytest.raises(ParseException):
-        formula_to_composition("[Fe(CN]6]-3")
+        formula_to_composition(species)
 
 
+@pytest.mark.parametrize(
+    "species, composition",
+    [
+        (
+            "Ca2.832Fe0.6285Mg5.395(CO3)6",
+            {
+                6: 6,
+                8: 18,
+                12: 5.395,
+                20: 2.832,
+                26: 0.6285,
+            },
+        ),
+        (
+            "Ca2.832Fe0.6285Mg5.395(CO3)6(s)",
+            {
+                6: 6,
+                8: 18,
+                12: 5.395,
+                20: 2.832,
+                26: 0.6285,
+            },
+        ),
+        (
+            "Ca2.832Fe0.6285Mg5.395(CO3)6..8H2O(s)",
+            {
+                1: 16,
+                6: 6,
+                8: 26,
+                12: 5.395,
+                20: 2.832,
+                26: 0.6285,
+            },
+        ),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_composition_fractional_subscripts():
-    assert formula_to_composition("Ca2.832Fe0.6285Mg5.395(CO3)6") == {
-        6: 6,
-        8: 18,
-        12: 5.395,
-        20: 2.832,
-        26: 0.6285,
-    }
-    assert formula_to_composition("Ca2.832Fe0.6285Mg5.395(CO3)6(s)") == {
-        6: 6,
-        8: 18,
-        12: 5.395,
-        20: 2.832,
-        26: 0.6285,
-    }
-    assert formula_to_composition("Ca2.832Fe0.6285Mg5.395(CO3)6..8H2O(s)") == {
-        1: 16,
-        6: 6,
-        8: 26,
-        12: 5.395,
-        20: 2.832,
-        26: 0.6285,
-    }
+def test_formula_to_composition_fractional_subscripts(species, composition):
+    assert formula_to_composition(species) == composition
 
 
+@pytest.mark.parametrize(
+    "species, composition",
+    [
+        ("e-", {0: -1}),
+        ("e-1", {0: -1}),
+        ("e-(aq)", {0: -1}),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_composition_solvated_electrons():
-    assert formula_to_composition("e-") == {0: -1}
-    assert formula_to_composition("e-1") == {0: -1}
-    assert formula_to_composition("e-(aq)") == {0: -1}
-    # Deprecated charges as of 0.8.0.
-    # assert formula_to_composition("e/-") == {0: -1}
-    # assert formula_to_composition("e/-(aq)") == {0: -1}
+def test_formula_to_composition_solvated_electrons(species, composition):
+    assert formula_to_composition(species) == composition
 
 
+@pytest.mark.parametrize(
+    "species, composition",
+    [
+        ("H2O", {1: 2, 8: 1}),
+        ("((H2O)2OH)12", {1: 60, 8: 36}),
+        ("PCl5", {15: 1, 17: 5}),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_composition_covalent_compounds():
-    assert formula_to_composition("H2O") == {1: 2, 8: 1}
-    assert formula_to_composition("((H2O)2OH)12") == {1: 60, 8: 36}
-    assert formula_to_composition("PCl5") == {15: 1, 17: 5}
+def test_formula_to_composition_covalent_compounds(species, composition):
+    assert formula_to_composition(species) == composition
 
 
+@pytest.mark.parametrize(
+    "species, composition",
+    [
+        ("CH4(g)", {1: 4, 6: 1}),
+        ("CH3CH3(g)", {1: 6, 6: 2}),
+        # Many ways to write benzene.
+        ("C6H6(l)", {1: 6, 6: 6}),
+        ("(CH)6(l)", {1: 6, 6: 6}),
+        ("CHCHCHCHCHCH(l)", {1: 6, 6: 6}),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_composition_organic_compounds():
-    assert formula_to_composition("CH4(g)") == {1: 4, 6: 1}
-    assert formula_to_composition("CH3CH3(g)") == {1: 6, 6: 2}
-    # Many ways to write benzene.
-    assert formula_to_composition("C6H6(l)") == {1: 6, 6: 6}
-    assert formula_to_composition("(CH)6(l)") == {1: 6, 6: 6}
-    assert formula_to_composition("CHCHCHCHCHCH(l)") == {1: 6, 6: 6}
+def test_formula_to_composition_organic_compounds(species, composition):
+    assert formula_to_composition(species) == composition
 
 
+@pytest.mark.parametrize(
+    "species, composition",
+    [
+        (".NO2(g)", {7: 1, 8: 2}),
+        (".NH2", {1: 2, 7: 1}),
+        ("ONOOH", {1: 1, 7: 1, 8: 3}),
+        (".ONOO", {7: 1, 8: 3}),
+        (".NO3-2", {0: -2, 7: 1, 8: 3}),
+        # Deprecated charges as of 0.8.0.
+        # (".NO3/2-", {0: -2, 7: 1, 8: 3}),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_composition_radicals():
-    assert formula_to_composition(".NO2(g)") == {7: 1, 8: 2}
-    assert formula_to_composition(".NH2") == {1: 2, 7: 1}
-    assert formula_to_composition("ONOOH") == {1: 1, 7: 1, 8: 3}
-    assert formula_to_composition(".ONOO") == {7: 1, 8: 3}
-    assert formula_to_composition(".NO3-2") == {0: -2, 7: 1, 8: 3}
-    # Deprecated charges as of 0.8.0.
-    # assert formula_to_composition(".NO3/2-") == {0: -2, 7: 1, 8: 3}
+def test_formula_to_composition_radicals(species, composition):
+    assert formula_to_composition(species) == composition
 
 
 @requires(parsing_library)
@@ -296,10 +409,16 @@ def test_formula_to_composition_structural_formulas():
         formula_to_composition("F-F")
 
 
+@pytest.mark.parametrize(
+    "species, composition",
+    [
+        ("alpha-FeOOH(s)", {1: 1, 8: 2, 26: 1}),
+        ("epsilon-Zn(OH)2(s)", {1: 2, 8: 2, 30: 1}),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_composition_crystal_phases():
-    assert formula_to_composition("alpha-FeOOH(s)") == {1: 1, 8: 2, 26: 1}
-    assert formula_to_composition("epsilon-Zn(OH)2(s)") == {1: 2, 8: 2, 30: 1}
+def test_formula_to_composition_crystal_phases(species, composition):
+    assert formula_to_composition(species) == composition
 
 
 @requires(parsing_library)
@@ -379,207 +498,217 @@ def test_to_reaction():
     )
 
 
+@pytest.mark.parametrize(
+    "species, latex",
+    [
+        ("H2O", "H_{2}O"),
+        # ("C6H6/+", "C_{6}H_{6}^{+}"),
+        ("C6H6+", "C_{6}H_{6}^{+}"),
+        # ("C18H38/2+", "C_{18}H_{38}^{2+}"),
+        # ("C18H38/+2", "C_{18}H_{38}^{2+}"),
+        ("C18H38+2", "C_{18}H_{38}^{2+}"),
+        ("NaCl", "NaCl"),
+        ("NaCl(s)", "NaCl(s)"),
+        ("e-(aq)", "e^{-}(aq)"),
+        ("Ca+2(aq)", "Ca^{2+}(aq)"),
+        (".NO2(g)", r"^\bullet NO_{2}(g)"),
+        (".NH2", r"^\bullet NH_{2}"),
+        ("ONOOH", "ONOOH"),
+        (".ONOO", r"^\bullet ONOO"),
+        # (".NO3/2-", r"^\bullet NO_{3}^{2-}"),
+        (".NO3-2", r"^\bullet NO_{3}^{2-}"),
+        ("alpha-FeOOH(s)", r"\alpha-FeOOH(s)"),
+        ("epsilon-Zn(OH)2(s)", r"\varepsilon-Zn(OH)_{2}(s)"),
+        ("Na2CO3..7H2O(s)", r"Na_{2}CO_{3}\cdot 7H_{2}O(s)"),
+        ("Na2CO3..1H2O(s)", r"Na_{2}CO_{3}\cdot H_{2}O(s)"),
+        ("K4[Fe(CN)6]", r"K_{4}[Fe(CN)_{6}]"),
+        ("K4[Fe(CN)6](s)", r"K_{4}[Fe(CN)_{6}](s)"),
+        ("K4[Fe(CN)6](aq)", r"K_{4}[Fe(CN)_{6}](aq)"),
+        ("[Fe(H2O)6][Fe(CN)6]..19H2O", r"[Fe(H_{2}O)_{6}][Fe(CN)_{6}]\cdot 19H_{2}O"),
+        (
+            "[Fe(H2O)6][Fe(CN)6]..19H2O(s)",
+            r"[Fe(H_{2}O)_{6}][Fe(CN)_{6}]\cdot 19H_{2}O(s)",
+        ),
+        (
+            "[Fe(H2O)6][Fe(CN)6]..19H2O(aq)",
+            r"[Fe(H_{2}O)_{6}][Fe(CN)_{6}]\cdot 19H_{2}O(aq)",
+        ),
+        ("[Fe(CN)6]-3", r"[Fe(CN)_{6}]^{3-}"),
+        ("[Fe(CN)6]-3(aq)", r"[Fe(CN)_{6}]^{3-}(aq)"),
+        (
+            "Ca2.832Fe0.6285Mg5.395(CO3)6",
+            r"Ca_{2.832}Fe_{0.6285}Mg_{5.395}(CO_{3})_{6}",
+        ),
+        (
+            "Ca2.832Fe0.6285Mg5.395(CO3)6(s)",
+            r"Ca_{2.832}Fe_{0.6285}Mg_{5.395}(CO_{3})_{6}(s)",
+        ),
+        (
+            "Ca2.832Fe0.6285Mg5.395(CO3)6..8H2O(s)",
+            r"Ca_{2.832}Fe_{0.6285}Mg_{5.395}(CO_{3})_{6}\cdot 8H_{2}O(s)",
+        ),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_latex():
-    assert formula_to_latex("H2O") == "H_{2}O"
-    # assert formula_to_latex("C6H6/+") == "C_{6}H_{6}^{+}"
-    assert formula_to_latex("C6H6+") == "C_{6}H_{6}^{+}"
-    # assert formula_to_latex("C18H38/2+") == "C_{18}H_{38}^{2+}"
-    # assert formula_to_latex("C18H38/+2") == "C_{18}H_{38}^{2+}"
-    assert formula_to_latex("C18H38+2") == "C_{18}H_{38}^{2+}"
-    assert formula_to_latex("NaCl") == "NaCl"
-    assert formula_to_latex("NaCl(s)") == "NaCl(s)"
-    assert formula_to_latex("e-(aq)") == "e^{-}(aq)"
-    assert formula_to_latex("Ca+2(aq)") == "Ca^{2+}(aq)"
-    assert formula_to_latex(".NO2(g)") == r"^\bullet NO_{2}(g)"
-    assert formula_to_latex(".NH2") == r"^\bullet NH_{2}"
-    assert formula_to_latex("ONOOH") == "ONOOH"
-    assert formula_to_latex(".ONOO") == r"^\bullet ONOO"
-    # assert formula_to_latex(".NO3/2-") == r"^\bullet NO_{3}^{2-}"
-    assert formula_to_latex(".NO3-2") == r"^\bullet NO_{3}^{2-}"
-    assert formula_to_latex("alpha-FeOOH(s)") == r"\alpha-FeOOH(s)"
-    assert formula_to_latex("epsilon-Zn(OH)2(s)") == (r"\varepsilon-Zn(OH)_{2}(s)")
-    assert formula_to_latex("Na2CO3..7H2O(s)") == r"Na_{2}CO_{3}\cdot 7H_{2}O(s)"
-    assert formula_to_latex("Na2CO3..1H2O(s)") == r"Na_{2}CO_{3}\cdot H_{2}O(s)"
-    assert formula_to_latex("K4[Fe(CN)6]") == r"K_{4}[Fe(CN)_{6}]"
-    assert formula_to_latex("K4[Fe(CN)6](s)") == r"K_{4}[Fe(CN)_{6}](s)"
-    assert formula_to_latex("K4[Fe(CN)6](aq)") == r"K_{4}[Fe(CN)_{6}](aq)"
-    assert (
-        formula_to_latex("[Fe(H2O)6][Fe(CN)6]..19H2O")
-        == r"[Fe(H_{2}O)_{6}][Fe(CN)_{6}]\cdot 19H_{2}O"
-    )
-    assert (
-        formula_to_latex("[Fe(H2O)6][Fe(CN)6]..19H2O(s)")
-        == r"[Fe(H_{2}O)_{6}][Fe(CN)_{6}]\cdot 19H_{2}O(s)"
-    )
-    assert (
-        formula_to_latex("[Fe(H2O)6][Fe(CN)6]..19H2O(aq)")
-        == r"[Fe(H_{2}O)_{6}][Fe(CN)_{6}]\cdot 19H_{2}O(aq)"
-    )
-    assert formula_to_latex("[Fe(CN)6]-3") == r"[Fe(CN)_{6}]^{3-}"
-    assert formula_to_latex("[Fe(CN)6]-3(aq)") == r"[Fe(CN)_{6}]^{3-}(aq)"
-    assert (
-        formula_to_latex("Ca2.832Fe0.6285Mg5.395(CO3)6")
-        == r"Ca_{2.832}Fe_{0.6285}Mg_{5.395}(CO_{3})_{6}"
-    )
-    assert (
-        formula_to_latex("Ca2.832Fe0.6285Mg5.395(CO3)6(s)")
-        == r"Ca_{2.832}Fe_{0.6285}Mg_{5.395}(CO_{3})_{6}(s)"
-    )
-    assert (
-        formula_to_latex("Ca2.832Fe0.6285Mg5.395(CO3)6..8H2O(s)")
-        == r"Ca_{2.832}Fe_{0.6285}Mg_{5.395}(CO_{3})_{6}\cdot 8H_{2}O(s)"
-    )
+def test_formula_to_latex(species, latex):
+    assert formula_to_latex(species) == latex
 
 
+@pytest.mark.parametrize(
+    "species, latex",
+    [
+        # Parentheses.
+        ("Fe(CN)6-3", "Fe(CN)_{6}^{3-}"),
+        ("((H2O)2OH)12", "((H_{2}O)_{2}OH)_{12}"),
+        # Square brackets.
+        ("Fe[CN]6-3", "Fe[CN]_{6}^{3-}"),
+        ("[(H2O)2OH]12", "[(H_{2}O)_{2}OH]_{12}"),
+        # Curly braces.
+        ("Fe{CN}6-3", r"Fe\{CN\}_{6}^{3-}"),
+        ("{(H2O)2OH}12", r"\{(H_{2}O)_{2}OH\}_{12}"),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_latex_braces():
-    # Parentheses.
-    assert formula_to_latex("Fe(CN)6-3") == "Fe(CN)_{6}^{3-}"
-    assert formula_to_latex("((H2O)2OH)12") == "((H_{2}O)_{2}OH)_{12}"
-
-    # Square brackets.
-    assert formula_to_latex("Fe[CN]6-3") == "Fe[CN]_{6}^{3-}"
-    assert formula_to_latex("[(H2O)2OH]12") == "[(H_{2}O)_{2}OH]_{12}"
-
-    # Curly braces.
-    assert formula_to_latex("Fe{CN}6-3") == r"Fe\{CN\}_{6}^{3-}"
-    assert formula_to_latex("{(H2O)2OH}12") == r"\{(H_{2}O)_{2}OH\}_{12}"
+def test_formula_to_latex_braces(species, latex):
+    assert formula_to_latex(species) == latex
 
 
+@pytest.mark.parametrize(
+    "species, latex",
+    [
+        ("Li@C60", r"Li@C_{60}"),
+        ("(Li@C60)+", r"(Li@C_{60})^{+}"),
+        ("Na@C60", r"Na@C_{60}"),
+        ("(Na@C60)+", r"(Na@C_{60})^{+}"),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_latex_caged():
+def test_formula_to_latex_caged(species, latex):
     """Should produce LaTeX for cage species."""
-    assert formula_to_latex("Li@C60") == r"Li@C_{60}"
-    assert formula_to_latex("(Li@C60)+") == r"(Li@C_{60})^{+}"
-    assert formula_to_latex("Na@C60") == r"Na@C_{60}"
-    assert formula_to_latex("(Na@C60)+") == r"(Na@C_{60})^{+}"
+    assert formula_to_latex(species) == latex
 
 
+@pytest.mark.parametrize(
+    "species, unicode",
+    [
+        ("NH4+", u"NH₄⁺"),
+        ("H2O", u"H₂O"),
+        # ("C6H6/+", u"C₆H₆⁺"),
+        ("C6H6+", u"C₆H₆⁺"),
+        # ("Fe(CN)6/3-", u"Fe(CN)₆³⁻"),
+        ("Fe(CN)6-3", u"Fe(CN)₆³⁻"),
+        # ("C18H38/2+", u"C₁₈H₃₈²⁺"),
+        # ("C18H38/+2", u"C₁₈H₃₈²⁺"),
+        ("C18H38+2", u"C₁₈H₃₈²⁺"),
+        ("((H2O)2OH)12", u"((H₂O)₂OH)₁₂"),
+        ("[(H2O)2OH]12", u"[(H₂O)₂OH]₁₂"),
+        ("{(H2O)2OH}12", u"{(H₂O)₂OH}₁₂"),
+        ("NaCl", u"NaCl"),
+        ("NaCl(s)", u"NaCl(s)"),
+        ("e-(aq)", u"e⁻(aq)"),
+        ("Ca+2(aq)", u"Ca²⁺(aq)"),
+        (".NO2(g)", u"⋅NO₂(g)"),
+        (".NH2", u"⋅NH₂"),
+        ("ONOOH", u"ONOOH"),
+        (".ONOO", u"⋅ONOO"),
+        # (".NO3/2-", u"⋅NO₃²⁻"),
+        (".NO3-2", u"⋅NO₃²⁻"),
+        ("alpha-FeOOH(s)", u"α-FeOOH(s)"),
+        ("epsilon-Zn(OH)2(s)", u"ε-Zn(OH)₂(s)"),
+        ("Na2CO3..7H2O(s)", u"Na₂CO₃·7H₂O(s)"),
+        ("Na2CO3..1H2O(s)", u"Na₂CO₃·H₂O(s)"),
+        ("K4[Fe(CN)6]", r"K₄[Fe(CN)₆]"),
+        ("K4[Fe(CN)6](s)", r"K₄[Fe(CN)₆](s)"),
+        ("K4[Fe(CN)6](aq)", r"K₄[Fe(CN)₆](aq)"),
+        ("[Fe(H2O)6][Fe(CN)6]..19H2O", r"[Fe(H₂O)₆][Fe(CN)₆]·19H₂O"),
+        ("[Fe(H2O)6][Fe(CN)6]..19H2O(s)", r"[Fe(H₂O)₆][Fe(CN)₆]·19H₂O(s)"),
+        ("[Fe(H2O)6][Fe(CN)6]..19H2O(aq)", r"[Fe(H₂O)₆][Fe(CN)₆]·19H₂O(aq)"),
+        ("[Fe(CN)6]-3", r"[Fe(CN)₆]³⁻"),
+        ("[Fe(CN)6]-3(aq)", r"[Fe(CN)₆]³⁻(aq)"),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_unicode():
-    assert formula_to_unicode("NH4+") == u"NH₄⁺"
-    assert formula_to_unicode("H2O") == u"H₂O"
-    # assert formula_to_unicode("C6H6/+") == u"C₆H₆⁺"
-    assert formula_to_unicode("C6H6+") == u"C₆H₆⁺"
-    # assert formula_to_unicode("Fe(CN)6/3-") == u"Fe(CN)₆³⁻"
-    assert formula_to_unicode("Fe(CN)6-3") == u"Fe(CN)₆³⁻"
-    # assert formula_to_unicode("C18H38/2+") == u"C₁₈H₃₈²⁺"
-    # assert formula_to_unicode("C18H38/+2") == u"C₁₈H₃₈²⁺"
-    assert formula_to_unicode("C18H38+2") == u"C₁₈H₃₈²⁺"
-    assert formula_to_unicode("((H2O)2OH)12") == u"((H₂O)₂OH)₁₂"
-    assert formula_to_unicode("[(H2O)2OH]12") == u"[(H₂O)₂OH]₁₂"
-    assert formula_to_unicode("{(H2O)2OH}12") == u"{(H₂O)₂OH}₁₂"
-    assert formula_to_unicode("NaCl") == u"NaCl"
-    assert formula_to_unicode("NaCl(s)") == u"NaCl(s)"
-    assert formula_to_unicode("e-(aq)") == u"e⁻(aq)"
-    assert formula_to_unicode("Ca+2(aq)") == u"Ca²⁺(aq)"
-    assert formula_to_unicode(".NO2(g)") == u"⋅NO₂(g)"
-    assert formula_to_unicode(".NH2") == u"⋅NH₂"
-    assert formula_to_unicode("ONOOH") == u"ONOOH"
-    assert formula_to_unicode(".ONOO") == u"⋅ONOO"
-    # assert formula_to_unicode(".NO3/2-") == u"⋅NO₃²⁻"
-    assert formula_to_unicode(".NO3-2") == u"⋅NO₃²⁻"
-    assert formula_to_unicode("alpha-FeOOH(s)") == u"α-FeOOH(s)"
-    assert formula_to_unicode("epsilon-Zn(OH)2(s)") == u"ε-Zn(OH)₂(s)"
-    assert formula_to_unicode("Na2CO3..7H2O(s)") == u"Na₂CO₃·7H₂O(s)"
-    assert formula_to_unicode("Na2CO3..1H2O(s)") == u"Na₂CO₃·H₂O(s)"
-    assert formula_to_unicode("K4[Fe(CN)6]") == r"K₄[Fe(CN)₆]"
-    assert formula_to_unicode("K4[Fe(CN)6](s)") == r"K₄[Fe(CN)₆](s)"
-    assert formula_to_unicode("K4[Fe(CN)6](aq)") == r"K₄[Fe(CN)₆](aq)"
-    assert (
-        formula_to_unicode("[Fe(H2O)6][Fe(CN)6]..19H2O") == r"[Fe(H₂O)₆][Fe(CN)₆]·19H₂O"
-    )
-    assert (
-        formula_to_unicode("[Fe(H2O)6][Fe(CN)6]..19H2O(s)")
-        == r"[Fe(H₂O)₆][Fe(CN)₆]·19H₂O(s)"
-    )
-    assert (
-        formula_to_unicode("[Fe(H2O)6][Fe(CN)6]..19H2O(aq)")
-        == r"[Fe(H₂O)₆][Fe(CN)₆]·19H₂O(aq)"
-    )
-    assert formula_to_unicode("[Fe(CN)6]-3") == r"[Fe(CN)₆]³⁻"
-    assert formula_to_unicode("[Fe(CN)6]-3(aq)") == r"[Fe(CN)₆]³⁻(aq)"
+def test_formula_to_unicode(species, unicode):
+    assert formula_to_unicode(species) == unicode
 
 
+@pytest.mark.parametrize(
+    "species, unicode",
+    [
+        ("Li@C60", r"Li@C₆₀"),
+        ("(Li@C60)+", r"(Li@C₆₀)⁺"),
+        ("Na@C60", r"Na@C₆₀"),
+        ("(Na@C60)+", r"(Na@C₆₀)⁺"),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_unicode_caged():
+def test_formula_to_unicode_caged(species, unicode):
     """Should produce LaTeX for cage species."""
-    assert formula_to_unicode("Li@C60") == r"Li@C₆₀"
-    assert formula_to_unicode("(Li@C60)+") == r"(Li@C₆₀)⁺"
-    assert formula_to_unicode("Na@C60") == r"Na@C₆₀"
-    assert formula_to_unicode("(Na@C60)+") == r"(Na@C₆₀)⁺"
+    assert formula_to_unicode(species) == unicode
 
 
+@pytest.mark.parametrize(
+    "species, html",
+    [
+        ("H2O", "H<sub>2</sub>O"),
+        # ("C6H6/+", "C<sub>6</sub>H<sub>6</sub><sup>+</sup>"),
+        ("C6H6+", "C<sub>6</sub>H<sub>6</sub><sup>+</sup>"),
+        # ("Fe(CN)6/3-", "Fe(CN)<sub>6</sub><sup>3-</sup>"),
+        ("Fe(CN)6-3", "Fe(CN)<sub>6</sub><sup>3-</sup>"),
+        # ("C18H38/2+", "C<sub>18</sub>H<sub>38</sub><sup>2+</sup>"),
+        # ("C18H38/+2", "C<sub>18</sub>H<sub>38</sub><sup>2+</sup>"),
+        ("C18H38+2", "C<sub>18</sub>H<sub>38</sub><sup>2+</sup>"),
+        ("((H2O)2OH)12", "((H<sub>2</sub>O)<sub>2</sub>OH)<sub>12</sub>"),
+        ("[(H2O)2OH]12", "[(H<sub>2</sub>O)<sub>2</sub>OH]<sub>12</sub>"),
+        ("{(H2O)2OH}12", "{(H<sub>2</sub>O)<sub>2</sub>OH}<sub>12</sub>"),
+        ("NaCl", "NaCl"),
+        ("NaCl(s)", "NaCl(s)"),
+        ("e-(aq)", "e<sup>-</sup>(aq)"),
+        ("Ca+2(aq)", "Ca<sup>2+</sup>(aq)"),
+        (".NO2(g)", r"&sdot;NO<sub>2</sub>(g)"),
+        (".NH2", r"&sdot;NH<sub>2</sub>"),
+        ("ONOOH", "ONOOH"),
+        (".ONOO", r"&sdot;ONOO"),
+        # (".NO3/2-", r"&sdot;NO<sub>3</sub><sup>2-</sup>"),
+        (".NO3-2", r"&sdot;NO<sub>3</sub><sup>2-</sup>"),
+        ("alpha-FeOOH(s)", r"&alpha;-FeOOH(s)"),
+        ("epsilon-Zn(OH)2(s)", (r"&epsilon;-Zn(OH)<sub>2</sub>(s)")),
+        ("Na2CO3..7H2O(s)", "Na<sub>2</sub>CO<sub>3</sub>&sdot;7H<sub>2</sub>O(s)"),
+        ("Na2CO3..1H2O(s)", "Na<sub>2</sub>CO<sub>3</sub>&sdot;H<sub>2</sub>O(s)"),
+        ("K4[Fe(CN)6]", r"K<sub>4</sub>[Fe(CN)<sub>6</sub>]"),
+        ("K4[Fe(CN)6](s)", r"K<sub>4</sub>[Fe(CN)<sub>6</sub>](s)"),
+        ("K4[Fe(CN)6](aq)", r"K<sub>4</sub>[Fe(CN)<sub>6</sub>](aq)"),
+        (
+            "[Fe(H2O)6][Fe(CN)6]..19H2O",
+            r"[Fe(H<sub>2</sub>O)<sub>6</sub>][Fe(CN)<sub>6</sub>]&sdot;19H<sub>2</sub>O",
+        ),
+        (
+            "[Fe(H2O)6][Fe(CN)6]..19H2O(s)",
+            r"[Fe(H<sub>2</sub>O)<sub>6</sub>][Fe(CN)<sub>6</sub>]&sdot;19H<sub>2</sub>O(s)",
+        ),
+        (
+            "[Fe(H2O)6][Fe(CN)6]..19H2O(aq)",
+            r"[Fe(H<sub>2</sub>O)<sub>6</sub>][Fe(CN)<sub>6</sub>]&sdot;19H<sub>2</sub>O(aq)",
+        ),
+        ("[Fe(CN)6]-3", r"[Fe(CN)<sub>6</sub>]<sup>3-</sup>"),
+        ("[Fe(CN)6]-3(aq)", r"[Fe(CN)<sub>6</sub>]<sup>3-</sup>(aq)"),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_html():
-    assert formula_to_html("H2O") == "H<sub>2</sub>O"
-    # assert formula_to_html("C6H6/+") == "C<sub>6</sub>H<sub>6</sub><sup>+</sup>"
-    assert formula_to_html("C6H6+") == "C<sub>6</sub>H<sub>6</sub><sup>+</sup>"
-    # assert formula_to_html("Fe(CN)6/3-") == "Fe(CN)<sub>6</sub><sup>3-</sup>"
-    assert formula_to_html("Fe(CN)6-3") == "Fe(CN)<sub>6</sub><sup>3-</sup>"
-    # assert formula_to_html("C18H38/2+") == "C<sub>18</sub>H<sub>38</sub><sup>2+</sup>"
-    # assert formula_to_html("C18H38/+2") == "C<sub>18</sub>H<sub>38</sub><sup>2+</sup>"
-    assert formula_to_html("C18H38+2") == "C<sub>18</sub>H<sub>38</sub><sup>2+</sup>"
-    assert (
-        formula_to_html("((H2O)2OH)12")
-        == "((H<sub>2</sub>O)<sub>2</sub>OH)<sub>12</sub>"
-    )
-    assert (
-        formula_to_html("[(H2O)2OH]12")
-        == "[(H<sub>2</sub>O)<sub>2</sub>OH]<sub>12</sub>"
-    )
-    assert (
-        formula_to_html("{(H2O)2OH}12")
-        == "{(H<sub>2</sub>O)<sub>2</sub>OH}<sub>12</sub>"
-    )
-    assert formula_to_html("NaCl") == "NaCl"
-    assert formula_to_html("NaCl(s)") == "NaCl(s)"
-    assert formula_to_html("e-(aq)") == "e<sup>-</sup>(aq)"
-    assert formula_to_html("Ca+2(aq)") == "Ca<sup>2+</sup>(aq)"
-    assert formula_to_html(".NO2(g)") == r"&sdot;NO<sub>2</sub>(g)"
-    assert formula_to_html(".NH2") == r"&sdot;NH<sub>2</sub>"
-    assert formula_to_html("ONOOH") == "ONOOH"
-    assert formula_to_html(".ONOO") == r"&sdot;ONOO"
-    # assert formula_to_html(".NO3/2-") == r"&sdot;NO<sub>3</sub><sup>2-</sup>"
-    assert formula_to_html(".NO3-2") == r"&sdot;NO<sub>3</sub><sup>2-</sup>"
-    assert formula_to_html("alpha-FeOOH(s)") == r"&alpha;-FeOOH(s)"
-    assert formula_to_html("epsilon-Zn(OH)2(s)") == (r"&epsilon;-Zn(OH)<sub>2</sub>(s)")
-    assert (
-        formula_to_html("Na2CO3..7H2O(s)")
-        == "Na<sub>2</sub>CO<sub>3</sub>&sdot;7H<sub>2</sub>O(s)"
-    )
-    assert (
-        formula_to_html("Na2CO3..1H2O(s)")
-        == "Na<sub>2</sub>CO<sub>3</sub>&sdot;H<sub>2</sub>O(s)"
-    )
-    assert formula_to_html("K4[Fe(CN)6]") == r"K<sub>4</sub>[Fe(CN)<sub>6</sub>]"
-    assert formula_to_html("K4[Fe(CN)6](s)") == r"K<sub>4</sub>[Fe(CN)<sub>6</sub>](s)"
-    assert (
-        formula_to_html("K4[Fe(CN)6](aq)") == r"K<sub>4</sub>[Fe(CN)<sub>6</sub>](aq)"
-    )
-    assert (
-        formula_to_html("[Fe(H2O)6][Fe(CN)6]..19H2O")
-        == r"[Fe(H<sub>2</sub>O)<sub>6</sub>][Fe(CN)<sub>6</sub>]&sdot;19H<sub>2</sub>O"
-    )
-    assert (
-        formula_to_html("[Fe(H2O)6][Fe(CN)6]..19H2O(s)")
-        == r"[Fe(H<sub>2</sub>O)<sub>6</sub>][Fe(CN)<sub>6</sub>]&sdot;19H<sub>2</sub>O(s)"
-    )
-    assert (
-        formula_to_html("[Fe(H2O)6][Fe(CN)6]..19H2O(aq)")
-        == r"[Fe(H<sub>2</sub>O)<sub>6</sub>][Fe(CN)<sub>6</sub>]&sdot;19H<sub>2</sub>O(aq)"
-    )
-    assert formula_to_html("[Fe(CN)6]-3") == r"[Fe(CN)<sub>6</sub>]<sup>3-</sup>"
-    assert (
-        formula_to_html("[Fe(CN)6]-3(aq)") == r"[Fe(CN)<sub>6</sub>]<sup>3-</sup>(aq)"
-    )
+def test_formula_to_html(species, html):
+    assert formula_to_html(species) == html
 
 
+@pytest.mark.parametrize(
+    "species, html",
+    [
+        ("Li@C60", r"Li@C<sub>60</sub>"),
+        ("(Li@C60)+", r"(Li@C<sub>60</sub>)<sup>+</sup>"),
+        ("Na@C60", r"Na@C<sub>60</sub>"),
+        ("(Na@C60)+", r"(Na@C<sub>60</sub>)<sup>+</sup>"),
+    ],
+)
 @requires(parsing_library)
-def test_formula_to_html_caged():
+def test_formula_to_html_caged(species, html):
     """Should produce HTML for cage species."""
-    assert formula_to_html("Li@C60") == r"Li@C<sub>60</sub>"
-    assert formula_to_html("(Li@C60)+") == r"(Li@C<sub>60</sub>)<sup>+</sup>"
-    assert formula_to_html("Na@C60") == r"Na@C<sub>60</sub>"
-    assert formula_to_html("(Na@C60)+") == r"(Na@C<sub>60</sub>)<sup>+</sup>"
+    assert formula_to_html(species) == html
