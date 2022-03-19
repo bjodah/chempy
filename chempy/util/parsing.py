@@ -5,9 +5,8 @@
 from collections import defaultdict
 
 import re
-import warnings
 
-from .pyutil import ChemPyDeprecationWarning, memoize
+from .pyutil import memoize
 from .periodic import symbols
 
 parsing_library = "pyparsing"  # info used for selective testing.
@@ -77,34 +76,116 @@ def _get_formula_parser():
         the code is licensed under 'CC-WIKI'.
         (see: http://blog.stackoverflow.com/2009/06/attribution-required/)
 
+    Documentation for the desired product.  Original documentation
+    above.
+
+    Create a chemical formula parser.
+
+    Parse a chemical formula, including elements, nested ions,
+    complexes, charges (ions), hydrates, and state symbols.
+
+    BNF for nested chemical formula with complexes
+
+        count :: ( '1'..'9'? | '1'..'9'' '0'..'9'+ )
+        element :: 'A'..'Z' 'a'..'z'*
+        charge :: ( '-' | '+' ) ( '1'..'9'? | '1'..'9'' '0'..'9'+ )
+        prime :: ( "*" | "'" )*
+        term :: (element
+                 | '(' formula ')'
+                 | '{' formula '}'
+                 | '[' formula ']' ) count prime charge?
+        formula :: term+
+        hydrate :: '.' count? formula
+        state :: '(' ( 's' | 'l' | 'g' | 'aq' | 'cr' ) ')'
+        compound :: count formula hydrate? state?
+
+    Parse a chemical formula, including elements, non-integer
+    subscripts, nested ions, complexes, charges (ions), hydrates, and
+    state symbols.
+
+    BNF for nested chemical formula with complexes
+
+        count :: ( '1'..'9'? | '1'..'9'' '0'..'9'+ | '0'..'9'+ '.' '0'..'9'+ )
+        element :: 'A'..'Z' 'a'..'z'*
+        charge :: ( '-' | '+' ) ( '1'..'9'? | '1'..'9'' '0'..'9'+ )
+        prime :: ( "*" | "'" )*
+        term :: (element
+                 | '(' formula ')'
+                 | '{' formula '}'
+                 | '[' formula ']' ) count prime charge?
+        formula :: term+
+        hydrate :: '..' count? formula
+        state :: '(' ( 's' | 'l' | 'g' | 'aq' | 'cr' ) ')'
+        compound :: count formula hydrate? state?
     """
     _p = __import__(parsing_library)
     Forward, Group, OneOrMore = _p.Forward, _p.Group, _p.OneOrMore
     Optional, ParseResults, Regex = _p.Optional, _p.ParseResults, _p.Regex
-    Suppress, Word, nums = _p.Suppress, _p.Word, _p.nums
+    Suppress = _p.Suppress
 
-    LPAR, RPAR = map(Suppress, "()")
-    integer = Word(nums)
+    # Define and suppress the grouping symbols.
+    LCB = Suppress(Regex(r"\{"))
+    RCB = Suppress(Regex(r"\}"))
+    LSB = Suppress(Regex(r"\["))
+    RSB = Suppress(Regex(r"\]"))
+    LP = Suppress(Regex(r"\("))
+    RP = Suppress(Regex(r"\)"))
 
-    # add parse action to convert integers to ints, to support doing addition
-    # and multiplication at parse time
-    integer.setParseAction(lambda t: int(t[0]))
+    # Define and suppress the caged symbol.
+    caged = Suppress(Regex(r"\@"))
 
-    # element = Word(alphas.upper(), alphas.lower())
-    # or if you want to be more specific, use this Regex
+    # Primes/stars for marking special species in reactions.
+    primes = Suppress(Regex(r"[*']+"))
+
+    # Parse counts (subscripts and coefficients).
+    count = Regex(r"(\d+\.\d+|\d*)")
+    count.setParseAction(lambda t: 1 if t[0] == "" else float(t[0]))
+
+    # Parse states.
+    state = Suppress(Regex(r"\((s|l|g|aq|cr)\)"))
+
+    # Elements, 1-118, official symbols.
     element = Regex(
-        r"A[cglmrstu]|B[aehikr]?|C[adeflmnorsu]?|D[bsy]|E[rsu]|F[elmr]?|"
-        "G[ade]|H[efgos]?|I[nr]?|Kr?|L[airuv]|M[cdgnot]|N[abdehiop]?|"
-        "O[gs]?|P[abdmortu]?|R[abefghnu]|S[bcegimnr]?|T[abcehilms]|"
-        "U|V|W|Xe|Yb?|Z[nr]"
-    )
+        r"A[cglmrstu]"
+        "|B[aehikr]?"
+        "|C[adeflmnorsu]?"
+        "|D[bsy]"
+        "|E[rsu]"
+        "|F[elmr]?"
+        "|G[ade]"
+        "|H[efgos]?"
+        "|I[nr]?"
+        "|Kr?"
+        "|L[airuv]"
+        "|M[cdgnot]"
+        "|N[abdehiop]?"
+        "|O[gs]?"
+        "|P[abdmortu]?"
+        "|R[abefghnu]"
+        "|S[bcegimnr]?"
+        "|T[abcehilms]"
+        "|U"
+        "|V"
+        "|W"
+        "|Xe"
+        "|Yb?"
+        "|Z[nr]"
+    ).setResultsName("element", listAllMatches=True)
 
     # forward declare 'formula' so it can be used in definition of 'term'
     formula = Forward()
 
     term = Group(
-        (element | Group(LPAR + formula + RPAR)("subgroup"))
-        + Optional(integer, default=1)("mult")
+        (
+            element
+            | Group(LP + formula + RP)("subgroup")
+            | Group(LSB + formula + RSB)("subgroup")
+            | Group(LCB + formula + RCB)("subgroup")
+            | Group(caged + formula)("subgroup")
+        )
+        + Optional(count, default=1)("mult")
+        + Optional(state)("state")
+        + Optional(primes)("primes")
     )
 
     # add parse actions for parse-time processing
@@ -155,24 +236,20 @@ def _get_charge(chgstr):
         if token in chgstr:
             if anti in chgstr:
                 raise ValueError("Invalid charge description (+ & - present)")
+
             before, after = chgstr.split(token)
+
             if len(before) > 0 and len(after) > 0:
                 raise ValueError("Values both before and after charge token")
-            if len(before) > 0:
-                # will_be_missing_in='0.8.0'
-                warnings.warn(
-                    "'Fe/3+' deprecated, use e.g. 'Fe+3'",
-                    ChemPyDeprecationWarning,
-                    stacklevel=3,
-                )
-                return sign * int(1 if before == "" else before)
+
             if len(after) > 0:
                 return sign * int(1 if after == "" else after)
+
     raise ValueError("Invalid charge description (+ or - missing)")
 
 
 def _formula_to_parts(formula, prefixes, suffixes):
-    # Drop prefixes and suffixes
+    # Drop prefixes and suffixes.
     drop_pref, drop_suff = [], []
     for ign in prefixes:
         if formula.startswith(ign):
@@ -183,24 +260,12 @@ def _formula_to_parts(formula, prefixes, suffixes):
             drop_suff.append(ign)
             formula = formula[: -len(ign)]
 
-    # Extract charge
+    # Extract charge.
     if "/" in formula:
-        # will_be_missing_in='0.8.0'
-        warnings.warn(
-            "/ depr. (before 0.5.0): use 'Fe+3' over 'Fe/3+'",
-            ChemPyDeprecationWarning,
-            stacklevel=3,
+        raise ValueError(
+            "Slashes ('/') in charge strings are deprecated."
+            "  Use `Fe+3` instead of `Fe/3+`."
         )
-        parts = formula.split("/")
-
-        if "+" in parts[0] or "-" in parts[0]:
-            raise ValueError("Charge needs to be separated with a /")
-        if parts[1] is not None:
-            wo_pm = parts[1].replace("+", "").replace("-", "")
-            if wo_pm != "" and not str.isdigit(wo_pm):
-                raise ValueError("Non-digits in charge specifier")
-        if len(parts) > 2:
-            raise ValueError("At most one '/' allowed in formula")
     else:
         for token in "+-":
             if token in formula:
@@ -211,15 +276,26 @@ def _formula_to_parts(formula, prefixes, suffixes):
                 break
         else:
             parts = [formula, None]
+
     return parts + [tuple(drop_pref), tuple(drop_suff[::-1])]
 
 
 def _parse_stoich(stoich):
-    if stoich == "e":  # special case, the electron is not an element
+    # Special case:  the electron is not an element.
+    if stoich == "e":
         return {}
-    return {
-        symbols.index(k) + 1: n for k, n in _get_formula_parser().parseString(stoich)
-    }
+
+    comp = {}
+    for k, n in _get_formula_parser().parseString(stoich, parseAll=True):
+        # Only use rational subscripts if necessary as
+        # ``sympy.linsolve()`` does not like non-integers when
+        # balancing reactions.
+        if n == int(n):
+            comp[symbols.index(k) + 1] = int(n)
+        else:
+            comp[symbols.index(k) + 1] = n
+
+    return comp
 
 
 _greek_letters = (
@@ -248,21 +324,22 @@ _greek_letters = (
     "psi",
     "omega",
 )
-_greek_u = u"αβγδεζηθικλμνξοπρστυφχψω"
+_greek_u = "αβγδεζηθικλμνξοπρστυφχψω"
 
 _latex_mapping = {k + "-": "\\" + k + "-" for k in _greek_letters}
 _latex_mapping["epsilon-"] = "\\varepsilon-"
 _latex_mapping["omicron-"] = "o-"
 _latex_mapping["."] = "^\\bullet "
-_latex_infix_mapping = {".": "\\cdot "}
+_latex_infix_mapping = {"..": "\\cdot "}
 
 _unicode_mapping = {k + "-": v + "-" for k, v in zip(_greek_letters, _greek_u)}
-_unicode_mapping["."] = u"⋅"
-_unicode_infix_mapping = {".": u"·"}
+_unicode_mapping["."] = "⋅"
+_unicode_infix_mapping = {"..": "·"}
 
 _html_mapping = {k + "-": "&" + k + ";-" for k in _greek_letters}
 _html_mapping["."] = "&sdot;"
-_html_infix_mapping = _html_mapping
+# _html_infix_mapping = _html_mapping
+_html_infix_mapping = {"..": "&sdot;"}
 
 
 def _get_leading_integer(s):
@@ -300,15 +377,17 @@ def formula_to_composition(
     True
     >>> formula_to_composition('.NHO-(aq)') == {0: -1, 1: 1, 7: 1, 8: 1}
     True
-    >>> formula_to_composition('Na2CO3.7H2O') == {11: 2, 6: 1, 8: 10, 1: 14}
+    >>> formula_to_composition('Na2CO3..7H2O') == {11: 2, 6: 1, 8: 10, 1: 14}
     True
 
     """
     if prefixes is None:
         prefixes = _latex_mapping.keys()
+
     stoich_tok, chg_tok = _formula_to_parts(formula, prefixes, suffixes)[:2]
     tot_comp = {}
-    parts = stoich_tok.split(".")
+    parts = stoich_tok.split("..")
+
     for idx, stoich in enumerate(parts):
         if idx == 0:
             m = 1
@@ -320,14 +399,17 @@ def formula_to_composition(
                 tot_comp[k] = m * v
             else:
                 tot_comp[k] += m * v
+
     if chg_tok is not None:
         tot_comp[0] = _get_charge(chg_tok)
+
     return tot_comp
 
 
 def _subs(string, patterns):
     for patt, repl in patterns.items():
         string = string.replace(patt, repl)
+
     return string
 
 
@@ -450,17 +532,17 @@ def _formula_to_format(
     suffixes=("(s)", "(l)", "(g)", "(aq)"),
 ):
     parts = _formula_to_parts(formula, prefixes.keys(), suffixes)
-    stoichs = parts[0].split(".")
+    stoichs = parts[0].split("..")
     string = ""
     for idx, stoich in enumerate(stoichs):
         if idx == 0:
             m = 1
         else:
             m, stoich = _get_leading_integer(stoich)
-            string += _subs(".", infixes)
+            string += _subs("..", infixes)
         if m != 1:
             string += str(m)
-        string += re.sub(r"([0-9]+)", lambda m: sub(m.group(1)), stoich)
+        string += re.sub(r"([0-9]+\.[0-9]+|[0-9]+)", lambda m: sub(m.group(1)), stoich)
 
     if parts[1] is not None:
         chg = _get_charge(parts[1])
@@ -483,7 +565,7 @@ def formula_to_latex(formula, prefixes=None, infixes=None, **kwargs):
     formula: str
         Chemical formula, e.g. 'H2O', 'Fe+3', 'Cl-'
     prefixes: dict
-        Prefix transofmrations, default: greek letters and .
+        Prefix transformations, default: greek letters and .
     infixes: dict
         Infix transformations, default: .
     suffixes: iterable of str
@@ -510,7 +592,8 @@ def formula_to_latex(formula, prefixes=None, infixes=None, **kwargs):
     return _formula_to_format(
         lambda x: "_{%s}" % x,
         lambda x: "^{%s}" % x,
-        formula,
+        # formula,
+        re.sub(r"([{}])", r"\\\1", formula) if re.search(r"[{}]", formula) else formula,
         prefixes,
         infixes,
         **kwargs
@@ -519,20 +602,20 @@ def formula_to_latex(formula, prefixes=None, infixes=None, **kwargs):
 
 _unicode_sub = {}
 
-for k, v in enumerate(u"₀₁₂₃₄₅₆₇₈₉"):
+for k, v in enumerate("₀₁₂₃₄₅₆₇₈₉"):
     _unicode_sub[str(k)] = v
 
 _unicode_sup = {
-    "+": u"⁺",
-    "-": u"⁻",
+    "+": "⁺",
+    "-": "⁻",
 }
 
-for k, v in enumerate(u"⁰¹²³⁴⁵⁶⁷⁸⁹"):
+for k, v in enumerate("⁰¹²³⁴⁵⁶⁷⁸⁹"):
     _unicode_sup[str(k)] = v
 
 
 def formula_to_unicode(formula, prefixes=None, infixes=None, **kwargs):
-    u"""Convert formula string to unicode string representation
+    """Convert formula string to unicode string representation
 
     Parameters
     ----------
@@ -574,7 +657,7 @@ def formula_to_unicode(formula, prefixes=None, infixes=None, **kwargs):
 
 
 def formula_to_html(formula, prefixes=None, infixes=None, **kwargs):
-    u"""Convert formula string to html string representation
+    """Convert formula string to html string representation
 
     Parameters
     ----------

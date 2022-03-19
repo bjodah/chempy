@@ -47,7 +47,7 @@ def test_mass_from_composition__formula():
     mass = mass_from_composition(formula_to_composition("NaF"))
     assert abs(41.988172443 - mass) < 1e-7
 
-    Fminus = mass_from_composition(formula_to_composition("F/-"))
+    Fminus = mass_from_composition(formula_to_composition("F-"))
     assert abs(Fminus - 18.998403163 - 5.489e-4) < 1e-7
 
 
