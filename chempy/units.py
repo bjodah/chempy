@@ -523,7 +523,7 @@ def allclose(a, b, rtol=1e-8, atol=None):
             return np.all([_d <= _lim for _d, _lim in zip(d, lim)])
 
 
-def linspace(start, stop, num=50):
+def linspace(start, stop, num=50, **kwargs):
     """ Analogous to ``numpy.linspace``.
 
     Examples
@@ -537,7 +537,7 @@ def linspace(start, stop, num=50):
     unit = unit_of(start)
     start_ = to_unitless(start, unit)
     stop_ = to_unitless(stop, unit)
-    return np.linspace(start_, stop_, num)*unit
+    return np.linspace(start_, stop_, num, **kwargs)*unit
 
 
 def logspace_from_lin(start, stop, num=50):
