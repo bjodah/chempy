@@ -22,6 +22,8 @@ from operator import mul
 import sys
 import warnings
 
+from sym.backend import _SymPy
+
 from .util.arithmeticdict import ArithmeticDict
 from .util.pyutil import NameSpace, deprecated
 
@@ -385,6 +387,25 @@ def to_unitless(value, new_unit=None):
                     return np.asarray(result)
         except TypeError:
             return np.array([to_unitless(elem, new_unit) for elem in value])
+
+
+class SymPyDeDim(_SymPy):
+    pass
+
+transcendentals = "exp log sin cos".split()  # non-exhaustive list
+
+
+def _wrap_with_to_unitless(trans):
+
+    def wrapper(self, arg):
+        fun = getattr(self.__sym_backend__, trans)
+        return fun(to_unitless(arg))
+
+    return wrapper
+
+
+for trans in transcendentals:
+    setattr(SymPyDeDim, trans, _wrap_with_to_unitless(trans))
 
 
 def uniform(container):
