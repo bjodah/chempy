@@ -3,7 +3,7 @@ from __future__ import (absolute_import, division, print_function)
 
 from collections import OrderedDict
 import types
-from ..pyutil import defaultkeydict, defaultnamedtuple, multi_indexed_cases
+from ..pyutil import defaultkeydict, defaultnamedtuple, multi_indexed_cases, AttrDict
 
 
 def test_defaultnamedtuple():
@@ -63,3 +63,13 @@ def test_multi_indexed_cases():
     assert mi._asdict() == {'a': 0, 'b': 0}
     assert type(c) is dict
     assert c == {'a': 0.5, 'b': 0.25}
+
+
+def test_AttrDict():
+    ad = AttrDict(a=1, b=2, c=3)
+    assert ad.a == 1
+    assert len(ad) == 3
+    adc = ad - "ab"
+    assert len(adc) == 1
+    assert dict(adc) == {'c': 3}
+    assert adc.c == 3

@@ -49,6 +49,8 @@ def _implicit_conversion(obj):
             return Constant(float(obj))
         elif isinstance(obj, sympy.Symbol):
             return Symbol(unique_keys=(obj.name,))
+        elif isinstance(obj, sympy.Number):
+            return Constant(float(obj))
 
     raise NotImplementedError(
         "Don't know how to convert %s (of type %s)" % (obj, type(obj)))
@@ -211,7 +213,10 @@ class Expr(object):
         raise NotImplementedError("Subclass and implement __call__")
 
     def __float__(self):
-        return float(self({}))
+         try:
+             return float(self({}))
+         except KeyError:
+             raise ValueError("Missing values for variables")
 
     def _all_keys(self, attr):
         _keys = getattr(self, attr)

@@ -154,6 +154,9 @@ class AttrDict(dict):
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self
 
+    def __sub__(self, other):
+        return self.__class__({k: v for k, v in self.items() if k not in other})
+
 
 class defaultkeydict(defaultdict):
     """ defaultdict where default_factory should have the signature key -> value
