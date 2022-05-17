@@ -6,8 +6,12 @@ import math
 
 from chempy.chemistry import Reaction
 from chempy.util.testing import requires
-from chempy.units import units_library, allclose, default_units as u
+from chempy.units import (
+    units_library, allclose, SymPyDeDim, to_unitless,
+    default_units as u, default_constants as dc,
+    UncertainQuantity as UQ
 
+)
 from ..arrhenius import (
     arrhenius_equation, ArrheniusParam, ArrheniusParamWithUnits
 )
@@ -62,3 +66,25 @@ def test_ArrheniusParamWithUnits__from_rateconst_at_T():
     _2 = _get_ref2_units()
     apu = ArrheniusParamWithUnits.from_rateconst_at_T(_2.Ea, (_2.T, _2.k))
     assert allclose(apu(_2.T), _2.k)
+
+
+def test_ArrheniusParamWithUnits__UncertainQuantity():
+    ap = ArrheniusParamWithUnits(UQ(1e10, 1/u.molar/u.s, 0.2e10), UQ(32e3, u.joule/u.mole, 2e3))
+    sym_consts = namedtuple("SymConstants", ["molar_gas_constant"])(
+        molar_gas_constant=np.array(sympy.Symbol('R_J_Kmol'), dtype='object')*u.J/u.K/u.mol
+    )
+    sym_vars = {
+        'temperature': np.array(sympy.Symbol('T_K'), dtype='object')*u.K
+        'A': np.array(1.0*sympy.Symbol(f'[{sk}]'), dtype=object)*u.molar,
+    }
+    const_vars = [
+        (dc, {'temperature': 298*u.K, 'A': 2*u.molar}),
+        (sym_consts, sym_vars)
+    ]
+    for consts, variables in const_vars:
+        re = ap.as_RateExpr(constants=consts, units=u)
+        rx = Reaction({'A': 2}, {'B': 1})
+        sympy_dedim = SymPyDeDim()
+        rate = re(variables, backend=sympy_dedim, reaction=rx)
+        ref = 2*2*1e10*math.exp(-32e3/298/8.314511)
+        assert allclose(to_unitless(rate, u.molar/u.s), ref, rtol=1e-3)

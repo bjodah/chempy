@@ -15,7 +15,7 @@ from ..units import (
     linspace, linlogspace, logspace_from_lin, SI_base_registry, unitless_in_registry, format_string, get_physical_dimensionality,
     to_unitless, length, magnitude, mass, time, default_unit_in_registry, Backend, latex_of_unit,
     unit_of, unit_registry_to_human_readable, units_library, volume, simplified, uniform,
-    unit_registry_from_human_readable, _sum, UncertainQuantity, compare_equality,
+    unit_registry_from_human_readable, _sum, UncertainQuantity, compare_equality, SymPyDeDim,
     default_units as u, patched_numpy as pnp, default_constants as dc
 )
 
@@ -162,6 +162,18 @@ def test_to_unitless():
 
     one_billionth_molar_in_nanomolar = to_unitless(1e-9*u.molar, u.nanomolar)
     assert one_billionth_molar_in_nanomolar == 1
+
+    RT = dc.molar_gas_constant*298*u.K
+    Ea = 18e3*u.J/u.mole
+    Ea_over_RT = Ea/RT
+    ref = 18e3/8.314/298
+    assert allclose(to_unitless(simplified(Ea_over_RT)), ref, rtol=1e-3)
+    Ea_over_RT_uncert = UncertainQuantity(Ea, unit_of(Ea), 0.1*Ea)/RT
+    assert allclose(to_unitless(simplified(Ea_over_RT_uncert)), ref, rtol=1e-3)
+
+    sy = SymPyDeDim()
+    sy.exp(Ea_over_RT)
+    sy.exp(Ea_over_RT_uncert)
 
 
 @requires(units_library)
