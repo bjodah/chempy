@@ -79,7 +79,6 @@ def sulfuric_acid_density(w, T=None, T0=None, units=None, warn=True):
         if np.any(w < 0.1) or np.any(w > .9):
             warnings.warn("Mass fraction is outside range (0.1-0.9)")
     t_arr = np.array([float(t/K)**j for j in range(5)]).reshape((1, 5))
-    print(w)
     w_arr = np.array([w**i for i in range(11)]).reshape((11, 1))
     return np.sum((t_arr*w_arr)*_data)*kg/m3  # Equation (2) in reference
 
