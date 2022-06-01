@@ -16,14 +16,17 @@ from ..units import (
     to_unitless, length, magnitude, mass, time, default_unit_in_registry, Backend, latex_of_unit,
     unit_of, unit_registry_to_human_readable, units_library, volume, simplified, uniform,
     unit_registry_from_human_readable, _sum, UncertainQuantity, compare_equality, SymPyDeDim,
-    default_units as u, patched_numpy as pnp, default_constants as dc
+    default_units as u, patched_numpy as pnp, default_constants as dc,
+    rescale
 )
+
 
 
 def test_dimensionality():
     assert mass + 2*length - 2*time == energy
     assert amount - 3*length == concentration
     assert 3*length == volume
+
 
 
 @requires(units_library)
@@ -55,6 +58,16 @@ def test_default_units():
     u.per100eV
     u.umol
     u.umol_per_J
+
+
+def test_rescale():
+    fourtytwo_km = 42*u.km
+    assert rescale(fourtytwo_km, u.m) == 42e3
+    sy = SymPyDeDim()
+    l_m = np.array(sy.Symbol('l_m', real=True, nonnegative=True),
+                   dtype=object)
+    lngth = l_m * u.m
+    assert rescale(fourtytwo_km/lngth, 1)*l_m - 42e3 == 0.0
 
 
 @requires(units_library)
@@ -175,6 +188,17 @@ def test_to_unitless():
     sy.exp(Ea_over_RT)
     sy.exp(Ea_over_RT_uncert)
 
+    T_K_sym = np.array(sy.Symbol('T_K', real=True), dtype=object) * u.K
+    to_unitless(T_K_sym/(298*u.K))
+    rescale(simplified(Ea/dc.molar_gas_constant)/T_K_sym, 1)
+    Ea_over_R_uncert = UncertainQuantity(Ea, unit_of(Ea), 0.1*Ea)/dc.molar_gas_constant
+    to_unitless(Ea_over_R_uncert/(298*u.K))
+    Ea_over_R_uncert_simplified = simplified(Ea_over_R_uncert)
+    Ea_over_RTsym_simpl_uncert = Ea_over_R_uncert_simplified/T_K_sym
+    rescale(Ea_over_RTsym_simpl_uncert, 1)
+    to_unitless(Ea_over_RTsym_simpl_uncert)
+    sy.exp(Ea_over_RTsym_simpl_uncert)
+
 
 @requires(units_library)
 def test_UncertainQuantity():
@@ -190,7 +214,8 @@ def test_UncertainQuantity():
 @requires(units_library, 'sympy')
 def test_to_unitless__sympy():
     import sympy as sp
-    assert sp.cos(to_unitless(sp.pi)) == -1
+    pi = np.array(sp.pi, dtype=object)
+    assert sp.cos(to_unitless(pi)) == -1
     with pytest.raises(AttributeError):
         to_unitless(sp.pi, u.second)
 
@@ -407,7 +432,8 @@ def test_Backend__numpy():
 @requires('sympy')
 def test_Backend__sympy():
     b = Backend('sympy')
-    b.sin(b.pi) == 0
+    pi = np.array(b.pi, dtype=object)
+    b.sin(pi) == 0
 
     with pytest.raises(AttributeError):
         b.min
@@ -511,8 +537,6 @@ def test_fold_constants():
 @requires('numpy')
 def test_to_unitless___0D_array_with_object():
     from ..util._expr import Constant
-    # b = Backend('sympy')
-    # pi = np.array(b.pi)
     pi = np.array(Constant(np.pi))
     one_thousand_pi = to_unitless(pi * u.metre, u.millimeter)
     assert get_physical_dimensionality(one_thousand_pi) == {}

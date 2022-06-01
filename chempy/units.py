@@ -327,6 +327,8 @@ def unit_of(expr, simplified=False):
 
 
 def rescale(value, unit):
+    if unit is 1:
+        unit = pq.dimensionless
     try:
         return value.rescale(unit)
     except AttributeError:
@@ -359,8 +361,11 @@ def to_unitless(value, new_unit=None):
     if isinstance(value, (list, tuple)):
         return np.array([to_unitless(elem, new_unit) for elem in value])
     elif isinstance(value, np.ndarray) and not hasattr(value, 'rescale'):
-        if is_unitless(new_unit) and new_unit == 1 and value.dtype != object:
-            return value
+        if is_unitless(new_unit) and new_unit == 1:
+            if value.ndim == 0:
+                return value.item()
+            else:
+                return value
         return np.array([to_unitless(elem, new_unit) for elem in value])
     elif isinstance(value, dict):
         new_value = dict(value.items())  # value.copy()
@@ -374,7 +379,7 @@ def to_unitless(value, new_unit=None):
     else:
         try:
             try:
-                result = (value*pq.dimensionless/new_unit).rescale(pq.dimensionless)
+                result = rescale(value*pq.dimensionless/new_unit, pq.dimensionless)
             except AttributeError:
                 if new_unit == pq.dimensionless:
                     return value
