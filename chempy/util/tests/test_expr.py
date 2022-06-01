@@ -257,9 +257,9 @@ def test_PiecewisePoly__sympy():
     res = tpwp.eval_poly({'temperature': x}, backend=sp)
     assert isinstance(res, sp.Piecewise)
     assert res.args[0][0] == 1 + 0.1*x
-    assert res.args[0][1] == sp.And(0 <= x, x <= 10)
+    assert res.args[0][1] == sp.And(sp.Le(0 , x), sp.Le(x, 10)).simplify()
     assert res.args[1][0] == 3 - 0.1*x
-    assert res.args[1][1] == sp.And(10 <= x, x <= 20)
+    assert res.args[1][1] == sp.And(sp.Le(10, x), sp.Le(x, 20)).simplify()
 
     with pytest.raises(ValueError):
         tpwp.from_polynomials([(0, 10), (10, 20)], [p1, p2])
@@ -278,9 +278,9 @@ def test_create_Piecewise_Poly__sympy():
     res = pw({'Tmpr': x}, backend=sp)
     assert isinstance(res, sp.Piecewise)
     assert res.args[0][0] == 1 + 0.1*x
-    assert res.args[0][1] == sp.And(0 <= x, x <= 10)
+    assert res.args[0][1].simplify() == sp.And(0 <= x, x <= 10).simplify()
     assert res.args[1][0] == 3 - 0.1*x
-    assert res.args[1][1] == sp.And(10 <= x, x <= 20)
+    assert res.args[1][1].simplify() == sp.And(10 <= x, x <= 20).simplify()
 
 
 @requires('sympy')
@@ -293,9 +293,9 @@ def test_create_Piecewise__nan_fallback__sympy():
     res = pw({'Tmpr': x}, backend=sp)
     assert isinstance(res, sp.Piecewise)
     assert res.args[0][0] == 42
-    assert res.args[0][1] == sp.And(0 <= x, x <= 10)
+    assert res.args[0][1].simplify() == sp.And(sp.Le(0, x), sp.Le(x, 10)).simplify()
     assert res.args[1][0] == 43
-    assert res.args[1][1] == sp.And(10 <= x, x <= 20)
+    assert res.args[1][1].simplify() == sp.And(sp.Le(10, x), sp.Le(x, 20)).simplify()
     assert res.args[2][0].name.lower() == 'nan'
     assert res.args[2][1] == True  # noqa
 

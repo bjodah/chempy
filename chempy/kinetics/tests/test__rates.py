@@ -171,11 +171,11 @@ def test_PiecewiseTPolyMassAction__sympy():
     r = Reaction({'A': 2, 'B': 1}, {'C': 1}, inact_reac={'B': 1})
     res1 = pwp({'A': 11, 'B': 13, 'temperature': T}, backend=sp, reaction=r)
     ref1 = 11**2 * 13 * sp.Piecewise(
-        (10+0.1*T, sp.And(0 <= T, T <= 273.15)),
-        (37.315 - 0.1*(T-273.15), sp.And(273.15 <= T, T <= 373.15)),
+        (10+0.1*T, sp.And(sp.Le(0, T), sp.Le(T, 273.15)).simplify()),
+        (37.315 - 0.1*(T-273.15), sp.And(sp.Le(273.15, T), sp.Le(T, 373.15)).simplify()),
         (sp.Symbol('NAN'), True)
     )
-    assert res1 == ref1
+    assert res1.simplify() == ref1.simplify()
 
 
 def test_Log10PiecewiseRTPolyMassAction():
