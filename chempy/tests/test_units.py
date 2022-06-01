@@ -214,9 +214,9 @@ def test_UncertainQuantity():
 @requires(units_library, 'sympy')
 def test_to_unitless__sympy():
     import sympy as sp
-    pi = np.array(sp.pi, dtype=object)
-    assert sp.cos(to_unitless(pi)) == -1
-    with pytest.raises(AttributeError):
+    for pi in [np.array(sp.pi, dtype=object), sp.pi]:
+        assert sp.cos(to_unitless(pi)) == -1
+    with pytest.raises(ValueError):
         to_unitless(sp.pi, u.second)
 
 

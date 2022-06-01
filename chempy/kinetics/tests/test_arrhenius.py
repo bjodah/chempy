@@ -3,6 +3,9 @@
 from __future__ import (absolute_import, division, print_function)
 
 import math
+from collections import namedtuple
+import numpy as np
+import sympy
 
 from chempy.chemistry import Reaction
 from chempy.util.testing import requires
@@ -70,21 +73,30 @@ def test_ArrheniusParamWithUnits__from_rateconst_at_T():
 
 def test_ArrheniusParamWithUnits__UncertainQuantity():
     ap = ArrheniusParamWithUnits(UQ(1e10, 1/u.molar/u.s, 0.2e10), UQ(32e3, u.joule/u.mole, 2e3))
+    symR = sympy.Symbol('R_J_Kmol')
     sym_consts = namedtuple("SymConstants", ["molar_gas_constant"])(
-        molar_gas_constant=np.array(sympy.Symbol('R_J_Kmol'), dtype='object')*u.J/u.K/u.mol
+        molar_gas_constant=np.array(symR, dtype='object')*u.J/u.K/u.mol
     )
+    symA = sympy.Symbol(f'[A]')
+    symT = sympy.Symbol('T_K')
     sym_vars = {
-        'temperature': np.array(sympy.Symbol('T_K'), dtype='object')*u.K
-        'A': np.array(1.0*sympy.Symbol(f'[{sk}]'), dtype=object)*u.molar,
+        'temperature': np.array(symT, dtype='object')*u.K,
+        'A': np.array(1.0*symA, dtype=object)*u.molar,
     }
-    const_vars = [
-        (dc, {'temperature': 298*u.K, 'A': 2*u.molar}),
-        (sym_consts, sym_vars)
+    numT = 298.0
+    numA = 2.0
+    const_vars_symbolic = [
+        (dc, {'temperature': numT*u.K, 'A': numA*u.molar}, False),
+        (sym_consts, sym_vars, True)
     ]
-    for consts, variables in const_vars:
+    for consts, variables, symbolic in const_vars_symbolic:
         re = ap.as_RateExpr(constants=consts, units=u)
         rx = Reaction({'A': 2}, {'B': 1})
         sympy_dedim = SymPyDeDim()
         rate = re(variables, backend=sympy_dedim, reaction=rx)
         ref = 2*2*1e10*math.exp(-32e3/298/8.314511)
-        assert allclose(to_unitless(rate, u.molar/u.s), ref, rtol=1e-3)
+        if symbolic:
+            rate_mag = rate.magnitude.item().subs({symA: numA, symT: numT, symR: 8.314511})
+        else:
+            rate_mag = to_unitless(rate, u.molar/u.s)
+        assert allclose(rate_mag, ref, rtol=1e-3)

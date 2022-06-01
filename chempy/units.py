@@ -17,6 +17,7 @@ getter & setter functions in `chempy.units`).
 """
 from __future__ import (absolute_import, division, print_function)
 
+from collections.abc import Iterable
 from functools import reduce, wraps
 from operator import mul
 import sys
@@ -358,9 +359,7 @@ def to_unitless(value, new_unit=None):
     if new_unit is None:
         new_unit = pq.dimensionless
 
-    if isinstance(value, (list, tuple)):
-        return np.array([to_unitless(elem, new_unit) for elem in value])
-    elif isinstance(value, np.ndarray) and not hasattr(value, 'rescale'):
+    if isinstance(value, np.ndarray) and not hasattr(value, 'rescale'):
         if is_unitless(new_unit) and new_unit == 1:
             if value.ndim == 0:
                 return value.item()
@@ -374,24 +373,22 @@ def to_unitless(value, new_unit=None):
         return new_value
     elif isinstance(value, (int, float)) and new_unit is integer_one or new_unit is None:
         return value
+    elif isinstance(value, Iterable) and getattr(value, 'ndim', -1) != 0:
+        return np.array([to_unitless(elem, new_unit) for elem in value])
     elif isinstance(value, str):
         raise ValueError("str not supported")
+
+    ori_unit = unit_of(value)
+    ori_mag = magnitude(value)
+    scale_factor = simplified(ori_unit/new_unit)
+    if is_unitless(scale_factor):
+        sc = magnitude(scale_factor)
+        if getattr(ori_mag, 'ndim', -1) == 0 or not isinstance(ori_mag, Iterable):
+            return ori_mag*sc
+        else:
+            return np.array(ori_mag*sc)
     else:
-        try:
-            try:
-                result = rescale(value*pq.dimensionless/new_unit, pq.dimensionless)
-            except AttributeError:
-                if new_unit == pq.dimensionless:
-                    return value
-                else:
-                    raise
-            else:
-                if result.ndim == 0:
-                    return result.item()
-                else:
-                    return np.asarray(result)
-        except TypeError:
-            return np.array([to_unitless(elem, new_unit) for elem in value])
+        raise ValueError("Incompatible units")
 
 
 class SymPyDeDim(_SymPy):
