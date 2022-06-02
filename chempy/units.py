@@ -309,7 +309,7 @@ def is_unitless(expr):
     return True
 
 
-def unit_of(expr, simplified=False):
+def unit_of(expr, simplify=False):
     """ Returns the unit of a quantity
 
     Examples
@@ -320,22 +320,24 @@ def unit_of(expr, simplified=False):
     1
 
     """
-    if isinstance(expr, (tuple, list)):
-        return unit_of(uniform(expr)[0], simplified)
-    elif isinstance(expr, dict):
-        return unit_of(list(uniform(expr).values())[0], simplified)
-
-    try:
-        if simplified:
-            return expr.units.simplified
+    if hasattr(expr, 'units'):
+        if simplify:
+            return simplified(expr.units)
         else:
             return expr.units
-    except AttributeError:
+    elif isinstance(expr, dict):
+        return unit_of(list(uniform(expr).values())[0], simplify)
+    elif isinstance(expr, Iterable) and getattr(expr, 'ndim', -1) != 0 and len(expr) > 1:
+        return unit_of(uniform(expr)[0], simplify)
+    elif isinstance(expr, str):
+        raise ValueError("Cannot determine unit of a string: %s" % expr)
+    else:
         return 1
 
 
 def rescale(value, unit):
-    if unit is 1:
+    literal_integer_one = 1
+    if unit is literal_integer_one:
         unit = pq.dimensionless
     try:
         return value.rescale(unit)
@@ -381,7 +383,10 @@ def to_unitless(value, new_unit=None):
     elif isinstance(value, (int, float)) and new_unit is integer_one or new_unit is None:
         return value
     elif isinstance(value, Iterable) and getattr(value, 'ndim', -1) != 0:
-        return np.array([to_unitless(elem, new_unit) for elem in value])
+        if len(value) == 0:
+            return to_unitless(value[0], new_unit)
+        else:
+            return np.array([to_unitless(elem, new_unit) for elem in value])
     elif isinstance(value, str):
         raise ValueError("str not supported")
 
@@ -431,14 +436,18 @@ def uniform(container):
     {'b': array(200.0) * m, 'a': array(3000.0) * m}
 
     """
-    if isinstance(container, (tuple, list)):
-        unit = unit_of(container[0])
-    elif isinstance(container, dict):
+    if isinstance(container, dict):
         unit = unit_of(list(container.values())[0])
         return container.__class__([(k, to_unitless(v, unit)*unit) for k, v in container.items()])
+    elif isinstance(container, str):
+        raise ValueError("Cannot treat strings")
+    elif getattr(container, 'ndim', -1) == 0:
+        return container
+    elif isinstance(container, Iterable):
+        unit = unit_of(container[0])
+        return to_unitless(container, unit)*unit
     else:
         return container
-    return to_unitless(container, unit)*unit
 
 
 def get_physical_dimensionality(value):

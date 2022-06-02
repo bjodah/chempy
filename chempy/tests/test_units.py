@@ -123,13 +123,20 @@ def test_unit_of():
     assert compare_equality(unit_of(7), 1)
     assert unit_of(u.gray).dimensionality == u.gray.dimensionality
     ref = (u.joule/u.kg).simplified.dimensionality
-    assert unit_of(u.gray, simplified=True).dimensionality == ref
+    assert unit_of(u.gray, simplify=True).dimensionality == ref
 
     assert compare_equality(unit_of(dict(foo=3*u.molar, bar=2*u.molar)), u.molar)
     assert not compare_equality(unit_of(dict(foo=3*u.molar, bar=2*u.molar)), u.second)
     with pytest.raises(Exception):
         unit_of(dict(foo=3*u.molar, bar=2*u.second))
     assert not compare_equality(unit_of(dict(foo=3*u.molar, bar=2*u.molar)), u.mol/u.metre**3)
+    with pytest.raises(ValueError):
+        uf = unit_of("f")
+    with pytest.raises(ValueError):
+        unit_of("foo")
+    with pytest.raises(ValueError):
+        unit_of("foo bar".split())
+
 
 
 @requires(units_library)
@@ -181,6 +188,11 @@ def test_to_unitless():
 
     one_billionth_molar_in_nanomolar = to_unitless(1e-9*u.molar, u.nanomolar)
     assert one_billionth_molar_in_nanomolar == 1
+
+    single_element_1D = [42.0]*u.m
+    dedimd_element_1D = to_unitless(single_element_1D, u.m)
+    assert single_element_1D.shape == (1,)
+    assert dedimd_element_1D.shape == (1,)
 
     RT = dc.molar_gas_constant*298*u.K
     Ea = 18e3*u.J/u.mole

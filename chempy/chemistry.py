@@ -904,8 +904,8 @@ class Equilibrium(Reaction):
     def check_consistent_units(self, throw=False):
         if is_quantity(self.param):  # This will assume mass action
             exponent = sum(self.prod.values()) - sum(self.reac.values())
-            unit_param = unit_of(self.param, simplified=True)
-            unit_expected = unit_of(default_units.molar**exponent, simplified=True)
+            unit_param = unit_of(self.param, simplify=True)
+            unit_expected = unit_of(default_units.molar**exponent, simplify=True)
             if unit_param == unit_expected:
                 return True
             else:
