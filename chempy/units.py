@@ -138,6 +138,13 @@ def is_quantity(arg):
     else:
         return False
 
+def is_uncertain_quantity(arg):
+    if arg.__class__.__name__ == 'UncertainQuantity':
+        return True  # this checks works even if quantities is not installed.
+    else:
+        return False
+
+
 # SI Base Quantities:
 time = ArithmeticDict(int, {'time': 1})
 length = ArithmeticDict(int, {'length': 1})

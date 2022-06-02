@@ -17,7 +17,7 @@ from ..units import (
     unit_of, unit_registry_to_human_readable, units_library, volume, simplified, uniform,
     unit_registry_from_human_readable, _sum, UncertainQuantity, compare_equality, SymPyDeDim,
     default_units as u, patched_numpy as pnp, default_constants as dc,
-    rescale
+    rescale, is_quantity, is_uncertain_quantity
 )
 
 
@@ -136,6 +136,8 @@ def test_unit_of():
 def test_to_unitless():
     dm = u.decimetre
     vals = [1.0*dm, 2.0*dm]
+    assert not is_quantity(vals)
+    assert not is_uncertain_quantity(vals)
     result = to_unitless(vals, u.metre)
     assert result[0] == 0.1
     assert result[1] == 0.2
@@ -151,6 +153,8 @@ def test_to_unitless():
     assert result[1] == 0.2
 
     length_unit = 1000*u.metre
+    assert is_quantity(length_unit)
+    assert not is_uncertain_quantity(length_unit)
     result = to_unitless(1.0*u.metre, length_unit)
     assert abs(result - 1e-3) < 1e-12
 
@@ -163,6 +167,8 @@ def test_to_unitless():
     assert (float(to_unitless(UncertainQuantity(2, u.dm3, .3), u.cm3)) - 2000) < 1e-12
 
     g1 = UncertainQuantity(4.46, u.per100eV, 0)
+    assert is_uncertain_quantity(g1)
+    assert not is_quantity(g1)
     g_unit = get_derived_unit(SI_base_registry, 'radiolytic_yield')
     assert abs(to_unitless(g1, g_unit) - 4.46 * 1.036e-7) < 1e-9
     g2 = UncertainQuantity(-4.46, u.per100eV, 0)
