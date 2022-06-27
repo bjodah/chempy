@@ -1,5 +1,12 @@
 from itertools import chain
 
+def default_magnitude_fmt(x):
+    try:
+        result = '%.3g' % x
+    except TypeError:
+        result = str(x)
+    return result
+
 
 class Printer(object):
     _str = str  # set to unicdoe int UnicodePrinter for Python 2
@@ -10,7 +17,7 @@ class Printer(object):
         Reaction_param_separator='; ',
         Reaction_coeff_space=' ',
         Reaction_around_arrow=(' ', ' '),
-        magnitude_fmt=lambda x: '%.3g' % x,
+        magnitude_fmt=default_magnitude_fmt,
     )
     _default_setting_factories = dict(
         substances=dict,

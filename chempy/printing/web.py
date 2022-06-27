@@ -1,3 +1,4 @@
+import html
 from .numbers import number_to_scientific_html
 from .string import StrPrinter
 
@@ -12,6 +13,13 @@ def _html_clsname(key):
 _html_semicolon = '&#59; '
 
 
+def default_magnitude_fmt(x):
+    try:
+        result = number_to_scientific_html(x)
+    except TypeError:
+        result = str(x)  # html.escape(str(x))
+    return result
+
 class HTMLPrinter(StrPrinter):
 
     printmethod_attr = '_html'
@@ -21,7 +29,7 @@ class HTMLPrinter(StrPrinter):
         Equilibrium_arrow='&harr;',
         Reaction_arrow='&rarr;',
         Reaction_param_separator=_html_semicolon,
-        magnitude_fmt=number_to_scientific_html
+        magnitude_fmt=default_magnitude_fmt
     )
 
     def _print_Substance(self, s, **kwargs):
