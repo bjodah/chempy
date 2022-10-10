@@ -205,7 +205,7 @@ with minimal (non-zero) integer coefficients we can pass ``underdetermined=None`
 
 
 note however that even though this solution is in some sense "canonical",
-it is merely one of an inifite number of solutions (``x1`` from earlier may be any integer).
+it is merely one of an infinite number of solutions (``x1`` from earlier may be any integer).
 
 
 .. _Symbol: http://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol
