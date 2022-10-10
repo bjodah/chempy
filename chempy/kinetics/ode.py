@@ -153,7 +153,7 @@ def get_odesys(
         e.g. ``chempy.units.default_constants``, parameter keys not found in
         substitutions will be looked for as an attribute of ``constants`` when provided.
     \\*\\*kwargs :
-        Keyword arguemnts passed on to `SymbolicSys`.
+        Keyword arguments passed on to `SymbolicSys`.
 
     Returns
     -------

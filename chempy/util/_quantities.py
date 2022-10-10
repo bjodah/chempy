@@ -15,7 +15,7 @@ def format_units_html(udict, font="%s", mult=r"&sdot;", paren=False):
 
     Exponentiation (m**2) will be replaced with superscripts (m<sup>2</sup>})
 
-    No formating is done, change `font` argument to e.g.:
+    No formatting is done, change `font` argument to e.g.:
     '<span style="color: #0000a0">%s</span>' to have text be colored blue.
 
     Multiplication (*) are replaced with the symbol specified by the mult

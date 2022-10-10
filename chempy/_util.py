@@ -57,7 +57,7 @@ def get_backend(backend):
 
 
 def intdiv(p, q):
-    """Integer divsions which rounds toward zero
+    """Integer divisions which rounds toward zero
 
     Examples
     --------

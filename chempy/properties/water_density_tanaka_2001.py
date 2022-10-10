@@ -47,7 +47,7 @@ def water_density(T=None, T0=None, units=None, a=None, just_return_a=False, warn
     References
     ----------
     TANAKA M., GIRARD G., DAVIS R., PEUTO A. and BIGNELL N.,
-        "Recommanded table for the density of water between 0 °C and 40 °C
+        "Recommended table for the density of water between 0 °C and 40 °C
         based on recent experimental reports",
         Metrologia, 2001, 38, 301-309.
         http://iopscience.iop.org/article/10.1088/0026-1394/38/4/3

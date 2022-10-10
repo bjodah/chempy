@@ -462,11 +462,11 @@ def test_balance_stoichiometry__very_underdetermined():
 
 @requires("sympy", "pulp")
 def test_balance_stoichiometry__underdetermined__canoncial():
-    # This tests for canoncial representation of the underdetermined system
+    # This tests for canonical representation of the underdetermined system
     # where all coefficients are integer and >= 1. It is however of limited
     # practical use (and hence marked ``xfail``) since underdetermined systems
     # have infinite number of solutions. It should however be possible to rewrite
-    # the logic so that such canoncial results are returned from balance_stoichiometry
+    # the logic so that such canonical results are returned from balance_stoichiometry
     r2 = {"O2", "O3", "C", "NO", "N2O", "NO2", "N2O4"}
     p2 = {"CO", "CO2", "N2"}
     bal2 = balance_stoichiometry(r2, p2, underdetermined=None)

@@ -59,7 +59,7 @@ def _implicit_conversion(obj):
 
 
 class Expr(object):
-    """Baseclass for Expressions corresponding to physical quantitites.
+    """Baseclass for Expressions corresponding to physical quantities.
 
     The design assumes that a large group of different Expr subclasses may
     be evaluated with some shared state (parameter_keys). The backend kwarg

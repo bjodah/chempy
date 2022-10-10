@@ -157,7 +157,7 @@ concentration = {"amount": 1} - volume
 
 
 def get_derived_unit(registry, key):
-    """Get the unit of a physcial quantity in a provided unit system.
+    """Get the unit of a physical quantity in a provided unit system.
 
     Parameters
     ----------
@@ -231,7 +231,7 @@ def _latex_from_dimensionality(dim):
 
 
 def latex_of_unit(quant):
-    """Returns LaTeX reperesentation of the unit of a quantity
+    """Returns LaTeX representation of the unit of a quantity
 
     Examples
     --------
@@ -243,7 +243,7 @@ def latex_of_unit(quant):
 
 
 def unicode_of_unit(quant):
-    """Returns unicode reperesentation of the unit of a quantity
+    """Returns unicode representation of the unit of a quantity
 
     Examples
     --------
@@ -255,7 +255,7 @@ def unicode_of_unit(quant):
 
 
 def html_of_unit(quant):
-    """Returns HTML reperesentation of the unit of a quantity
+    """Returns HTML representation of the unit of a quantity
 
     Examples
     --------
@@ -279,7 +279,7 @@ def unit_registry_from_human_readable(unit_registry):
             unit_quants = list(pq.Quantity(0, u_symbol).dimensionality.keys())
 
         if len(unit_quants) != 1:
-            raise TypeError("Unkown UnitQuantity: {}".format(unit_registry[k]))
+            raise TypeError("Unknown UnitQuantity: {}".format(unit_registry[k]))
         else:
             new_registry[k] = factor * unit_quants[0]
     return new_registry

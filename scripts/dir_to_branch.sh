@@ -22,5 +22,5 @@ cd $WORKDIR
 cp -r ${UPLOAD_DIR}/. $OUTPUTDIR/
 cd $OUTPUTDIR
 git add -f . > /dev/null
-git commit -m "Lastest docs from successful drone build (hash: ${DRONE_COMMIT})"
+git commit -m "Latest docs from successful drone build (hash: ${DRONE_COMMIT})"
 #git push -f origin $OVERWRITE_UPLOAD_BRANCH

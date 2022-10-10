@@ -30,7 +30,7 @@ if len(RELEASE_VERSION) > 0:
         TAGGED_RELEASE = True
         __version__ = RELEASE_VERSION[1:]
     else:
-        raise ValueError("Ill formated version")
+        raise ValueError("Ill formatted version")
 else:
     TAGGED_RELEASE = False
     # read __version__ attribute from _release.py:
@@ -93,7 +93,7 @@ classifiers = [
 with io.open(_path_under_setup(pkg_name, "__init__.py"), "rt", encoding="utf-8") as f:
     short_description = f.read().split('"""')[1].split("\n")[1]
 if not 10 < len(short_description) < 255:
-    warnings.warn("Short description from __init__.py proably not read correctly")
+    warnings.warn("Short description from __init__.py probably not read correctly")
 long_descr = io.open(_path_under_setup("README.rst"), encoding="utf-8").read()
 if not len(long_descr) > 100:
     warnings.warn("Long description from README.rst probably not read correctly.")

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-This module implements the denisty parameterisation of aqueous sulfuric acid
+This module implements the density parameterisation of aqueous sulfuric acid
 of Myhre et al. from 1998.
 """
 
@@ -136,7 +136,7 @@ def density_from_concentration(
         Convergence criterion for fixed-point iteration
         (default: 1e-3 kg/m³).
     maxiter : int
-        Maximum number of iterations (when exceeded a NoConvergence excpetion
+        Maximum number of iterations (when exceeded a NoConvergence exception
         is raised).
     \\*\\*kwargs:
         Keyword arguments passed onto ``rho_cb``.

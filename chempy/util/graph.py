@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Convenince functions for representing reaction systems as graphs.
+Convenience functions for representing reaction systems as graphs.
 """
 import os
 import subprocess
@@ -20,20 +20,20 @@ def rsys2dot(
 ):
     """
     Returns list of lines of DOT (graph description language)
-    formated graph.
+    formatted graph.
 
     Parameters
     ==========
     rsys: ReactionSystem
     tex: bool (default False)
-        If set True, output will be LaTeX formated
+        If set True, output will be LaTeX formatted
     (Substance need to have latex_name attribute set)
     rprefix: string
         Reaction enumeration prefix, default: r
     rref0: integer
-        Reaction enumeration inital counter value, default: 1
+        Reaction enumeration initial counter value, default: 1
     nodeparams: string
-        DOT formated param list, default: [label={} shape=diamond]
+        DOT formatted param list, default: [label={} shape=diamond]
 
     Returns
     =======

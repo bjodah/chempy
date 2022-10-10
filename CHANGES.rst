@@ -92,7 +92,7 @@ v0.6.7
 v0.6.6
 ======
 - Support for containers in ``chempy.units.unit_of``.
-- ``balance_stoichiometry`` now correctly find the canoncial solution when ``underdetermined=None`` is passed.
+- ``balance_stoichiometry`` now correctly find the canonical solution when ``underdetermined=None`` is passed.
 - ``chempy.kinetics.integrated`` was refactored to have more approachable API.
 
 v0.6.5
@@ -114,7 +114,7 @@ v0.6.2
 
 v0.6.1
 ======
-- Extensive test suite in conda pacakge no longer require graphviz & latex
+- Extensive test suite in conda package no longer require graphviz & latex
 
 v0.6.0
 ======
@@ -122,7 +122,7 @@ v0.6.0
 - ``NameSpace`` and ``AttributeContainer`` are now public in ``.util.pyutil``.
 - New printers in ``chempy.printing``, allows user to subclass printers.
 - Jupyter Notebook representation of ``ReactionSystem`` is now interactive (JavaScript/CSS)
-- More data from the litterature: water viscosity (``chempy.properties.water_viscosity_korson_1969``).
+- More data from the literature: water viscosity (``chempy.properties.water_viscosity_korson_1969``).
 - New methods for ``ReactionSystem``:
   - ``split``: splits reaction-system into disjoint parts
   - ``categorize_substances``: e.g. "nonparticipating", "unaffected".
@@ -170,7 +170,7 @@ v0.5.0
 ======
 - ``.electrochemistry.nernst_formula`` - thanks to Adel Qalieh (@adelq)
 - moved ``.util.parsing.number_to_scientific_*`` to ``.printing(.numbers)``
-- Number formating now handles uncertainties.
+- Number formatting now handles uncertainties.
 - ``refereence`` in reimplementations now a dict
 - Fixes to ``.kinetics.ode.get_odesys`` (refactored)
 

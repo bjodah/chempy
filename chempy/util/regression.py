@@ -195,7 +195,7 @@ def least_squares(x, y, w=1):  # w == 1 => OLS, w != 1 => WLS
 
     References
     ----------
-    Wikipedia & standard texts on least sqaures method.
+    Wikipedia & standard texts on least squares method.
     Comment regarding R2 in WLS:
         Willett, John B., and Judith D. Singer. "Another cautionary note about R 2:
         Its use in weighted least-squares regression analysis."
@@ -280,7 +280,7 @@ irls.ones = lambda x, y, b, c: 1
 
 if np is not None:
     irls.exp = lambda x, y, b, c: np.exp(b[1] * x)
-    irls.gaussian = lambda x, y, b, c: np.exp(-((b[1] * x) ** 2))  # guassian weighting
+    irls.gaussian = lambda x, y, b, c: np.exp(-((b[1] * x) ** 2))  # gaussian weighting
     irls.abs_residuals = lambda x, y, b, c: np.abs(b[0] + b[1] * x - y)
 
 

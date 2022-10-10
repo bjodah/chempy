@@ -1,6 +1,6 @@
 """
 Interactive kinetics app with sliders.
-Start by runing:
+Start by running:
     $ bokeh serve interactive.py
 Add --show argument or navigate to:
     http://localhost:5006/interactive

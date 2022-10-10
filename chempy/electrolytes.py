@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-This modules collects expressions related to ionic strenght, e.g. the Debye-Hückel expressions.
+This modules collects expressions related to ionic strength, e.g. the Debye-Hückel expressions.
 """
 
 from collections import OrderedDict

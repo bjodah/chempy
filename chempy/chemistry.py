@@ -205,7 +205,7 @@ class Substance(object):
 
     @staticmethod
     def composition_keys(substance_iter, skip_keys=()):
-        """Occuring :attr:`composition` keys among a series of substances"""
+        """Occurring :attr:`composition` keys among a series of substances"""
         keys = set()
         for s in substance_iter:
             if s.composition is None:
@@ -263,7 +263,7 @@ class Species(Substance):
             and if suffixes is missing in phases phase_idx is taken to be 0
         default_phase_idx: int or None (default: 0)
             If ``default_phase_idx`` is ``None``, ``ValueError`` is raised for
-                unkown suffixes.
+                unknown suffixes.
             Else ``default_phase_idx`` is used as ``phase_idx`` in those cases.
         \\*\\*kwargs:
             Keyword arguments passed on.
@@ -568,7 +568,7 @@ class Reaction(object):
         return True
 
     def check_all_integral(self, throw=False):
-        """Checks if all stoichiometric coefficents are integers"""
+        """Checks if all stoichiometric coefficients are integers"""
         for nam, cont in [
             (nam, getattr(self, nam))
             for nam in "reac prod inact_reac inact_prod".split()
@@ -1188,7 +1188,7 @@ class Equilibrium(Reaction):
             flip = True
         else:
             flip = False
-        other = int(other)  # convert SymPy "Integer" to Pyton "int"
+        other = int(other)  # convert SymPy "Integer" to Python "int"
         reac = dict(other * ArithmeticDict(int, self.reac))
         prod = dict(other * ArithmeticDict(int, self.prod))
         inact_reac = dict(other * ArithmeticDict(int, self.inact_reac))
@@ -1337,7 +1337,7 @@ def balance_stoichiometry(
         e.g. "C + O2 -> CO + CO2". Set to ``None`` if you want the symbols replaced
         so that the coefficients are the smallest possible positive (non-zero) integers.
     allow_duplicates : bool
-        If False: raises an excpetion if keys appear in both ``reactants`` and ``products``.
+        If False: raises an exception if keys appear in both ``reactants`` and ``products``.
 
     Examples
     --------
@@ -1557,7 +1557,7 @@ def balance_stoichiometry(
         if int(__version__.split(".")[1]) > 6:
             warnings.warn(  # deprecated because comparison with ``1`` problematic (True==1)
                 (
-                    "Pass underdetermined == None instead of ``1`` (depreacted since 0.7.0,"
+                    "Pass underdetermined == None instead of ``1`` (deprecated since 0.7.0,"
                     " will_be_missing_in='0.9.0')"
                 ),
                 ChemPyDeprecationWarning,
