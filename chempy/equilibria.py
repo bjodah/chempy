@@ -381,7 +381,7 @@ class EqSystem(ReactionSystem):
         neqsys_type : str
             what method to use for NeqSys construction (get_neqsys_*)
         \\*\\*kwargs :
-            Keyword argumetns passed on to py:meth:`pyneqsys.NeqSys.solve_series`.
+            Keyword arguments passed on to py:meth:`pyneqsys.NeqSys.solve_series`.
 
         """
         _plot = plot_kwargs is not None

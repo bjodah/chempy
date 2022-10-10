@@ -51,8 +51,8 @@ numerically using pyodesys [@dahlgren_pyodesys_2018] and pyneqsys
 Thanks to the use of SymPy [@Meurer2017], stoichiometry problems with
 a single unique solution can be solved analytically, as well as
 under-determined systems, where the answer then contains a free parameter.
-The under-determined formulation can also be expressed in a canoncial form
-with coefficients minimzed using PuLP [@mitchell2011pulp;@lougee2003common].
+The under-determined formulation can also be expressed in a canonical form
+with coefficients minimized using PuLP [@mitchell2011pulp;@lougee2003common].
 In fact, most equations and parametrizations in ChemPy support---in addition to
 NumPy arrays [@vanderWalt2011]---also symbolic input, as well as arrays
 with explicit units. The latter allows ChemPy to check that, e.g., the correct

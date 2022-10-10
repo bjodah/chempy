@@ -30,7 +30,7 @@ def _mk_Poly(parameter_name, reciprocal=False, shift_name="shift"):
     Parameters
     ----------
     parameter: str
-        name of paramter
+        name of parameter
     reciprocal: bool
         whether the polynomial is in the reciprocal of the parameter
 

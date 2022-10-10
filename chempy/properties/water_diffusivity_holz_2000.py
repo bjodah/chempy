@@ -39,9 +39,9 @@ def water_self_diffusion_coefficient(T=None, units=None, warn=True, err_mult=Non
     warn : bool (default: True)
         Emit UserWarning when outside temperature range.
     err_mult : length 2 array_like (default: None)
-        Perturb paramaters D0 and TS with err_mult[0]*dD0 and
+        Perturb parameters D0 and TS with err_mult[0]*dD0 and
         err_mult[1]*dTS respectively, where dD0 and dTS are the
-        reported uncertainties in the fitted paramters. Useful
+        reported uncertainties in the fitted parameters. Useful
         for estimating error in diffusion coefficient.
 
     References

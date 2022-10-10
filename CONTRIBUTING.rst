@@ -25,5 +25,5 @@ This project uses `black <https://github.com/psf/black>`_ to format its source c
 ensures that style is consistent and alleviates some of the work associated with code review.
 
 If you want to contribute a major feature you may want to discuss this first by opening
-an issue (in order to avoid unneccessary work in case someone else is already working on
+an issue (in order to avoid unnecessary work in case someone else is already working on
 something related).

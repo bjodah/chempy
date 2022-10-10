@@ -468,7 +468,7 @@ class ReactionSystem(object):
 
         Returns
         -------
-        pair of ReactionSystem instaces: the "sum" and "duplicates"
+        pair of ReactionSystem instances: the "sum" and "duplicates"
 
         """
         iter_rs = iter(rsystems)
@@ -583,7 +583,7 @@ class ReactionSystem(object):
             if raise_on_unk:
                 for k in cont:
                     if k not in substance_keys:
-                        raise KeyError("Unkown substance key: %s" % k)
+                        raise KeyError("Unknown substance key: %s" % k)
             cont = [cont[k] for k in substance_keys]
         if unit is not None:
             cont = to_unitless(cont, unit)
@@ -790,7 +790,7 @@ class ReactionSystem(object):
 
         Notes
         -----
-        The function does not take into account wheter there actually exists a
+        The function does not take into account whether there actually exists a
         reaction path leading to a substance. Note also that the upper limit is
         per substance, i.e. the sum of all upper bounds amount to more substance than
         available in ``init_conc``.

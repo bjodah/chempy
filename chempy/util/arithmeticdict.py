@@ -23,11 +23,11 @@ def _itruediv(d1, d2):
 
 
 class ArithmeticDict(defaultdict):
-    """A dictionary which supports arithmetics
+    """A dictionary which supports arithmetic
 
     Subclassed from defaultdict, with support for addition, subtraction,
     multiplication and division. If other term/factor has a :meth:`keys` method
-    the arithmetics are performed on a key per key basis. If :meth:`keys` is
+    the arithmetic are performed on a key per key basis. If :meth:`keys` is
     missing, the operation is broadcasted onto all values.
     Nonexisting keys are interpreted to signal a zero.
 

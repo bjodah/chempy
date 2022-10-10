@@ -447,7 +447,7 @@ def _parse_multiplicity(strings, substance_keys=None):
     if substance_keys is not None:
         for k in result:
             if k not in substance_keys:
-                raise ValueError("Unkown substance_key: %s" % k)
+                raise ValueError("Unknown substance_key: %s" % k)
     return result
 
 

@@ -64,7 +64,7 @@ def _r(r, p, substmap, parmap, *, unit_conc, unit_time, variables=None):
             parmap[pk], substmap[prod]
         )
     else:
-        raise NotImplementedError("Whats that?")
+        raise NotImplementedError("What's that?")
     return r_str, pk, abs(ratcoeff)
 
 

@@ -135,7 +135,7 @@ def rsys2tablines(
     coldelim : string
         column delimiter (default: ' & ')
     tex : bool
-        use latex formated output (default: True)
+        use latex formatted output (default: True)
     ref_fmt : string or callable
         format string of ``ref`` attribute of reactions
     unit_registry : unit registry

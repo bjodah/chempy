@@ -83,7 +83,7 @@ def _js_rsys(cls_names_substances, substance_row_cls_irrel, rsys_id):
 
 
 class JSPrinter(CSSPrinter):
-    """Prints javascript-enabled HTML representaions"""
+    """Prints javascript-enabled HTML representations"""
 
     def _print_ReactionSystem(self, rsys, **kwargs):
         tab = super(JSPrinter, self)._print_ReactionSystem(rsys, **kwargs)
