@@ -328,6 +328,31 @@ def test_balance_stoichiometry():
     assert r8 == {'Zn': 1}
     assert p8 == {'Zn+2': 1, 'e-': 2}
 
+    def _bal9(fail):
+        # glucose + adp + pi => lactate + water + atp
+        return balance_stoichiometry(
+            "glucose adp pi".split(), "lactate water atp".split(),
+            substances=dict(
+                glucose=Substance.from_formula("C6H12O6"),
+                adp=Substance.from_formula("C10H15N5O10P2"),
+                pi=Substance.from_formula("PO3-2" if fail else "PO4-3"),
+                lactate=Substance.from_formula("C3H5O3-"),
+                water=Substance.from_formula("H2O"),
+                atp=Substance.from_formula("C10H16N5O13P3")
+            )
+        )
+    with pytest.raises(ValueError):
+        _bal9(True)
+    r9, p9 = _bal9(False)
+
+    r10, p10 = balance_stoichiometry("EDTA OHm".split(), "EDTAm4 H2O".split(), substances=dict(
+        EDTA=Substance.from_formula("(CH2N(CH2COOH)2)2"),
+        OHm=Substance.from_formula("OH-"),
+        EDTAm4=Substance.from_formula("(CH2N(CH2COO)2)2-4"),
+        H2O=Substance.from_formula("H2O")
+    ))
+    print(r10, p10)
+
 
 @requires('sympy')
 def test_balance_stoichiometry__ordering():
