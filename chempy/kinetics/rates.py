@@ -167,19 +167,57 @@ class MassAction(RateExpr, UnaryWrapper):
         order = reaction.order()
         return ({'time': -1, 'amount': 1-order, 'length': 3*(order - 1)},)
 
+    def rate_coeff(self, variables, backend=math, **kwargs):
+        rat_c, = self.all_args(variables, backend=backend, **kwargs)
+        return rat_c
+
     def active_conc_prod(self, variables, backend=math, reaction=None):
         result = 1
         for k, v in reaction.reac.items():
             result *= variables[k]**v
         return result
 
-    def rate_coeff(self, variables, backend=math, **kwargs):
-        rat_c, = self.all_args(variables, backend=backend, **kwargs)
-        return rat_c
+    def inactive_reactants_modulation(self, variables, backend=math, reaction=None):
+
+        # if hasattr(backend, 'Heaviside'):
+        #     heaviside = backend.Heaviside  # e.g. sympy
+        # elif hasattr(backend, 'heaviside'):
+        #     heaviside = backend.heaviside  # e.g. numpy
+        # else:
+        #     heaviside = lambda x, z: (1 if x > 0 else (z if x == 0 else 0))  # noqa
+        lo, hi = backend.log(1e-35), backend.log(1e-30)
+        if hasattr(backend, 'Piecewise'):  # e.g. sympy
+            def heaviside(x, z):
+                assert z == 0
+                lx = backend.log(x)
+                xclp = backend.Piecewise((lo, lx < lo), (hi, lx > hi), (lx, True))
+                x = (xclp - lo)/(hi - lo)
+                y = (3 - 2*x)*x*x
+                return y.simplify()
+        elif hasattr(backend, 'clip'):  # e.g. numpy
+            def heaviside(x, z):
+                assert z == 0
+                lx = backend.log(x)
+                xclp = be.clip(lx, lo, hi)
+                y = (3 - 2*x)*x*x
+                return y
+        else:
+            heaviside = lambda x, z: (1 if x > 0 else (z if x == 0 else 0))  # noqa
+
+        result = 1
+        for k, v in reaction.inact_reac.items():
+            if k not in reaction.reac:
+                x = variables[k]
+                if backend is math and not isinstance(x, (float, int)):
+                    continue
+                result *= heaviside(x, 0)
+        return result
 
     def __call__(self, variables, backend=math, reaction=None, **kwargs):
-        return self.rate_coeff(variables, backend=backend, reaction=reaction)*self.active_conc_prod(
-            variables, backend=backend, reaction=reaction, **kwargs)
+        k  = self.rate_coeff(variables, backend=backend, reaction=reaction)
+        act = self.active_conc_prod(variables, backend=backend, reaction=reaction, **kwargs)
+        inact = self.inactive_reactants_modulation(variables, backend=backend, reaction=reaction, **kwargs)
+        return k*act*inact
 
     def string(self, *args, **kwargs):
         if self.args is None and len(self.unique_keys) == 1:

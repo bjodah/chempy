@@ -506,8 +506,11 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
         - ``'validate'``: callable acppeting a dictionary mapping str to quantities
     """
     if backend is None:
-        from sym import Backend
-        backend = Backend(backend)
+        if rates_kw is not None and 'backend' in rates_kw:
+            backend = rates_kw['backend']
+        else:
+            from sym import Backend
+            backend = Backend(backend)
     if SymbolicSys is None:
         from pyodesys.symbolic import SymbolicSys
 
@@ -551,7 +554,10 @@ def _create_odesys(rsys, substance_symbols=None, parameter_symbols=None, pretty_
         raise ValueError("time_symbol already in use (name clash?)")
     varbls = dict(symbols, **parameter_symbols)
     varbls.update(parameter_expressions or {})
-    rates = rsys.rates(varbls, **(rates_kw or {}))
+    rates_kw = rates_kw or {}
+    if 'backend' not in rates_kw:
+        rates_kw['backend'] = backend
+    rates = rsys.rates(varbls, **rates_kw)
     compo_vecs, compo_names = rsys.composition_balance_vectors()
     zero = (backend.Symbol('x')**0) * 0
     odesys = SymbolicSys(
