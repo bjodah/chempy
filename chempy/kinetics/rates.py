@@ -186,10 +186,11 @@ class MassAction(RateExpr, UnaryWrapper):
         # else:
         #     heaviside = lambda x, z: (1 if x > 0 else (z if x == 0 else 0))  # noqa
         lo, hi = backend.log(1e-35), backend.log(1e-30)
+        tiny = 1e-300
         if hasattr(backend, 'Piecewise'):  # e.g. sympy
             def heaviside(x, z):
                 assert z == 0
-                lx = backend.log(x)
+                lx = backend.log(backend.Max(x, tiny))
                 xclp = backend.Piecewise((lo, lx < lo), (hi, lx > hi), (lx, True))
                 x = (xclp - lo)/(hi - lo)
                 y = (3 - 2*x)*x*x
@@ -197,7 +198,7 @@ class MassAction(RateExpr, UnaryWrapper):
         elif hasattr(backend, 'clip'):  # e.g. numpy
             def heaviside(x, z):
                 assert z == 0
-                lx = backend.log(x)
+                lx = backend.log(backend.maximum(x, tiny))
                 xclp = be.clip(lx, lo, hi)
                 y = (3 - 2*x)*x*x
                 return y
