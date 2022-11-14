@@ -383,8 +383,12 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
     reac_prod = [[y.strip() for y in x.split(' + ')] for x in stoich.split(token)]
 
     act, inact = [], []
+
+    def _is_act(x):
+        return not (x.startswith('(') and x.endswith(')'))
+
     for elements in reac_prod:
-        act.append(_parse_multiplicity([x for x in elements if not x.startswith('(')], substance_keys))
+        act.append(_parse_multiplicity([x for x in elements if _is_act(x)], substance_keys))
         inact.append(_parse_multiplicity(
             [x[1:-1] for x in elements if x.startswith('(') and x.endswith(')')],
             substance_keys
