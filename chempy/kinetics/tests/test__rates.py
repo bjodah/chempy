@@ -183,7 +183,7 @@ def test_Log10PiecewiseRTPolyMassAction():
     p2 = RTPoly([-47.532, 4.92, -1.036, 0.0])
     ratex = MassAction(10**TPiecewise([293.15, p1, 423.15, p2, 623.15]))
     r = Reaction({'e-(aq)': 2}, {'H2': 1, 'OH-': 2}, ratex, {'H2O': 2})
-    res = ratex({'e-(aq)': 1e-13, 'temperature': 293.15}, reaction=r)
+    res = ratex({'e-(aq)': 1e-13, 'temperature': 293.15, 'H2O': 55.4}, reaction=r)
     ref = 6.20e9*1e-26
     assert abs((res-ref)/ref) < 6e-3
 
@@ -194,12 +194,12 @@ def test_TPiecewise():
     expr1 = ShiftedTPoly([298.15*u.K, 12.5/u.molar/u.s, 0/u.molar/u.s/u.K, 2/u.molar/u.s/u.K**2])
     pwma = MassAction(TPiecewise([273.15*u.K, expr0, 298.15*u.K, expr1, 373.15*u.K]))
     r = Reaction({'e-(aq)': 2}, {'H2': 1, 'OH-': 2}, inact_reac={'H2O': 2})
-    res0 = pwma({'temperature': 293.15*u.K, 'e-(aq)': 1e-13*u.molar}, reaction=r)
+    res0 = pwma({'temperature': 293.15*u.K, 'e-(aq)': 1e-13*u.molar, 'H2O': 55.4}, reaction=r)
     ref0 = 12*1e-26 * u.molar/u.s
     assert allclose(res0, ref0)
     assert not allclose(res0, 2*ref0)
 
-    res1 = pwma({'temperature': 300.15*u.K, 'e-(aq)': 2e-13*u.molar}, reaction=r)
+    res1 = pwma({'temperature': 300.15*u.K, 'e-(aq)': 2e-13*u.molar, 'H2O': 55.4}, reaction=r)
     ref1 = 20.5*4e-26 * u.molar/u.s
     assert allclose(res1, ref1)
     assert not allclose(res1, ref1/2)

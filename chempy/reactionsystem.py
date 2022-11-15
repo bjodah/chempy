@@ -9,7 +9,7 @@ from itertools import chain
 
 from .chemistry import Reaction, Substance
 from .units import to_unitless, magnitude
-from .util.pyutil import deprecated
+from .util.pyutil import defaultkeydict, deprecated
 
 
 class ReactionSystem(object):
@@ -875,3 +875,50 @@ class ReactionSystem(object):
             (k, v) for k, v in self.substances.items() if k not in concs
         ])
         return ReactionSystem(new_rxns, new_substances, **kw_rs)
+
+    def simplify(self, constant_parameter_values, constant_initial_values, *, kw_rs=None):
+        """Return a new simplified ReactionSystem.
+
+        Parameters
+        ----------
+        constant_parameter_values : dict
+            str -> value (0), no units
+        constant_initial_values : dict
+            str -> value (0), no units
+        """
+        from sympy import Symbol
+        r_keep, r_drop = [], []
+        for r in self.rxns:
+            rat = r.rate(defaultkeydict(lambda k: Symbol(k), constant_parameter_values))
+            if all(v == 0 for v in rat.values()):
+                r_drop.append(r)
+            else:
+                r_keep.append(r)
+
+        s_drop = []
+        for sk, ic in constant_initial_values.items():
+            if ic != 0:
+                continue
+            for r in r_keep:
+                if r.prod.get(sk, 0) != 0 or r.inact_prod.get(sk, 0) != 0:
+                    break  # sk can be formed
+            else:
+                # No reaction could form sk
+                s_drop.append(sk)
+
+        r_keep2 = []
+        for r in r_keep:
+            variables = defaultkeydict(
+                lambda k: Symbol(k),
+                dict({sk: 0 for sk in s_drop}, **constant_parameter_values)
+            )
+            if all(v == 0 for v in r.rate(variables).values()):
+                r_drop.append(r)
+            else:
+                r_keep2.append(r)
+        if kw_rs is None:
+            kw_rs = dict(dont_check={'balance'})
+        new_substances = OrderedDict([
+            (k, v) for k, v in self.substances.items() if k not in s_drop
+        ])
+        return ReactionSystem(r_keep2, new_substances, **kw_rs), s_drop, r_drop
