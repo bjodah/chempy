@@ -172,8 +172,13 @@ class NumSysLin(_NumSys):
         init_concs, eq_params = self._inits_and_eq_params(params)
         A, ks = self._get_A_ks(eq_params)
         # yvec == C
-        f_equil = [q/k - 1 if k != 0 else q for q, k
-                   in zip(prodpow(yvec, A), ks)]
+
+        f_equil = [prod - K*reac if K != 0 else prod/reac
+                   for prod, reac, K in zip(
+                           prodpow(yvec, np.clip(A, a_min=0, a_max=None)),
+                           prodpow(yvec, -np.clip(A, a_min=None, a_max=0)),
+                           ks
+                   )]
         B, comp_nrs = self.eqsys.composition_balance_vectors()
         f_preserv = linear_exprs(B, yvec, mat_dot_vec(B, init_concs),
                                  rref=self.rref_preserv)
