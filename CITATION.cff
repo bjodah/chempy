@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Dahlgren"
+  given-names: "Björn"
+  orcid: "https://orcid.org/0000-0003-0596-0222"
+title: "ChemPy"
+version: 0.8.2
+url: "https://github.com/bjodah/chempy"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Dahlgren"
+    given-names: "Björn"
+    orcid: "https://orcid.org/0000-0003-0596-0222"
+  doi: "10.21105/joss.00565"
+  journal: "Journal of Open Source Software"
+  title: "ChemPy: A package useful for chemistry written in Python"
+  date-released: "2018-04-04"
