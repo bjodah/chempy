@@ -74,7 +74,7 @@ else:
         )
     if not hasattr(default_units, "per100eV"):
         default_units.per100eV = pq.UnitQuantity(
-            "per_100_eV",
+            "per100eV",
             1 / (100 * default_units.eV * default_constants.Avogadro_constant),
             u_symbol="(100eV)**-1",
         )
