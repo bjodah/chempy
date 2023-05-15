@@ -18,7 +18,7 @@ this excellent documentation:
 
 You will submit your suggested changes (e.g. new feature/bugfix/documentation/typo-fix)
 as a pull request. The new version of the code is automatically tested in isolation on
-CI servers (remember to add your own tests in case you add new funcionality). In addition
+CI servers (remember to add your own tests in case you add new functionality). In addition
 to the automatic tests, the code will be reviewed with respect to documentation & clarity
 (docstrings follow the `numpy convention <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_).
 This project uses `black <https://github.com/psf/black>`_ to format its source code, it
