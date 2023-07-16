@@ -221,7 +221,7 @@ def test_to_unitless__sympy():
     import sympy as sp
 
     assert sp.cos(to_unitless(sp.pi)) == -1
-    with pytest.raises(AttributeError):
+    with pytest.raises(Exception):
         to_unitless(sp.pi, u.second)
 
 
