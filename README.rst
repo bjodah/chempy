@@ -1,8 +1,8 @@
 ChemPy
 ======
 
-.. image:: http://hera.physchem.kth.se:8080/api/badges/bjodah/chempy/status.svg?ref=refs/heads/master
-   :target: http://hera.physchem.kth.se:8080/bjodah/chempy
+.. image:: https://github.com/bjodah/chempy/actions/workflows/lint_python.yml/badge.svg
+   :target: https://github.com/bjodah/chempy/actions/workflows/lint_python.yml
    :alt: Build status
 .. image:: https://img.shields.io/pypi/v/chempy.svg
    :target: https://pypi.python.org/pypi/chempy
@@ -13,12 +13,6 @@ ChemPy
 .. image:: https://img.shields.io/pypi/l/chempy.svg
    :target: https://github.com/bjodah/chempy/blob/master/LICENSE
    :alt: License
-.. image:: http://img.shields.io/badge/benchmarked%20by-asv-green.svg?style=flat
-   :target: http://hera.physchem.kth.se/~chempy/benchmarks
-   :alt: airspeedvelocity
-.. image:: http://hera.physchem.kth.se/~chempy/branches/master/htmlcov/coverage.svg
-   :target: http://hera.physchem.kth.se/~chempy/branches/master/htmlcov
-   :alt: coverage
 .. image:: http://joss.theoj.org/papers/10.21105/joss.00565/status.svg
    :target: https://doi.org/10.21105/joss.00565
    :alt: Journal of Open Source Software DOI
@@ -54,10 +48,9 @@ Documentation
 -------------
 The easiest way to get started is to have a look at the examples in this README,
 and also the jupyter notebooks_. In addition there is auto-generated API documentation
-for the latest `stable release here <https://bjodah.github.io/chempy/latest>`_
-(and `here are <http://hera.physchem.kth.se/~chempy/branches/master/html>`_ the API docs for the development version).
+for the latest `stable release here <https://bjodah.github.io/chempy/latest>`_.
 
-.. _notebooks: http://hera.physchem.kth.se/~chempy/branches/master/examples
+.. _notebooks: https://github.com/bjodah/chempy/tree/master/examples
 
 Installation
 ------------

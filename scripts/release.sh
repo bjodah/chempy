@@ -25,6 +25,7 @@ PKG=$(find . -maxdepth 2 -name __init__.py -print0 | xargs -0 -n1 dirname | xarg
 PKG_UPPER=$(echo $PKG | tr '[:lower:]' '[:upper:]')
 ./scripts/run_tests.sh
 env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION python3 setup.py sdist
+env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION python3 setup.py bdist_wheel
 env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION ./scripts/generate_docs.sh
 
 # All went well, add a tag and push it.
@@ -32,6 +33,7 @@ git tag -a v$VERSION -m v$VERSION
 git push
 git push --tags
 twine upload dist/${PKG}-$VERSION.tar.gz
+twine upload dist/${PKG}-$VERSION.whl
 
 set +x
 echo ""

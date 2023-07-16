@@ -386,7 +386,10 @@ def to_unitless(value, new_unit=None):
     else:
         try:
             try:
-                result = (value * pq.dimensionless / new_unit).rescale(pq.dimensionless)
+                mag = magnitude(value)
+                unt = unit_of(value)
+                conv = rescale(unt/new_unit, pq.dimensionless)
+                result = np.array(mag)*conv
             except AttributeError:
                 if new_unit == pq.dimensionless:
                     return value
