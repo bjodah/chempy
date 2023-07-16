@@ -1,3 +1,8 @@
+v0.8.3
+======
+- Fixes for latest version of quantities.
+- Build python wheel as part of release script.
+
 v0.8.2
 ======
 - changed version of dependency "pyodesys"
