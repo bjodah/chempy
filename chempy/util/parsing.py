@@ -600,7 +600,9 @@ def formula_to_latex(formula, prefixes=None, infixes=None, **kwargs):
     )
 
 
-_unicode_sub = {}
+_unicode_sub = {
+    '.': "\u0323",
+}
 
 for k, v in enumerate("₀₁₂₃₄₅₆₇₈₉"):
     _unicode_sub[str(k)] = v
@@ -608,6 +610,7 @@ for k, v in enumerate("₀₁₂₃₄₅₆₇₈₉"):
 _unicode_sup = {
     "+": "⁺",
     "-": "⁻",
+    '.': "\u02d9"
 }
 
 for k, v in enumerate("⁰¹²³⁴⁵⁶⁷⁸⁹"):

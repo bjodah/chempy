@@ -58,6 +58,10 @@ def test_Substance__from_formula():
     assert H2O.unicode_name == u"H₂O"
     assert H2O.html_name == u"H<sub>2</sub>O"
 
+    # see https://github.com/bjodah/chempy/issues/223
+    zinc_nitrate = Substance.from_formula("Zn(NO3)2.6H2O")
+    assert zinc_nitrate.composition == {30: 1, 7: 2, 8: 3*2+6, 1: 12}
+
 
 @requires(parsing_library)
 def test_Species():
