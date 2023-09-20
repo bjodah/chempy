@@ -206,9 +206,8 @@ def test_Reaction_from_string__units():
 
 
 @requires(parsing_library, units_library)
-def test_Reaction_check_integral():
+def test_Reaction__check_integral():
 
-    # this could be sympy.core.numbers.Integer
     Reaction(*balance_stoichiometry({"H2", "O2"}, {"H2O"}))
 
     class MyInt:
@@ -266,7 +265,7 @@ def test_Equilibrium__as_reactions():
 
 
 @requires(parsing_library)
-def test_ReactioN__latex():
+def test_Reaction__latex():
     keys = "H2O H2 O2".split()
     subst = {k: Substance.from_formula(k) for k in keys}
     r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
