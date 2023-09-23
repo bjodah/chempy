@@ -11,6 +11,7 @@ from ..parsing import (
     parsing_library,
     to_reaction,
 )
+
 from ..testing import requires
 
 
@@ -625,6 +626,22 @@ def test_formula_to_latex_caged(species, latex):
         ("[Fe(H2O)6][Fe(CN)6]..19H2O(aq)", r"[Fe(H₂O)₆][Fe(CN)₆]·19H₂O(aq)"),
         ("[Fe(CN)6]-3", r"[Fe(CN)₆]³⁻"),
         ("[Fe(CN)6]-3(aq)", r"[Fe(CN)₆]³⁻(aq)"),
+        (
+            "Ca2.832Fe0.6285Mg5.395(CO3)6",
+            r"Ca₂.₈₃₂Fe₀.₆₂₈₅Mg₅.₃₉₅(CO₃)₆",
+        ),
+        (
+            "Ca2.832Fe0.6285Mg5.395(CO3)6(s)",
+            r"Ca₂.₈₃₂Fe₀.₆₂₈₅Mg₅.₃₉₅(CO₃)₆(s)",
+        ),
+        (
+            "Ca2.832Fe0.6285Mg5.395(CO3)6..8H2O(s)",
+            r"Ca₂.₈₃₂Fe₀.₆₂₈₅Mg₅.₃₉₅(CO₃)₆·8H₂O(s)",
+        ),
+        (
+            "Zn(NO3)2..6H2O",
+            r"Zn(NO₃)₂·6H₂O",
+        ),
     ],
 )
 @requires(parsing_library)
@@ -692,8 +709,29 @@ def test_formula_to_unicode_caged(species, unicode):
         ),
         ("[Fe(CN)6]-3", r"[Fe(CN)<sub>6</sub>]<sup>3-</sup>"),
         ("[Fe(CN)6]-3(aq)", r"[Fe(CN)<sub>6</sub>]<sup>3-</sup>(aq)"),
+        (
+            "Ca2.832Fe0.6285Mg5.395(CO3)6",
+            r"Ca<sub>2.832</sub>Fe<sub>0.6285</sub>Mg<sub>5.395</sub>(CO<sub>3</sub>)<sub>6</sub>",
+        ),
+        (
+            "Ca2.832Fe0.6285Mg5.395(CO3)6(s)",
+            r"Ca<sub>2.832</sub>Fe<sub>0.6285</sub>Mg<sub>5.395</sub>(CO<sub>3</sub>)<sub>6</sub>(s)",
+        ),
+        (
+            "Ca2.832Fe0.6285Mg5.395(CO3)6..8H2O(s)",
+            r"Ca<sub>2.832</sub>Fe<sub>0.6285</sub>Mg<sub>5.395</sub>(CO<sub>3</sub>)<sub>6</sub>&sdot;8H<sub>2</sub>O(s)",
+        ),
+        (
+            "Ca2.832Fe0.6285Mg5.395(CO3)6..8H2O(s)",
+            r"Ca<sub>2.832</sub>Fe<sub>0.6285</sub>Mg<sub>5.395</sub>(CO<sub>3</sub>)<sub>6</sub>&sdot;8H<sub>2</sub>O(s)",
+        ),
+        (
+            "Zn(NO3)2..6H2O",
+            r"Zn(NO<sub>3</sub>)<sub>2</sub>&sdot;6H<sub>2</sub>O",
+        ),
     ],
 )
+
 @requires(parsing_library)
 def test_formula_to_html(species, html):
     assert formula_to_html(species) == html
