@@ -98,6 +98,17 @@ class Substance(object):
                 return False
         return True
 
+    def __hash__(self) -> int:
+        return sum(
+            map(
+                hash,
+                (
+                    getattr(self, k)
+                    for k in self.attrs
+                ),
+            )
+        )
+
     @property
     def charge(self):
         """Convenience property for accessing ``composition[0]``"""
