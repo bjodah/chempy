@@ -40,6 +40,7 @@ def test_Substance():
     assert s.composition == {0: 1, 1: 1}
     assert s.charge == 1
     assert abs(s.mass - 1.008) < 1e-3
+    assert s in {s: 1}
 
 
 def test_Substance__2():

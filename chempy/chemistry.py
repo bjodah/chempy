@@ -104,7 +104,7 @@ class Substance(object):
                 hash,
                 (
                     getattr(self, k)
-                    for k in self.attrs
+                    for k in ("name", "latex_name", "unicode_name", "html_name")
                 ),
             )
         )
