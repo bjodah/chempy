@@ -41,6 +41,7 @@ def test_Substance():
     assert s.charge == 1
     assert abs(s.mass - 1.008) < 1e-3
     assert s in {s: 1}
+    assert hash(s) != hash(Substance.from_formula("He"))
 
 
 def test_Substance__2():

@@ -99,15 +99,14 @@ class Substance(object):
         return True
 
     def __hash__(self) -> int:
-        return sum(
-            map(
-                hash,
-                (
-                    getattr(self, k)
-                    for k in ("name", "latex_name", "unicode_name", "html_name")
-                ),
-            )
-        )
+        hashed_values = []
+        for key in self.attrs:
+            value = getattr(self, key)
+            if isinstance(value, dict):
+                hashed_values.append(hash(tuple(sorted(value.items()))))
+            else:
+                hashed_values.append(hash(value))
+        return sum(hashed_values)
 
     @property
     def charge(self):
