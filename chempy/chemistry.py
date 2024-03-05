@@ -98,6 +98,16 @@ class Substance(object):
                 return False
         return True
 
+    def __hash__(self) -> int:
+        hashed_values = []
+        for key in self.attrs:
+            value = getattr(self, key)
+            if isinstance(value, dict):
+                hashed_values.append(hash(tuple(sorted(value.items()))))
+            else:
+                hashed_values.append(hash(value))
+        return sum(hashed_values)
+
     @property
     def charge(self):
         """Convenience property for accessing ``composition[0]``"""
