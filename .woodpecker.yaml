@@ -10,7 +10,7 @@ steps:
   #     - /tmp/cache:/cache
   #   ttl: 90  # liftetime in days
 
-  - install:
+  - name: install
     image: bjodah/bjodahimg20dot:21.8.a
     environment:
       - CC=gcc-11
@@ -33,7 +33,7 @@ steps:
       - mkdir -p deploy/public_html/branches/${DRONE_BRANCH}
       - cp dist/chempy-* deploy/public_html/branches/${DRONE_BRANCH}/
 
-  - test-suite:
+  - name: test-suite
     image: bjodah/bjodahimg20dot:21.8.a
     group: testing
     environment:
@@ -62,7 +62,7 @@ steps:
       - bash -c "source /tmp/test_sdist/bin/activate; pip install --cache-dir $CACHE_ROOT/pip_cache file://$(realpath $(eval ls chempy-*.tar.gz))#chempy[all] pytest; pytest --pyargs chempy"
       - bash -c "source /tmp/test_git_archive/bin/activate; pip install --cache-dir $CACHE_ROOT/pip_cache file://$(realpath chempy-head.zip)#chempy[all] pytest; pytest --pyargs chempy"
 
-  - render-notebooks:
+  - name: render-notebooks
     image: bjodah/bjodahimg20dot:21.8.a
     group: testing
     environment:
@@ -81,7 +81,7 @@ steps:
       - mv index.html index.ipynb.html
       - cp -r index.* examples/ "deploy/public_html/branches/${DRONE_BRANCH}"
 
-  - compile-documentation:
+  - name: compile-documentation
     image: bjodah/bjodahimg20dot:21.8.a
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
