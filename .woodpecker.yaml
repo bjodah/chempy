@@ -109,4 +109,5 @@ steps:
     image: bjodah/bjodahimg20dot:21.8.a
     commands:
       - tar czf chempy-latest.tar.gz ./deploy/public_html
-      - curl -T chempy-latest.tar.gz ftp://artifacts-server:2121
+      - curl -T chempy-latest.tar.gz ftp://chempy:$ARTIFACTS_PASS@artifacts-server:2121
+    secrets: [ ARTIFACTS_PASS ]
