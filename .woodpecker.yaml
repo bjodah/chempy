@@ -105,13 +105,8 @@ steps:
   #   volumes:
   #     - /tmp/cache:/cache
 
-  # deploy:
-  #   image: drillster/drone-rsync
-  #   when:
-  #     event: [push]
-  #   hosts: [ "hera.physchem.kth.se" ]
-  #   port: 22
-  #   user: chempy
-  #   secrets: [ rsync_key ]  # secret only set fro event "push" not "pull_request"
-  #   source: ./deploy/public_html
-  #   target: ~/
+  - name: deploy
+    image: bjodah/bjodahimg20dot:21.8.a
+    commands:
+      - tar czf chempy-latest.tar.gz ./deploy/public_html
+      - curl -T chempy-latest.tar.gz ftp://artifacts-server:2121
