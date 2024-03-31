@@ -108,6 +108,6 @@ steps:
   - name: deploy
     image: bjodah/bjodahimg20dot:21.8.a
     commands:
-      - tar czf chempy-latest.tar.gz ./deploy/public_html
-      - curl -T chempy-latest.tar.gz ftp://chempy:$ARTIFACTS_PASS@artifacts-server:2121
-    secrets: [ ARTIFACTS_PASS ]
+      - tar czf chempy-${CI_COMMIT_BRANCH}.tar.gz ./deploy/public_html
+      - curl -T chempy-${CI_COMMIT_BRANCH}.tar.gz ftp://chempy:$${ARTIFACTS_PASS}@$${FTP_SERVER}/
+    secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
