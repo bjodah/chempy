@@ -5,7 +5,7 @@ steps:
   - name: restore-cache
     image: bjodah/bjodahimg20dot:21.8.a
     commands:
-      - curl ftp://chempy::$${ARTIFACTS_PASS}@$${FTP_SERVER}/cache/cache-ci.tar | tar x
+      - curl ftp://chempy:$${ARTIFACTS_PASS}@$${FTP_SERVER}/cache/cache-ci.tar | tar x
     secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
     when:
      - event: push
