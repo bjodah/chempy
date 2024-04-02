@@ -1,14 +1,15 @@
+when:
+  - event: [pull_request, tag, cron, push]
+
 steps:
-  # restore-cache:
-  #   image: drillster/drone-volume-cache
-  #   restore: true
-  #   mount:
-  #     - ./cache-ci/pyusrb
-  #     - ./cache-ci/conda_packages
-  #     - ./cache-ci/pip_cache
-  #   volumes:
-  #     - /tmp/cache:/cache
-  #   ttl: 90  # liftetime in days
+  - name: restore-cache
+    image: bjodah/bjodahimg20dot:21.8.a
+    commands:
+      - curl ftp://chempy::$${ARTIFACTS_PASS}@$${FTP_SERVER}/cache/cache-ci.tar | tar x
+    secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
+    when:
+     - event: push
+       repo: bjodah/chempy
 
   - name: install
     image: bjodah/bjodahimg20dot:21.8.a
@@ -35,7 +36,7 @@ steps:
 
   - name: test-suite
     image: bjodah/bjodahimg20dot:21.8.a
-    group: testing
+    depends_on: [ install ]
     environment:
       - CC=gcc-11
       - CXX=g++-11
@@ -64,7 +65,7 @@ steps:
 
   - name: render-notebooks
     image: bjodah/bjodahimg20dot:21.8.a
-    group: testing
+    depends_on: [ install ]
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
       - SUNDBASE=/opt/sundials-5.7.0-release
@@ -95,19 +96,23 @@ steps:
       - cp LICENSE doc/_build/html/
       - cp -r doc/_build/html/ deploy/public_html/branches/${DRONE_BRANCH}
 
-  # rebuild-cache:
-  #   image: drillster/drone-volume-cache
-  #   rebuild: true
-  #   mount:
-  #     - ./cache-ci/pyusrb
-  #     - ./cache-ci/conda_packages
-  #     - ./cache-ci/pip_cache
-  #   volumes:
-  #     - /tmp/cache:/cache
+  - name: rebuild-cache
+    image: bjodah/bjodahimg20dot:21.8.a
+    commands:
+      - find ./ci-cache/ -type f -mtime +90 -exec rm {} \;
+      - tar cf ci-cache.tar ./ci-cache/
+      - curl -T ci-cache.tar ftp://chempy::$${ARTIFACTS_PASS}@$${FTP_SERVER}/cache/
+    secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
+    when:
+     - event: push
+       repo: bjodah/chempy
 
   - name: deploy
     image: bjodah/bjodahimg20dot:21.8.a
     commands:
       - tar czf chempy-${CI_COMMIT_BRANCH}.tar.gz ./deploy/public_html
-      - curl -T chempy-${CI_COMMIT_BRANCH}.tar.gz ftp://chempy:$${ARTIFACTS_PASS}@$${FTP_SERVER}/
+      - curl -T chempy-${CI_COMMIT_BRANCH}.tar.gz ftp://chempy:$${ARTIFACTS_PASS}@$${FTP_SERVER}/public_html/
     secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
+    when:
+     - event: push
+       repo: bjodah/chempy
