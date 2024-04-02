@@ -24,5 +24,5 @@ steps:
        repo: bjodah/chempy
 
 depends_on:
-  - tests
+  - testing
 
