@@ -107,7 +107,7 @@ steps:
     commands:
       - find ./cache-ci/ -type f -mtime +90 -exec rm {} \;
       - tar cf cache-ci.tar ./cache-ci/
-      - curl -T cache-ci.tar ftp://chempy::$${ARTIFACTS_PASS}@$${FTP_SERVER}/cache/
+      - curl -T cache-ci.tar ftp://chempy:$${ARTIFACTS_PASS}@$${FTP_SERVER}/cache/
     secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
     when:
      - event: push
