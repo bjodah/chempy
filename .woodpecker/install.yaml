@@ -1,0 +1,35 @@
+when:
+  - event: [pull_request, tag, cron, push]
+
+steps:
+  - name: restore-cache
+    image: bjodah/bjodahimg20dot:21.8.a
+    commands:
+      - curl ftp://chempy::$${ARTIFACTS_PASS}@$${FTP_SERVER}/cache/cache-ci.tar | tar x
+    secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
+    when:
+     - event: push
+       repo: bjodah/chempy
+
+  - name: install
+    image: bjodah/bjodahimg20dot:21.8.a
+    environment:
+      - CC=gcc-11
+      - CXX=g++-11
+      - CPLUS_INCLUDE_PATH=/opt/boost-1.77.0/include
+      - SUNDBASE=/opt/sundials-5.7.0-release
+      - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
+    commands:
+      - export CACHE_ROOT=$(pwd)/cache-ci
+      - export PYTHONUSERBASE=$CACHE_ROOT/pyusrb
+      - if [ ! -d $PYTHONUSERBASE ]; then mkdir -p $PYTHONUSERBASE; fi
+      - export CPATH=$SUNDBASE/include:$CPATH
+      - export LIBRARY_PATH=$SUNDBASE/lib
+      - export LD_LIBRARY_PATH=$SUNDBASE/lib
+      - python3 -m pip install --cache-dir $CACHE_ROOT/pip_cache --user -e .[all]
+      - python3 -c "import pycvodes; import pyodesys; import pygslodeiv2"  # debug this CI config
+      - git fetch -tq
+      - python3 setup.py sdist                    # test pip installable sdist (checks MANIFEST.in)
+      - git archive -o dist/chempy-head.zip HEAD  # test pip installable zip (symlinks break)
+      - mkdir -p deploy/public_html/branches/${DRONE_BRANCH}
+      - cp dist/chempy-* deploy/public_html/branches/${DRONE_BRANCH}/
