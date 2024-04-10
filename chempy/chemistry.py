@@ -426,7 +426,8 @@ class Reaction(object):
         if isinstance(container, set):
             container = {k: 1 for k in container}
         container = container or {}
-        if type(container) == dict:  # we don't want isinstance here in case of OrderedDict
+        if type(container) == dict:  # noqa
+            # we don't want isinstance here in case of OrderedDict
             container = OrderedDict(sorted(container.items(), key=lambda kv: kv[0]))
         return container
 
@@ -1275,10 +1276,13 @@ def balance_stoichiometry(reactants, products, substances=None,
     if substances is None:
         substances = OrderedDict([(k, substance_factory(k)) for k in chain(reactants, products)])
     if isinstance(substances, str):
-        substances = OrderedDict([(k, substance_factory(k)) for k in substances.split()])
-    if type(reactants) == set:  # we don't want isinstance since it might be "OrderedSet"
+        substances = OrderedDict(
+            [(k, substance_factory(k)) for k in substances.split()]
+        )
+    if type(reactants) == set:  # noqa
+        # we don't want isinstance since it might be "OrderedSet"
         reactants = sorted(reactants)
-    if type(products) == set:
+    if type(products) == set:  # noqa
         products = sorted(products)
     subst_keys = list(reactants) + list(products)
 
