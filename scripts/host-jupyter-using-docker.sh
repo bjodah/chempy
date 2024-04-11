@@ -1,6 +1,6 @@
 #!/bin/bash -ue
 #
-# This script requires that Docker is installed.
+# This script requires that Docker (or podman) is installed.
 #
 # Arguments: mount-path, port-number, Dockerfile-path
 #
@@ -22,11 +22,27 @@ if [[ "${HOST_USER}" == root ]]; then
     >&2 echo "Need another user name than root (pip will fail)"
     exit 1
 fi
+
+if which podman; then
+    PODMAN=podman
+elif which docker; then
+    if groups | grep docker; then
+        PODMAN=docker
+    else
+        PODMAN="sudo docker"
+    fi
+else
+    >&2 echo "Neither podman nor docker found on \$PATH"
+    exit 1
+fi
+
 if [[ "$MOUNT" == .* ]]; then
     MOUNT="$(pwd)/$MOUNT"
 fi
+
+
 if [[ "$DOCKERIMAGE" == ./* ]]; then
-    DOCKERIMAGE=$(sudo docker build $DOCKERIMAGE | tee /dev/tty | tail -1 | cut -d' ' -f3)
+    DOCKERIMAGE=$($PODMAN build $DOCKERIMAGE | tee /dev/tty | tail -1 | cut -d' ' -f3)
 fi
 if [[ "$PORT" == "0" ]]; then
     LOCALCMD="pytest -sv -ra --pyargs $PKG"
@@ -40,7 +56,14 @@ useradd --uid \$HOST_UID --gid \$HOST_GID --home /mount \$HOST_WHOAMI; \
 sudo --login -u \$HOST_WHOAMI PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 python3 -m pip install --user -e .[all]; \
 sudo --login -u \$HOST_WHOAMI /mount/.local/bin/jupyter-nbextension enable --user --py widgetsnbextension; \
 sudo --login -u \$HOST_WHOAMI LD_LIBRARY_PATH=/usr/local/lib MPLBACKEND=Agg /mount/.local/bin/$LOCALCMD"
+
 set -x
-sudo docker run --rm --name "${PKG}_nb_${PORT}" $PORTFWD \
- -e HOST_WHOAMI=${HOST_USER} -e HOST_UID=$(id -u ${HOST_USER}) -e HOST_GID=$(id -g ${HOST_USER})\
- -v $MOUNT:/mount -w /mount -it $DOCKERIMAGE /bin/bash -x -c "$MYCMD"
+
+
+$PODMAN run \
+        --rm \
+        --name "${PKG}_nb_${PORT}" $PORTFWD \
+        -e HOST_WHOAMI=${HOST_USER} \
+        -e HOST_UID=$(id -u ${HOST_USER}) \
+        -e HOST_GID=$(id -g ${HOST_USER}) \
+        -v $MOUNT:/mount -w /mount -it $DOCKERIMAGE /bin/bash -x -c "$MYCMD"

@@ -3,13 +3,13 @@ ChemPy
 
 .. image:: https://github.com/bjodah/chempy/actions/workflows/lint_python.yml/badge.svg
    :target: https://github.com/bjodah/chempy/actions/workflows/lint_python.yml
-   :alt: Build status
+   :alt: Github Actions CI status
+.. image:: https://hackspett.bjodah.se/api/badges/1/status.svg
+   :target: https://hackspett.bjodah.se/repos/1
+   :alt: Woodpecker CI status
 .. image:: https://img.shields.io/pypi/v/chempy.svg
    :target: https://pypi.python.org/pypi/chempy
    :alt: PyPI version
-.. image:: https://img.shields.io/badge/python-3.8,3.9-blue.svg
-   :target: https://www.python.org/
-   :alt: Python version
 .. image:: https://img.shields.io/pypi/l/chempy.svg
    :target: https://github.com/bjodah/chempy/blob/master/LICENSE
    :alt: License
@@ -372,16 +372,6 @@ literature with relevance in chemistry. Here is how you use one of these formula
    [H2O] = 55.46 M (at 15 °C)
    [H2O] = 55.35 M (at 25 °C)
    [H2O] = 55.18 M (at 35 °C)
-
-
-Run notebooks using binder
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-Using only a web-browser (and an internet connection) it is possible to explore the
-notebooks here: (by the courtesy of the people behind mybinder)
-
-.. image:: http://mybinder.org/badge.svg
-   :target: https://mybinder.org/v2/gh/bjodah/chempy/f5f2546e79e165ba8fb258fc87d83a7fbdcbad64?filepath=index.ipynb
-   :alt: Binder
 
 
 Citing
