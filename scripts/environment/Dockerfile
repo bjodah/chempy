@@ -1,4 +1,4 @@
-FROM debian:bullseye
+FROM docker.io/debian:bullseye
 
 MAINTAINER Björn Dahlgren <bjodah@gmail.com>
 
@@ -29,6 +29,7 @@ RUN mkdir /tmp/sundials-5.5.0-build && \
     cmake --build /tmp/sundials-5.5.0-build --target install && \
     rm -r /tmp/sundials-5.5.0*/ && \
     python3 -m pip install --upgrade-strategy=eager --upgrade pip && \
+    python3 -m pip install --upgrade-strategy=eager numpy cython setuptools && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 
