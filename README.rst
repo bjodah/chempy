@@ -385,7 +385,7 @@ If you make use of ChemPy in e.g. academic work you may cite the following peer-
 Depending on what underlying solver you are using you should also cite the appropriate paper
 (you can look at the list of references in the JOSS article). If you need to reference,
 in addition to the paper, a specific point version of ChemPy (for e.g. reproducibility)
-you can get per-version DOIs from the zendodo archive:
+you can get per-version DOIs from the zenodo archive:
 
 .. image:: https://zenodo.org/badge/8840/bjodah/chempy.svg
    :target: https://zenodo.org/badge/latestdoi/8840/bjodah/chempy
