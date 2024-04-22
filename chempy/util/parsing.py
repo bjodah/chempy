@@ -538,6 +538,7 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
 
 internal_asterisk = re.compile(r"([^\s\*]+)\*([a-zA-Z0-9]+)")
 
+
 def _formula_to_format(
     sub,
     sup,
