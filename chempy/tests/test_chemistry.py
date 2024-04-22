@@ -570,16 +570,3 @@ C +      CO2 -> C + CO + CO2  # suggested solution:  C +      CO2 ->     2 CO
         underdetermined=None,
     )
     assert bal_Mn_COx == ({"CO": 2}, {"C": 1, "CO2": 1})
-
-
-def test_composition_dot_as_crystal_water_chempy08x():
-    """In Chempy v0.8.x a dot will signify crystal water. But an asterisk '*'
-    or and interpunct (·) is also accepted (and preferred).
-    From Chempy v0.9.x on-wards, only interpunct and asterisk will be
-    interpreted as crystal water delimiters, and a dot will be interpreted
-    as floating point delimiter in fractional stoichiometric coefficients."""
-    assert Substance.from_formula('Zn(NO3)2·6H2O').composition == {30: 1, 7: 2, 8: 12, 1: 12}
-    assert Substance.from_formula('Zn(NO3)2*6H2O').composition == {30: 1, 7: 2, 8: 12, 1: 12}
-    # https://docs.pytest.org/en/7.1.x/how-to/capture-warnings.html#ensuring-code-triggers-a-deprecation-warning
-    with pytest.deprecated_call():
-        assert Substance.from_formula('Zn(NO3)2.6H2O').composition == {30: 1, 7: 2, 8: 12, 1: 12}

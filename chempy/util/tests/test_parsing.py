@@ -303,45 +303,46 @@ def test_formula_to_composition_bad_complexes(species):
         formula_to_composition(species)
 
 
-@pytest.mark.parametrize(
-    "species, composition",
-    [
-        (
-            "Ca2.832Fe0.6285Mg5.395(CO3)6",
-            {
-                6: 6,
-                8: 18,
-                12: 5.395,
-                20: 2.832,
-                26: 0.6285,
-            },
-        ),
-        (
-            "Ca2.832Fe0.6285Mg5.395(CO3)6(s)",
-            {
-                6: 6,
-                8: 18,
-                12: 5.395,
-                20: 2.832,
-                26: 0.6285,
-            },
-        ),
-        (
-            "Ca2.832Fe0.6285Mg5.395(CO3)6..8H2O(s)",
-            {
-                1: 16,
-                6: 6,
-                8: 26,
-                12: 5.395,
-                20: 2.832,
-                26: 0.6285,
-            },
-        ),
-    ],
-)
-@requires(parsing_library)
-def test_formula_to_composition_fractional_subscripts(species, composition):
-    assert formula_to_composition(species) == composition
+# This test is enabled in chempy-0.9+
+# @pytest.mark.parametrize(
+#     "species, composition",
+#     [
+#         (
+#             "Ca2.832Fe0.6285Mg5.395(CO3)6",
+#             {
+#                 6: 6,
+#                 8: 18,
+#                 12: 5.395,
+#                 20: 2.832,
+#                 26: 0.6285,
+#             },
+#         ),
+#         (
+#             "Ca2.832Fe0.6285Mg5.395(CO3)6(s)",
+#             {
+#                 6: 6,
+#                 8: 18,
+#                 12: 5.395,
+#                 20: 2.832,
+#                 26: 0.6285,
+#             },
+#         ),
+#         (
+#             "Ca2.832Fe0.6285Mg5.395(CO3)6..8H2O(s)",
+#             {
+#                 1: 16,
+#                 6: 6,
+#                 8: 26,
+#                 12: 5.395,
+#                 20: 2.832,
+#                 26: 0.6285,
+#             },
+#         ),
+#     ],
+# )
+# @requires(parsing_library)
+# def test_formula_to_composition_fractional_subscripts(species, composition):
+#     assert formula_to_composition(species) == composition
 
 
 @pytest.mark.parametrize(
@@ -535,18 +536,19 @@ def test_to_reaction():
         ),
         ("[Fe(CN)6]-3", r"[Fe(CN)_{6}]^{3-}"),
         ("[Fe(CN)6]-3(aq)", r"[Fe(CN)_{6}]^{3-}(aq)"),
-        (
-            "Ca2.832Fe0.6285Mg5.395(CO3)6",
-            r"Ca_{2.832}Fe_{0.6285}Mg_{5.395}(CO_{3})_{6}",
-        ),
-        (
-            "Ca2.832Fe0.6285Mg5.395(CO3)6(s)",
-            r"Ca_{2.832}Fe_{0.6285}Mg_{5.395}(CO_{3})_{6}(s)",
-        ),
-        (
-            "Ca2.832Fe0.6285Mg5.395(CO3)6..8H2O(s)",
-            r"Ca_{2.832}Fe_{0.6285}Mg_{5.395}(CO_{3})_{6}\cdot 8H_{2}O(s)",
-        ),
+        # This test is enabled in chempy-0.9+:
+        # (
+        #     "Ca2.832Fe0.6285Mg5.395(CO3)6",
+        #     r"Ca_{2.832}Fe_{0.6285}Mg_{5.395}(CO_{3})_{6}",
+        # ),
+        # (
+        #     "Ca2.832Fe0.6285Mg5.395(CO3)6(s)",
+        #     r"Ca_{2.832}Fe_{0.6285}Mg_{5.395}(CO_{3})_{6}(s)",
+        # ),
+        # (
+        #     "Ca2.832Fe0.6285Mg5.395(CO3)6..8H2O(s)",
+        #     r"Ca_{2.832}Fe_{0.6285}Mg_{5.395}(CO_{3})_{6}\cdot 8H_{2}O(s)",
+        # ),
     ],
 )
 @requires(parsing_library)
@@ -712,3 +714,17 @@ def test_formula_to_html(species, html):
 def test_formula_to_html_caged(species, html):
     """Should produce HTML for cage species."""
     assert formula_to_html(species) == html
+
+
+def test_composition_dot_as_crystal_water_chempy08x():
+    """In Chempy v0.8.x a dot will signify crystal water. But an asterisk '*'
+    or and interpunct (·) is also accepted (and preferred).
+    From Chempy v0.9.x on-wards, only interpunct and asterisk will be
+    interpreted as crystal water delimiters, and a dot will be interpreted
+    as floating point delimiter in fractional stoichiometric coefficients."""
+    ref = {30: 1, 7: 2, 8: 12, 1: 12}
+    assert formula_to_composition('Zn(NO3)2{}6H2O'.format('\u00B7')) == ref
+    assert formula_to_composition('Zn(NO3)2*6H2O') == ref
+    # https://docs.pytest.org/en/7.1.x/how-to/capture-warnings.html#ensuring-code-triggers-a-deprecation-warning
+    with pytest.deprecated_call():
+        assert formula_to_composition('Zn(NO3)2.6H2O') == ref

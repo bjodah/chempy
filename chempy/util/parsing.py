@@ -96,7 +96,7 @@ def _get_formula_parser():
                  | '{' formula '}'
                  | '[' formula ']' ) count prime charge?
         formula :: term+
-        hydrate :: ( '.' | '·' | '*' ) count? formula
+        hydrate :: ( '.' | '\u00B7' | '*' ) count? formula
         state :: '(' ( 's' | 'l' | 'g' | 'aq' | 'cr' ) ')'
         compound :: count formula hydrate? state?
 
@@ -115,7 +115,7 @@ def _get_formula_parser():
                  | '{' formula '}'
                  | '[' formula ']' ) count prime charge?
         formula :: term+
-        hydrate :: ( '..' | '·' | '*' ) count? formula
+        hydrate :: ( '..' | '\u00B7' | '*' ) count? formula
         state :: '(' ( 's' | 'l' | 'g' | 'aq' | 'cr' ) ')'
         compound :: count formula hydrate? state?
     """
@@ -331,16 +331,16 @@ _latex_mapping = {k + "-": "\\" + k + "-" for k in _greek_letters}
 _latex_mapping["epsilon-"] = "\\varepsilon-"
 _latex_mapping["omicron-"] = "o-"
 _latex_mapping["."] = "^\\bullet "
-_latex_infix_mapping = {"·": "\\cdot "}
+_latex_infix_mapping = {"..": "\\cdot "}
 
 _unicode_mapping = {k + "-": v + "-" for k, v in zip(_greek_letters, _greek_u)}
 _unicode_mapping["."] = "⋅"
-_unicode_infix_mapping = {"·": "·"}
+_unicode_infix_mapping = {"..": "\u00b7"}
 
 _html_mapping = {k + "-": "&" + k + ";-" for k in _greek_letters}
 _html_mapping["."] = "&sdot;"
 # _html_infix_mapping = _html_mapping
-_html_infix_mapping = {"·": "&sdot;"}
+_html_infix_mapping = {"..": "&sdot;"}
 
 
 def _get_leading_integer(s):
@@ -378,7 +378,7 @@ def formula_to_composition(
     True
     >>> formula_to_composition('.NHO-(aq)') == {0: -1, 1: 1, 7: 1, 8: 1}
     True
-    >>> formula_to_composition('Na2CO3·7H2O'.format(s)) == {11: 2, 6: 1, 8: 10, 1: 14}
+    >>> formula_to_composition('Na2CO3*7H2O') == {11: 2, 6: 1, 8: 10, 1: 14}
     True
 
     """
@@ -387,7 +387,19 @@ def formula_to_composition(
 
     stoich_tok, chg_tok = _formula_to_parts(formula, prefixes, suffixes)[:2]
     tot_comp = {}
-    parts = stoich_tok.split("·")
+    if ".." in stoich_tok:
+        parts = stoich_tok.split("..")
+    elif "\u00b7" in stoich_tok:
+        parts = stoich_tok.split('\u00b7')
+    elif '.' in stoich_tok:
+        warnings.warn(
+            ("dot is ambiguous in chempy-0.8.x, prefer '*' or '\u00b7' for complexes."
+             " Dot will be interpreted as floating point in chempy-0.9+"),
+            ChemPyDeprecationWarning
+        )
+        parts = stoich_tok.split('.')
+    else:
+        parts = list(filter(len, internal_asterisk.split(stoich_tok)))
 
     for idx, stoich in enumerate(parts):
         if idx == 0:
@@ -524,6 +536,8 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
     )
 
 
+internal_asterisk = re.compile(r"([^\s\*]+)\*([a-zA-Z0-9]+)")
+
 def _formula_to_format(
     sub,
     sup,
@@ -533,15 +547,16 @@ def _formula_to_format(
     suffixes=("(s)", "(l)", "(g)", "(aq)"),
 ):
     parts = _formula_to_parts(formula, prefixes.keys(), suffixes)
-    parts0 = parts[0].replace("..", '·').replace('*', '·')
+    parts0 = parts[0].replace("..", "\u00B7")
+    parts0 = internal_asterisk.sub("\u00B7", parts0)
     if '.' in parts0:
         warnings.warn(
             ("dot is ambiguous in chempy-0.8.x, prefer '*' or '' for complexes."
              " Dot will be interpreted as floating point in chempy-0.9+"),
             ChemPyDeprecationWarning
         )
-        parts0 = parts0.replace('.', '·')
-    stoichs = parts0.split("·")
+        parts0 = parts0.replace('.', "\u00B7")
+    stoichs = parts0.split("\u00B7")
 
     string = ""
     for idx, stoich in enumerate(stoichs):
@@ -549,7 +564,7 @@ def _formula_to_format(
             m = 1
         else:
             m, stoich = _get_leading_integer(stoich)
-            string += _subs("·", infixes)
+            string += _subs("..", infixes)
         if m != 1:
             string += str(m)
         string += re.sub(r"([0-9]+\.[0-9]+|[0-9]+)", lambda m: sub(m.group(1)), stoich)
