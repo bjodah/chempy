@@ -27,7 +27,7 @@ steps:
       - export CPATH=$SUNDBASE/include:$CPATH
       - export LIBRARY_PATH=$SUNDBASE/lib
       - export LD_LIBRARY_PATH=$SUNDBASE/lib
-      - python3 -m pip install --user --upgrade-strategy=eager --upgrade cython
+      - python3 -m pip install --cache-dir $CACHE_ROOT/pip_cache --user --upgrade-strategy=eager --upgrade cython
       - python3 -m pip install --cache-dir $CACHE_ROOT/pip_cache --user -e .[all]
       - python3 -c "import pycvodes; import pyodesys; import pygslodeiv2"  # debug this CI config
       - git fetch -tq
