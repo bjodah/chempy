@@ -95,7 +95,7 @@ def _get_formula_parser():
                  | '{' formula '}'
                  | '[' formula ']' ) count prime charge?
         formula :: term+
-        hydrate :: '.' count? formula
+        hydrate :: ( '..' | '\u00B7' ) count? formula
         state :: '(' ( 's' | 'l' | 'g' | 'aq' | 'cr' ) ')'
         compound :: count formula hydrate? state?
 
@@ -114,7 +114,7 @@ def _get_formula_parser():
                  | '{' formula '}'
                  | '[' formula ']' ) count prime charge?
         formula :: term+
-        hydrate :: '..' count? formula
+        hydrate :: ( '..' | '\u00B7' ) count? formula
         state :: '(' ( 's' | 'l' | 'g' | 'aq' | 'cr' ) ')'
         compound :: count formula hydrate? state?
     """
@@ -334,7 +334,7 @@ _latex_infix_mapping = {"..": "\\cdot "}
 
 _unicode_mapping = {k + "-": v + "-" for k, v in zip(_greek_letters, _greek_u)}
 _unicode_mapping["."] = "⋅"
-_unicode_infix_mapping = {"..": "·"}
+_unicode_infix_mapping = {"..": "\u00b7"}  # 0x00b7: '·'
 
 _html_mapping = {k + "-": "&" + k + ";-" for k in _greek_letters}
 _html_mapping["."] = "&sdot;"
@@ -379,6 +379,8 @@ def formula_to_composition(
     True
     >>> formula_to_composition('Na2CO3..7H2O') == {11: 2, 6: 1, 8: 10, 1: 14}
     True
+    >>> formula_to_composition('UO2.3') == {92: 1, 8: 2.3}
+    True
 
     """
     if prefixes is None:
@@ -386,7 +388,10 @@ def formula_to_composition(
 
     stoich_tok, chg_tok = _formula_to_parts(formula, prefixes, suffixes)[:2]
     tot_comp = {}
-    parts = stoich_tok.split("..")
+    if '\u00b7' in stoich_tok:
+        parts = stoich_tok.split('\u00b7')
+    else:
+        parts = stoich_tok.split("..")
 
     for idx, stoich in enumerate(parts):
         if idx == 0:
@@ -532,7 +537,10 @@ def _formula_to_format(
     suffixes=("(s)", "(l)", "(g)", "(aq)"),
 ):
     parts = _formula_to_parts(formula, prefixes.keys(), suffixes)
-    stoichs = parts[0].split("..")
+    if '\u00b7' in parts[0]:
+        stoichs = parts[0].split('\u00b7')
+    else:
+        stoichs = parts[0].split("..")
     string = ""
     for idx, stoich in enumerate(stoichs):
         if idx == 0:
@@ -600,9 +608,11 @@ def formula_to_latex(formula, prefixes=None, infixes=None, **kwargs):
     )
 
 
-_unicode_sub = {}
+_unicode_sub = {
+    ".": ".",
+}
 
-for k, v in enumerate("₀₁₂₃₄₅₆₇₈₉"):
+for k, v in enumerate("₀₁₂₃₄₅₆₇₈₉."):
     _unicode_sub[str(k)] = v
 
 _unicode_sup = {
