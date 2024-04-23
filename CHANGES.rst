@@ -1,3 +1,12 @@
+v0.9.0
+======
+- Fractional stoichiometries are now officially supported in parser (e.g. Fe2O3.14)
+- Complexes/crystal water should now be delimited with '..' (fix by @jeremyagray)
+- Unicode printing of subscript decimal point should now work (gh-223, fix by @jeremyagray)
+- Substance class now has a __hash__ function (fix by @DNIIBOY)
+- Unit per100eV now has correct repr (fix by @daankoning)
+- Passing results from balance_stoichiometry into Reaction now works (gh-218, thanks @montmorill)
+
 v0.8.3
 ======
 - Fixes for latest version of quantities.
