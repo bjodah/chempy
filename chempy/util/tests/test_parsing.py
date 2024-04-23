@@ -752,7 +752,6 @@ def test_formula_to_html_caged(species, html):
     assert formula_to_html(species) == html
 
 
-
 def test_composition_dot_as_crystal_water_chempy08x():
     ref = {30: 1, 7: 2, 8: 12, 1: 12}
     assert formula_to_composition('Zn(NO3)2{}6H2O'.format('\u00B7')) == ref
