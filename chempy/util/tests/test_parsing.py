@@ -724,7 +724,7 @@ def test_composition_dot_as_crystal_water_chempy08x():
     as floating point delimiter in fractional stoichiometric coefficients."""
     ref = {30: 1, 7: 2, 8: 12, 1: 12}
     assert formula_to_composition('Zn(NO3)2{}6H2O'.format('\u00B7')) == ref
-    assert formula_to_composition('Zn(NO3)2*6H2O') == ref
+    assert formula_to_composition('Zn(NO3)2..6H2O') == ref
     # https://docs.pytest.org/en/7.1.x/how-to/capture-warnings.html#ensuring-code-triggers-a-deprecation-warning
     with pytest.deprecated_call():
         assert formula_to_composition('Zn(NO3)2.6H2O') == ref

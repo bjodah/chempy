@@ -96,7 +96,7 @@ def _get_formula_parser():
                  | '{' formula '}'
                  | '[' formula ']' ) count prime charge?
         formula :: term+
-        hydrate :: ( '.' | '\u00B7' | '*' ) count? formula
+        hydrate :: ( '..' | '\u00B7' | '.' ) count? formula
         state :: '(' ( 's' | 'l' | 'g' | 'aq' | 'cr' ) ')'
         compound :: count formula hydrate? state?
 
@@ -115,7 +115,7 @@ def _get_formula_parser():
                  | '{' formula '}'
                  | '[' formula ']' ) count prime charge?
         formula :: term+
-        hydrate :: ( '..' | '\u00B7' | '*' ) count? formula
+        hydrate :: ( '..' | '\u00B7' | '.' ) count? formula
         state :: '(' ( 's' | 'l' | 'g' | 'aq' | 'cr' ) ')'
         compound :: count formula hydrate? state?
     """
@@ -378,7 +378,7 @@ def formula_to_composition(
     True
     >>> formula_to_composition('.NHO-(aq)') == {0: -1, 1: 1, 7: 1, 8: 1}
     True
-    >>> formula_to_composition('Na2CO3*7H2O') == {11: 2, 6: 1, 8: 10, 1: 14}
+    >>> formula_to_composition('Na2CO3..7H2O') == {11: 2, 6: 1, 8: 10, 1: 14}
     True
 
     """
@@ -387,10 +387,10 @@ def formula_to_composition(
 
     stoich_tok, chg_tok = _formula_to_parts(formula, prefixes, suffixes)[:2]
     tot_comp = {}
-    if ".." in stoich_tok:
-        parts = stoich_tok.split("..")
-    elif "\u00b7" in stoich_tok:
+    if "\u00b7" in stoich_tok:
         parts = stoich_tok.split('\u00b7')
+    elif '..' in stoich_tok:
+        parts = stoich_tok.split("..")
     elif '.' in stoich_tok:
         warnings.warn(
             ("dot is ambiguous in chempy-0.8.x, prefer '*' or '\u00b7' for complexes."
@@ -399,7 +399,7 @@ def formula_to_composition(
         )
         parts = stoich_tok.split('.')
     else:
-        parts = list(filter(len, internal_asterisk.split(stoich_tok)))
+        parts = [stoich_tok]
 
     for idx, stoich in enumerate(parts):
         if idx == 0:
@@ -536,9 +536,6 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
     )
 
 
-internal_asterisk = re.compile(r"([^\s\*]+)\*([a-zA-Z0-9]+)")
-
-
 def _formula_to_format(
     sub,
     sup,
@@ -549,7 +546,6 @@ def _formula_to_format(
 ):
     parts = _formula_to_parts(formula, prefixes.keys(), suffixes)
     parts0 = parts[0].replace("..", "\u00B7")
-    parts0 = internal_asterisk.sub("\u00B7", parts0)
     if '.' in parts0:
         warnings.warn(
             ("dot is ambiguous in chempy-0.8.x, prefer '*' or '' for complexes."
