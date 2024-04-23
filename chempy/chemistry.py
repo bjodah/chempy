@@ -583,7 +583,7 @@ class Reaction(object):
             for nam in "reac prod inact_reac inact_prod".split()
         ]:
             for k, v in cont.items():
-                if v != type(v)(int(v)):
+                if v != int(v) and v != type(v)(int(v)):
                     if throw:
                         raise ValueError(
                             "Found a non-integer stoichiometric coefficient for %s in %s."

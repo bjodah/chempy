@@ -208,6 +208,46 @@ def test_Reaction_from_string__units():
 
 
 @requires(parsing_library, units_library)
+def test_Reaction__check_integral():
+
+    Reaction(*balance_stoichiometry({"H2", "O2"}, {"H2O"}))
+
+    class MyInt:
+        def __init__(self, __data):
+            self.__data = __data
+
+        def __eq__(self, other):
+            return self.__data == other
+
+        def __lt__(self, other):
+            return self.__data < other
+
+        def __int__(self):
+            return self.__data
+
+        def __rsub__(self, other):
+            return other - self.__data
+
+    class MyOne:
+        def __eq__(self, other):
+            return 1 == other
+
+        def __lt__(self, other):
+            return 1 < other
+
+        def __int__(self):
+            return 1
+
+        def __rsub__(self, other):
+            return other - 1
+
+    Reaction({"H2": MyInt(2), "O2": MyOne()}, {"H2O": 2})
+
+    with pytest.raises(ValueError):
+        Reaction({"H2": 1, "O2": 0.5}, {"H2O": 1})
+
+
+@requires(parsing_library, units_library)
 def test_Substance__molar_mass():
     mw_water = Substance.from_formula("H2O").molar_mass(default_units)
     q = mw_water / ((15.9994 + 2 * 1.008) * default_units.gram / default_units.mol)
@@ -227,7 +267,7 @@ def test_Equilibrium__as_reactions():
 
 
 @requires(parsing_library)
-def test_ReactioN__latex():
+def test_Reaction__latex():
     keys = "H2O H2 O2".split()
     subst = {k: Substance.from_formula(k) for k in keys}
     r2 = Reaction.from_string("2 H2O -> 2 H2 + O2", subst)
