@@ -378,7 +378,7 @@ def formula_to_composition(
     True
     >>> formula_to_composition('.NHO-(aq)') == {0: -1, 1: 1, 7: 1, 8: 1}
     True
-    >>> formula_to_composition('Na2CO3*7H2O') == {11: 2, 6: 1, 8: 10, 1: 14}
+    >>> formula_to_composition('Na2CO3..7H2O') == {11: 2, 6: 1, 8: 10, 1: 14}
     True
 
     """
@@ -389,6 +389,8 @@ def formula_to_composition(
     tot_comp = {}
     if "\u00b7" in stoich_tok:
         parts = stoich_tok.split('\u00b7')
+    elif '..' in stoich_tok:
+        parts = stoich_tok.split("..")
     elif '.' in stoich_tok:
         warnings.warn(
             ("dot is ambiguous in chempy-0.8.x, prefer '*' or '\u00b7' for complexes."
@@ -397,8 +399,7 @@ def formula_to_composition(
         )
         parts = stoich_tok.split('.')
     else:
-        parts = stoich_tok.split("..")
-
+        parts = [stoich_tok]
 
     for idx, stoich in enumerate(parts):
         if idx == 0:
@@ -533,7 +534,6 @@ def to_reaction(line, substance_keys, token, Cls, globals_=None, **kwargs):
     return Cls(
         act[0], act[1], param, inact_reac=inact[0], inact_prod=inact[1], **kwargs
     )
-
 
 
 def _formula_to_format(
