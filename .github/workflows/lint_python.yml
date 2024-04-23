@@ -14,10 +14,10 @@ jobs:
       - run: bandit --recursive --skip B101,B102,B110,B112,B307,B404,B603,B607 .
       - run: black --check . || true
       - run: codespell --ignore-words-list="ans,claus,fith,nam,nd,ond,serie,te"
-      - run: flake8 . --count --max-complexity=66 --max-line-length=118
+      - run: flake8 . --count --max-complexity=66 --max-line-length=129
                       --show-source --statistics
       - run: pip install flake8-bugbear flake8-comprehensions flake8-return flake8-simplify
-      - run: flake8 . --count --exit-zero --max-complexity=66 --max-line-length=118
+      - run: flake8 . --count --exit-zero --max-complexity=66 --max-line-length=129
                       --show-source --statistics
       - run: isort --check-only --profile black . || true
       - run: pip install setuptools

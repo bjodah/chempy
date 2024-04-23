@@ -731,7 +731,6 @@ def test_formula_to_unicode_caged(species, unicode):
         ),
     ],
 )
-
 @requires(parsing_library)
 def test_formula_to_html(species, html):
     assert formula_to_html(species) == html
