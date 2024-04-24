@@ -1,3 +1,12 @@
+v0.8.4
+======
+- Reverted parsing behavior for crystal water. Use this release to convert to new syntax:
+  NaSO4..10H2O
+  from chempy-0.9+ the following syntax is supported:
+  Fe2O3.14
+  v0.8.3 had a regression in this respect, see gh-223
+
+
 v0.8.3
 ======
 - Fixes for latest version of quantities.
