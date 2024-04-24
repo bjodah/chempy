@@ -1,11 +1,19 @@
-v0.9.0
-======
+v0.9.0 (2024-04-24)
+===================
 - Fractional stoichiometries are now officially supported in parser (e.g. Fe2O3.14)
 - Complexes/crystal water should now be delimited with '..' (fix by @jeremyagray)
 - Unicode printing of subscript decimal point should now work (gh-223, fix by @jeremyagray)
 - Substance class now has a __hash__ function (fix by @DNIIBOY)
 - Unit per100eV now has correct repr (fix by @daankoning)
 - Passing results from balance_stoichiometry into Reaction now works (gh-218, thanks @montmorill)
+
+v0.8.4 (2024-04-24)
+===================
+- Reverted parsing behavior for crystal water. Use this release to convert to new syntax:
+  NaSO4..10H2O
+  from chempy-0.9+ the following syntax is supported:
+  Fe2O3.14
+  v0.8.3 had a regression in this respect, see gh-223
 
 v0.8.3
 ======
