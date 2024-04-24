@@ -51,14 +51,16 @@ else
     LOCALCMD="jupyter notebook --no-browser --port $PORT --ip=* index.ipynb"
     PORTFWD="-p ${4:-127.0.0.1}:$PORT:$PORT"
 fi
-MYCMD="groupadd -f --gid \$HOST_GID \$HOST_WHOAMI; \
-useradd --uid \$HOST_UID --gid \$HOST_GID --home /mount \$HOST_WHOAMI; \
-sudo --login -u \$HOST_WHOAMI PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 python3 -m pip install --user -e .[all]; \
-sudo --login -u \$HOST_WHOAMI /mount/.local/bin/jupyter-nbextension enable --user --py widgetsnbextension; \
-sudo --login -u \$HOST_WHOAMI LD_LIBRARY_PATH=/usr/local/lib MPLBACKEND=Agg /mount/.local/bin/$LOCALCMD"
+MYCMD="\
+groupadd -f --gid \$HOST_GID \$HOST_WHOAMI; \
+useradd --uid \$HOST_UID --gid \$HOST_GID --home /mount/.env \$HOST_WHOAMI; \
+sudo -u \$HOST_WHOAMI PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 python3 -m pip install --cache-dir /mount/.env/pypi-cache --user -e .[all]; \
+sudo -u \$HOST_WHOAMI /mount/.env/.local/bin/jupyter-nbextension enable --user --py widgetsnbextension; \
+sudo -u \$HOST_WHOAMI LD_LIBRARY_PATH=/usr/local/lib MPLBACKEND=Agg PYTHONPATH=/mount /mount/.env/.local/bin/$LOCALCMD"
 
 set -x
 
+mkdir -m 777 -p .env
 
 $PODMAN run \
         --rm \
