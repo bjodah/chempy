@@ -11,7 +11,7 @@ from ..graph import rsys2dot, rsys2graph
 from ..testing import requires, skipif
 
 try:
-    dot_missing = subprocess.call(["dot", "-?"]) != 0
+    dot_missing = subprocess.run(["dot", "-?"]).returncode != 0
 except OSError:
     dot_missing = True
 

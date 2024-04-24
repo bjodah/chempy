@@ -100,7 +100,7 @@ if not len(long_descr) > 100:
 _author, _author_email = open(_path_under_setup("AUTHORS"), "rt").readline().split("<")
 
 extras_req = {
-    "integrators": ["pyodeint>=0.10.4", "pycvodes>=0.14.0", "pygslodeiv2>=0.9.4"],
+    "integrators": ["pyodeint>=0.10.4", "pycvodes>=0.14.5", "pygslodeiv2>=0.9.4"],
     "solvers": ["pykinsol>=0.1.6"],
     "native": ["pycompilation>=0.4.12", "pycodeexport>=0.1.3", "appdirs"],
     "docs": ["Sphinx", "sphinx_rtd_theme", "numpydoc"],
@@ -128,7 +128,7 @@ setup_kwargs = dict(
         "sympy>=1.1.1,!=1.2",
         "quantities>=0.12.1",
         "pyneqsys>=0.5.5",
-        "pyodesys>=0.14.1" if sys.version_info[0] >= 3 else "pyodesys<0.12",
+        "pyodesys>=0.14.4" if sys.version_info[0] >= 3 else "pyodesys<0.12",
         "pyparsing>=2.0.3",
         "sym>=0.3.4",
         "pulp>=1.6.8",

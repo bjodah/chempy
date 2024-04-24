@@ -107,13 +107,13 @@ Using Docker
 If you have `Docker <https://www.docker.com>`_ installed, you may use it to host a jupyter
 notebook server::
 
-  $ ./scripts/host-jupyter-using-docker.sh . 8888
+  $ ./scripts/host-env.sh host-notebook --port 8888
 
 the first time you run the command, some dependencies will be downloaded. When the installation
 is complete there will be a link visible which you can open in your browser. You can also run
 the test suite using the same docker-image::
 
-  $ ./scripts/host-jupyter-using-docker.sh . 0
+  $ ./scripts/host-env.sh run-tests
 
 there will be a few skipped test (due to some dependencies not being installed by default) and
 quite a few warnings.
