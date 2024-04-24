@@ -26,10 +26,7 @@ build/
 *.bak0
 *.bak1
 sundials-*.tar.gz
-.local/
-.ipython/
-.jupyter/*
-!.jupyter/jupyter_notebook_config.py
+.env/
 tmp/
 .coverage
 htmlcov/
