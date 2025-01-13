@@ -207,7 +207,7 @@ def test_to_unitless():
     sy.exp(Ea_over_RT_uncert)
 
     T_K_sym = np.array(sy.Symbol('T_K', real=True), dtype=object) * u.K
-    to_unitless(T_K_sym/(298*u.K))
+    assert to_unitless(T_K_sym/(298*u.K)).tolist() == [sy.Symbol('T_K', real=True)]
     rescale(simplified(Ea/dc.molar_gas_constant)/T_K_sym, 1)
     Ea_over_R_uncert = UncertainQuantity(Ea, unit_of(Ea), 0.1*Ea)/dc.molar_gas_constant
     to_unitless(Ea_over_R_uncert/(298*u.K))
@@ -223,7 +223,7 @@ def test_UncertainQuantity():
     a = UncertainQuantity([1, 2], u.m, [.1, .2])
     assert a[1] == [2.]*u.m
     assert (-a)[0] == [-1.]*u.m
-    assert (-a).uncertainty[0] == [0.1]*u.m
+    assert allclose((-a).uncertainty[0], [0.1]*u.m)
     assert (-a)[0] == (a*-1)[0]
     assert (-a).uncertainty[0] == (a*-1).uncertainty[0]
     assert allclose(a, [1, 2]*u.m)

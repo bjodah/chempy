@@ -86,8 +86,8 @@ def test_Log10TPolyMassAction__units():
     p = MassAction(Constant(kunit)*10**ShiftedTPoly([273.15*u.K, .7, .02/u.K, .003/u.K**2, .0004/u.K**3]))
     r = Reaction({'A': 2, 'B': 1}, {'C': 1}, p, {'B': 1})
     res = p({'A': 11*u.molar, 'B': 13*u.molar, 'temperature': 298.15*u.K}, reaction=r)
-    ref = 10**(.7 + .02*25 + 0.003 * 25**2 + 0.0004 * 25**3)
-    assert abs(res - ref*13*11**2*Mps) < 1e-15
+    ref = 10**(.7 + .02*25 + 0.003 * 25**2 + 0.0004 * 25**3)*13*11**2*Mps
+    assert abs((res - ref)/ref) < 1e-15
 
 
 def test_TPolyInLog10MassAction():
