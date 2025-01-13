@@ -1,17 +1,19 @@
-pipeline:
-  restore-cache:
-    image: drillster/drone-volume-cache
-    restore: true
-    mount:
-      - ./cache-ci/pyusrb
-      - ./cache-ci/conda_packages
-      - ./cache-ci/pip_cache
-    volumes:
-      - /tmp/cache:/cache
-    ttl: 90  # liftetime in days
+when:
+  - event: [pull_request, tag, cron, push]
 
-  install:
-    image: bjodah/bjodahimg20dot:21.7.c
+steps:
+
+  - name: restore-cache
+    image: bjodah/bjodahimg20dot:21.8.a
+    commands:
+      - curl ftp://chempy:$${ARTIFACTS_PASS}@$${FTP_SERVER}/cache/cache-ci.tar | tar x
+    secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
+    when:
+     - event: push
+       repo: bjodah/chempy
+
+  - name: install
+    image: bjodah/bjodahimg20dot:21.8.a
     environment:
       - CC=gcc-11
       - CXX=g++-11
@@ -30,12 +32,11 @@ pipeline:
       - git fetch -tq
       - python3 setup.py sdist                    # test pip installable sdist (checks MANIFEST.in)
       - git archive -o dist/chempy-head.zip HEAD  # test pip installable zip (symlinks break)
-      - mkdir -p deploy/public_html/branches/${DRONE_BRANCH}
-      - cp dist/chempy-* deploy/public_html/branches/${DRONE_BRANCH}/
+      - mkdir -p deploy/public_html/branches/${CI_COMMIT_BRANCH}
+      - cp dist/chempy-* deploy/public_html/branches/${CI_COMMIT_BRANCH}/
 
-  test-suite:
-    image: bjodah/bjodahimg20dot:21.7.c
-    group: testing
+  - name: test-suite
+    image: bjodah/bjodahimg20dot:21.8.a
     environment:
       - CC=gcc-11
       - CXX=g++-11
@@ -52,19 +53,20 @@ pipeline:
       - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
       - ./scripts/run_tests.sh --cov chempy --cov-report html
       - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
-      - cp -r htmlcov/ deploy/public_html/branches/${DRONE_BRANCH}/
+      - cp -r htmlcov/ deploy/public_html/branches/${CI_COMMIT_BRANCH}/
       - ./.ci/grep-for-merge-blocking-token.sh
       - export CHEMPY_DEPRECATION_FILTER=ignore
       - python3 -m virtualenv /tmp/test_sdist
       - python3 -m virtualenv /tmp/test_git_archive
-      - cd deploy/public_html/branches/${DRONE_BRANCH}
+      - cd deploy/public_html/branches/${CI_COMMIT_BRANCH}
       - unset CHEMPY_SKIP_NO_TESTS  # I can't get pip to install extras when using local file...
       - bash -c "source /tmp/test_sdist/bin/activate; pip install --cache-dir $CACHE_ROOT/pip_cache file://$(realpath $(eval ls chempy-*.tar.gz))#chempy[all] pytest; pytest --pyargs chempy"
       - bash -c "source /tmp/test_git_archive/bin/activate; pip install --cache-dir $CACHE_ROOT/pip_cache file://$(realpath chempy-head.zip)#chempy[all] pytest; pytest --pyargs chempy"
+    depends_on:
+      - install
 
-  render-notebooks:
-    image: bjodah/bjodahimg20dot:21.7.c
-    group: testing
+  - name: render-notebooks
+    image: bjodah/bjodahimg20dot:21.8.a
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
       - SUNDBASE=/opt/sundials-5.7.0-release
@@ -79,21 +81,12 @@ pipeline:
       - ./scripts/render_notebooks.sh
       - ./.ci/grep-for-binary-data.sh
       - mv index.html index.ipynb.html
-#      - (cd examples/; for f in bokeh_*.py; do python3 -m bokeh html $f; done)
-      - cp -r index.* examples/ "deploy/public_html/branches/${DRONE_BRANCH}"
+      - cp -r index.* examples/ "deploy/public_html/branches/${CI_COMMIT_BRANCH}"
+    depends_on:
+      - install
 
-#  conda-recipe:
-#    image: bjodah/bjodahimg20dot:21.7.c
-#    group: testing
-#    commands:
-#      - export CONDA_PKGS_DIRS=$(pwd)/cache-ci/conda_packages
-#      - git fetch -tq
-#      - PATH=/opt/miniconda3/bin:$PATH conda config --add channels bjodah  # sym, pyodesys, pyneqsys
-#      - PATH=/opt/miniconda3/bin:$PATH conda build --output-folder "deploy/public_html/branches/${DRONE_BRANCH}" conda-recipe
-#      - (cd $CONDA_PKGS_DIRS; find . -maxdepth 1 -type d -not -path . -not -path .. | xargs rm -r)
-
-  compile-documentation:
-    image: bjodah/bjodahimg20dot:21.7.c
+  - name: compile-documentation
+    image: bjodah/bjodahimg20dot:21.8.a
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
       - SUNDBASE=/opt/sundials-5.7.0-release
@@ -104,26 +97,34 @@ pipeline:
       - export LD_LIBRARY_PATH=$SUNDBASE/lib
       - ./scripts/generate_docs.sh
       - cp LICENSE doc/_build/html/
-      - cp -r doc/_build/html/ deploy/public_html/branches/${DRONE_BRANCH}
+      - cp -r doc/_build/html/ deploy/public_html/branches/${CI_COMMIT_BRANCH}
+    depends_on:
+      - test-suite
+      - render-notebooks
 
-  rebuild-cache:
-    image: drillster/drone-volume-cache
-    rebuild: true
-    mount:
-#      - ./cache-ci/sund-3.2.1
-      - ./cache-ci/pyusrb
-      - ./cache-ci/conda_packages
-      - ./cache-ci/pip_cache
-    volumes:
-      - /tmp/cache:/cache
-
-  deploy:
-    image: drillster/drone-rsync
+  - name: rebuild-cache
+    image: bjodah/bjodahimg20dot:21.8.a
+    commands:
+      - find ./cache-ci/ -type f -mtime +90 -exec rm {} \;
+      - tar cf cache-ci.tar ./cache-ci/
+      - curl -T cache-ci.tar ftp://chempy:$${ARTIFACTS_PASS}@$${FTP_SERVER}/cache/
+    secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
     when:
-      event: [push]
-    hosts: [ "hera.physchem.kth.se" ]
-    port: 22
-    user: chempy
-    secrets: [ rsync_key ]  # secret only set fro event "push" not "pull_request"
-    source: ./deploy/public_html
-    target: ~/
+     - event: push
+       repo: bjodah/chempy
+    depends_on:
+      - compile-documentation
+
+  - name: deploy-public-html
+    image: bjodah/bjodahimg20dot:21.8.a
+    commands:
+      - tar czf chempy-${CI_COMMIT_BRANCH}.tar.gz ./deploy/public_html
+      - curl -T chempy-${CI_COMMIT_BRANCH}.tar.gz ftp://chempy:$${ARTIFACTS_PASS}@$${FTP_SERVER}/public_html/
+    secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
+    when:
+     - event: push
+       repo: bjodah/chempy
+    depends_on:
+      - compile-documentation
+
+
