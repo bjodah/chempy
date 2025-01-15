@@ -4,7 +4,7 @@ when:
 steps:
 
   - name: restore-cache
-    image: bjodah/bjodahimg20dot:21.8.a
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:24
     commands:
       - curl ftp://chempy:$${ARTIFACTS_PASS}@$${FTP_SERVER}/cache/cache-ci.tar | tar x
     secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
@@ -13,12 +13,10 @@ steps:
        repo: bjodah/chempy
 
   - name: install
-    image: bjodah/bjodahimg20dot:21.8.a
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:24
     environment:
-      - CC=gcc-11
-      - CXX=g++-11
-      - CPLUS_INCLUDE_PATH=/opt/boost-1.76.0/include
-      - SUNDBASE=/opt/sundials-5.7.0-release
+      - CPLUS_INCLUDE_PATH=/opt-3/boost-1.87.0/include
+      - SUNDBASE=/opt-3/sundials-6.7.0-release
       - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
     commands:
       - export CACHE_ROOT=$(pwd)/cache-ci
@@ -36,12 +34,10 @@ steps:
       - cp dist/chempy-* deploy/public_html/branches/${CI_COMMIT_BRANCH}/
 
   - name: test-suite
-    image: bjodah/bjodahimg20dot:21.8.a
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:24
     environment:
-      - CC=gcc-11
-      - CXX=g++-11
-      - CPLUS_INCLUDE_PATH=/opt/boost-1.76.0/include
-      - SUNDBASE=/opt/sundials-5.7.0-release
+      - CPLUS_INCLUDE_PATH=/opt-3/boost-1.87.0/include
+      - SUNDBASE=/opt-3/sundials-6.7.0-release
       - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
       - CHEMPY_SKIP_NO_TESTS=1
     commands:
@@ -66,12 +62,10 @@ steps:
       - install
 
   - name: render-notebooks
-    image: bjodah/bjodahimg20dot:21.8.a
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:24
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
-      - SUNDBASE=/opt/sundials-5.7.0-release
-      - CC=gcc-11
-      - CXX=g++-11
+      - SUNDBASE=/opt-3/sundials-6.7.0-release
       - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
     commands:
       - export PYTHONUSERBASE=$(pwd)/cache-ci/pyusrb
@@ -86,10 +80,10 @@ steps:
       - install
 
   - name: compile-documentation
-    image: bjodah/bjodahimg20dot:21.8.a
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:24
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
-      - SUNDBASE=/opt/sundials-5.7.0-release
+      - SUNDBASE=/opt-3/sundials-6.7.0-release
     commands:
       - export PYTHONUSERBASE=$(pwd)/cache-ci/pyusrb
       - export CPATH=$SUNDBASE/include
@@ -103,7 +97,7 @@ steps:
       - render-notebooks
 
   - name: rebuild-cache
-    image: bjodah/bjodahimg20dot:21.8.a
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:24
     commands:
       - find ./cache-ci/ -type f -mtime +90 -exec rm {} \;
       - tar cf cache-ci.tar ./cache-ci/
@@ -116,7 +110,7 @@ steps:
       - compile-documentation
 
   - name: deploy-public-html
-    image: bjodah/bjodahimg20dot:21.8.a
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:24
     commands:
       - tar czf chempy-${CI_COMMIT_BRANCH}.tar.gz ./deploy/public_html
       - curl -T chempy-${CI_COMMIT_BRANCH}.tar.gz ftp://chempy:$${ARTIFACTS_PASS}@$${FTP_SERVER}/public_html/
