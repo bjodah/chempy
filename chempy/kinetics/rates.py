@@ -198,8 +198,9 @@ class MassAction(RateExpr, UnaryWrapper):
         elif hasattr(backend, 'clip'):  # e.g. numpy
             def heaviside(x, z):
                 assert z == 0
-                lx = backend.log(backend.maximum(x, tiny))
-                xclp = be.clip(lx, lo, hi)
+                lx = backend.log(backend.maximum(backend.array(x), tiny))
+                xclp = backend.clip(lx, lo, hi)
+                x = (xclp - lo)/(hi - lo)
                 y = (3 - 2*x)*x*x
                 return y
         else:
