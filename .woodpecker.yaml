@@ -22,16 +22,7 @@ steps:
       - export CACHE_ROOT=$(pwd)/cache-ci
       - export PYTHONUSERBASE=$CACHE_ROOT/pyusrb
       - if [ ! -d $PYTHONUSERBASE ]; then mkdir -p $PYTHONUSERBASE; fi
-      - export CPATH=$SUNDBASE/include:$CPATH
-      - export LIBRARY_PATH=$SUNDBASE/lib
-      - export LD_LIBRARY_PATH=$SUNDBASE/lib
-      - python3 -m pip install --cache-dir $CACHE_ROOT/pip_cache --user -e .[all]
-      - python3 -c "import pycvodes; import pyodesys; import pygslodeiv2"  # debug this CI config
-      - git fetch -tq
-      - python3 setup.py sdist                    # test pip installable sdist (checks MANIFEST.in)
-      - git archive -o dist/chempy-head.zip HEAD  # test pip installable zip (symlinks break)
-      - mkdir -p deploy/public_html/branches/${CI_COMMIT_BRANCH}
-      - cp dist/chempy-* deploy/public_html/branches/${CI_COMMIT_BRANCH}/
+      - .ci/ci-01-install.sh
 
   - name: test-suite
     image: cont-reg.bjodah.se:443/bjodah/triceratops-3:24
@@ -46,9 +37,7 @@ steps:
       - export CPATH=$SUNDBASE/include:$CPATH
       - export LIBRARY_PATH=$SUNDBASE/lib
       - export LD_LIBRARY_PATH=$SUNDBASE/lib
-      - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
-      - ./scripts/run_tests.sh --cov chempy --cov-report html
-      - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
+      - .ci/ci-02-run-tests.sh
       - cp -r htmlcov/ deploy/public_html/branches/${CI_COMMIT_BRANCH}/
       - ./.ci/grep-for-merge-blocking-token.sh
       - export CHEMPY_DEPRECATION_FILTER=ignore
@@ -72,7 +61,7 @@ steps:
       - export CPATH=$SUNDBASE/include:$CPATH
       - export LIBRARY_PATH=$SUNDBASE/lib
       - export LD_LIBRARY_PATH=$SUNDBASE/lib
-      - ./scripts/render_notebooks.sh
+      - bash -c "source /opt-3/cpython-v3.*-apt-deb/bin/activate; ./scripts/render_notebooks.sh"
       - ./.ci/grep-for-binary-data.sh
       - mv index.html index.ipynb.html
       - cp -r index.* examples/ "deploy/public_html/branches/${CI_COMMIT_BRANCH}"
@@ -89,7 +78,7 @@ steps:
       - export CPATH=$SUNDBASE/include
       - export LIBRARY_PATH=$SUNDBASE/lib
       - export LD_LIBRARY_PATH=$SUNDBASE/lib
-      - ./scripts/generate_docs.sh
+      - bash -c "source /opt-3/cpython-v3.*-apt-deb/bin/activate; ./scripts/generate_docs.sh"
       - cp LICENSE doc/_build/html/
       - cp -r doc/_build/html/ deploy/public_html/branches/${CI_COMMIT_BRANCH}
     depends_on:
