@@ -13,6 +13,7 @@ def test_QuantityDict():
     # QuantityDict * scalar_quantity
     c = QuantityDict(u.molar, {})
     c['H2O'] = 55.4 * u.molar
+    assert to_unitless(c['H2O'], u.mol/u.m3) == 55400.0
     with pytest.raises(ValueError):
         c['HCl'] = 3 * u.kg
 
@@ -20,7 +21,9 @@ def test_QuantityDict():
         QuantityDict(u.molar, {'a': u.mole})
 
     V = .4*u.dm3
+    assert to_unitless(c['H2O'], u.mol/u.m3) == 55400.0
     n = c*V
+    assert to_unitless(c['H2O'], u.mol/u.m3) == 55400.0
     assert isinstance(n, QuantityDict)
 
     # For the following to work major changes to quantities needs to be made:
@@ -70,4 +73,4 @@ def test_Solution__withdraw():
     s4 = s3.withdraw(.2 * u.dm3)
     assert s4 == s3
     assert s4 == (s1 + s2).withdraw(.2 * u.dm3)
-    assert s4 != s1 + s2
+    assert s4 != (s1 + s2)

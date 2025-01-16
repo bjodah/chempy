@@ -4,7 +4,7 @@ when:
 steps:
 
   - name: restore-cache
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:24
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-4:16
     commands:
       - curl ftp://chempy:$${ARTIFACTS_PASS}@$${FTP_SERVER}/cache/cache-ci.tar | tar x
     secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
@@ -13,7 +13,7 @@ steps:
        repo: bjodah/chempy
 
   - name: install
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:24
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-4:16
     environment:
       - CPLUS_INCLUDE_PATH=/opt-3/boost-1.87.0/include
       - SUNDBASE=/opt-3/sundials-6.7.0-release
@@ -25,7 +25,7 @@ steps:
       - .ci/ci-01-install.sh
 
   - name: test-suite
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:24
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-4:16
     environment:
       - CPLUS_INCLUDE_PATH=/opt-3/boost-1.87.0/include
       - SUNDBASE=/opt-3/sundials-6.7.0-release
@@ -51,7 +51,7 @@ steps:
       - install
 
   - name: render-notebooks
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:24
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-4:16
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
       - SUNDBASE=/opt-3/sundials-6.7.0-release
@@ -69,7 +69,7 @@ steps:
       - install
 
   - name: compile-documentation
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:24
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-4:16
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
       - SUNDBASE=/opt-3/sundials-6.7.0-release
@@ -86,7 +86,7 @@ steps:
       - render-notebooks
 
   - name: rebuild-cache
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:24
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-4:16
     commands:
       - find ./cache-ci/ -type f -mtime +90 -exec rm {} \;
       - tar cf cache-ci.tar ./cache-ci/
@@ -99,7 +99,7 @@ steps:
       - compile-documentation
 
   - name: deploy-public-html
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:24
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-4:16
     commands:
       - tar czf chempy-${CI_COMMIT_BRANCH}.tar.gz ./deploy/public_html
       - curl -T chempy-${CI_COMMIT_BRANCH}.tar.gz ftp://chempy:$${ARTIFACTS_PASS}@$${FTP_SERVER}/public_html/

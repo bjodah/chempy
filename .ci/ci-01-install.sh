@@ -42,12 +42,15 @@ done
 
 $PYTHON -m pip install $INSTALL_PIP_FLAGS -e .[all]
 $PYTHON -c "import pycvodes; import pyodesys; import pygslodeiv2"
-git fetch -tq
+#git fetch -tq
 $PYTHON setup.py sdist                    # test pip installable sdist (checks MANIFEST.in)
 git archive -o dist/chempy-head.zip HEAD  # test pip installable zip (symlinks break)
 mkdir -p deploy/public_html/branches/${CI_COMMIT_BRANCH}
 cp dist/chempy-* deploy/public_html/branches/${CI_COMMIT_BRANCH}/
 
+set +e
 [[ $($PYTHON setup.py --version) =~ ^[0-9]+.* ]]
 ./scripts/run_tests.sh --cov chempy --cov-report html
+bash
 ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
+

@@ -64,8 +64,11 @@ class QuantityDict(ArithmeticDict):
             raise ValueError("entry for %s (%s) is not compatible with %s" % (key, value, self.units))
         super(QuantityDict, self).__setitem__(key, value)
 
+    def _copy_of_items(self):
+        return [(k, v.copy()) for k, v in self.items()]
+
     def copy(self):
-        return self.__class__(self.units, copy.deepcopy(list(self.items())))
+        return self.__class__(self.units, self._copy_of_items())
 
     def __repr__(self):
         return "{}({}, {})".format(self.__class__.__name__,
@@ -73,12 +76,12 @@ class QuantityDict(ArithmeticDict):
                                    dict(self))
 
     def __mul__(self, other):
-        d = dict(copy.deepcopy(list(self.items())))
+        d = dict(self._copy_of_items())
         _imul(d, other)
         return self.__class__(self.units * getattr(other, 'units', 1), d)
 
     def __truediv__(self, other):
-        d = dict(copy.deepcopy(list(self.items())))
+        d = dict(self._copy_of_items())
         _itruediv(d, other)
         return self.__class__(self.units / getattr(other, 'units', 1), d)
 

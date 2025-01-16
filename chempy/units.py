@@ -335,12 +335,12 @@ def unit_of(expr, simplify=False):
         return 1
 
 
-def rescale(value, unit):
+def rescale(value, unit, dtype=None):
     literal_integer_one = 1
     if unit is literal_integer_one:
         unit = pq.dimensionless
     try:
-        return value.rescale(unit)
+        return value.rescale(unit, dtype=dtype)
     except AttributeError:
         if unit == 1:
             return value
