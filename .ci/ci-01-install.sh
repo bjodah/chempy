@@ -1,9 +1,9 @@
 #!/bin/bash
 set -euxo pipefail
+source /opt-3/cpython-v3.*-apt-deb/bin/activate
 export CPATH=$SUNDBASE/include:${CPATH:-}
 export LIBRARY_PATH=$SUNDBASE/lib
 export LD_LIBRARY_PATH=$SUNDBASE/lib
-source /opt-3/cpython-v3.*-apt-deb/bin/activate
 PYTHON=python
 INSTALL_PIP_FLAGS="--cache-dir $CACHE_ROOT/pip_cache ${INSTALL_PIP_FLAGS:-}"  # --user
 for pypkg in pyodeint pygslodeiv2 pycompilation pycodeexport pycvodes pykinsol sym pyodesys; do
@@ -40,17 +40,11 @@ for pypkg in pyodeint pygslodeiv2 pycompilation pycodeexport pycvodes pykinsol s
     #( cd /tmp; $PYTHON -m pytest -k "not pool_discontinuity_approx" --pyargs $pypkg )
 done
 
-$PYTHON -m pip install $INSTALL_PIP_FLAGS -e .[all]
 $PYTHON -c "import pycvodes; import pyodesys; import pygslodeiv2"
+$PYTHON -m pip install $INSTALL_PIP_FLAGS -e .[all]
+[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]
 #git fetch -tq
 $PYTHON setup.py sdist                    # test pip installable sdist (checks MANIFEST.in)
 git archive -o dist/chempy-head.zip HEAD  # test pip installable zip (symlinks break)
 mkdir -p deploy/public_html/branches/${CI_COMMIT_BRANCH}
 cp dist/chempy-* deploy/public_html/branches/${CI_COMMIT_BRANCH}/
-
-set +e
-[[ $($PYTHON setup.py --version) =~ ^[0-9]+.* ]]
-./scripts/run_tests.sh --cov chempy --cov-report html
-bash
-./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
-
