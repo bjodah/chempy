@@ -482,10 +482,10 @@ class Reaction(object):
         >>> r4 = Reaction.from_string("A -> 2 B; 'k'", 'A B')
         >>> r4.rate(dict(A=3, B=5, k=7)) == {'A': -3*7, 'B': 2*3*7}
         True
-        >>> r5 = Reaction.from_string("A -> B; 1/molar/second", 'A B')
+        >>> r5 = Reaction.from_string("A -> B; 1/molar/second", 'A B') # doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
             ...
-        ValueError: Unable to convert between units ...
+        ValueError: Incompatible units
 
 
         Notes

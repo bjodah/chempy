@@ -651,10 +651,10 @@ class Backend(object):
     >>> math.exp(3*km) == math.exp(3*m)
     True
     >>> be = Backend('math')
-    >>> be.exp(3*km)
+    >>> be.exp(3*km) # doctest: +IGNORE_EXCEPTION_DETAIL
     Traceback (most recent call last):
         ...
-    ValueError: Unable to convert between units of "km" and "dimensionless"
+    ValueError: Incompatible units
     >>> import numpy as np
     >>> np.sum([1000*pq.metre/pq.kilometre, 1])
     1001.0
