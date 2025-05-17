@@ -120,7 +120,7 @@ class Reducible:
         Decompose reducible representation.
 
         Decompose a reducible representation for a specific point group and
-        returns the number of each irreducible representation in the reducible.
+        return the number of each irreducible representation in the reducible.
 
         Parameters
         ----------
@@ -137,12 +137,12 @@ class Reducible:
 
         Examples
         --------
-        >>> rep = ReduceRep([9, -1, 3, 1], 'c2v', vibe_only=False)
-        >>> rep.decomp_reduc([9, -1, 3, 1], 'C2v')
+        >>> rep = Reducible([9, -1, 3, 1], 'c2v', vibe_only=False)
+        >>> rep.decomp_reduc()
         array([3, 1, 3, 2])
 
-        >>> rep = ReduceRep([15, 0, 0, 7, -2, -2], 'c3h, vibe_only=True)
-        >>> rep.decomp_reduc([15, 0, 0, 7, -2, -2], 'C3h')
+        >>> rep = Reducible([15, 0, 0, 7, -2, -2], 'c3h, vibe_only=True)
+        >>> rep.decomp_reduc()
         array([3, 4, 1, 1])
 
         """
@@ -173,7 +173,7 @@ class Reducible:
 
         Examples
         --------
-        >>> rep = ReduceRep([9, -1, 3, 1], 'c2v', vibe_only=False)
+        >>> rep = Reducible([9, -1, 3, 1], 'c2v', vibe_only=False)
         >>> rep.vide_modes()
         array([2, 0, 1, 0])
         """
@@ -200,8 +200,8 @@ class Reducible:
 
         Examples
         --------
-        >>> rep = ReduceRep([9, -1, 3, 1], 'c2v', vibe_only=False)
-        >>> rep.ir_active([3, 1, 3, 2, 'C2v')
+        >>> rep = Reducible([9, -1, 3, 1], 'c2v', vibe_only=False)
+        >>> rep.ir_active()
         array([2, 0, 1, 0])
 
         """
@@ -231,8 +231,8 @@ class Reducible:
 
         Examples
         --------
-        >>> rep = ReduceRep([9, -1, 3, 1], 'c2v', vibe_only=False)
-        >>> rep.raman_active([3, 1, 3, 2, 'C2v')
+        >>> rep = Reducible([9, -1, 3, 1], 'c2v', vibe_only=False)
+        >>> rep.raman_active()
         array([2, 0, 1, 0])
 
         """
@@ -311,6 +311,12 @@ class Reducible:
         Returns
         -------
         Reducible object
+
+        Examples
+        --------
+        >>> rep = Reducible.from_atoms([3, 1, 3, 1], 'c2v')
+        >>> rep.gamma
+        >>> array([9, -1, 3, 1])
         """
         n_atoms = np.array(n_atoms)
 
