@@ -13,13 +13,13 @@ import numpy as np
 # data tables in character_tables.py file
 from .tables import (
     tables,
-    headers,
-    mulliken,
     rot_trans_modes,
     IR_active,
     Raman_active,
     masks,
     atom_contribution,
+    mulliken,
+    headers
 )
 
 
@@ -30,7 +30,8 @@ def get_header(group):
     Parameters
     ----------
     group : string
-        point group Schoelflies notation (e.g., 'C2v')
+        Point group Schoelflies notation (e.g., 'C2v').  This is
+        case-insentive.
 
     Returns
     -------
@@ -68,7 +69,8 @@ def get_mulliken(group):
     Parameters
     ----------
     group : string
-        point group Schoelflies notation (e.g., 'C2v')
+        Point group Schoelflies notation (e.g., 'C2v').  This is
+        case-insentive.
 
     Returns
     -------
@@ -86,23 +88,25 @@ class Reducible:
     modes.
     """
 
-    def __init__(self, gamma, group, vibe_only=True):
+    def __init__(self, gamma, group, all_motion=False):
         """
+        Initialize Reducible representation object.
 
         Parameters
         ----------
         gamma : array_like
             Reducible representation.
         group : str
-            Point group Schoelflies notation (e.g., 'C2v')
-        vibe_only : bool, optional
-            True if reducible representation is only vibrational modes and
-            False if the reducible describes all motions. The default is True.
+            Point group Schoelflies notation (e.g., 'C2v').  This is
+            case-insentive.
+        all_motion : bool, optional
+            False if reducible representation is only vibrational modes and
+            True if the reducible describes all motions (rotational,
+            translational, and vibrational). The default is False.
 
         Returns
         -------
         None.
-
         """
         if np.all(np.mod(gamma, 1) != 0):
             print('Invalid representation - must be whole numbers.')
@@ -113,38 +117,77 @@ class Reducible:
         else:
             self.group = group.lower()
             self.gamma = gamma
-            self.vibe_only = vibe_only
+            self.all_motion = all_motion
 
-    def decomp_reduc(self):
+    def return_dict_method(func):
         """
-        Decompose reducible representation.
+        Return results as a dictionary.
 
-        Decompose a reducible representation for a specific point group and
-        return the number of each irreducible representation in the reducible.
+        Return a list or array as a dictionary with with mulliken symbols as
+        the keys.
 
         Parameters
         ----------
-        gamma: array_like
-               Reducible representation
-        group: str
-            Point group of representation in Schoelflies notation (e.g., 'C2v')
+        arr : array_like
+            List or array containing results corresponding to irreducible
+            representations.
+        group : string
+            Point group Schoelflies notation (e.g., 'C2v').  This is
+            case-insentive.
 
         Returns
         -------
-        Numpy array with  number of each irreducible representation, in
-        order, in the provided reducible representation. Use get_mulliken()
-        for listing of irreducible representations and order.
+        Dictionary.
+
+        """
+        def wrapper(self, *args, **kwargs):
+            if kwargs.get('to_dict'):
+                keys = mulliken[self.group.lower()]
+                values = func(self, *args, **kwargs)
+                return dict(zip(keys, values.tolist()))
+            else:
+                return func(self, *args, **kwargs)
+        return wrapper
+
+    @return_dict_method
+    def decomp(self, to_dict=False):
+        """
+        Decompose reducible representation into number of irreducbiles.
+
+        Decompose a reducible representation for a specific point group and
+        returns the number of each irreducible representation in the reducible.
+
+        The order of irreducibles can be determined by get_mulliken(group).
+
+        Parameters
+        ----------
+        gamma : array_like
+               Reducible representation with symmetry operations in the order
+               provided by get_header(group).
+        group : str
+            Point group of representation in Schoelflies notation
+            (e.g., 'C2v'). This is case-insentive.
+        to_dict : bool
+            True causes function to return a dictionary with mulliken symbols
+            as the keys.
+
+        Returns
+        -------
+        np.array with  number of each irreducible representation in the
+        provided reducible representation. Use get_mulliken() for listing of
+        irreducible representations and order.
 
         Examples
         --------
-        >>> rep = Reducible([9, -1, 3, 1], 'c2v', vibe_only=False)
-        >>> rep.decomp_reduc()
+        >>> rep = Reducible([9, -1, 3, 1], 'c2v', all_motion=True)
+        >>> rep.decomp()
         array([3, 1, 3, 2])
 
-        >>> rep = Reducible([15, 0, 0, 7, -2, -2], 'c3h, vibe_only=True)
-        >>> rep.decomp_reduc()
+        >>> rep = Reducible([15, 0, 0, 7, -2, -2], 'C3h', all_motion=False)
+        >>> rep.decomp()
         array([3, 4, 1, 1])
-
+        >>> rep.decomp(to_dict=True)
+        >>> {"A'": 3, 'A"': 4, "E'": 2, 'E"': 1}
         """
         table = tables[self.group]
         gamma = np.array(self.gamma)
@@ -157,7 +200,8 @@ class Reducible:
 
         return np.rint(n_i).astype(int)
 
-    def vibe_modes(self):
+    @return_dict_method
+    def vibe_modes(self, to_dict=False):
         """Return vibrational modes.
 
         Return the number of vibrational modes after rotation and translation
@@ -165,91 +209,99 @@ class Reducible:
 
         Parameters
         ----------
-        None
+        to_dict : bool
+            True causes function to return a dictionary with mulliken symbols
+            as the keys.
 
         Returns
         -------
-        Numpy array
+        Numpy array or dictionary
 
         Examples
         --------
-        >>> rep = Reducible([9, -1, 3, 1], 'c2v', vibe_only=False)
+        >>> rep = Reducible([9, -1, 3, 1], 'c2v', all_motion=True)
         >>> rep.vide_modes()
         array([2, 0, 1, 0])
+        >>> rep.vibe_modes(to_dict)
+        >>> {'A1': 2, 'A2': 0, 'B1': 1, 'B2': 0}
         """
-        if self.vibe_only is True:
-            return self.decomp_reduc()
-            print('Already only contains vibrational modes.')
+        if self.all_motion is False:
+            return self.decomp()
         else:
-            rot_trans = rot_trans_modes[self.group.lower()]
-            irreducibles = self.decomp_reduc()
+            rot_trans = rot_trans_modes[self.group]
+            irreducibles = self.decomp()
 
         return np.array(irreducibles) - np.array(rot_trans)
 
-    def ir_active(self):
-        """Retrun IR active modes.
+    @return_dict_method
+    def ir_active(self, to_dict=False):
+        """Return IR active vibrational modes.
 
         Return the number of each irreducible representation that are IR active
         in the given reducible representation. If vibe_only=False for the
         reducible representation, the rotational and translational modes are
         automatically subtracted out.
 
+        Parameters
+        ----------
+        to_dict : bool
+            True causes function to return a dictionary with mulliken symbols
+            as the keys.
+
         Returns
         -------
-        Numpy array
+        Numpy array or dictionary
 
         Examples
         --------
-        >>> rep = Reducible([9, -1, 3, 1], 'c2v', vibe_only=False)
-        >>> rep.ir_active()
+        >>> rep = Reducible([9, -1, 3, 1], 'c2v', all_motion=True)
+        >>> rep.ir_active([3, 1, 3, 2, 'C2v')
         array([2, 0, 1, 0])
+        >>> rep = Reducible([5, 2, 1, 3, 0, 3], 'd3h', all_motion=False)
+        >>> rep.ir_active()
+        >>> array([0, 0, 1, 0, 1, 0])
+        >>> rep.ir_active(to_dict=True)
+        >>>  {"A1'": 0, "A2'": 0, "E'": 1, 'A1"': 0, 'A2"': 1, 'E"': 0}
 
         """
-        irreducibles = self.decomp_reduc()
+        return self.vibe_modes() * np.array(IR_active[self.group])
 
-        if self.vibe_only is True:
-            return irreducibles * np.array(IR_active[self.group])
-
-        if self.vibe_only is False:
-            rot_trans = np.array(rot_trans_modes[self.group.lower()])
-
-            vibrations = np.array(irreducibles) - rot_trans
-
-            return vibrations * np.array(IR_active[self.group.lower()])
-
-    def raman_active(self):
-        """Return Raman active modes.
+    @return_dict_method
+    def raman_active(self, to_dict=False):
+        """Return Raman active vibrational modes.
 
         Return the number of each irreducible representation that are Raman
         active in the given reducible representation. If vibe_only=False for
         the reducible representation, the rotational and translational modes
         are automatically subtracted out.
 
+        Parameters
+        ----------
+        to_dict : bool
+            True causes function to return a dictionary with mulliken symbols
+            as the keys.
+
         Returns
         -------
-        Numpy array
+        Numpy array or dictionary
 
         Examples
         --------
-        >>> rep = Reducible([9, -1, 3, 1], 'c2v', vibe_only=False)
-        >>> rep.raman_active()
+        >>> rep = Reducible([9, -1, 3, 1], 'c2v', all_motion=True)
+        >>> rep.raman_active([3, 1, 3, 2, 'C2v')
         array([2, 0, 1, 0])
+        >>> rep = Reducible([5, 2, 1, 3, 0, 3], 'd3h', all_motion=False)
+        >>> rep.raman_active()
+        >>> array([2, 0, 1, 0, 0, 0])
+        >>> rep.raman_active(to_dict=True)
+        >>>  {"A1'": 2, "A2'": 0, "E'": 1, 'A1"': 0, 'A2"': 0, 'E"': 0}
 
         """
-        rot_trans = np.array(rot_trans_modes[self.group.lower()])
-        irreducibles = self.decomp_reduc()
-
-        vibrations = np.array(irreducibles) - rot_trans
-
-        if np.any((vibrations % 1) != 0):
-            print(""""Invalid reducible representation - all values must
-                  be whole numbers.""")
-        else:
-            return vibrations * np.array(Raman_active[self.group.lower()])
+        return self.vibe_modes() * np.array(Raman_active[self.group])
 
     @classmethod
-    def from_irred(cls, n_irred, group, vibe_only=True):
-        """Create reducible for number of irreducibiel representations.
+    def from_irred(cls, n_irred, group, all_motion=False):
+        """Create reducible from number of irreducibiel representations.
 
         Alternative constructor that returns a reducible representation
         given the number of each irreducible representations that comprise
@@ -259,12 +311,13 @@ class Reducible:
         ----------
         n_irred: array_like
             Number of each irreducible representations in the returned
-            reducible representation
+            reducible representation.
         group: str
-            Point group in Schoelflies notation (e.g., 'C2v')
-        vibe_only: bool
-            Whether the resulting reducible representation only represents
-            vibrational modes
+            Point group in Schoelflies notation (e.g., 'C2v').  This is
+            case-insentive.
+        all_motion: bool
+            Whether the resulting reducible representation represents all
+            motions (rotration, vibration, and translation).
 
         Returns
         -------
@@ -276,18 +329,13 @@ class Reducible:
         >>> rep.gamma
         array([2, 0, 2, 0])
 
-        >>> rep = Reducible.from_irred([3, 1, 3, 2], 'C2v')
-        >>> rep.gamma
-        array([9, -1, 3, 1])
-
         >>> rep = Reducible.from_irred([3, 1, 1], 'C3v')
         >>> rep.gamma
         array([6, 3, 2])
-
         """
         irred_sum = np.sum((tables[group.lower()].T * n_irred).T, axis=0)
 
-        return cls(np.rint(irred_sum).astype(int), group, vibe_only=True)
+        return cls(np.rint(irred_sum).astype(int), group, all_motion=False)
 
     @classmethod
     def from_atoms(cls, n_atoms, group):
@@ -305,7 +353,8 @@ class Reducible:
             Number of atoms that remain stationary during each operation in
             the point group - see get_header() for list of operations.
         group: str
-            Point group in Schoelflies notation (e.g., 'C2v')
+            Point group in Schoelflies notation (e.g., 'C2v').  This is
+            case-insentive.
 
 
         Returns
@@ -314,16 +363,15 @@ class Reducible:
 
         Examples
         --------
-        >>> rep = Reducible.from_atoms([3, 1, 3, 1], 'c2v')
+        >>> rep = Reducible.from_atoms([4, 2, 4, 2], 'c2v')
         >>> rep.gamma
-        >>> array([9, -1, 3, 1])
+        >>> array([12, -2,  4,  2])
         """
         n_atoms = np.array(n_atoms)
 
         if np.all(np.mod(n_atoms, 1) == 0):
             gamma = np.rint(n_atoms * np.array(atom_contribution[group]))
-            return cls(gamma.astype(int), group, vibe_only=False)
-
+            return cls(gamma.astype(int), group, all_motion=True)
         else:
             print("""Number of stationary atoms (n_atoms) must be an integer
                   value.""")
