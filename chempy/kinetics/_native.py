@@ -62,13 +62,18 @@ _roots_ss = """
     const int ny = get_ny();
     std::vector<double> f(ny);
     double tot=0.0;
-    rhs(x, y, &f[0]);
+    auto flag_rhs = rhs(x, y, &f[0]);
+    if (flag_rhs != AnyODE::Status::success) { return AnyODE::Status::unrecoverable_error; }
     for (int i=0; i<ny; ++i){
-        tot += std::min(std::abs(f[i]/m_atol[i]), std::abs(f[i]/y[i]/m_rtol));  // m_atol needs to be of size ny!
+        //fprintf(stderr, "f[i] = %12.5g y[i] = %12.5g f[i]/(|y[i]|+1e-100) = %12.5g\\n", f[i], y[i], f[i]/(fabs(y[i])+1e-100));
+        //fflush(stderr);
+        tot += fmin(fabs(f[i]/(m_atol[i]+1e-100)), fabs(f[i]/(fabs(y[i])+1e-100)/(m_rtol+1e-100)));  // m_atol needs to be of size ny!
     }
+    //tot = cbrt(tot);
+    //fprintf(stderr, "tot = %12.5g\\n", tot);
+    //fflush(stderr);
+    //return AnyODE::Status::unrecoverable_error;
     out[0] = tot/ny - m_special_settings[0];
-    this->nrev++;
-    return AnyODE::Status::success;
 """
 
 _constr_special_settings = r"""
@@ -153,8 +158,7 @@ def get_native(rsys, odesys, integrator, skip_keys=(0,), steady_state_root=False
         native_code_kw['namespace_override']['p_nroots'] = ' return %d; ' % len(conc_roots)
         native_code_kw['namespace_override']['p_roots'] = (
             ''.join(['    out[%(i)d] = y[%(j)d] - m_special_settings[%(i)d];\n' %
-                     dict(i=i, j=odesys.names.index(k)) for i, k in enumerate(conc_roots)]) +
-            '    return AnyODE::Status::success;\n'
+                     dict(i=i, j=odesys.names.index(k)) for i, k in enumerate(conc_roots)])
         )
         if 'p_constructor' not in ns_extend:
             ns_extend['p_constructor'] = []
