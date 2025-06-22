@@ -174,7 +174,7 @@ class MassAction(RateExpr, UnaryWrapper):
     def active_conc_prod(self, variables, backend=math, reaction=None):
         result = 1
         for k, v in reaction.reac.items():
-            result *= variables[k]**v
+            result = result * variables[k]**v
         return result
 
     def inactive_reactants_modulation(self, variables, backend=math, reaction=None):
@@ -212,7 +212,7 @@ class MassAction(RateExpr, UnaryWrapper):
                 x = variables[k]
                 if backend is math and not isinstance(x, (float, int)):
                     continue
-                result *= heaviside(x, 0)
+                result = result * heaviside(x, 0)
         return result
 
     def __call__(self, variables, backend=math, reaction=None, **kwargs):
