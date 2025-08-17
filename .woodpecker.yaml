@@ -1,10 +1,15 @@
+variables:
+#   Developers are not expected to actually use this CI image locally, however,
+#   using this image avoid downloading a bunch of PyPI packages for each CI run.
+  - &ci_image 'cont-reg.bjodah.se:443/bjodah/triceratops-6:32'
+
 when:
   - event: [pull_request, tag, cron, push]
 
 steps:
 
   - name: restore-cache
-    image: bjodah/bjodahimg20dot:21.8.a
+    image: *ci_image
     commands:
       - curl ftp://chempy:$${ARTIFACTS_PASS}@$${FTP_SERVER}/cache/cache-ci.tar | tar x
     secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
@@ -13,90 +18,37 @@ steps:
        repo: bjodah/chempy
 
   - name: install
-    image: bjodah/bjodahimg20dot:21.8.a
-    environment:
-      - CC=gcc-11
-      - CXX=g++-11
-      - CPLUS_INCLUDE_PATH=/opt/boost-1.77.0/include
-      - SUNDBASE=/opt/sundials-5.7.0-release
-      - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
+    image: *ci_image
     commands:
-      - export CACHE_ROOT=$(pwd)/cache-ci
-      - export PYTHONUSERBASE=$CACHE_ROOT/pyusrb
-      - if [ ! -d $PYTHONUSERBASE ]; then mkdir -p $PYTHONUSERBASE; fi
-      - export CPATH=$SUNDBASE/include:$CPATH
-      - export LIBRARY_PATH=$SUNDBASE/lib
-      - export LD_LIBRARY_PATH=$SUNDBASE/lib
-      - python3 -m pip install --cache-dir $CACHE_ROOT/pip_cache --user --upgrade-strategy=eager --upgrade cython
-      - python3 -m pip install --cache-dir $CACHE_ROOT/pip_cache --user -e .[all]
-      - python3 -c "import pycvodes; import pyodesys; import pygslodeiv2"  # debug this CI config
-      - git fetch -tq
-      - python3 setup.py sdist                    # test pip installable sdist (checks MANIFEST.in)
-      - git archive -o dist/chempy-head.zip HEAD  # test pip installable zip (symlinks break)
+      - bash -l .ci/run-01-install-deps-create-sdist.sh
       - mkdir -p deploy/public_html/branches/${CI_COMMIT_BRANCH}
       - cp dist/chempy-* deploy/public_html/branches/${CI_COMMIT_BRANCH}/
 
   - name: test-suite
-    image: bjodah/bjodahimg20dot:21.8.a
+    image: *ci_image
     environment:
-      - CC=gcc-11
-      - CXX=g++-11
-      - CPLUS_INCLUDE_PATH=/opt/boost-1.77.0/include
-      - SUNDBASE=/opt/sundials-5.7.0-release
-      - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
       - CHEMPY_SKIP_NO_TESTS=1
     commands:
-      - export CACHE_ROOT=$(pwd)/cache-ci
-      - export PYTHONUSERBASE=$CACHE_ROOT/pyusrb
-      - export CPATH=$SUNDBASE/include:$CPATH
-      - export LIBRARY_PATH=$SUNDBASE/lib
-      - export LD_LIBRARY_PATH=$SUNDBASE/lib
-      - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
-      - ./scripts/run_tests.sh --cov chempy --cov-report html
-      - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
-      - cp -r htmlcov/ deploy/public_html/branches/${CI_COMMIT_BRANCH}/
-      - ./.ci/grep-for-merge-blocking-token.sh
-      - export CHEMPY_DEPRECATION_FILTER=ignore
-      - python3 -m virtualenv /tmp/test_sdist
-      - python3 -m virtualenv /tmp/test_git_archive
-      - cd deploy/public_html/branches/${CI_COMMIT_BRANCH}
-      - unset CHEMPY_SKIP_NO_TESTS  # I can't get pip to install extras when using local file...
-      - bash -c "source /tmp/test_sdist/bin/activate; pip install --cache-dir $CACHE_ROOT/pip_cache file://$(realpath $(eval ls chempy-*.tar.gz))#chempy[all] pytest; pytest --pyargs chempy"
-      - bash -c "source /tmp/test_git_archive/bin/activate; pip install --cache-dir $CACHE_ROOT/pip_cache file://$(realpath chempy-head.zip)#chempy[all] pytest; pytest --pyargs chempy"
+      - bash -l .ci/run-02-test-suite.sh
     depends_on:
       - install
 
   - name: render-notebooks
-    image: bjodah/bjodahimg20dot:21.8.a
+    image: *ci_image
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
-      - SUNDBASE=/opt/sundials-5.7.0-release
-      - CC=gcc-11
-      - CXX=g++-11
-      - CPATH=/usr/include/suitesparse  # sunlinsol_klu.h includes "klu.h"
     commands:
-      - export PYTHONUSERBASE=$(pwd)/cache-ci/pyusrb
-      - export CPATH=$SUNDBASE/include:$CPATH
-      - export LIBRARY_PATH=$SUNDBASE/lib
-      - export LD_LIBRARY_PATH=$SUNDBASE/lib
-      - ./scripts/render_notebooks.sh
-      - ./.ci/grep-for-binary-data.sh
-      - mv index.html index.ipynb.html
-      - cp -r index.* examples/ "deploy/public_html/branches/${CI_COMMIT_BRANCH}"
+      - bash -l .ci/run-03-render-notebooks.sh
+      - .ci/grep-for-binary-data.sh
     depends_on:
       - install
 
   - name: compile-documentation
-    image: bjodah/bjodahimg20dot:21.8.a
+    image: *ci_image
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
-      - SUNDBASE=/opt/sundials-5.7.0-release
     commands:
-      - export PYTHONUSERBASE=$(pwd)/cache-ci/pyusrb
-      - export CPATH=$SUNDBASE/include
-      - export LIBRARY_PATH=$SUNDBASE/lib
-      - export LD_LIBRARY_PATH=$SUNDBASE/lib
-      - ./scripts/generate_docs.sh
+      - bash -lc '. .ci/_source_common_env.sh; ./scripts/generate_docs.sh'
       - cp LICENSE doc/_build/html/
       - cp -r doc/_build/html/ deploy/public_html/branches/${CI_COMMIT_BRANCH}
     depends_on:
@@ -104,7 +56,7 @@ steps:
       - render-notebooks
 
   - name: rebuild-cache
-    image: bjodah/bjodahimg20dot:21.8.a
+    image: *ci_image
     commands:
       - find ./cache-ci/ -type f -mtime +90 -exec rm {} \;
       - tar cf cache-ci.tar ./cache-ci/
@@ -117,7 +69,7 @@ steps:
       - compile-documentation
 
   - name: deploy-public-html
-    image: bjodah/bjodahimg20dot:21.8.a
+    image: *ci_image
     commands:
       - tar czf chempy-${CI_COMMIT_BRANCH}.tar.gz ./deploy/public_html
       - curl -T chempy-${CI_COMMIT_BRANCH}.tar.gz ftp://chempy:$${ARTIFACTS_PASS}@$${FTP_SERVER}/public_html/
@@ -127,5 +79,3 @@ steps:
        repo: bjodah/chempy
     depends_on:
       - compile-documentation
-
-
