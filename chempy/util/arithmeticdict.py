@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import division
 
 from collections import defaultdict
 from itertools import chain
@@ -19,7 +20,7 @@ def _itruediv(d1, d2):
             d1[k] = d1[k] / d2[k]
     else:
         for k in d1:
-            d1[k] /= d2
+            d1[k] = d1[k] / d2
 
 
 class ArithmeticDict(defaultdict):
@@ -60,7 +61,7 @@ class ArithmeticDict(defaultdict):
     def __iadd__(self, other):
         try:
             for k, v in other.items():
-                self[k] = sekf[k] + v
+                self[k] = self[k] + v
         except AttributeError:
             for k in self:
                 self[k] = self[k] + other
@@ -77,19 +78,19 @@ class ArithmeticDict(defaultdict):
 
     def __add__(self, other):
         a = self.copy()
-        a = a + other
+        a += other
         return a
 
     def __sub__(self, other):
         a = self.copy()
-        a = a - other
+        a -= other
         return a
 
     def __radd__(self, other):
         return self + other
 
     def __rsub__(self, other):
-        return -1 * self + other
+        return -1*self + other
 
     def __imul__(self, other):
         _imul(self, other)
@@ -97,7 +98,7 @@ class ArithmeticDict(defaultdict):
 
     def __mul__(self, other):
         a = self.copy()
-        a = a * other
+        a *= other
         return a
 
     def __rmul__(self, other):
@@ -109,22 +110,21 @@ class ArithmeticDict(defaultdict):
 
     def __truediv__(self, other):
         a = self.copy()
-        a = a / other
+        a /= other
         return a
 
     def __rtruediv__(self, other):
-        """other / self"""
-        return self.__class__(
-            self.default_factory, {k: other / v for k, v in self.items()}
-        )
+        """ other / self """
+        return self.__class__(self.default_factory,
+                              {k: other/v for k, v in self.items()})
 
     def __ifloordiv__(self, other):
         if hasattr(other, "keys"):
             for k in set(chain(self.keys(), other.keys())):
-                self[k] = self[k] // other[k]
+                self[k] = self[k]//other[k]
         else:
             for k in self:
-                self[k] //= other
+                self[k] = self[k] // other
         return self
 
     def __floordiv__(self, other):
@@ -133,18 +133,18 @@ class ArithmeticDict(defaultdict):
         return a
 
     def __rfloordiv__(self, other):
-        """other // self"""
-        return self.__class__(
-            self.default_factory, {k: other // v for k, v in self.items()}
-        )
+        """ other // self """
+        return self.__class__(self.default_factory,
+                              {k: other//v for k, v in self.items()})
 
+    __div__ = __truediv__  # Py2 compatibility (or: import division from __future__)
     __idiv__ = __itruediv__  # Py2 compatibility
     __rdiv__ = __rtruediv__  # Py2 compatibility
 
     def __repr__(self):
-        return "{}({}, {})".format(
-            self.__class__.__name__, repr(self.default_factory), dict(self)
-        )
+        return "{}({}, {})".format(self.__class__.__name__,
+                                   repr(self.default_factory),
+                                   dict(self))
 
     def _element_eq(self, a, b):
         return a == b
@@ -166,15 +166,14 @@ class ArithmeticDict(defaultdict):
 
     def isclose(self, other, rtol=1e-12, atol=None):
         def _isclose(a, b):
-            lim = abs(rtol * b)
+            lim = abs(rtol*b)
             if atol is not None:
-                lim = lim + atol
-            return abs((a - b)) <= lim
-
+                lim += atol
+            return abs((a-b)) <= lim
         return self._discrepancy(other, _isclose)
 
     def all_non_negative(self):
         for v in self.values():
-            if v < v * 0:
+            if v < v*0:
                 return False
         return True
