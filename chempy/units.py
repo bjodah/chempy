@@ -20,6 +20,7 @@ from functools import reduce
 from operator import mul
 import sys
 import warnings
+from typing import Iterable
 
 from .util.arithmeticdict import ArithmeticDict
 from .util.pyutil import NameSpace, deprecated
@@ -347,7 +348,7 @@ def rescale(value, unit):
 
 
 def to_unitless(value, new_unit=None):
-    """Nondimensionalization of a quantity.
+    """ Nondimensionalization of a quantity.
 
     Parameters
     ----------
@@ -366,42 +367,39 @@ def to_unitless(value, new_unit=None):
     if new_unit is None:
         new_unit = pq.dimensionless
 
-    if isinstance(value, (list, tuple)):
-        return np.array([to_unitless(elem, new_unit) for elem in value])
-    elif isinstance(value, np.ndarray) and not hasattr(value, "rescale"):
-        if is_unitless(new_unit) and new_unit == 1 and value.dtype != object:
-            return value
+    if isinstance(value, np.ndarray) and not hasattr(value, 'rescale'):
+        if is_unitless(new_unit) and new_unit == 1:
+            if value.ndim == 0:
+                return value.item()
+            else:
+                return value
         return np.array([to_unitless(elem, new_unit) for elem in value])
     elif isinstance(value, dict):
         new_value = dict(value.items())  # value.copy()
         for k in value:
             new_value[k] = to_unitless(value[k], new_unit)
         return new_value
-    elif (
-        isinstance(value, (int, float)) and new_unit is integer_one or new_unit is None
-    ):
+    elif isinstance(value, (int, float)) and new_unit is integer_one or new_unit is None:
         return value
+    elif isinstance(value, Iterable) and getattr(value, 'ndim', -1) != 0:
+        if len(value) == 0:
+            return to_unitless(value[0], new_unit)
+        else:
+            return np.array([to_unitless(elem, new_unit) for elem in value])
     elif isinstance(value, str):
         raise ValueError("str not supported")
+
+    ori_unit = unit_of(value)
+    ori_mag = magnitude(value)
+    scale_factor = simplified(ori_unit/new_unit)
+    if is_unitless(scale_factor):
+        sc = magnitude(scale_factor)
+        if getattr(ori_mag, 'ndim', -1) == 0 or not isinstance(ori_mag, Iterable):
+            return ori_mag*sc
+        else:
+            return np.array(ori_mag*sc)
     else:
-        try:
-            try:
-                mag = magnitude(value)
-                unt = unit_of(value)
-                conv = rescale(unt/new_unit, pq.dimensionless)
-                result = np.array(mag)*conv
-            except AttributeError:
-                if new_unit == pq.dimensionless:
-                    return value
-                else:
-                    raise
-            else:
-                if result.ndim == 0:
-                    return float(result)
-                else:
-                    return np.asarray(result)
-        except TypeError:
-            return np.array([to_unitless(elem, new_unit) for elem in value])
+        raise ValueError("Incompatible units")
 
 
 def uniform(container):

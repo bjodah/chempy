@@ -10,7 +10,7 @@ def _imul(d1, d2):
             d1[k] = d1[k] * d2[k]
     else:
         for k in d1:
-            d1[k] *= d2
+            d1[k] = d1[k] * d2
 
 
 def _itruediv(d1, d2):
@@ -60,29 +60,29 @@ class ArithmeticDict(defaultdict):
     def __iadd__(self, other):
         try:
             for k, v in other.items():
-                self[k] += v
+                self[k] = sekf[k] + v
         except AttributeError:
             for k in self:
-                self[k] += other
+                self[k] = self[k] + other
         return self
 
     def __isub__(self, other):
         try:
             for k, v in other.items():
-                self[k] -= v
+                self[k] = self[k] - v
         except AttributeError:
             for k in self:
-                self[k] -= other
+                self[k] = self[k] - other
         return self
 
     def __add__(self, other):
         a = self.copy()
-        a += other
+        a = a + other
         return a
 
     def __sub__(self, other):
         a = self.copy()
-        a -= other
+        a = a - other
         return a
 
     def __radd__(self, other):
@@ -97,7 +97,7 @@ class ArithmeticDict(defaultdict):
 
     def __mul__(self, other):
         a = self.copy()
-        a *= other
+        a = a * other
         return a
 
     def __rmul__(self, other):
@@ -109,7 +109,7 @@ class ArithmeticDict(defaultdict):
 
     def __truediv__(self, other):
         a = self.copy()
-        a /= other
+        a = a / other
         return a
 
     def __rtruediv__(self, other):
@@ -168,7 +168,7 @@ class ArithmeticDict(defaultdict):
         def _isclose(a, b):
             lim = abs(rtol * b)
             if atol is not None:
-                lim += atol
+                lim = lim + atol
             return abs((a - b)) <= lim
 
         return self._discrepancy(other, _isclose)

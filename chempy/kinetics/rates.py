@@ -191,7 +191,7 @@ class MassAction(RateExpr, UnaryWrapper):
     def active_conc_prod(self, variables, backend=math, reaction=None):
         result = 1
         for k, v in reaction.reac.items():
-            result *= variables[k] ** v
+            result = result * variables[k] ** v
         return result
 
     def rate_coeff(self, variables, backend=math, **kwargs):
