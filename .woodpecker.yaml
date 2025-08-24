@@ -17,7 +17,7 @@ steps:
      - event: push
        repo: bjodah/chempy
 
-  - name: install
+  - name: test-suite
     image: *ci_image
     environment:
       - CHEMPY_SKIP_NO_TESTS=1
