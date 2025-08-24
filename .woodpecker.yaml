@@ -19,29 +19,23 @@ steps:
 
   - name: install
     image: *ci_image
-    commands:
-      - bash -l .ci/run-01-install-deps-create-sdist.sh
-      - mkdir -p deploy/public_html/branches/${CI_COMMIT_BRANCH}
-      - cp dist/chempy-* deploy/public_html/branches/${CI_COMMIT_BRANCH}/
-
-  - name: test-suite
-    image: *ci_image
     environment:
       - CHEMPY_SKIP_NO_TESTS=1
     commands:
+      - bash -l .ci/run-01-install-deps-create-sdist.sh
       - bash -l .ci/run-02-test-suite.sh
-    depends_on:
-      - install
+      - mkdir -p deploy/public_html/branches/${CI_COMMIT_BRANCH}
+      - cp dist/chempy-* deploy/public_html/branches/${CI_COMMIT_BRANCH}/
+
 
   - name: render-notebooks
     image: *ci_image
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
     commands:
+      - bash -l .ci/run-01-install-deps-create-sdist.sh
       - bash -l .ci/run-03-render-notebooks.sh
       - .ci/grep-for-binary-data.sh
-    depends_on:
-      - install
 
   - name: compile-documentation
     image: *ci_image
