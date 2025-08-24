@@ -338,8 +338,7 @@ class Expr(object):
         >>> units, d = p.dedimensionalisation(SI_base_registry)
         >>> bool(units[0] == 1e6*u.micromole)
         True
-        >>> d.args[0] == 2e-6
-        True
+        >>> assert d.args[0] == 2e-6
 
 
         Returns
