@@ -336,7 +336,7 @@ class Expr(object):
         >>> from chempy.units import SI_base_registry, default_units as u
         >>> p = Pressure([2*u.micromole])
         >>> units, d = p.dedimensionalisation(SI_base_registry)
-        >>> units[0] == 1e6*u.micromole
+        >>> bool(units[0] == 1e6*u.micromole)
         True
         >>> d.args[0] == 2e-6
         True

@@ -260,8 +260,8 @@ def test_PiecewiseTPolyMassAction__sympy():
         11 ** 2
         * 13
         * sp.Piecewise(
-            (10 + 0.1 * T, sp.And(0 <= T, T <= 273.15)),
-            (37.315 - 0.1 * (T - 273.15), sp.And(273.15 <= T, T <= 373.15)),
+            (10 + 0.1 * T, sp.And(sp.S.Zero <= T, T <= 273.15)),
+            (37.315 - 0.1 * (T - 273.15), sp.And(sp.Float(273.15) <= T, T <= sp.Float(373.15))),
             (sp.Symbol("NAN"), True),
         )
     )

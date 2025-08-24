@@ -517,7 +517,7 @@ class Reaction(object):
         True
         >>> r3 = Reaction.from_string("A -> B; 1/second", 'A B')
         >>> from chempy.units import to_unitless, default_units as u
-        >>> to_unitless(r3.param, u.hour**-1)
+        >>> to_unitless(r3.param, u.hour**-1).item()
         3600.0
         >>> r4 = Reaction.from_string("A -> 2 B; 'k'", 'A B')
         >>> r4.rate(dict(A=3, B=5, k=7)) == {'A': -3*7, 'B': 2*3*7}

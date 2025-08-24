@@ -8,12 +8,12 @@ Examples
 >>> s1 = Solution(0.1*u.dm3, {'CH3OH': 0.1 * u.molar})
 >>> s2 = Solution(0.3*u.dm3, {'CH3OH': 0.4 * u.molar, 'Na+': 2e-3*u.molar, 'Cl-': 2e-3*u.molar})
 >>> s3 = s1 + s2
->>> abs(to_unitless(s3.volume - 4e-4 * u.m**3, u.dm3)) < 1e-15
+>>> bool(abs(to_unitless(s3.volume - 4e-4 * u.m**3, u.dm3)) < 1e-15)
 True
 >>> s3.concentrations.isclose({'CH3OH': 0.325*u.molar, 'Na+': 1.5e-3*u.molar, 'Cl-': 1.5e-3*u.molar})
 True
 >>> s4 = s3.dissolve({'CH3OH': 1*u.gram})
->>> abs(s4.concentrations['CH3OH'] - (0.325 + 1/(12.011 + 4*1.008 + 15.999)/.4)*u.molar) < 1e-4
+>>> bool(abs(s4.concentrations['CH3OH'] - (0.325 + 1/(12.011 + 4*1.008 + 15.999)/.4)*u.molar) < 1e-4)
 True
 
 """

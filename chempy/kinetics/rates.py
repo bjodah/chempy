@@ -244,9 +244,7 @@ class Arrhenius(Expr):
     >>> ratex = MassAction(Arrhenius([A, Ea_over_R]))
     >>> rxn = Reaction({'R'}, {'P'}, ratex)
     >>> dRdt = rxn.rate({'R': 3*u.M, 'temperature': 298.15*u.K})['R']
-    >>> allclose(dRdt, -3*1e11*exp(-42e3/8.3145/298.15)*u.M/u.s)
-    True
-
+    >>> assert allclose(dRdt, -3*1e11*exp(-42e3/8.3145/298.15)*u.M/u.s)
     """
 
     argument_names = ("A", "Ea_over_R")
