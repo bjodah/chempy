@@ -16,7 +16,7 @@ from __future__ import (absolute_import, division, print_function)
 import math
 from itertools import chain
 from operator import add, mul, truediv, sub, pow
-from ..units import is_quantity, unit_of, to_unitless, is_quantity
+from ..units import is_quantity, unit_of, to_unitless
 from .pyutil import defaultkeydict, deprecated
 
 
@@ -213,10 +213,10 @@ class Expr(object):
         raise NotImplementedError("Subclass and implement __call__")
 
     def __float__(self):
-         try:
-             return float(self({}))
-         except KeyError:
-             raise ValueError("Missing values for variables")
+        try:
+            return float(self({}))
+        except KeyError:
+            raise ValueError("Missing values for variables")
 
     def _all_keys(self, attr):
         _keys = getattr(self, attr)
@@ -533,9 +533,11 @@ class _UnaryExpr(Expr):
         else:
             return cls((arg,), *args, **kwargs)
 
+
 class _NegExpr(_UnaryExpr):
 
-    _op = lambda x: -x
+    def _op(x):
+        return -x
 
     def _str(self, *args, **kwargs):
         return "-%s" % args[0]._str(*args, **kwargs)
@@ -646,7 +648,6 @@ class Constant(Expr):
             return NotImplemented
 
 
-
 class Symbol(Expr):
     nargs = 1
 
@@ -717,9 +718,9 @@ def create_Piecewise(parameter_name, nan_fallback=False):
         upper = [bounds_exprs[2*(i+1)] for i in range(n_exprs)]
         exprs = [bounds_exprs[2*i + 1] for i in range(n_exprs)]
 
-
         if is_quantity(x):
             xunit = unit_of(x)
+
             def ulx(arg):
                 return to_unitless(arg, xunit)
             lower = list(map(ulx, lower))
