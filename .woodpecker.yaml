@@ -22,6 +22,7 @@ steps:
     environment:
       - CHEMPY_SKIP_NO_TESTS=1
     commands:
+      - mkdir -p deploy/public_html/branches/${CI_COMMIT_BRANCH}/
       - bash -l .ci/run-01-install-deps-create-sdist.sh
       - bash -l .ci/run-02-test-suite.sh
       - mkdir -p deploy/public_html/branches/${CI_COMMIT_BRANCH}
@@ -33,6 +34,7 @@ steps:
     environment:
       - CHEMPY_DEPRECATION_FILTER=ignore
     commands:
+      - mkdir -p deploy/public_html/branches/${CI_COMMIT_BRANCH}/
       - bash -l .ci/run-01-install-deps-create-sdist.sh
       - bash -l .ci/run-03-render-notebooks.sh
       - .ci/grep-for-binary-data.sh

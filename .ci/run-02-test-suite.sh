@@ -5,7 +5,7 @@ set -euxo pipefail
 bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
 ./scripts/run_tests.sh --cov chempy --cov-report html
 ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
-cp -r htmlcov/ deploy/public_html/branches/${CI_COMMIT_BRANCH}/
+cp -r htmlcov/ dist/*.* deploy/public_html/branches/${CI_COMMIT_BRANCH}/
 ./.ci/grep-for-merge-blocking-token.sh
 export CHEMPY_DEPRECATION_FILTER=ignore
 python3 -m virtualenv /tmp/test_sdist
