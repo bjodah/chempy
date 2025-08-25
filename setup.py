@@ -14,7 +14,7 @@ from setuptools import setup
 
 pkg_name = "chempy"
 url = "https://github.com/bjodah/" + pkg_name
-license = "BSD"
+license = "BSD-2-Clause"
 
 RELEASE_VERSION = os.environ.get("%s_RELEASE_VERSION" % pkg_name.upper(), "")  # v*
 
@@ -80,18 +80,14 @@ tests = [
 
 classifiers = [
     "Development Status :: 4 - Beta",
-    "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Chemistry",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
 ]
 
 with io.open(_path_under_setup(pkg_name, "__init__.py"), "rt", encoding="utf-8") as f:
-    short_description = f.read().split('"""')[1].split("\n")[1]
+    short_description = f.read().split('"""')[1].strip()
 if not 10 < len(short_description) < 255:
     warnings.warn("Short description from __init__.py probably not read correctly")
 long_descr = io.open(_path_under_setup("README.rst"), encoding="utf-8").read()
@@ -127,10 +123,10 @@ setup_kwargs = dict(
         "matplotlib>=2.2.3",
         "sympy>=1.1.1,!=1.2",
         "quantities>=0.12.1",
-        "pyneqsys>=0.5.5",
-        "pyodesys>=0.14.4" if sys.version_info[0] >= 3 else "pyodesys<0.12",
+        "pyneqsys>=0.5.7",
+        "pyodesys>=0.14.5" if sys.version_info[0] >= 3 else "pyodesys<0.12",
         "pyparsing>=2.0.3",
-        "sym>=0.3.4",
+        "sym>=0.3.7",
         "pulp>=1.6.8",
         "dot2tex>=2.11.3",
     ],

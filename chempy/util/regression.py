@@ -186,11 +186,10 @@ def least_squares(x, y, w=1):  # w == 1 => OLS, w != 1 => WLS
     --------
     >>> import numpy as np
     >>> beta, vcv, R2 = least_squares([0, 1, 2], [1, 3, 5])
-    >>> all(abs(beta - np.array([1, 2])) < 1e-14), R2 == 1, (abs(vcv) < 1e-14).all()
-    (True, True, True)
+    >>> assert all(abs(beta - np.array([1, 2])) < 1e-14) and R2 == 1 and (abs(vcv) < 1e-14).all()
     >>> b1, v1, r2_1 = least_squares([1, 2, 3], [0, 1, 4], [1, 1, 1])
     >>> b2, v2, r2_2 = least_squares([1, 2, 3], [0, 1, 4], [1, 1, .2])
-    >>> abs(b2[1] - 1) < abs(b1[1] - 1)
+    >>> bool(abs(b2[1] - 1) < abs(b1[1] - 1))
     True
 
     References
