@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-ChemPy is a Python package useful for solving problems in chemistry.
-"""
+"""ChemPy is a Python package useful for solving problems in chemistry."""
 
 
 from ._url import __url__

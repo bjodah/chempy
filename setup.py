@@ -14,7 +14,7 @@ from setuptools import setup
 
 pkg_name = "chempy"
 url = "https://github.com/bjodah/" + pkg_name
-license = "BSD"
+license = "BSD-2-Clause"
 
 RELEASE_VERSION = os.environ.get("%s_RELEASE_VERSION" % pkg_name.upper(), "")  # v*
 
