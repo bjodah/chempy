@@ -6,8 +6,8 @@ requires = [
 
 [project]
 name = "chempy"
-dynamic = ['version', 'description']
-license = "BSD-2-Clause"
+dynamic = ['version', 'optional-dependencies', 'classifiers', 'description', 'readme', 'requires-python', 'authors', 'keywords']
+license = {'text' = "BSD-2-Clause"}
 dependencies = [
     "numpy>1.11.3",
     "scipy>=1.0.1",
