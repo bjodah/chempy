@@ -265,7 +265,8 @@ def test_PiecewiseTPolyMassAction__sympy():
             (sp.Symbol("NAN"), True),
         )
     )
-    assert res1.subs({T: 300}) == ref1.subs({T: 300})
+    for Tval in [200, 300, 400]:
+        assert res1.subs({T: Tval}) == ref1.subs({T: Tval})
 
 
 def test_Log10PiecewiseRTPolyMassAction():

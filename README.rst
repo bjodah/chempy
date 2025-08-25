@@ -236,13 +236,13 @@ example of how ChemPy can check consistency of units:
 .. code:: python
 
    >>> from chempy import Reaction
-   >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4/M/s")
+   >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4/M/s")  # DOCTEST: +ELLIPSIS
    Traceback (most recent call last):
    ...
-   ValueError: Unable to convert between units of "1/M" and "dimensionless"
+   ValueError: Incompatible units
    >>> r = Reaction.from_string("H2O -> H+ + OH-; 1e-4/s")
    >>> from chempy.units import to_unitless, default_units as u
-   >>> to_unitless(r.param, 1/u.minute)
+   >>> to_unitless(r.param, 1/u.minute).item()
    0.006
 
 right now the ``.units`` module wraps the quantities_ package with some minor
