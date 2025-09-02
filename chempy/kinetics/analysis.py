@@ -119,7 +119,7 @@ def plot_reaction_contributions(
         if yscale == "symlog":
             ax.axhline(linthreshy, linestyle="--", color="k", linewidth=0.5)
             ax.axhline(-linthreshy, linestyle="--", color="k", linewidth=0.5)
-            ax.set_yscale(yscale, linthreshy=linthreshy)
+            ax.set_yscale(yscale, linthresh=linthreshy)
         else:
             ax.set_yscale(yscale)
 

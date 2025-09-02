@@ -33,7 +33,7 @@ git tag -a v$VERSION -m v$VERSION
 git push
 git push --tags
 twine upload dist/${PKG}-$VERSION.tar.gz
-twine upload dist/${PKG}-$VERSION.whl
+twine upload dist/${PKG}-$VERSION-py*-none-any.whl
 
 set +x
 echo ""

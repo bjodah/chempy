@@ -1,0 +1,26 @@
+[build-system]
+requires = [
+         "setuptools<=72.1.0",   # ==72.1.0, see https://github.com/pypa/setuptools/issues/4748
+         "wheel",
+]
+
+[project]
+name = "chempy"
+dynamic = ['version', 'optional-dependencies', 'classifiers', 'description', 'readme', 'requires-python', 'authors', 'keywords']
+license = {'text' = "BSD-2-Clause"}
+dependencies = [
+    "numpy>1.11.3",
+    "scipy>=1.0.1",
+    "matplotlib>=2.2.3",
+    "sympy>=1.1.1,!=1.2",
+    "quantities>=0.12.1",
+    "pyneqsys>=0.5.7",
+    "pyodesys>=0.14.5",
+    "pyparsing>=2.0.3",
+    "sym>=0.3.7",
+    "pulp>=1.6.8",
+    "dot2tex>=2.11.3",
+]
+
+[project.urls]
+Home = "https://github.com/bjodah/chempy"

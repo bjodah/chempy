@@ -11,11 +11,14 @@ something that should be relied upon in external code. Consider the ``.util._exp
 module deprecated and aim to use SymPy expressions where possible, and handle units
 separately.
 """
+from __future__ import (absolute_import, division, print_function)
 
 import math
 from itertools import chain
 from operator import add, mul, truediv, sub, pow
+from ..units import is_quantity, unit_of, to_unitless
 from .pyutil import defaultkeydict, deprecated
+
 
 try:
     import sympy
@@ -24,7 +27,7 @@ except ImportError:
 
 
 def _implicit_conversion(obj):
-    if isinstance(obj, (int, float)):
+    if isinstance(obj, (int, float)) or is_quantity(obj):
         return Constant(obj)
     elif isinstance(obj, Expr):
         return obj
@@ -35,31 +38,26 @@ def _implicit_conversion(obj):
         if isinstance(obj, sympy.Mul):
             if len(obj.args) != 2:
                 raise NotImplementedError("Did you use evaluate=False?")
-            return _MulExpr(
-                [_implicit_conversion(obj.args[0]), _implicit_conversion(obj.args[1])]
-            )
+            return _MulExpr([_implicit_conversion(obj.args[0]), _implicit_conversion(obj.args[1])])
         elif isinstance(obj, sympy.Add):
             if len(obj.args) != 2:
                 raise NotImplementedError("Did you use evaluate=False?")
-            return _AddExpr(
-                [_implicit_conversion(obj.args[0]), _implicit_conversion(obj.args[1])]
-            )
+            return _AddExpr([_implicit_conversion(obj.args[0]), _implicit_conversion(obj.args[1])])
         elif isinstance(obj, sympy.Pow):
-            return _PowExpr(
-                _implicit_conversion(obj.base), _implicit_conversion(obj.exp)
-            )
+            return _PowExpr(_implicit_conversion(obj.base), _implicit_conversion(obj.exp))
         elif isinstance(obj, sympy.Float):
             return Constant(float(obj))
         elif isinstance(obj, sympy.Symbol):
             return Symbol(unique_keys=(obj.name,))
+        elif isinstance(obj, sympy.Number):
+            return Constant(float(obj))
 
     raise NotImplementedError(
-        "Don't know how to convert %s (of type %s)" % (obj, type(obj))
-    )
+        "Don't know how to convert %s (of type %s)" % (obj, type(obj)))
 
 
 class Expr(object):
-    """Baseclass for Expressions corresponding to physical quantities.
+    ''' Baseclass for Expressions corresponding to physical quantities.
 
     The design assumes that a large group of different Expr subclasses may
     be evaluated with some shared state (parameter_keys). The backend kwarg
@@ -113,7 +111,7 @@ class Expr(object):
     parameter_keys : tuple of strings
     nargs : int
         number of arguments (`None` signifies unset, -1 signifies any number)
-    """
+    '''
 
     argument_names = None
     argument_defaults = None
@@ -127,17 +125,11 @@ class Expr(object):
     def __init__(self, args=None, unique_keys=None):
         if isinstance(args, str):
             args = (args,)
-        if (
-            self.argument_names is not None
-            and self.argument_names[-1] != Ellipsis
-            and self.nargs is None
-        ):
+        if self.argument_names is not None and self.argument_names[-1] != Ellipsis and self.nargs is None:
             self.nargs = len(self.argument_names)
         if self.argument_defaults is not None:
             if self.nargs == -1:
-                raise ValueError(
-                    "Cannot have defaults when number of arguments is unbounded."
-                )
+                raise ValueError("Cannot have defaults when number of arguments is unbounded.")
             if len(self.argument_defaults) > len(self.argument_names):
                 raise ValueError("Cannot have more defaults than actual arguments")
             if args is not None:
@@ -145,11 +137,9 @@ class Expr(object):
                 if n_missing > 0:
                     args = tuple(chain(args, self.argument_defaults[-n_missing:]))
 
-        if self.nargs == 1 and (
-            isinstance(args, (float, int))
-            or getattr(args, "ndim", -1) == 0
-            or isinstance(args, Expr)
-        ):
+        if self.nargs == 1 and (isinstance(args, (float, int)) or
+                                getattr(args, 'ndim', -1) == 0 or
+                                isinstance(args, Expr)):
             args = [args]
             nargs = 1
         elif args is None:
@@ -158,18 +148,10 @@ class Expr(object):
             nargs = len(args)
 
         if self.nargs not in (None, -1) and nargs is not None and nargs != self.nargs:
-            raise ValueError(
-                "Incorrect number of arguments: %d (expected %d)" % (nargs, self.nargs)
-            )
-        if (
-            unique_keys is not None
-            and self.nargs is not None
-            and len(unique_keys) > self.nargs
-        ):
-            raise ValueError(
-                "Incorrect number of unique_keys: %d (expected %d or less)"
-                % (len(unique_keys), self.nargs)
-            )
+            raise ValueError("Incorrect number of arguments: %d (expected %d)" % (nargs, self.nargs))
+        if unique_keys is not None and self.nargs is not None and len(unique_keys) > self.nargs:
+            raise ValueError("Incorrect number of unique_keys: %d (expected %d or less)" % (
+                len(unique_keys), self.nargs))
         self.unique_keys = None if unique_keys is None else tuple(unique_keys)
 
         if isinstance(args, dict):
@@ -179,12 +161,12 @@ class Expr(object):
 
     @classmethod
     def fk(cls, *args):
-        """Alternative constructor "from keys", \\*args is used as ``unique_keys``."""
+        """ Alternative constructor "from keys", \\*args is used as ``unique_keys``. """
         return cls(unique_keys=args)
 
     @classmethod
-    def from_callback(cls, callback, attr="__call__", **kwargs):
-        """Factory of subclasses
+    def from_callback(cls, callback, attr='__call__', **kwargs):
+        """ Factory of subclasses
 
         Parameters
         ----------
@@ -213,7 +195,6 @@ class Expr(object):
         True
 
         """
-
         def body(self, variables, backend=math, **kw):
             args = self.all_args(variables, backend=backend)
             params = self.all_params(variables, backend=backend)
@@ -232,7 +213,10 @@ class Expr(object):
         raise NotImplementedError("Subclass and implement __call__")
 
     def __float__(self):
-        return float(self({}))
+        try:
+            return float(self({}))
+        except KeyError:
+            raise ValueError("Missing values for variables")
 
     def _all_keys(self, attr):
         _keys = getattr(self, attr)
@@ -244,29 +228,23 @@ class Expr(object):
         return _all
 
     def all_parameter_keys(self):
-        return self._all_keys("parameter_keys")
+        return self._all_keys('parameter_keys')
 
     def all_unique_keys(self):
-        return self._all_keys("unique_keys")
+        return self._all_keys('unique_keys')
 
     def _str(self, arg_fmt, unique_keys_fmt=str):
         if self.args is None or len(self.args) == 0:
-            args_str = ""
+            args_str = ''
         elif len(self.args) == 1:
-            args_str = "%s," % self.args[0]
+            args_str = '%s,' % self.args[0]
         else:
-            args_str = "%s" % ", ".join(map(arg_fmt, self.args))
-        args_strs = [
-            ", ".join(
-                chain(
-                    ["(%s)" % args_str],
-                    [unique_keys_fmt(self.unique_keys)]
-                    if self.unique_keys is not None
-                    else [],
-                )
-            )
-        ]
-        return "{}({})".format(self.__class__.__name__, ", ".join(args_strs))
+            args_str = '%s' % ', '.join(map(arg_fmt, self.args))
+        args_strs = [', '.join(chain(
+            ['(%s)' % args_str],
+            [unique_keys_fmt(self.unique_keys)] if self.unique_keys is not None else []
+        ))]
+        return "{}({})".format(self.__class__.__name__, ', '.join(args_strs))
 
     def __repr__(self):
         return self._str(repr)
@@ -306,9 +284,7 @@ class Expr(object):
                     res = self.args[index]
         else:
             if self.args is None or index > len(self.args):
-                res = self.argument_defaults[
-                    index - self.nargs + len(self.argument_defaults)
-                ]
+                res = self.argument_defaults[index - self.nargs + len(self.argument_defaults)]
             else:
                 res = self.args[index]
 
@@ -327,23 +303,19 @@ class Expr(object):
             nargs = len(self.args)
         else:
             nargs = self.nargs
-        return [
-            self.arg(variables, i, backend, evaluate, **kwargs) for i in range(nargs)
-        ]
+        return [self.arg(variables, i, backend, evaluate, **kwargs) for i in range(nargs)]
 
     def all_params(self, variables, backend=math):
-        return [
-            v(variables, backend=backend) if isinstance(v, Expr) else v
-            for v in [variables[k] for k in self.parameter_keys]
-        ]
+        return [v(variables, backend=backend) if isinstance(v, Expr) else v for v
+                in [variables[k] for k in self.parameter_keys]]
 
     def args_dimensionality(self, **kwargs):
-        """return tuple of dicts mapping str to int ('length', 'mass', 'time', 'current',
-        'temperature', 'luminous_intensity', 'amount')"""
+        """ return tuple of dicts mapping str to int ('length', 'mass', 'time', 'current',
+        'temperature', 'luminous_intensity', 'amount') """
         raise NotImplementedError("method not implemented in subclass.")
 
     def dedimensionalisation(self, unit_registry, variables={}, backend=math):
-        """Create an instance with consistent units from a unit_registry
+        """ Create an instance with consistent units from a unit_registry
 
         Parameters
         ----------
@@ -364,10 +336,9 @@ class Expr(object):
         >>> from chempy.units import SI_base_registry, default_units as u
         >>> p = Pressure([2*u.micromole])
         >>> units, d = p.dedimensionalisation(SI_base_registry)
-        >>> units[0] == 1e6*u.micromole
+        >>> bool(units[0] == 1e6*u.micromole)
         True
-        >>> d.args[0] == 2e-6
-        True
+        >>> assert d.args[0] == 2e-6
 
 
         Returns
@@ -377,37 +348,26 @@ class Expr(object):
 
         """
         from ..units import default_unit_in_registry, to_unitless, unitless_in_registry
-
         new_units = []
         if self.args is None:
             unitless_args = None
         else:
             unitless_args = []
-            units = [
-                None
-                if isinstance(arg, Expr)
-                else default_unit_in_registry(arg, unit_registry)
-                for arg in self.all_args(variables, backend=backend, evaluate=False)
-            ]
-            for arg, unit in zip(
-                self.all_args(variables, backend=backend, evaluate=False), units
-            ):
+            units = [None if isinstance(arg, Expr) else default_unit_in_registry(arg, unit_registry) for arg
+                     in self.all_args(variables, backend=backend, evaluate=False)]
+            for arg, unit in zip(self.all_args(variables, backend=backend, evaluate=False), units):
                 if isinstance(arg, Expr):
                     if unit is not None:
                         raise ValueError()
-                    _unit, _dedim = arg.dedimensionalisation(
-                        unit_registry, variables, backend=backend
-                    )
+                    _unit, _dedim = arg.dedimensionalisation(unit_registry, variables, backend=backend)
                 else:
                     _unit, _dedim = unit, to_unitless(arg, unit)
                 new_units.append(_unit)
                 unitless_args.append(_dedim)
         instance = self.__class__(unitless_args, self.unique_keys)
         if self.argument_defaults is not None:
-            instance.argument_defaults = tuple(
-                unitless_in_registry(arg, unit_registry)
-                for arg in self.argument_defaults
-            )
+            instance.argument_defaults = tuple(unitless_in_registry(arg, unit_registry)
+                                               for arg in self.argument_defaults)
 
         return new_units, instance
 
@@ -417,23 +377,17 @@ class Expr(object):
             backend = sympy
         variables = defaultkeydict(
             None if default is None else (lambda k: backend.Symbol(default(k))),
-            {
-                k: v
-                if isinstance(v, Expr)
-                else (backend.Symbol(v) if isinstance(v, str) else backend.Float(v))
-                for k, v in variables.items()
-            },
-        )
+            {k: v if isinstance(v, Expr) else (backend.Symbol(v) if isinstance(v, str) else backend.Float(v))
+             for k, v in variables.items()})
         expr = self(variables, backend=backend, **kwargs).simplify()
-        if method == "latex":
+        if method == 'latex':
             return backend.latex(expr)
-        elif method == "str":
+        elif method == 'str':
             return str(expr)
-        elif method == "unicode":
+        elif method == 'unicode':
             return backend.pretty(expr, use_unicode=True)
-        elif method == "mathml":
+        elif method == 'mathml':
             from sympy.printing.mathml import mathml
-
             return mathml(expr)
         else:
             raise NotImplementedError("Unknown method: %s" % method)
@@ -461,7 +415,7 @@ class Expr(object):
         Requires SymPy
 
         """
-        return self._sympy_format("latex", variables, backend=backend, default=default)
+        return self._sympy_format('latex', variables, backend=backend, default=default)
 
     def __eq__(self, other):
         if self.__class__ != other.__class__:
@@ -476,7 +430,6 @@ class Expr(object):
         if len(self.args) != len(other.args):
             return False
         from ..units import compare_equality
-
         for arg0, arg1 in zip(self.args, other.args):
             if not compare_equality(arg0, arg1):
                 return False
@@ -486,52 +439,58 @@ class Expr(object):
         _other = _implicit_conversion(other)
         if _other.trivially_zero:
             return self
-        return _AddExpr([self, _other])
+        return _AddExpr.make(self, _other)
 
     def __sub__(self, other):
-        if other == other * 0:
+        if other == other*0:
             return self
-        return _SubExpr([self, _implicit_conversion(other)])
+        return _SubExpr.make(self, _implicit_conversion(other))
 
     def __mul__(self, other):
         if other == 1:
             return self
         if isinstance(other, UnaryWrapper):
             return NotImplemented  # delegate to UnaryWrapper.__rmul__
-        return _MulExpr([self, _implicit_conversion(other)])
+        return _MulExpr.make(self, _implicit_conversion(other))
 
     def __truediv__(self, other):
         if other == 1:
             return self
         if isinstance(other, UnaryWrapper):
             return NotImplemented  # delegate to UnaryWrapper.__rtruediv__
-        return _DivExpr([self, _implicit_conversion(other)])
+        return _DivExpr.make(self, _implicit_conversion(other))
 
     def __neg__(self):
         if isinstance(self, _NegExpr):
             return self.args[0]
-        return _NegExpr((self,))
+        return _NegExpr.make(self)
+
+    def __abs__(self):
+        if isinstance(self, _AbsExpr):
+            return self
+        return _AbsExpr.make(self)
 
     def __radd__(self, other):
-        return self + other
+        return self+other
 
     def __rmul__(self, other):
-        return self * other
+        return self*other
 
     def __rsub__(self, other):
         return (-self) + other
 
     def __rtruediv__(self, other):
-        return _DivExpr([_implicit_conversion(other), self])
+        return _DivExpr.make(_implicit_conversion(other), self)
 
     def __pow__(self, other):
-        return _PowExpr([self, _implicit_conversion(other)])
+        return _PowExpr.make(self, _implicit_conversion(other))
 
     def __rpow__(self, other):
-        return _PowExpr([_implicit_conversion(other), self])
+        return _PowExpr.make(_implicit_conversion(other), self)
 
 
 class UnaryWrapper(Expr):
+
     def __checks(self):
         if self.nargs != 1:
             raise ValueError("UnaryWrapper can only be used when nargs == 1")
@@ -540,28 +499,46 @@ class UnaryWrapper(Expr):
 
     def __mul__(self, other):
         self.__checks()
-        (arg,) = self.args
+        arg, = self.args
         return self.__class__([_MulExpr([arg, _implicit_conversion(other)])])
 
     def __truediv__(self, other):
         if other == 1:
             return self
         self.__checks()
-        (arg,) = self.args
+        arg, = self.args
         return self.__class__([_DivExpr([arg, _implicit_conversion(other)])])
 
     def __rtruediv__(self, other):
         self.__checks()
-        (arg,) = self.args
+        arg, = self.args
         return self.__class__([_DivExpr([_implicit_conversion(other), arg])])
 
     @classmethod
-    def from_callback(cls, callback, attr="__call__", **kwargs):
+    def from_callback(cls, callback, attr='__call__', **kwargs):
         Wrapper = super().from_callback(callback, attr=attr, **kwargs)
         return lambda *args, **kw: cls(Wrapper(*args, **kw))
 
 
-class _NegExpr(Expr):
+class _UnaryExpr(Expr):
+    _op = None
+
+    @classmethod
+    def make(cls, arg, *args, **kwargs):
+        assert not isinstance(arg, (tuple, list))
+        if isinstance(arg, Constant) and isinstance(arg.args[0], (float, int)):
+            inner_arg = arg.args[0]
+            new_args = cls._op(inner_arg),
+            return Constant(new_args)
+        else:
+            return cls((arg,), *args, **kwargs)
+
+
+class _NegExpr(_UnaryExpr):
+
+    def _op(x):
+        return -x
+
     def _str(self, *args, **kwargs):
         return "-%s" % args[0]._str(*args, **kwargs)
 
@@ -569,20 +546,41 @@ class _NegExpr(Expr):
         return super(_NegExpr, self)._str(repr)
 
     def __call__(self, variables, backend=math, **kwargs):
-        (arg0,) = self.all_args(variables, backend=backend, **kwargs)
+        arg0, = self.all_args(variables, backend=backend, **kwargs)
         return -arg0
 
-    def rate_coeff(self, *args, **kwargs):  # <--- feature creep into base-class...
-        return (-self.args[0].rate_coeff(*args, **kwargs),)
+    def rate_coeff(self, *args, **kwargs):   # <--- feature creep into base-class...
+        return -self.args[0].rate_coeff(*args, **kwargs),
+
+
+class _AbsExpr(_UnaryExpr):
+    _op = abs
+
+    def _str(self, *args, **kwargs):
+        return "abs(%s)" % args[0]._str(*args, **kwargs)
+
+    def __repr__(self):
+        return super(_AbsExpr, self)._str(repr)
+
+    def __call__(self, variables, backend=math, **kwargs):
+        arg0, = self.all_args(variables, backend=backend, **kwargs)
+        return abs(arg0)
 
 
 class _BinaryExpr(Expr):
     _op = None
 
+    @classmethod
+    def make(cls, a1, a2, *args, **kwargs):
+        assert not isinstance(a1, (tuple, list))
+        assert not isinstance(a2, (tuple, list))
+        if all(isinstance(arg, Constant) and isinstance(arg.args[0], (float, int)) for arg in [a1, a2]):
+            return Constant(cls._op(a1.args[0], a2.args[0]), *args, **kwargs)
+        else:
+            return cls((a1, a2), *args, **kwargs)
+
     def _str(self, *args, **kwargs):
-        return ("({0} %s {1})" % self._op_str).format(
-            *[arg._str(*args, **kwargs) for arg in self.args]
-        )
+        return ("({0} %s {1})" % self._op_str).format(*[arg._str(*args, **kwargs) for arg in self.args])
 
     def __repr__(self):
         return super(_BinaryExpr, self)._str(repr)
@@ -592,25 +590,23 @@ class _BinaryExpr(Expr):
         return self._op(arg0, arg1)
 
     def rate_coeff(self, *args, **kwargs):
-        return self._op(
-            self.args[0].rate_coeff(*args, **kwargs),
-            self.args[1].rate_coeff(*args, **kwargs),
-        )
+        return self._op(self.args[0].rate_coeff(*args, **kwargs),
+                        self.args[1].rate_coeff(*args, **kwargs))
 
 
 class _AddExpr(_BinaryExpr):
     _op = add
-    _op_str = "+"
+    _op_str = '+'
 
 
 class _SubExpr(_BinaryExpr):
     _op = sub
-    _op_str = "-"
+    _op_str = '-'
 
 
 class _MulExpr(_BinaryExpr):
     _op = mul
-    _op_str = "*"
+    _op_str = '*'
 
     @property
     def trivially_zero(self):
@@ -622,12 +618,12 @@ class _MulExpr(_BinaryExpr):
 
 class _DivExpr(_BinaryExpr):
     _op = truediv
-    _op_str = "/"
+    _op_str = '/'
 
 
 class _PowExpr(_BinaryExpr):
     _op = pow
-    _op_str = "**"
+    _op_str = '**'
 
 
 class Constant(Expr):
@@ -643,19 +639,27 @@ class Constant(Expr):
     def rate_coeff(self, *args, **kwargs):
         return self.args[0]
 
+    def __lt__(self, other):
+        if isinstance(other, (float, int)) and isinstance(self.args[0], (float, int)):
+            return self.args[0] < other
+        elif isinstance(other, Constant):
+            return self < other.args[0]
+        else:
+            return NotImplemented
+
 
 class Symbol(Expr):
     nargs = 1
 
     def _str(self, *args, **kwargs):
-        (uk,) = self.unique_keys
+        uk, = self.unique_keys
         return uk
 
     def __repr__(self):
         return super(Symbol, self)._str(repr)
 
     def __call__(self, variables, backend=None, **kwargs):
-        (uk,) = self.unique_keys
+        uk, = self.unique_keys
         return variables[uk]
 
 
@@ -668,13 +672,11 @@ class UnaryFunction(Function):
     _func_name = None
 
     def __call__(self, variables, backend=math, **kwargs):
-        (arg,) = self.all_args(variables, backend=backend, **kwargs)
+        arg, = self.all_args(variables, backend=backend, **kwargs)
         return getattr(backend, self._func_name)(arg)
 
     def rate_coeff(self, *args, **kwargs):
-        return getattr(kwargs.get("backend", math), self._func_name)(
-            self.args[0].rate_coeff(*args, **kwargs)
-        )
+        return getattr(kwargs.get('backend', math), self._func_name)(self.args[0].rate_coeff(*args, **kwargs))
 
 
 class BinaryFunction(Function):
@@ -683,11 +685,11 @@ class BinaryFunction(Function):
 
 
 class Log10(UnaryFunction):
-    _func_name = "log10"
+    _func_name = 'log10'
 
 
 class Exp(UnaryFunction):
-    _func_name = "exp"
+    _func_name = 'exp'
 
 
 def create_Piecewise(parameter_name, nan_fallback=False):
@@ -706,16 +708,27 @@ def create_Piecewise(parameter_name, nan_fallback=False):
     True
 
     """
-
     def _pw(bounds_exprs, x, backend=math, **kwargs):
         if len(bounds_exprs) < 3:
             raise ValueError("Need at least 3 args")
         if len(bounds_exprs) % 2 != 1:
             raise ValueError("Need an odd number of bounds/exprs")
         n_exprs = (len(bounds_exprs) - 1) // 2
-        lower = [bounds_exprs[2 * (i + 0)] for i in range(n_exprs)]
-        upper = [bounds_exprs[2 * (i + 1)] for i in range(n_exprs)]
-        exprs = [bounds_exprs[2 * i + 1] for i in range(n_exprs)]
+        lower = [bounds_exprs[2*(i+0)] for i in range(n_exprs)]
+        upper = [bounds_exprs[2*(i+1)] for i in range(n_exprs)]
+        exprs = [bounds_exprs[2*i + 1] for i in range(n_exprs)]
+
+        if is_quantity(x):
+            xunit = unit_of(x)
+
+            def ulx(arg):
+                return to_unitless(arg, xunit)
+            lower = list(map(ulx, lower))
+            upper = list(map(ulx, upper))
+        else:
+            # xunit = 1
+            def ulx(arg):
+                return arg
 
         try:
             pw = backend.Piecewise
@@ -726,15 +739,13 @@ def create_Piecewise(parameter_name, nan_fallback=False):
             else:
                 raise ValueError("not within any bounds: %s" % x)
         else:
-            _NAN = backend.Symbol("NAN")
+            _NAN = backend.Symbol('NAN')
+            ux = ulx(x)
             return pw(
-                *(
-                    [
-                        (ex, backend.And(lo <= x, x <= up))
-                        for lo, up, ex in zip(lower, upper, exprs)
-                    ]
-                    + ([(_NAN, True)] if nan_fallback else [])
-                )
+                *([(ex, backend.And(backend.Le(lo, ux), backend.Le(ux, up))) for
+                   lo, up, ex in zip(lower, upper, exprs)] +
+                  ([(_NAN, True)] if nan_fallback else []))
+                , evaluate=False
             )
 
     return Expr.from_callback(_pw, parameter_keys=(parameter_name,))
@@ -761,7 +772,7 @@ def create_Poly(parameter_name, reciprocal=False, shift=None, name=None):
 
     """
     if shift is True:
-        shift = "shift"
+        shift = 'shift'
 
     def _poly(args, x, backend=math, **kwargs):
 
@@ -777,14 +788,14 @@ def create_Poly(parameter_name, reciprocal=False, shift=None, name=None):
         res = None
         for coeff in coeffs:
             if res is None:
-                res = coeff * cur
+                res = coeff*cur
             else:
-                res += coeff * cur
+                res = res + coeff*cur
 
             if reciprocal:
-                cur /= x0
+                cur = cur / x0
             else:
-                cur *= x0
+                cur = cur * x0
         return res
 
     if shift is None:
@@ -793,10 +804,7 @@ def create_Poly(parameter_name, reciprocal=False, shift=None, name=None):
         argument_names = (shift, Ellipsis)
     if name is not None:
         _poly.__name__ = name
-    return Expr.from_callback(
-        _poly, parameter_keys=(parameter_name,), argument_names=argument_names
-    )
-
+    return Expr.from_callback(_poly, parameter_keys=(parameter_name,), argument_names=argument_names)
 
 from ._expr_deprecated import _mk_PiecewisePoly, _mk_Poly  # noqa
 

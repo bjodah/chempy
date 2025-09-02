@@ -353,11 +353,12 @@ def test_create_Piecewise_Poly__sympy():
     pw = TPw([0, p1, 10, p2, 20])
     x = sp.Symbol("x")
     res = pw({"Tmpr": x}, backend=sp)
+    ten = sp.S.One * 10
     assert isinstance(res, sp.Piecewise)
     assert res.args[0][0] == 1 + 0.1 * x
-    assert res.args[0][1] == sp.And(0 <= x, x <= 10)
+    assert res.args[0][1] == sp.And(sp.S.Zero <= x, x <= ten)
     assert res.args[1][0] == 3 - 0.1 * x
-    assert res.args[1][1] == sp.And(10 <= x, x <= 20)
+    assert res.args[1][1] == sp.And(ten <= x, x <= 2*ten)
 
 
 @requires("sympy")
@@ -370,9 +371,11 @@ def test_create_Piecewise__nan_fallback__sympy():
     res = pw({"Tmpr": x}, backend=sp)
     assert isinstance(res, sp.Piecewise)
     assert res.args[0][0] == 42
-    assert res.args[0][1] == sp.And(0 <= x, x <= 10)
+    ten = sp.S.One*10
+    twenty = 2*ten
+    assert res.args[0][1] == sp.And(sp.S.Zero <= x, x <= ten)
     assert res.args[1][0] == 43
-    assert res.args[1][1] == sp.And(10 <= x, x <= 20)
+    assert res.args[1][1] == sp.And(ten <= x, x <= twenty)
     assert res.args[2][0].name.lower() == "nan"
     assert res.args[2][1] == True  # noqa
 
