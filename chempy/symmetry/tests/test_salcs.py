@@ -40,7 +40,7 @@ def test_calc_salcs_func():
                  [1.0*e1 - 0.5*e2 - 0.5*e3, 1.0*e2 - 1.0*e3,
                   1.0*e1 - 0.5*e2 - 0.5*e3, 1.0*e2 - 1.0*e3], 0,
                  a1 - a2, 0]
-    angles = [[0, -90], [120, -90], [240, -90], [0, 0], [0, 180]]
+    angles = [[0, 90], [120, 90], [240, 90], [0, 0], [0, 180]]
     assert(calc_salcs_func(angles, 'd3h', [e1, e2, e3, a1, a2], mode='angle')
            == salc_true2)
 
@@ -48,7 +48,7 @@ def test_calc_salcs_func():
     salc_true3 =   [[1.0*e1 + 1.0*e2, 1.0*a1 + 1.0*a2, 1.0*e1 + 1.0*e2, 1.0*e1 + 1.0*e2], 0,
                     a1 - a2, [1.0*e1 - 1.0*e2, 1.0*e1 - 1.0*e2]]
     a1, a2, e1, e2 = sympy.symbols('a1 a2 e1 e2')
-    assert(calc_salcs_func([[0, -90], [-180, -90], [90, 120], [-90, 120]],
+    assert(calc_salcs_func([[0, 90], [-180, 90], [90, 120], [-90, 120]],
                            'c2v', [a1, a2, e1, e2], mode='angle') == salc_true3)
 
     # octahedral
@@ -56,7 +56,7 @@ def test_calc_salcs_func():
     salc_true4 = [a + b + c + d + e + f, 0,
                   [-a - b - c - d + 2*e + 2*f, a - b + c - d],
                   0, 0, 0, 0, 0, [a - c, b - d, e - f], 0]
-    oh_angle = calc_salcs_func([[0, -90], [90, -90], [180, -90], [270, -90], [0, 0],
+    oh_angle = calc_salcs_func([[0, 90], [90, 90], [180, 90], [270, 90], [0, 0],
                                 [0, -180]], 'oh', [a, b, c, d, e, f], mode='angle')
     oh_vector = calc_salcs_func([[1, 0, 0], [0, 1, 0], [-1, 0, 0], [0, -1, 0],
                                  [0, 0, 1], [0, 0, -1]], 'oh', [a, b, c, d, e, f])

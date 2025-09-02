@@ -147,7 +147,7 @@ def _angles_to_vectors(ligand_angles):
 
     Example
     -------
-    >>> _angles_to_vectors([[0, -90], [90, -90], [180, -90], [-90, -90]])
+    >>> _angles_to_vectors([[0, 90], [90, 90], [180, 90], [-90, 90]])
     >>> array([[ 1.0,  0.0, 0.0],
                [ 0.0,  1.0,  0.0],
                [-1.0,  0.0,  0.0],
@@ -161,8 +161,8 @@ def _angles_to_vectors(ligand_angles):
     all_vectors = []
     for orbital in ligand_angles:
         azimuth, polar = radians(orbital[0]), radians(orbital[1])
-        x = -sin(polar) * cos(azimuth)
-        y = -sin(polar) * sin(azimuth)
+        x = sin(polar) * cos(azimuth)
+        y = sin(polar) * sin(azimuth)
         z = cos(polar)
 
         # convert to int if close
