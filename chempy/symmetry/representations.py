@@ -72,7 +72,7 @@ def print_mulliken(group):
     ----------
     group : str
         Point group Schoenflies notation (e.g., 'C2v').  This is
-        case-insentive.
+        case-insensitive.
 
     Returns
     -------
@@ -90,7 +90,7 @@ def print_table(group):
     ----------
     group : str
         Point group Schoenflies notation (e.g., 'C2v').  This is
-        case-insentive.
+        case-insensitive.
 
     Returns
     -------

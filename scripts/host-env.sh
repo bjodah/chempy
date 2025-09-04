@@ -4,6 +4,10 @@ show_help() {
     echo "$(basename $0) host-notebook --port 8888 --listen 127.0.0.1"
     echo "$(basename $0) run-tests"
 }
+if [ $# -eq 0 ]; then
+    show_help
+    exit 1
+fi
 set -euxo pipefail
 
 HOST_NOTEBOOK=0

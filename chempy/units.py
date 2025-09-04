@@ -20,6 +20,7 @@ from functools import reduce
 from operator import mul
 import sys
 import warnings
+from typing import Iterable
 
 from .util.arithmeticdict import ArithmeticDict
 from .util.pyutil import NameSpace, deprecated
@@ -173,7 +174,7 @@ def get_derived_unit(registry, key):
     Examples
     --------
     >>> m, s = default_units.meter, default_units.second
-    >>> get_derived_unit(SI_base_registry, 'diffusivity') == m**2/s
+    >>> bool(get_derived_unit(SI_base_registry, 'diffusivity') == m**2/s)
     True
 
     """
@@ -316,7 +317,7 @@ def unit_of(expr, simplified=False):
 
     Examples
     --------
-    >>> unit_of(42*pq.second) == unit_of(12*pq.second)
+    >>> bool(unit_of(42*pq.second) == unit_of(12*pq.second))
     True
     >>> unit_of(42)
     1
@@ -347,7 +348,7 @@ def rescale(value, unit):
 
 
 def to_unitless(value, new_unit=None):
-    """Nondimensionalization of a quantity.
+    """ Nondimensionalization of a quantity.
 
     Parameters
     ----------
@@ -366,42 +367,39 @@ def to_unitless(value, new_unit=None):
     if new_unit is None:
         new_unit = pq.dimensionless
 
-    if isinstance(value, (list, tuple)):
-        return np.array([to_unitless(elem, new_unit) for elem in value])
-    elif isinstance(value, np.ndarray) and not hasattr(value, "rescale"):
-        if is_unitless(new_unit) and new_unit == 1 and value.dtype != object:
-            return value
+    if isinstance(value, np.ndarray) and not hasattr(value, 'rescale'):
+        if is_unitless(new_unit) and new_unit == 1:
+            if value.ndim == 0:
+                return value.item()
+            else:
+                return value
         return np.array([to_unitless(elem, new_unit) for elem in value])
     elif isinstance(value, dict):
         new_value = dict(value.items())  # value.copy()
         for k in value:
             new_value[k] = to_unitless(value[k], new_unit)
         return new_value
-    elif (
-        isinstance(value, (int, float)) and new_unit is integer_one or new_unit is None
-    ):
+    elif isinstance(value, (int, float)) and new_unit is integer_one or new_unit is None:
         return value
+    elif isinstance(value, Iterable) and getattr(value, 'ndim', -1) != 0:
+        if len(value) == 0:
+            return to_unitless(value[0], new_unit)
+        else:
+            return np.array([to_unitless(elem, new_unit) for elem in value])
     elif isinstance(value, str):
         raise ValueError("str not supported")
+
+    ori_unit = unit_of(value)
+    ori_mag = magnitude(value)
+    scale_factor = simplified(ori_unit/new_unit)
+    if is_unitless(scale_factor):
+        sc = magnitude(scale_factor)
+        if getattr(ori_mag, 'ndim', -1) == 0 or not isinstance(ori_mag, Iterable):
+            return ori_mag*sc
+        else:
+            return np.array(ori_mag*sc)
     else:
-        try:
-            try:
-                mag = magnitude(value)
-                unt = unit_of(value)
-                conv = rescale(unt/new_unit, pq.dimensionless)
-                result = np.array(mag)*conv
-            except AttributeError:
-                if new_unit == pq.dimensionless:
-                    return value
-                else:
-                    raise
-            else:
-                if result.ndim == 0:
-                    return float(result)
-                else:
-                    return np.asarray(result)
-        except TypeError:
-            return np.array([to_unitless(elem, new_unit) for elem in value])
+        raise ValueError("Incompatible units")
 
 
 def uniform(container):
@@ -487,7 +485,7 @@ def compare_equality(a, b):
     >>> km, m = default_units.kilometre, default_units.metre
     >>> compare_equality(3*km, 3)
     False
-    >>> compare_equality(3*km, 3000*m)
+    >>> bool(compare_equality(3*km, 3000*m))
     True
 
     """
@@ -550,7 +548,7 @@ def linspace(start, stop, num=50):
 
     Examples
     --------
-    >>> abs(linspace(2, 8, num=3)[1] - 5) < 1e-15
+    >>> bool(abs(linspace(2, 8, num=3)[1] - 5) < 1e-15)
     True
 
     """
@@ -567,7 +565,7 @@ def logspace_from_lin(start, stop, num=50):
 
     Examples
     --------
-    >>> abs(logspace_from_lin(2, 8, num=3)[1] - 4) < 1e-15
+    >>> bool(abs(logspace_from_lin(2, 8, num=3)[1] - 4) < 1e-15)
     True
 
     """
@@ -614,12 +612,12 @@ class Backend(object):
     >>> math.exp(3*km) == math.exp(3*m)
     True
     >>> be = Backend('math')
-    >>> be.exp(3*km)
+    >>> be.exp(3*km)  # DOCTEST: +ELLIPSIS
     Traceback (most recent call last):
         ...
-    ValueError: Unable to convert between units of "km" and "dimensionless"
+    ValueError: Incompatible units
     >>> import numpy as np
-    >>> np.sum([1000*pq.metre/pq.kilometre, 1])
+    >>> np.sum([1000*pq.metre/pq.kilometre, 1]).item()
     1001.0
     >>> be_np = Backend(np)
     >>> be_np.sum([[1000*pq.metre/pq.kilometre, 1], [3, 4]], axis=1)
