@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 
+from .tables import (
+    tables,
+    symmetry_func_dict,
+    column_coeffs,
+    mulliken
+)
+
 """
 Contains chemical group theory functions for calculating symmetry adapted
 linear combinations (SALCs) or group orbitals using either the projection
@@ -11,12 +18,6 @@ import numpy as np
 import sympy
 sympy.init_printing(pretty_print=False)
 
-from .tables import (
-    tables,
-    symmetry_func_dict,
-    column_coeffs,
-    mulliken
-)
 
 def return_dict(func):
     """
@@ -27,12 +28,8 @@ def return_dict(func):
 
     Parameters
     ----------
-    arr : array_like
-        List or array containing results corresponding to irreducible
-        representations.
-    group : string
-        Point group Schoelflies notation (e.g., 'C2v').  This is
-        case-insensitive.
+    func : function returning SALCs
+        Function that returns SALCs as a list by default.
 
     Returns
     -------
@@ -58,14 +55,15 @@ def _expand_irreducible(irred, group):
 
     Expands irreducible from the common condensed form to the full form. This
     entails repeating characters for every equivalent operation. For example,
-    C3v returns the rotation twice and reflection thrice.
+    C3v returns the rotation twice and the reflection thrice.
 
     Parameters
     ----------
     irred : tuple
         Condensed irreducible representation from character table.
     group : str
-        Point group (e.g., 'C2v').
+        Point group Schoenflies notation (e.g., 'C2v').  This is
+        case-insensitive.
 
     Returns
     -------
@@ -73,7 +71,7 @@ def _expand_irreducible(irred, group):
 
     Example
     ------
-    >>> _expand_irreducible([2, -1, 0], 'c3v')
+    >>> _expand_irreducible((2, -1, 0), 'c3v')
     >>> [2, -1, -1, 0, 0, 0]
 
     """
@@ -91,21 +89,26 @@ def calc_salcs_projection(projection, group, to_dict=False):
 
     Given the projections of orbitals as a result of a point group symmetry
     operations, returns the SALCs. This is a two-step process.
-    1. Provide all ligands or outer atoms a variable name (e.g., a, b, c, etc.)
-    2. Track one orbital to see how it transforms after each symmetry operation
-    3. Provide a list of strings of the results
+    1. Provide all ligands or outer atoms with SymPy variable names.
+    2. Track an orbital to see how it transforms after each symmetry operation
+    3. Provide a list of the results from step 2.
+
+    Note: The projection operator method only turns one SALC for E and T
+    point groups.
 
     Parameters
     ----------
-    projection : List of SymPy symbols
+    projection : List, tuple, or array of SymPy symbols
         Results of projection operations for symmetry operations of group.
     group : str
-        Point group (e.g., 'C2v').
+        Point group Schoenflies notation (e.g., 'C2v').  This is
+        case-insensitive.
 
     Returns
     -------
-    Nested list of strings of the SALCs for each irreducible representation.
-    Returns None for irreducibles with no SALC.
+    List or nested list of strings of the SALCs for each irreducible
+    representation. Returns 0 for irreducibles with no SALC. If to_dict=True,
+    returns a dictionary.
 
     Example
     -------
@@ -113,7 +116,8 @@ def calc_salcs_projection(projection, group, to_dict=False):
     >>> a, b, c = sympy.symbols('a b c')
     >>> calc_salcs_projection([a, b, c, a, b, c], 'c3v')
     >>> [2*a + 2*b + 2*c, , 0, 2*a - b - c]
-    >>>
+    >>> calc_salcs_projection([a, b, c, a, b, c], 'c3v', to_dict=True)
+    >>> {'A1': 2*a + 2*b + 2*c, 'A2': 0, 'E': 2*a - b - c}
 
     """
     salcs = []
@@ -132,31 +136,30 @@ def _angles_to_vectors(ligand_angles):
     """
     Calculate xyz vectors from angles around central atom.
 
-    Given angles for outer ligands/atoms with respect to x-axis and elevation,
+    Given angles for outer ligands/atoms with respect to x-axis and z-axis,
     this function returns a list of [x, y, z] unit vectors.
 
     Parameters
     ----------
     ligand_angles : nested list or tuple of numbers in (theta, phi) order
         Angle of each outer atom/ligand in degrees with respect
-        azimuth (theta) and polar (phi)
+        azimuth (theta) and polar (phi) coordinates. Theta is the angle from
+        the positive x-axis on the xy-plane and phi is the angle from the
+        positive z-axis.
 
     Returns
     -------
-    Nested Numpy array containing [x,y,z] vectors.
+    Nested list containing xyz vectors.
 
     Example
     -------
     >>> _angles_to_vectors([[0, 90], [90, 90], [180, 90], [-90, 90]])
-    >>> array([[ 1.0,  0.0, 0.0],
-               [ 0.0,  1.0,  0.0],
-               [-1.0,  0.0,  0.0],
-               [ 0.0, -1.0,  0.0]])
+    >>> [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0],
+         [-1.0, 0.0, 0.0], [0.0, -1.0, 0.0]])
 
     References
     ----------
     [1] https://en.wikipedia.org/wiki/Spherical_coordinate_system
-
     """
     all_vectors = []
     for orbital in ligand_angles:
@@ -183,12 +186,12 @@ def _eval_sym_func(coords, funcs):
     Evaluate symmetry functions for an irreducible representation.
 
     Evaluates symmetry functions using the supplied series of xyz coordinates.
-    If all values evaluate as zeros, the irreducible has no SALC, and 0 is
+    If all values evaluate as zero, the irreducible has no SALC, and 0 is
     returned.
 
     Parameters
     ----------
-    coords : array-like nested containing values in threes
+    coords : List, tuple, or array containing values in threes
         xyz coordinates of ligand unit vectors.
     funcs : str
         The symmetry function supplied as a string or tuple of strings
@@ -223,13 +226,13 @@ def _normalize_salcs(salcs):
     """
     Normalize SALC.
 
-    Normalizes SALC by dividing each SALC through by largest value in
+    Normalizes SALC by dividing each SALC through by the largest value in
     that SALC.
 
     Parameters
     ----------
     salcs : List or nested list
-        Nested list of SALCS.
+        Nested list of SALCs.
 
     Returns
     -------
@@ -265,7 +268,14 @@ def _weights_to_symbols(weights, symbols):
 
     Returns
     -------
-    Array containing symbolic weights of each ligand or outer atom.
+    List containing symbolic weights of each ligand or outer atom.
+
+    Examples
+    --------
+    >>> import sympy
+    >>> a, b, c = sympy.symbols('a b c')
+    >>> _weights_to_symbols([[1, 2, 1], [0, 1, -1], [0, 0, 0]], [a, b, c])
+    >>> [a + 2*b + c, b - c, 0]
 
     """
     symbolic_wt = []
@@ -288,7 +298,7 @@ def _weights_to_symbols(weights, symbols):
 @return_dict
 def calc_salcs_func(ligands, group, symbols, mode='vector', to_dict=False):
     """
-    Return SALCs from symmetry functions.
+    Return SALCs using symmetry functions in character table.
 
     Returns SALCs (symmetry adapted linear combinations) using the character
     functions for a given point group. This requires the user to give the
@@ -304,35 +314,41 @@ def calc_salcs_func(ligands, group, symbols, mode='vector', to_dict=False):
         Nested list of ligand positions as xyz coordinates (mode='vector')
         or angles (mode='angle').
     symbols : SymPy symbols
-        SymPy symbols or variables representing outer ligands or atoms.
+        SymPy symbols representing outer ligands or atoms.
     group : str
-        Point group (e.g., 'C2v').
+        Point group Schoenflies notation (e.g., 'C2v').  This is
+        case-insensitive.
     mode : 'vector' or 'angle'
-        Whether the position of ligands or outer atoms are provided in 3D
-        coordinates ('vector') or [angle from x-axis, elevation angle] pair
-        ('angle').
-
+        Whether the position of ligands or outer atoms are provided in xyz
+        coordinates ('vector') or [theta, phi] angles ('angle').
 
     Returns
     -------
-    Array of sympy symbols indicating the weight and sign of each atomic
+    List of sympy symbols indicating the weight and sign of each atomic
     orbital contribution to the SALC. There may be redundant SALCs returned
-    due to multiple symmetry functions in an irreducible representation
+    due to multiple symmetry functions with an irreducible representation
     returning the same SALC.
 
     Examples
     --------
     >>> import sympy
     >>> a, b, c, d = sympy.symbols('a b c d')
+    # for a square planar complex
     >>> calc_salcs_func([[1, 0, 0], [0, 1, 0], [-1, 0, 0], [0, -1, 0]],
                             'd4h', [a, b, c, d], mode='vector')
     >>> [a + b + c + d, 0, a - b + c - d, 0, 0, 0, 0, 0, 0, [a - c, b - d]]
+    # for a trigonal planar complex
     >>> calc_salcs_func([[0, -90], [120, -90], [240, -90]], 'd3h', [a, b, c],
                         mode='angle')
     >>> [1.0*a + 1.0*b + 1.0*c, 0,
          [1.0*a - 0.5*b - 0.5*c,
           1.0*b - 1.0*c, 1.0*a - 0.5*b - 0.5*c,
           1.0*b - 1.0*c], 0, 0, 0]
+
+    References
+    ----------
+    [1] Kim, S. K. Group Theoretical Methods and Applications to Molecules
+    and Crystals; Cambridge University Press: Cambridge, 1999, 155-157.
     """
     if mode == 'angle':
         ligand_vectors = _angles_to_vectors(ligands)

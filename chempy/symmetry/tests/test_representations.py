@@ -23,12 +23,16 @@ reducible_data = (
             ((4, 0, 0, 0), (1, 1, 1, 1), 'd2'),
             ((5, -1, 1, 3, -1), (1, 0, 2, 0, 1), 'd2d'),
             ((5, 2, 1, 3, 0, 3), (2, 0, 1, 0, 1, 0), 'd3h'),
-            ((4, 0, 0, 2, 0, 0, 0, 4, 2, 0), (1, 0, 1, 0, 0, 0, 0, 0, 0, 1), 'd4h'),
-            ((6, 0, 0, 0, -2, 0, 0, 0, 0, -6, 0, 2), (0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1), 'd6h'),
+            ((4, 0, 0, 2, 0, 0, 0, 4, 2, 0),
+             (1, 0, 1, 0, 0, 0, 0, 0, 0, 1), 'd4h'),
+            ((6, 0, 0, 0, -2, 0, 0, 0, 0, -6, 0, 2),
+             (0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1), 'd6h'),
             ([4, 1, 0, 0, 2], (1, 0, 0, 0, 1), 'Td'),
             ([8, -1, 4, 0, -2], (0, 1, 2, 1, 0), 'td'),
-            ((6, 0, 0, 2, 2, 0, 0, 0, 4, 2), (1, 0, 1, 0, 0, 0, 0, 0, 1, 0), 'Oh'),
-            ((7, 1, 1, 3, 3, 1, 1, 1, 5, 3), (2, 0, 1, 0, 0, 0, 0, 0, 1, 0), 'oh'),
+            ((6, 0, 0, 2, 2, 0, 0, 0, 4, 2),
+             (1, 0, 1, 0, 0, 0, 0, 0, 1, 0), 'Oh'),
+            ((7, 1, 1, 3, 3, 1, 1, 1, 5, 3),
+             (2, 0, 1, 0, 0, 0, 0, 0, 1, 0), 'oh'),
             )
 
 
@@ -38,6 +42,7 @@ def test_decomp(gamma, true_n_irred, group):
 
     assert np.all(true_n_irred == calc_n_irred)
 
+
 all_motion_data = (
     ((6, 0, 0, 6), (18, 0, 0, 6), 'c2h'),
     ((3, 1, 3, 1), (9, -1, 3, 1), 'c2v'),
@@ -45,12 +50,16 @@ all_motion_data = (
     ((6, 2, 2, 4, 2), (18, 2, -2, 4, 2), 'c4v'),
     ((8, 2, 0, 0, 0, 4), (24, 0, 0, 0, 0, 4), 'd3d'),
     ((6, 3, 2, 4, 1, 4), (18, 0, -2, 4, -2, 4), 'd3h'),
-    ((5, 1, 1, 3, 1, 1, 1, 5, 3, 1), (15, 1, -1, -3, -1, -3, -1, 5, 3, 1), 'd4h'),
+    ((5, 1, 1, 3, 1, 1, 1, 5, 3, 1),
+     (15, 1, -1, -3, -1, -3, -1, 5, 3, 1), 'd4h'),
     ((5, 2, 1, 1, 3), (15, 0, -1, -1, 3), 'td'),
-    ((7, 1, 1, 3, 3, 1, 1, 1, 5, 3), (21, 0, -1, 3, -3, -3, -1, 0, 5, 3), 'oh')
+    ((7, 1, 1, 3, 3, 1, 1, 1, 5, 3),
+     (21, 0, -1, 3, -3, -3, -1, 0, 5, 3), 'oh')
     )
 
-@pytest.mark.parametrize('stationary_atoms, reducible_rep, group', all_motion_data)
+
+@pytest.mark.parametrize('stationary_atoms, reducible_rep, group',
+                         all_motion_data)
 def test_from_atoms(stationary_atoms, reducible_rep, group):
 
     assert np.all(Reducible.from_atoms(stationary_atoms, group).gamma ==
@@ -108,13 +117,7 @@ class Test_ReducibleMethods():
         assert np.all(tDCE.raman_active(to_dict=True) ==
                       {'Ag': 5, 'Bg': 1, 'Au': 0, 'Bu': 0})
 
-
     def test_from_irred(self):
         test_rep = Reducible.from_irred([1, 0, 1, 0], 'c2v')
         true_rep = Reducible([2, 0, 2, 0], 'c2v', all_motion=False)
         assert np.all(test_rep.gamma == true_rep.gamma)
-
-    @pytest.mark.xfail()
-    def test_fail(self):
-        water = Reducible([9, -1, 3, 1], 'c2v', all_motion=False)
-        assert np.all(water.ir_active() == np.array([2, 0, 1, 0]))

@@ -31,7 +31,7 @@ def print_header(group):
 
     Parameters
     ----------
-    group : string
+    group : str
         Point group Schoenflies notation (e.g., 'C2v').  This is
         case-insensitive.
 
@@ -63,13 +63,14 @@ def print_point_groups():
 
     print(*pg)
 
+
 def print_mulliken(group):
     """
     Print Mulliken symbols of irreducible representation in order.
 
     Parameters
     ----------
-    group : string
+    group : str
         Point group Schoenflies notation (e.g., 'C2v').  This is
         case-insentive.
 
@@ -80,13 +81,14 @@ def print_mulliken(group):
     """
     print(*mulliken[group.lower()])
 
+
 def print_table(group):
     """
     Print character table for given point group.
 
     Parameters
     ----------
-    group : string
+    group : str
         Point group Schoenflies notation (e.g., 'C2v').  This is
         case-insentive.
 
@@ -113,20 +115,21 @@ def print_table(group):
 
     print(tabulate(table, tablefmt='rounded_grid'))
 
+
 @np.vectorize
 def sympy_to_num(sp):
     """
-    Convert array of sympy objects to array of floats and ints.
+    Convert array with sympy objects to array of floats and ints.
 
     Convert numpy array of sympy objects from table dictionary in tables.py
-    to numpy array of floats and ints for use in calculations. Four types of
+    to numpy array of floats and ints for use in calculations. Three types of
     values occur in the tables: ints, real sympy values, and imaginary sympy
     values.
 
     Parameters
     ----------
-    matrix : numpy array of sympy objects
-        numpy array of sympy objects from table dictionary in tables.py
+    sp : numpy array with sympy objects
+        numpy array with sympy objects from table dictionary in tables.py
 
     Returns
     -------
@@ -144,6 +147,7 @@ def sympy_to_num(sp):
             # returns ints unchanged
             return sp
 
+
 class Reducible:
     """Reducible representation object.
 
@@ -158,7 +162,7 @@ class Reducible:
 
         Parameters
         ----------
-        gamma : array_like
+        gamma : List, tuple, or array
             Reducible representation.
         group : str
             Point group Schoenflies notation (e.g., 'C2v').  This is
@@ -192,10 +196,10 @@ class Reducible:
 
         Parameters
         ----------
-        arr : array_like
+        arr : List, tuple, or array
             List or array containing results corresponding to irreducible
             representations.
-        group : string
+        group : str
             Point group Schoenflies notation (e.g., 'C2v').  This is
             case-insensitive.
 
@@ -219,37 +223,32 @@ class Reducible:
         Decompose reducible representation into number of irreducibles.
 
         Decompose a reducible representation for a specific point group and
-        returns the number of each irreducible representation in the reducible.
+        return the number of each irreducible representation in the reducible.
 
-        The order of irreducibles can be determined by get_mulliken(group).
+        The order of irreducibles can be looked up by print_mulliken()
+        or print_table().
 
         Parameters
         ----------
-        gamma : array_like
-               Reducible representation with symmetry operations in the order
-               provided by print_header(group).
-        group : str
-            Point group of representation in Schoenflies notation
-            (e.g., 'C2v'). This is case-insensitive.
         to_dict : bool
-            True causes function to return a dictionary with Mulliken symbols
-            as the keys.
+            True causes the function to return a dictionary with Mulliken
+            symbols as the keys.
 
         Returns
         -------
-        np.array with number of each irreducible representation in the
-        provided reducible representation. Use get_mulliken() for listing of
-        irreducible representations and order.
+        NumPy array with the number of each irreducible representation in the
+        provided reducible representation. Use print_mulliken() for listing of
+        irreducible representations and order. If to_dict=True, the function
+        returns a dictionary with the Mulliken symbols as keys.
 
         Examples
         --------
         >>> rep = Reducible([9, -1, 3, 1], 'c2v', all_motion=True)
         >>> rep.decomp()
-        array([3, 1, 3, 2])
-
+        >>> array([3, 1, 3, 2])
         >>> rep = Reducible([15, 0, 0, 7, -2, -2], 'C3h', all_motion=False)
         >>> rep.decomp()
-        array([3, 4, 1, 1])
+        >>> array([3, 4, 2, 1])
         >>> rep.decomp(to_dict=True)
         >>> {"A'": 3, 'A"': 4, "E'": 2, 'E"': 1}
         """
@@ -275,8 +274,8 @@ class Reducible:
         Parameters
         ----------
         to_dict : bool
-            True causes function to return a dictionary with Mulliken symbols
-            as the keys.
+            True causes the function to return a dictionary with Mulliken
+            symbols as the keys.
 
         Returns
         -------
@@ -303,9 +302,9 @@ class Reducible:
         """Return IR active vibrational modes.
 
         Return the number of each irreducible representation that is IR active
-        in the given reducible representation. If vibe_only=False for the
-        reducible representation, the rotational and translational modes are
-        automatically subtracted out.
+        in the given reducible representation. If all_motion=True for the
+        Reducible, the rotational and translational modes are automatically
+        subtracted out.
 
         Parameters
         ----------
@@ -320,8 +319,8 @@ class Reducible:
         Examples
         --------
         >>> rep = Reducible([9, -1, 3, 1], 'c2v', all_motion=True)
-        >>> rep.ir_active([3, 1, 3, 2, 'C2v')
-        array([2, 0, 1, 0])
+        >>> rep.ir_active()
+        >>> array([2, 0, 1, 0])
         >>> rep = Reducible([5, 2, 1, 3, 0, 3], 'd3h', all_motion=False)
         >>> rep.ir_active()
         >>> array([0, 0, 1, 0, 1, 0])
@@ -336,9 +335,9 @@ class Reducible:
         """Return Raman active vibrational modes.
 
         Return the number of each irreducible representation that is Raman
-        active in the given reducible representation. If vibe_only=False for
-        the reducible representation, the rotational and translational modes
-        are automatically subtracted out.
+        active in the given reducible representation. If all_motion=True for
+        the Reducible, the rotational and translational modes are automatically
+        subtracted out.
 
         Parameters
         ----------
@@ -354,7 +353,7 @@ class Reducible:
         --------
         >>> rep = Reducible([9, -1, 3, 1], 'c2v', all_motion=True)
         >>> rep.raman_active([3, 1, 3, 2, 'C2v'])
-        array([2, 0, 1, 0])
+        >>> array([2, 0, 1, 0])
         >>> rep = Reducible([5, 2, 1, 3, 0, 3], 'd3h', all_motion=False)
         >>> rep.raman_active()
         >>> array([2, 0, 1, 0, 0, 0])
@@ -368,13 +367,13 @@ class Reducible:
     def from_irred(cls, n_irred, group, all_motion=False):
         """Create reducible from number of irreducible representations.
 
-        Alternative constructor that returns a reducible representation
-        given the number of each irreducible representation that comprise
-        the reducible representation and the point group.
+        Alternative constructor that returns a Reducible representation object
+        given the number of each irreducible representation that comprises
+        the reducible representation in the point group.
 
         Parameters
         ----------
-        n_irred: array_like
+        n_irred: List, tuple, or array
             Number of each irreducible representation in the returned
             reducible representation.
         group: str
@@ -392,11 +391,10 @@ class Reducible:
         --------
         >>> rep = Reducible.from_irred([1, 0, 1, 0], 'c2v')
         >>> rep.gamma
-        array([2, 0, 2, 0])
-
+        >>> array([2, 0, 2, 0])
         >>> rep = Reducible.from_irred([3, 1, 1], 'C3v')
         >>> rep.gamma
-        array([6, 3, 2])
+        >>> array([6, 3, 2])
         """
         irred_sum = np.sum((tables[group.lower()].T * n_irred).T, axis=0)
 
@@ -406,21 +404,22 @@ class Reducible:
     def from_atoms(cls, n_atoms, group):
         """Create a representation based on number of stationary atoms.
 
-        Alternative constructor that returns a reducible representation
+        Alternative constructor that returns a Reducible representation object
         with all motions (rotation, translation, and vibration) given the
         number of atoms that do NOT move (i.e., translate) when carrying out
-        each symmetry operation in the point group. Note: vibe_only parameter
-        in the returned Reducible object is set to False.
+        each symmetry operation in the point group.
+
+        Note: all_motion parameter in the returned Reducible object is set
+        to True.
 
         Parameters
         ----------
-        n_atoms: array_like
+        n_atoms: List, tuple, or array
             Number of atoms that remain stationary during each operation in
-            the point group - see print_header() for list of operations.
+            the point group - see print_header() for the group operations.
         group: str
             Point group in Schoenflies notation (e.g., 'C2v').  This is
             case-insensitive.
-
 
         Returns
         -------
