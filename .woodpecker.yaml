@@ -4,7 +4,7 @@ variables:
   - &ci_image 'cont-reg.bjodah.se:443/bjodah/triceratops-6:32'
 
 when:
-  - event: [push]
+  - event: [push, pull_request]
 
 steps:
 
