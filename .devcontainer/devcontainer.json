@@ -2,7 +2,7 @@
 	"name": "chempy",
 	"image": "mcr.microsoft.com/devcontainers/python:1-3.13",
 	"features": {},
-	"postCreateCommand": "pip install -e '.[all]'",
+	"postCreateCommand": "pip install -e '.[testing]'",
 	"customizations": {
 		"vscode": {
 			"extensions": [
