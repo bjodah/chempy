@@ -1,3 +1,8 @@
+v0.10.0 (2025-09-05)
+====================
+- New module: chempy.symmetry (point groups)
+- Support for NumPy 2+
+
 v0.9.0 (2024-04-24)
 ===================
 - Fractional stoichiometries are now officially supported in parser (e.g. Fe2O3.14)
