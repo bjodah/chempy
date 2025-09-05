@@ -391,10 +391,10 @@ class Reducible:
         --------
         >>> rep = Reducible.from_irred([1, 0, 1, 0], 'c2v')
         >>> rep.gamma
-        >>> array([2, 0, 2, 0])
+        array([2, 0, 2, 0])
         >>> rep = Reducible.from_irred([3, 1, 1], 'C3v')
         >>> rep.gamma
-        >>> array([6, 3, 2])
+        array([6, 3, 2])
         """
         irred_sum = np.sum((tables[group.lower()].T * n_irred).T, axis=0)
 
@@ -428,8 +428,9 @@ class Reducible:
         Examples
         --------
         >>> rep = Reducible.from_atoms([4, 2, 4, 2], 'c2v')
-        >>> rep.gamma
-        >>> array([12, -2, 4, 2])
+        >>> rep.gamma  # doctest: +NORMALIZE_WHITESPACE
+        array([12, -2, 4, 2])
+
         """
         n_atoms = np.array(n_atoms)
 

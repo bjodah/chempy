@@ -72,7 +72,7 @@ def _expand_irreducible(irred, group):
     Example
     ------
     >>> _expand_irreducible((2, -1, 0), 'c3v')
-    >>> [2, -1, -1, 0, 0, 0]
+    [2, -1, -1, 0, 0, 0]
 
     """
     expanded_irred = []
@@ -154,8 +154,7 @@ def _angles_to_vectors(ligand_angles):
     Example
     -------
     >>> _angles_to_vectors([[0, 90], [90, 90], [180, 90], [-90, 90]])
-    >>> [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0],
-         [-1.0, 0.0, 0.0], [0.0, -1.0, 0.0]])
+    [[1, 0, 0], [0, 1, 0], [-1, 0, 0], [0, -1, 0]]
 
     References
     ----------
@@ -275,7 +274,7 @@ def _weights_to_symbols(weights, symbols):
     >>> import sympy
     >>> a, b, c = sympy.symbols('a b c')
     >>> _weights_to_symbols([[1, 2, 1], [0, 1, -1], [0, 0, 0]], [a, b, c])
-    >>> [a + 2*b + c, b - c, 0]
+    [a + 2*b + c, b - c, 0]
 
     """
     symbolic_wt = []
