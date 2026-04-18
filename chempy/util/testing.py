@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from pkg_resources import parse_requirements, parse_version
-
 import os
 from operator import lt, le, eq, ne, ge, gt
 import pytest
 
 _relop = dict(zip("< <= == != >= >".split(), (lt, le, eq, ne, ge, gt)))
 
+
+def _parse_version(vs: str, /):
+    return tuple(map(int, vs.split('.')))
 
 class requires(object):
     """Conditional skipping (on requirements) of tests in pytest
@@ -34,21 +35,23 @@ class requires(object):
     def __init__(self, *reqs):
         self.missing = []
         self.incomp = []
-        self.requirements = list(parse_requirements(reqs))
-        for req in self.requirements:
-            try:
-                mod = __import__(req.project_name)
-            except ImportError:
-                self.missing.append(req.project_name)
+        for req in reqs:
+            for rs, ro in _relop.items():
+                if rs in req:
+                    name, version = req.split(rs)
+                    version = _parse_version(version)
             else:
-                try:
-                    ver = parse_version(mod.__version__)
-                except AttributeError:
-                    pass
-                else:
-                    for rel, vstr in req.specs:
-                        if not _relop[rel](ver, parse_version(vstr)):
-                            self.incomp.append(str(req))
+                name, version = req, None
+            
+            try:
+                mod = __import__(name)
+            except ImportError:
+                self.missing.append(name)
+            else:
+                if version is not None:
+                    found_version = _parse_version(mod.__version__)
+                    if not (fulfilled := ro(version, found_version)):
+                        self.incomp.append("%s %s %s" % (found_version, rs, version))
 
     def __call__(self, cb):
         r = "Unfulfilled requirements."
