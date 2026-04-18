@@ -1,7 +1,7 @@
 variables:
 #   Developers are not expected to actually use this CI image locally, however,
 #   using this image avoid downloading a bunch of PyPI packages for each CI run.
-  - &ci_image 'cont-reg.bjodah.se:443/bjodah/triceratops-6:33'
+  - &ci_image 'cont-reg.bjodah.se:443/bjodah/triceratops-6:35'
 
 when:
   - event: [push, pull_request]
