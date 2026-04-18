@@ -4,7 +4,7 @@ import os
 from operator import lt, le, eq, ne, ge, gt
 import pytest
 
-_relop = dict(zip("< <= == != >= >".split(), (lt, le, eq, ne, ge, gt)))
+_relop = dict(zip("<= == != >= > <".split(), (le, eq, ne, ge, gt, lt)))
 
 
 def _parse_version(vs: str, /):
