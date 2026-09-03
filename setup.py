@@ -103,7 +103,7 @@ extras_req = {
     "plotting": ["bokeh>=0.13.0", "ipywidgets"],
     "testing": ["black", "pytest>=3.9", "pytest-cov", "pytest-flake8", "rstcheck"],
 }
-extras_req["all"] = list(chain(extras_req.values()))
+extras_req["all"] = list(chain(*extras_req.values()))
 
 setup_kwargs = dict(
     name=pkg_name,
@@ -125,7 +125,7 @@ setup_kwargs = dict(
         "quantities>=0.12.1",
         "pyneqsys>=0.5.7",
         "pyodesys>=0.14.5" if sys.version_info[0] >= 3 else "pyodesys<0.12",
-        "pyparsing>=2.0.3",
+        "pyparsing>=3.0.8",
         "sym>=0.3.7",
         "tabulate",
         "pulp>=1.6.8",

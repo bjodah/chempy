@@ -1,3 +1,7 @@
+Unreleased
+==========
+- Drop support for pyparsing 2.x and require pyparsing >= 3.0.8, and migrate to its snake_case API.
+
 v0.10.1 (2025-09-22)
 ====================
 - Fixes to chempy.symmetry

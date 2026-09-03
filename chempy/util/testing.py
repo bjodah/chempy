@@ -27,7 +27,6 @@ def _parse_requirement(req):
     return req.strip(), None, None
 
 
-
 class requires(object):
     """Conditional skipping (on requirements) of tests in pytest
 

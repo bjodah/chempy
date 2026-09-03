@@ -139,7 +139,7 @@ def _get_formula_parser():
 
     # Parse counts (subscripts and coefficients).
     count = Regex(r"(\d+\.\d+|\d*)")
-    count.setParseAction(lambda t: 1 if t[0] == "" else float(t[0]))
+    count.set_parse_action(lambda t: 1 if t[0] == "" else float(t[0]))
 
     # Parse states.
     state = Suppress(Regex(r"\((s|l|g|aq|cr)\)"))
@@ -170,7 +170,7 @@ def _get_formula_parser():
         "|Xe"
         "|Yb?"
         "|Z[nr]"
-    ).setResultsName("element", listAllMatches=True)
+    ).set_results_name("element", list_all_matches=True)
 
     # forward declare 'formula' so it can be used in definition of 'term'
     formula = Forward()
@@ -201,7 +201,7 @@ def _get_formula_parser():
                 term[1] *= mult
             return t.subgroup
 
-    term.setParseAction(multiplyContents)
+    term.set_parse_action(multiplyContents)
 
     # add parse action to sum up multiple references to the same element
     def sumByElement(tokens):
@@ -220,7 +220,7 @@ def _get_formula_parser():
 
     # define contents of a formula as one or more terms
     formula << OneOrMore(term)
-    formula.setParseAction(sumByElement)
+    formula.set_parse_action(sumByElement)
 
     return formula
 
@@ -286,7 +286,7 @@ def _parse_stoich(stoich):
         return {}
 
     comp = {}
-    for k, n in _get_formula_parser().parseString(stoich, parseAll=True):
+    for k, n in _get_formula_parser().parse_string(stoich, parse_all=True):
         # Only use rational subscripts if necessary as
         # ``sympy.linsolve()`` does not like non-integers when
         # balancing reactions.
