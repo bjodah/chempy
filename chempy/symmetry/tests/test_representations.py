@@ -6,34 +6,34 @@ from ..representations import Reducible
 
 # Test data with (reducible representation, num of irreducibles, point group)
 reducible_data = (
-            ((2, 0), (1, 1), 'cs'),
-            ((3, 1), (2, 1), 'ci'),
-            ((2), (2), 'c1'),
-            ((3, 1), (2, 1), 'c2'),
-            ((3, 0, 0), (1, 1), 'C3'),
-            ((4, 0, 0, 0), (1, 1, 1), 'c4'),
-            ((21, 1, 1, 1, 1), (5, 4, 4), 'c5'),
-            ((6, 0, 0, 0, 0, 0), (1, 1, 1, 1), 'c6'),
-            ([9, -1, 3, 1], [3, 1, 3, 2], 'c2v'),
-            ([3, 0, 1], (1, 0, 1), 'c3v'),
-            ((6, 0, 2, 0, 0), (1, 1, 1, 1, 1), 'c4v'),
-            ((4, 0, 2, 2), (2, 1, 0, 1), 'c2h'),
-            ((15, 0, 0, 7, -2, -2), (3, 4, 2, 1), 'c3h'),
-            ((5, -1, 1, -1, -1, 1, -5, 1), (0, 0, 1, 1, 2, 0), 'c4h'),
-            ((4, 0, 0, 0), (1, 1, 1, 1), 'd2'),
-            ((5, -1, 1, 3, -1), (1, 0, 2, 0, 1), 'd2d'),
-            ((5, 2, 1, 3, 0, 3), (2, 0, 1, 0, 1, 0), 'd3h'),
-            ((4, 0, 0, 2, 0, 0, 0, 4, 2, 0),
-             (1, 0, 1, 0, 0, 0, 0, 0, 0, 1), 'd4h'),
-            ((6, 0, 0, 0, -2, 0, 0, 0, 0, -6, 0, 2),
-             (0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1), 'd6h'),
-            ([4, 1, 0, 0, 2], (1, 0, 0, 0, 1), 'Td'),
-            ([8, -1, 4, 0, -2], (0, 1, 2, 1, 0), 'td'),
-            ((6, 0, 0, 2, 2, 0, 0, 0, 4, 2),
-             (1, 0, 1, 0, 0, 0, 0, 0, 1, 0), 'Oh'),
-            ((7, 1, 1, 3, 3, 1, 1, 1, 5, 3),
-             (2, 0, 1, 0, 0, 0, 0, 0, 1, 0), 'oh'),
-            )
+    ((2, 0), (1, 1), 'cs'),
+    ((3, 1), (2, 1), 'ci'),
+    ((2), (2), 'c1'),
+    ((3, 1), (2, 1), 'c2'),
+    ((3, 0, 0), (1, 1), 'C3'),
+    ((4, 0, 0, 0), (1, 1, 1), 'c4'),
+    ((21, 1, 1, 1, 1), (5, 4, 4), 'c5'),
+    ((6, 0, 0, 0, 0, 0), (1, 1, 1, 1), 'c6'),
+    ([9, -1, 3, 1], [3, 1, 3, 2], 'c2v'),
+    ([3, 0, 1], (1, 0, 1), 'c3v'),
+    ((6, 0, 2, 0, 0), (1, 1, 1, 1, 1), 'c4v'),
+    ((4, 0, 2, 2), (2, 1, 0, 1), 'c2h'),
+    ((15, 0, 0, 7, -2, -2), (3, 4, 2, 1), 'c3h'),
+    ((5, -1, 1, -1, -1, 1, -5, 1), (0, 0, 1, 1, 2, 0), 'c4h'),
+    ((4, 0, 0, 0), (1, 1, 1, 1), 'd2'),
+    ((5, -1, 1, 3, -1), (1, 0, 2, 0, 1), 'd2d'),
+    ((5, 2, 1, 3, 0, 3), (2, 0, 1, 0, 1, 0), 'd3h'),
+    ((4, 0, 0, 2, 0, 0, 0, 4, 2, 0),
+     (1, 0, 1, 0, 0, 0, 0, 0, 0, 1), 'd4h'),
+    ((6, 0, 0, 0, -2, 0, 0, 0, 0, -6, 0, 2),
+     (0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1), 'd6h'),
+    ([4, 1, 0, 0, 2], (1, 0, 0, 0, 1), 'Td'),
+    ([8, -1, 4, 0, -2], (0, 1, 2, 1, 0), 'td'),
+    ((6, 0, 0, 2, 2, 0, 0, 0, 4, 2),
+     (1, 0, 1, 0, 0, 0, 0, 0, 1, 0), 'Oh'),
+    ((7, 1, 1, 3, 3, 1, 1, 1, 5, 3),
+     (2, 0, 1, 0, 0, 0, 0, 0, 1, 0), 'oh'),
+)
 
 
 @pytest.mark.parametrize('gamma, true_n_irred, group', reducible_data)
@@ -44,6 +44,7 @@ def test_decomp(gamma, true_n_irred, group):
 
 
 all_motion_data = (
+    ((21, 1, 1, 1, 1), (63,  2, -1, -1,  2), 'c5'),
     ((6, 0, 0, 6), (18, 0, 0, 6), 'c2h'),
     ((3, 1, 3, 1), (9, -1, 3, 1), 'c2v'),
     ((4, 1, 2), (12, 0, 2), 'c3v'),
@@ -55,7 +56,7 @@ all_motion_data = (
     ((5, 2, 1, 1, 3), (15, 0, -1, -1, 3), 'td'),
     ((7, 1, 1, 3, 3, 1, 1, 1, 5, 3),
      (21, 0, -1, 3, -3, -3, -1, 0, 5, 3), 'oh')
-    )
+)
 
 
 @pytest.mark.parametrize('stationary_atoms, reducible_rep, group',
@@ -67,6 +68,19 @@ def test_from_atoms(stationary_atoms, reducible_rep, group):
 
 
 class Test_ReducibleMethods():
+
+    @pytest.mark.parametrize('gamma, group', [
+        ([9, -1, 3, 1.5], 'c2v'),
+        ([9, -1, 3, 1], 'c4b'),
+        ([9, -1, 1], 'c2v')
+    ])
+    def test_raise_valueerror(self, gamma, group):
+        with pytest.raises(ValueError):
+            Reducible(gamma, group)
+
+    def test_raise_valueerror_decom(self):
+        with pytest.raises(ValueError):
+            Reducible([9, -1, 0, 0], 'c2v').decomp()
 
     def test_decomp(self):
         water = Reducible([9, -1, 3, 1], 'c2v', all_motion=True)
@@ -117,7 +131,13 @@ class Test_ReducibleMethods():
         assert np.all(tDCE.raman_active(to_dict=True) ==
                       {'Ag': 5, 'Bg': 1, 'Au': 0, 'Bu': 0})
 
-    def test_from_irred(self):
-        test_rep = Reducible.from_irred([1, 0, 1, 0], 'c2v')
-        true_rep = Reducible([2, 0, 2, 0], 'c2v', all_motion=False)
+    @pytest.mark.parametrize('irred, gamma, group', [
+        ([1, 0, 1, 0], [2, 0, 2, 0], 'c2v'),
+        ([1, 0, 1, 0, 1, 0, 1], [6, 0, 2, 0, -2, 2, 0], 'd4d'),
+        ([1, 1], [3, 0, 0], 'c3'),
+        ([0, 0, 1, 1, 2, 0], [5, -1, 1, -1, -1, 1, -5, 1], 'C4h')
+    ])
+    def test_from_irred(self, irred, gamma, group):
+        test_rep = Reducible.from_irred(irred, group)
+        true_rep = Reducible(gamma, group, all_motion=False)
         assert np.all(test_rep.gamma == true_rep.gamma)

@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from .tables import (
-    tables,
-    symmetry_func_dict,
-    column_coeffs,
-    mulliken
-)
-
 """
 Contains chemical group theory functions for calculating symmetry adapted
 linear combinations (SALCs) or group orbitals using either the projection
@@ -14,13 +7,14 @@ operator method or using the symmetry functions in the character tables.
 """
 
 from math import cos, sin, radians, isclose
-import numpy as np
 from functools import wraps
+import numpy as np
 import sympy
-sympy.init_printing(pretty_print=False)
+
+from .tables import tables, symmetry_func_dict, column_coeffs, mulliken, masks
 
 
-def return_dict(func):
+def _return_dict(func):
     """
     Return results as a dictionary.
 
@@ -37,18 +31,23 @@ def return_dict(func):
     Dictionary.
 
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
-        if kwargs.get('to_dict'):
-            keys = mulliken[args[1].lower()]
+        if kwargs.get("to_dict"):
+            group = kwargs.get("group", args[1] if len(args) > 1
+                               else kwargs['group'])
+            keys = mulliken[group.lower()]
             values = func(*args, **kwargs)
-            return dict(zip(keys, values))
-        else:
-            return func(*args, **kwargs)
+            return dict(zip(keys, values, strict=True))
+
+        return func(*args, **kwargs)
+
     return wrapper
 
 
 # PROJECTION OPERATOR METHOD
+
 
 def _expand_irreducible(irred, group):
     """
@@ -83,7 +82,56 @@ def _expand_irreducible(irred, group):
     return expanded_irred
 
 
-def _normalize_salcs_expr(salcs):
+def _set_largest_coeff_pos(salcs):
+    """Flip signs of coefficients in SALC if largest coefficient is negative.
+
+    Flips all coefficient signs if the largest magnitude coefficient is
+    negative. If the coefficients are imaginary, the salc is returned
+    unchanged.
+
+    Parameters
+    ----------
+    salcs : list or nested list or tuple of SymPy expressions
+        SALC as a SymPy expression
+
+    Returns
+    -------
+    list or nested list of salcs
+
+    Example
+    -------
+    >>> from sympy import I, pi, exp
+    >>> a, b, c, d = sympy.symbols('a b c d')
+    >>> _set_largest_coeff_pos([-2*a + b + c])
+    [2*a - b - c]
+    >>> _set_largest_coeff_pos([2*a- b - c])
+    [2*a - b - c]
+    >>> _set_largest_coeff_pos([-a + b])
+    [a - b]
+    >>> _set_largest_coeff_pos([a + b*exp(2*I*pi/3) + c*exp(-2*I*pi/3)])
+    [a + b*exp(2*I*pi/3) + c*exp(-2*I*pi/3)]
+    >>> _set_largest_coeff_pos([-a + -b + -c, 0, [-a + c, -b + d]])
+    [a + b + c, 0, [a - c, b - d]]
+    """
+    results = []
+    for salc in salcs:
+        if isinstance(salc, list):
+            results.append(_set_largest_coeff_pos(salc))
+        elif salc == 0:
+            results.append(salc)
+        else:
+            symbols = sorted(list(salc.free_symbols), key=str)
+            coeffs = [salc.coeff(s) for s in symbols]
+            if not all(coeff.is_real for coeff in coeffs):
+                results.append(salc)
+            elif max(coeffs, key=abs) < 0:
+                results.append(-salc)
+            else:
+                results.append(salc)
+    return results
+
+
+def _normalize_salcs_expr(salcs, symbols, normalize_by='largest'):
     """
     Normalize SALC composed of sympy expressions.
 
@@ -94,36 +142,77 @@ def _normalize_salcs_expr(salcs):
     ----------
     salcs : List or nested list of sympy expressions.
         Nested list of SALCs.
+    symbols : SymPy symbols
+        SymPy symbols representing outer ligands or atoms.
+    normalize_by : 'largest' or 'smallest'
+        Coefficient used to divide all other coefficients during
+        normalization. The default is 'largest'.
 
     Returns
     -------
-    np.array
+    list of normalized SALCs
 
     """
     normalized_values = []
     for salc in salcs:
         if isinstance(salc, list):
-            normalized_values.append(_normalize_salcs_expr(salc))
+            normalized_values.append(_normalize_salcs_expr(
+                salc, symbols, normalize_by=normalize_by))
         elif salc == 0:
             normalized_values.append(salc)
         else:
-            normalized_values.append(salc.as_poly().monic().as_expr())
+            coeffs = [salc.coeff(symbol) for symbol in symbols]
+            if normalize_by == 'largest':
+                norm_coeff = max(coeffs, key=lambda x: (
+                    sympy.Abs(x), sympy.re(x), sympy.im(x)))
+            elif normalize_by == 'smallest':
+                nz_coeffs = (c for c in coeffs if c != 0)
+                norm_coeff = min(nz_coeffs, key=lambda x: (sympy.Abs(x),
+                                                           sympy.re(x), sympy.im(x)))
+            normalized_values.append(salc / norm_coeff)
 
     return normalized_values
 
 
-@return_dict
-def calc_salcs_projection(projection, group, to_dict=False):
+def _combine_conjugates(salcs, mask):
+    """Group together SALCs from doubly-degenerate complex conjugates.
+
+    Parameters
+    ----------
+    salcs : List
+        Non-nested list of SALCs.
+    mask : tuple
+        Tuple of 1 and 0 values.
+
+    Returns
+    -------
+    List or nested list
+    """
+    r = []
+    for i in range(len(salcs)):
+        try:
+            if mask[i] and mask[i + 1]:
+                r.append(salcs[i])
+            elif mask[i] and not mask[i + 1]:
+                r.append([salcs[i], salcs[i + 1]])
+        except IndexError:
+            r.append(salcs[i])
+    return r
+
+
+@_return_dict
+def calc_salcs_projection(projection, group, *, to_dict=False,
+                          normalize_by='largest'):
     """
     Return SALCs using projection operator method.
 
     Given the projections of orbitals as a result of a point group symmetry
-    operations, returns the SALCs. This is a two-step process.
+    operations, returns the SALCs. This is a three-step process.
     1. Provide all ligands or outer atoms with SymPy variable names.
     2. Track an orbital to see how it transforms after each symmetry operation
     3. Provide a list of the results from step 2.
 
-    Note: The projection operator method only turns one SALC for E and T
+    Note: The projection operator method only returns one SALC for E and T
     point groups.
 
     Parameters
@@ -133,10 +222,16 @@ def calc_salcs_projection(projection, group, to_dict=False):
     group : str
         Point group Schoenflies notation (e.g., 'C2v').  This is
         case-insensitive.
+    to_dict : bool
+        True causes the function to return a dictionary with Mulliken
+        symbols as the keys.
+    normalize_by : 'largest' or 'smallest'
+        Coefficient used to divide all other coefficients during
+        normalization. The default is 'largest'.
 
     Returns
     -------
-    List or nested list of strings of the SALCs for each irreducible
+    List or nested list of sympy expressions of the SALCs for each irreducible
     representation. Returns 0 for irreducibles with no SALC. If to_dict=True,
     returns a dictionary.
 
@@ -150,17 +245,37 @@ def calc_salcs_projection(projection, group, to_dict=False):
     {'A1': a + b + c, 'A2': 0, 'E': a - b/2 - c/2}
 
     """
+    if not isinstance(group, str):
+        raise ValueError('group needs to be a string.')
+    if group.lower() not in tables.keys():
+        raise ValueError('Invalid point group.')
+    if normalize_by not in ('smallest', 'largest'):
+        raise ValueError('normalize_by must be "largest" or "smallest".')
+    if not all([isinstance(proj, sympy.Expr) and not
+                isinstance(proj, sympy.Number) for proj in projection]):
+        raise ValueError('Projection must be all SymPy symbols.')
+    n_ops = sum(column_coeffs[group.lower()])
+    if n_ops != len(projection):
+        raise ValueError(f'The projection length must be {n_ops} for {group}.')
+
     salcs = []
 
     for irred in tables[group.lower()]:
-        product = np.array(_expand_irreducible(irred, group.lower()) *
-                           np.array(projection))
+        product = np.array(
+            _expand_irreducible(irred, group.lower()) * np.array(projection)
+        )
         salcs.append(np.sum(product))
+    salcs = _combine_conjugates(
+        salcs, masks[group.lower()])  # next complx conj
+    unique_sym = set().union(*(p.free_symbols for p in projection))
+    symbols = sorted(unique_sym, key=str)
 
-    return _normalize_salcs_expr(salcs)
+    return _set_largest_coeff_pos(
+        _normalize_salcs_expr(salcs, symbols, normalize_by=normalize_by))
 
 
 # USING SYMMETRY FUNCTIONS
+
 
 def _angles_to_vectors(ligand_angles):
     """
@@ -210,7 +325,7 @@ def _angles_to_vectors(ligand_angles):
     return all_vectors
 
 
-def _eval_sym_func(coords, funcs):
+def _eval_sym_func(coords, exprs):
     """
     Evaluate symmetry functions for an irreducible representation.
 
@@ -222,7 +337,7 @@ def _eval_sym_func(coords, funcs):
     ----------
     coords : List, tuple, or array containing values in threes
         xyz coordinates of ligand unit vectors.
-    funcs : str
+    exprs : tuple of strings
         The symmetry function supplied as a string or tuple of strings
         (e.g., 'x**2-y**2' or ('z**2', 'x**2+y**2')).
 
@@ -233,25 +348,23 @@ def _eval_sym_func(coords, funcs):
     """
     salcs = []
 
-    for func in funcs:
+    for expr in exprs:
         ligand_contribs = []
         for unit_vector in coords:
             x, y, z = unit_vector[0], unit_vector[1], unit_vector[2]
-            ligand_contrib = eval(func, {'x': x, 'y': y, 'z': z})
-            ligand_contribs.append(round(ligand_contrib, 2))
-
+            ligand_contrib = eval(expr, {'x': x, 'y': y, 'z': z})
+            ligand_contribs.append(round(ligand_contrib, 3))
         if np.any(ligand_contribs):
             salcs.append(ligand_contribs)
 
     if not salcs:
         return 0
-    elif len(salcs) == 1:
+    if len(salcs) == 1:
         return salcs[0]
-    else:
-        return salcs
+    return salcs
 
 
-def _normalize_salcs(salcs):
+def _normalize_salcs(salcs, normalize_by='largest'):
     """
     Normalize SALC.
 
@@ -262,20 +375,27 @@ def _normalize_salcs(salcs):
     ----------
     salcs : List or nested list
         Nested list of SALCs.
+    normalize_by : 'largest' or 'smallest'
+        Coefficient used to divide all other coefficients during
+        normalization. The default is 'largest'.
 
     Returns
     -------
-    np.array
+    list of normalized SALCs
 
     """
     normalized_values = []
     for value in salcs:
         if isinstance(value, list):
-            normalized_values.append(_normalize_salcs(value))
+            normalized_values.append(_normalize_salcs(value, normalize_by))
         elif value == 0:
             normalized_values.append(value)
         else:
-            coeff = round(value / max(salcs, key=abs), 2)
+            if normalize_by == 'largest':
+                coeff = round(value / max(salcs, key=abs), 2)
+            elif normalize_by == 'smallest':
+                coeff = round(
+                    value / min((s for s in salcs if s != 0), key=abs), 2)
             if coeff % 1 < 0.01:
                 coeff = sympy.Integer(coeff)
             normalized_values.append(coeff)
@@ -314,21 +434,20 @@ def _weights_to_symbols(weights, symbols):
     for weight in weights:
         if weight == 0:
             symbolic_wt.append(0)
+        elif isinstance(weight, (list, tuple)) and isinstance(weight[0], (list, tuple)):
+            symbolic_wt.append(_weights_to_symbols(weight, symbols))
         else:
-            try:
-                sym = np.array(weight).dot(np.array(symbols))
-                if isinstance(sym, np.ndarray):
-                    symbolic_wt.append(sym.tolist())
-                else:
-                    symbolic_wt.append(sym)
-            except ValueError:
-                symbolic_wt.append(_weights_to_symbols(weight, symbols))
-
+            sym = np.array(weight).dot(np.array(symbols))
+            if isinstance(sym, np.ndarray):
+                symbolic_wt.append(sym.tolist())
+            else:
+                symbolic_wt.append(sym)
     return symbolic_wt
 
 
-@return_dict
-def calc_salcs_func(ligands, group, symbols, mode='vector', to_dict=False):
+@_return_dict
+def calc_salcs_func(ligands, group, symbols, *, mode="vector", to_dict=False,
+                    normalize_by='largest'):
     """
     Return SALCs using symmetry functions in character table.
 
@@ -342,7 +461,7 @@ def calc_salcs_func(ligands, group, symbols, mode='vector', to_dict=False):
 
     Parameters
     ----------
-    ligand : list or nested list
+    ligands : list or nested list
         Nested list of ligand positions as xyz coordinates (mode='vector')
         or angles (mode='angle').
     group : str
@@ -352,14 +471,24 @@ def calc_salcs_func(ligands, group, symbols, mode='vector', to_dict=False):
         SymPy symbols representing outer ligands or atoms.
     mode : 'vector' or 'angle'
         Whether the position of ligands or outer atoms are provided in xyz
-        coordinates ('vector') or [theta, phi] angles ('angle').
+        coordinates ('vector') or [azimuthal, polar] angles ('angle'). The
+        azimuthal angle is the angle from the positive x-axis on the xy-plane
+        and the polar angle is the angle from the positive z-axis. Default is
+        'vector'.
+    to_dict : bool
+        True causes the function to return a dictionary with Mulliken
+        symbols as the keys.
+    normalize_by : 'largest' or 'smallest'
+        Coefficient used to divide all other coefficients during
+        normalization. The default is 'largest'.
 
     Returns
     -------
     List of sympy symbols indicating the weight and sign of each atomic
     orbital contribution to the SALC. There may be redundant SALCs returned
     due to multiple symmetry functions with an irreducible representation
-    returning the same SALC.
+    returning the same SALC. Not all SALCs are guaranteed to be returned in
+    this method.
 
     Examples
     --------
@@ -373,25 +502,40 @@ def calc_salcs_func(ligands, group, symbols, mode='vector', to_dict=False):
     [a + b + c, 0, [a - 0.5*b - 0.5*c, b - c, a - 0.5*b - 0.5*c, b - c], \
 0, 0, 0]
 
+    Notes
+    -----
+    C1 has only E as a symmetry operation, so each orbital is its own SALC.
+
     References
     ----------
     [1] Kim, S. K. Group Theoretical Methods and Applications to Molecules
     and Crystals; Cambridge University Press: Cambridge, 1999, 155-157.
     """
-    if mode == 'angle':
+    if not isinstance(group, str):
+        raise ValueError('group needs to be a string.')
+    if group.lower() not in tables.keys():
+        raise ValueError('Invalid point group.')
+    if group.lower() == 'c1':
+        raise ValueError('Each orbital is its own SALC for C1.')
+    if normalize_by not in ('smallest', 'largest'):
+        raise ValueError('normalize_by must be "largest" or "smallest".')
+    if len(ligands) != len(symbols):
+        raise ValueError('The number of symbols must equal the ligands.')
+
+    if mode == "angle":
         ligand_vectors = _angles_to_vectors(ligands)
-    elif mode == 'vector':
+    elif mode == "vector":
         ligand_vectors = ligands
     else:
-        raise Exception("Invalid mode input: must be 'angle' or 'vector'")
+        raise ValueError("Invalid mode input: must be 'angle' or 'vector'")
 
     salcs = []
-    for sym_func in symmetry_func_dict[group]:
+    for sym_func in symmetry_func_dict[group.lower()]:
         if sym_func == 0:
             salcs.append(0)
-        elif sym_func == 1:
-            salcs.append(1)
         else:
             salcs.append(_eval_sym_func(ligand_vectors, sym_func))
 
-    return _weights_to_symbols(_normalize_salcs(salcs), symbols)
+    normalized = _normalize_salcs(salcs, normalize_by=normalize_by)
+
+    return _set_largest_coeff_pos(_weights_to_symbols(normalized, symbols))
