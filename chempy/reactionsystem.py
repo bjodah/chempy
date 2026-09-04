@@ -166,8 +166,8 @@ class ReactionSystem(object):
         """Returns categories of substance keys (e.g. nonparticipating, unaffected etc.)
 
         Some substances are only *accumulated* (i.e. irreversibly formed) and are never net
-        reactants in any reactions, others are *depleted* (they are never net proucts in
-        any reaction). Some substanaces are *unaffected* since they appear with equal coefficients on
+        reactants in any reactions, others are *depleted* (they are never net products in
+        any reaction). Some substances are *unaffected* since they appear with equal coefficients on
         both reactant and product side, while some may be *nonparticipating* (they don't appear on
         either side and have thus no effect on the reactionsystem).
 
@@ -282,7 +282,7 @@ class ReactionSystem(object):
         return self.html(print_fn=javascript)
 
     def check_duplicate(self, throw=False):
-        """Raies ValueError if there are duplicates in ``self.rxns``"""
+        """Raises ValueError if there are duplicates in ``self.rxns``"""
         for i1, rxn1 in enumerate(self.rxns):
             for i2, rxn2 in enumerate(self.rxns[i1 + 1 :], i1 + 1):
                 if rxn1 == rxn2:
@@ -327,7 +327,7 @@ class ReactionSystem(object):
         strict : bool
             Puts a requirement on all substances to have their ``composition`` attribute set.
         throw : bool
-            Raies ValueError if there are unbalanecd reactions in self.rxns
+            Raises ValueError if there are unbalanced reactions in self.rxns
 
         """
         for subst in self.substances.values():
@@ -777,7 +777,7 @@ class ReactionSystem(object):
         Parameters
         ----------
         init_concs : dict or array_like
-            Per substance initial conidtions.
+            Per substance initial conditions.
         min_ : callbable
         dtype : dtype or None
         skip_keys : tuple
