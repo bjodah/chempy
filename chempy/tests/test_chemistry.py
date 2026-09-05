@@ -254,6 +254,13 @@ def test_Substance__molar_mass():
     assert abs(q - 1) < 1e-3
 
 
+def test_mass_AttributeError():
+    from chempy import Substance
+    with pytest.raises(AttributeError):
+        sub = Substance("NH3")
+        sub.mass
+
+
 @requires(units_library)
 def test_Equilibrium__as_reactions():
     s = default_units.second

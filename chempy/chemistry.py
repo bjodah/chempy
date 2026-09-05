@@ -126,6 +126,8 @@ class Substance(object):
         except KeyError:
             if self.composition is not None:
                 return mass_from_composition(self.composition)
+            else:
+                raise AttributeError("""Substance is missing a composition.""")
 
     @mass.setter
     def mass(self, value):
