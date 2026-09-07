@@ -4,6 +4,23 @@ from .string import StrPrinter
 from .numbers import number_to_scientific_unicode
 
 
+def _formula_fmt(s):
+    def _script(s, chs):
+        for i in range(10):
+            s = s.replace(chr(ord("0") + i), chs[i])
+        return s
+
+    e = ""
+    if "-" in s:
+        s, e = s.split("-")
+        e += u"⁻"
+    elif "+" in s:
+        s, e = s.split("+")
+        e += u"⁺"
+
+    return _script(s, u"₀₁₂₃₄₅₆₇₈₉") + _script(e, u"⁰¹²³⁴⁵⁶⁷⁸⁹")
+
+
 class UnicodePrinter(StrPrinter):
 
     _default_settings = dict(
@@ -11,6 +28,7 @@ class UnicodePrinter(StrPrinter):
         repr_name="unicode",
         Equilibrium_arrow=u"⇌",
         Reaction_arrow=u"→",
+        Reaction_formula_fmt=_formula_fmt,
         magnitude_fmt=number_to_scientific_unicode,
         unit_fmt=lambda dim: (
             dim.unicode
