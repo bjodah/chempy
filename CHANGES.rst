@@ -1,6 +1,13 @@
 Unreleased
 ==========
-- Drop support for pyparsing 2.x and require pyparsing >= 3.0.8, and migrate to its snake_case API.
+NIL
+
+v0.10.2 (2026-09-19)
+====================
+- Drop support for pyparsing 2.x and require pyparsing >= 3.0.8, and migrate to its snake_case API. (@FRIEDEEL)
+- Raise AttributeError with missing composition in Substance.mass (@weisscharlesj)
+- docs: fix minor typos in ReactionSystem docstrings (@celedriel)
+- General improvements to representations.py (@weisscharlesj)
 
 v0.10.1 (2025-09-22)
 ====================
