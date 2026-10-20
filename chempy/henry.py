@@ -6,7 +6,7 @@ Module for dealing with constants `Henry's law
 
 from ._util import get_backend
 from .util.pyutil import defaultnamedtuple, deprecated
-from .units import default_units
+from .units import Backend, default_units
 
 
 def Henry_H_at_T(T, H, Tderiv, T0=None, units=None, backend=None):
@@ -34,6 +34,7 @@ def Henry_H_at_T(T, H, Tderiv, T0=None, units=None, backend=None):
         K = 1
     else:
         K = units.Kelvin
+        be = Backend(be)
     if T0 is None:
         T0 = 298.15 * K
     return H * be.exp(Tderiv * (1 / T - 1 / T0))

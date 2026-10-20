@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import math
 
+from ..units import Backend
+
 
 def nernst_potential(
     ion_conc_out, ion_conc_in, charge, T, constants=None, units=None, backend=math
@@ -21,8 +23,8 @@ def nernst_potential(
         Absolute temperature.
     constants : object (optional, default: None)
         Constant attributes accessed:
-            F - Faraday constant
-            R - Ideal Gas constant
+            Faraday_constant
+            molar_gas_constant
     units : object (optional, default: None)
         Unit attributes: coulomb, joule, kelvin, mol.
     backend : module (optional, default: math)
@@ -44,4 +46,6 @@ def nernst_potential(
         F = constants.Faraday_constant
         R = constants.molar_gas_constant
 
+    if units is not None or constants is not None:
+        backend = Backend(backend)
     return (R * T) / (charge * F) * backend.log(ion_conc_out / ion_conc_in)

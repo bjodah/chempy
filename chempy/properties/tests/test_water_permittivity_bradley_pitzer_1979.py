@@ -1,5 +1,7 @@
 import warnings
 
+import pytest
+
 from chempy.units import allclose
 
 from ..water_permittivity_bradley_pitzer_1979 import water_permittivity
@@ -33,3 +35,10 @@ def test_water_permittivity__units():
         rtol=1e-2,
         atol=1e-2,
     )
+
+
+@requires(units_library)
+@pytest.mark.parametrize("backend", [None, "math", "numpy"])
+def test_water_permittivity__scaled_units(backend):
+    result = water_permittivity(298150 * u.mK, 1e5 * u.Pa, units=u, backend=backend)
+    assert allclose(result, 78.38436874203077)

@@ -4,6 +4,7 @@
 import warnings
 
 from .._util import _any, get_backend
+from ..units import Backend
 
 
 def water_permittivity(
@@ -50,6 +51,7 @@ def water_permittivity(
     else:
         K = units.kelvin
         bar = units.bar
+        be = Backend(be)
     if T is None:
         T = 298.15 * K
     if P is None:
@@ -58,7 +60,7 @@ def water_permittivity(
         U = (
             3.4279e2,
             -5.0866e-3 / K,
-            9.4690e-7 / K ** 2,
+            9.4690e-7 / K**2,
             -2.0525,
             3.1159e3 * K,
             -1.8289e2 * K,
@@ -81,7 +83,7 @@ def water_permittivity(
                         warnings.warn("Outside pressure range (5000 bar)")
     B = U[6] + U[7] / T + U[8] * T
     C = U[3] + U[4] / (U[5] + T)
-    eps1000 = U[0] * be.exp(U[1] * T + U[2] * T ** 2)
+    eps1000 = U[0] * be.exp(U[1] * T + U[2] * T**2)
     return eps1000 + C * be.log((B + P) / (B + 1000.0 * bar))
 
 

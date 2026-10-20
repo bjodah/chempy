@@ -14,13 +14,13 @@ def electrical_mobility_from_D(D, charge, T, constants=None, units=None):
     T: float with unit
         Absolute temperature
     constants: object (optional, default: None)
-        if None:
-            T assumed to be in Kelvin and b0 = 1 mol/kg
-        else:
-            see source code for what attributes are used.
-            Tip: pass quantities.constants
+        If None, use numerical SI constants, with units attached when provided.
+        Constant attributes accessed:
+            Boltzmann_constant
+            elementary_charge
+        Tip: pass quantities.constants
     units: object (optional, default: None)
-        attributes accessed: meter, Kelvin and mol
+        attributes accessed: joule, kelvin and coulomb
 
     Returns
     -------
@@ -32,7 +32,7 @@ def electrical_mobility_from_D(D, charge, T, constants=None, units=None):
         kB = 1.38064852e-23
         e = 1.60217662e-19
         if units is not None:
-            kB *= units.joule / units.kelvin / units.mol
+            kB *= units.joule / units.kelvin
             e *= units.coulomb
     else:
         kB = constants.Boltzmann_constant

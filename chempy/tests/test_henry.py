@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import pytest
+
 
 from ..henry import Henry, HenryWithUnits
 from ..units import units_library, allclose, default_units as u
@@ -31,3 +33,13 @@ def test_HenryWithUnits():
     kH_H2 = HenryWithUnits(7.8e-4 * u.molar / u.atm, 640 * u.K, ref="dean_1992")
     Hcp = kH_H2(300 * u.K)
     assert allclose(Hcp, 7.697430323e-4 * u.molar / u.atm)
+
+
+@requires(units_library)
+@pytest.mark.parametrize("backend", ["math", "numpy"])
+@pytest.mark.parametrize("temperature_unit", ["K", "mK"])
+def test_HenryWithUnits__scaled_temperature(backend, temperature_unit):
+    kH_H2 = HenryWithUnits(7.8e-4 * u.molar / u.atm, 640000 * u.mK)
+    T = (300 * u.K).rescale(getattr(u, temperature_unit))
+    result = kH_H2(T, backend=__import__(backend))
+    assert allclose(result, 7.697430323e-4 * u.molar / u.atm)
