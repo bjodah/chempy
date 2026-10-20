@@ -7,7 +7,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.x
+          # flake8-return 1.2.0 uses ast.NameConstant, removed in Python 3.14.
+          python-version: '3.13'
       - run: pip install --upgrade pip wheel
       - run: pip install bandit "black[jupyter]" codespell flake8 flake8-2020 
                          isort mypy pytest pyupgrade
