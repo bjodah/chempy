@@ -1307,16 +1307,26 @@ class Equilibrium(Reaction):
 def _solve_balancing_ilp_pulp(A):
     import pulp
 
-    x = [
-        pulp.LpVariable("x%d" % i, lowBound=1, cat="Integer") for i in range(A.shape[1])
-    ]
     prob = pulp.LpProblem("chempy_balancing_problem", pulp.LpMinimize)
+    if hasattr(prob, "add_variable"):
+        x = [
+            prob.add_variable("x%d" % i, lowBound=1, cat="Integer")
+            for i in range(A.shape[1])
+        ]
+    else:
+        x = [
+            pulp.LpVariable("x%d" % i, lowBound=1, cat="Integer")
+            for i in range(A.shape[1])
+        ]
     prob += reduce(add, x)
     for expr in [
         pulp.lpSum([x[i] * e for i, e in enumerate(row)]) for row in A.tolist()
     ]:
         prob += expr == 0
-    prob.solve(pulp.PULP_CBC_CMD(msg=False))
+    if hasattr(pulp, "PULP_CBC_CMD"):
+        prob.solve(pulp.PULP_CBC_CMD(msg=False))
+    else:
+        prob.solve(pulp.COIN_CMD(msg=False))
     return [pulp.value(_) for _ in x]
 
 
