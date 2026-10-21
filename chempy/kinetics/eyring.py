@@ -43,17 +43,20 @@ def eyring_equation(dH, dS, T, constants=None, units=None, backend=None):
         temperature
     constants: object (optional, default: None)
         if None:
-            T assumed to be in Kelvin, Ea in J/(K mol)
+            With no units, T is assumed to be in Kelvin, dH in J/mol,
+            and dS in J/(mol K).
         else:
-            attributes accessed: molar_gas_constant
+            attributes accessed: molar_gas_constant, Boltzmann_constant, Planck_constant
             Tip: pass quantities.constants
     units: object (optional, default: None)
-        attributes accessed: Joule, Kelvin and mol
+        attributes accessed: joule (or legacy Joule), Kelvin, kelvin, mol and second
     backend: module (optional)
         module with "exp", default: numpy, math
 
     """
     be = get_backend(backend)
+    if constants is not None or units is not None:
+        be = Backend(be)
     R = _get_R(constants, units)
     kB_over_h = _get_kB_over_h(constants, units)
 
@@ -137,6 +140,8 @@ class EyringParam(defaultnamedtuple("EyringParam", "dH dS ref", [None])):
     def kB_h_times_exp_dS_R(self, constants=None, units=None, backend=math):
         R = _get_R(constants, units)
         kB_over_h = _get_kB_over_h(constants, units)
+        if constants is not None or units is not None:
+            backend = Backend(backend)
         return kB_over_h * backend.exp(self.dS / R)
 
     def dH_over_R(self, constants=None, units=None, backend=None):

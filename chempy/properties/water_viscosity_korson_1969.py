@@ -1,6 +1,6 @@
 import warnings
 from .._util import _any
-
+from ..units import to_unitless
 
 A, B, C = 1.1709, 0.001827, 89.93
 eta20_cP = 1.0020
@@ -35,8 +35,9 @@ def water_viscosity(T=None, eta20=None, units=None, warn=True):
         T = 298.15 * K
     if eta20 is None:
         eta20 = eta20_cP * cP
-    t = T - 273.15 * K
-    if warn and (_any(t < 0 * K) or _any(t > 100 * K)):
+    # The empirical expression uses the numerical temperature in degrees Celsius.
+    t = (T if units is None else to_unitless(T, K)) - 273.15
+    if warn and (_any(t < 0) or _any(t > 100)):
         warnings.warn("Temperature is outside range (0-100 degC)")
     # equation (5) in the paper says "log" but they seem to mean "log10"
     # when comparing with Table II.

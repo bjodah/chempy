@@ -9,7 +9,13 @@ Contains functions for the `Arrhenius equation
 from .._util import get_backend
 from ..util.regression import least_squares
 from ..util.pyutil import defaultnamedtuple
-from ..units import default_constants, default_units, format_string, patched_numpy
+from ..units import (
+    Backend,
+    default_constants,
+    default_units,
+    format_string,
+    patched_numpy,
+)
 
 try:
     import numpy as np
@@ -49,7 +55,10 @@ def _get_R(constants=None, units=None):
     if constants is None:
         R = 8.314472
         if units is not None:
-            J = units.Joule
+            try:
+                J = units.joule
+            except AttributeError:
+                J = units.Joule  # legacy spelling
             K = units.Kelvin
             mol = units.mol
             R *= J / mol / K
@@ -72,12 +81,12 @@ def arrhenius_equation(A, Ea, T, constants=None, units=None, backend=None):
         temperature
     constants: object (optional, default: None)
         if None:
-            T assumed to be in Kelvin, Ea in J/(K mol)
+            With no units, T is assumed to be in Kelvin and Ea in J/mol.
         else:
             attributes accessed: molar_gas_constant
             Tip: pass quantities.constants
     units: object (optional, default: None)
-        attributes accessed: Joule, Kelvin and mol
+        attributes accessed: joule (or legacy Joule), Kelvin and mol
     backend: module (optional)
         module with "exp", default: numpy, math
 
@@ -143,7 +152,7 @@ def _fit_arrhenius_equation(T, k, kerr=None, linearized=False):
     if kerr is None:
         weights = None
     else:
-        weights = 1 / kerr ** 2
+        weights = 1 / kerr**2
     popt, pcov = curve_fit(arrhenius_equation, T, k, [A, Ea], weights)
     return popt, pcov
 
@@ -194,6 +203,8 @@ class ArrheniusParam(defaultnamedtuple("ArrheniusParam", "A Ea ref", [None])):
         R = _get_R(constants, units)
         if backend is None:
             from chempy.units import patched_numpy as backend
+        if constants is not None or units is not None:
+            backend = Backend(backend)
         return cls(k * backend.exp(Ea / R / T), Ea, **kwargs)
 
     @classmethod

@@ -2,6 +2,8 @@
 
 from math import log as ln
 
+import pytest
+
 from ..electrolytes import A as A_dh, B as B_dh
 from ..electrolytes import limiting_log_gamma, _ActivityProductBase, ionic_strength
 from ..units import (
@@ -9,6 +11,7 @@ from ..units import (
     units_library,
     default_constants as consts,
     default_units as u,
+    to_unitless,
 )
 from ..util.testing import requires
 
@@ -32,15 +35,19 @@ def test_A():
 
 
 @requires(units_library)
-def test_A__units():
+@pytest.mark.parametrize("constants", [None, consts])
+@pytest.mark.parametrize("default_b0", [False, True])
+def test_A__units(constants, default_b0):
+    kwargs = {} if default_b0 else {"b0": u.mol / u.kg}
     A20q = A_dh(
         80.1,
         293.15 * u.K,
-        998.2071 * u.kg / u.m ** 3,
-        b0=1 * u.mol / u.kg,
-        constants=consts,
+        998.2071 * u.kg / u.m**3,
+        constants=constants,
+        units=u,
+        **kwargs
     )
-    assert abs(A20q - 0.50669) < 1e-5
+    assert abs(to_unitless(A20q) / ln(10) - 0.50669) < 1e-5
 
 
 def test_B():
@@ -48,14 +55,17 @@ def test_B():
 
 
 @requires(units_library)
-def test_B__units():
+@pytest.mark.parametrize("constants", [None, consts])
+@pytest.mark.parametrize("default_b0", [False, True])
+def test_B__units(constants, default_b0):
+    kwargs = {} if default_b0 else {"b0": u.mol / u.kg}
     B20q = B_dh(
         80.1,
         293.15 * u.K,
-        998.2071 * u.kg / u.m ** 3,
-        b0=u.mol / u.kg,
-        constants=consts,
+        998.2071 * u.kg / u.m**3,
+        constants=constants,
         units=u,
+        **kwargs
     )
     close = allclose(B20q.simplified, 0.3282 / u.angstrom, rtol=1e-3)
     assert close

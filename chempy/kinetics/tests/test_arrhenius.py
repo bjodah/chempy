@@ -3,6 +3,8 @@
 
 import math
 
+import pytest
+
 from chempy.chemistry import Reaction
 from chempy.util.testing import requires
 from chempy.units import units_library, allclose, default_units as u
@@ -60,3 +62,36 @@ def test_ArrheniusParamWithUnits__from_rateconst_at_T():
     _2 = _get_ref2_units()
     apu = ArrheniusParamWithUnits.from_rateconst_at_T(_2.Ea, (_2.T, _2.k))
     assert allclose(apu(_2.T), _2.k)
+
+
+@requires(units_library)
+def test_arrhenius_equation__units_constants_None():
+    _2 = _get_ref2_units()
+    k = arrhenius_equation(_2.A, _2.Ea, _2.T, constants=None, units=u)
+    assert abs((k - _2.k) / _2.k) < 1e-4
+
+    ap = ArrheniusParam.from_rateconst_at_T(_2.Ea, (_2.T, _2.k), units=u)
+    assert abs((ap.A - _2.A) / _2.A) < 1e-4
+
+
+@requires(units_library)
+def test_arrhenius_equation__legacy_unit_namespace():
+    from types import SimpleNamespace
+
+    legacy_units = SimpleNamespace(Joule=u.joule, Kelvin=u.kelvin, mol=u.mol)
+    ref = _get_ref2_units()
+    result = arrhenius_equation(ref.A, ref.Ea, ref.T, units=legacy_units)
+    assert allclose(result, ref.k, rtol=1e-4)
+
+
+@requires(units_library)
+@pytest.mark.parametrize("backend", ["math", "numpy"])
+def test_ArrheniusParam__from_rateconst_at_T_scaled_units(backend):
+    ref = _get_ref2_units()
+    Ea = ref.Ea.rescale(u.kilojoule / u.mol)
+    T = ref.T.rescale(u.mK)
+    ap = ArrheniusParam.from_rateconst_at_T(
+        Ea, (T, ref.k), units=u, backend=__import__(backend)
+    )
+    assert allclose(ap.A, ref.A, rtol=1e-4)
+    assert allclose(ap(T, units=u), ref.k)
