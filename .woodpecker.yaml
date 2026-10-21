@@ -26,6 +26,7 @@ steps:
     environment:
       CHEMPY_SKIP_NO_TESTS: 1
     commands:
+      - cp -ra . /tmp/chempy && cd /tmp/chempy  # filesytem is racy on CI's persistent storage..
       - mkdir -p deploy/public_html/branches/${CI_COMMIT_BRANCH}/
       - bash -l .ci/run-01-install-deps-create-sdist.sh
       - bash -l .ci/run-02-test-suite.sh
