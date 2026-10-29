@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import math
+from numbers import Real
 
 from ..units import Backend
 
@@ -36,6 +37,14 @@ def nernst_potential(
     Membrane potential.
 
     """
+    for name, value in (("ion_conc_out", ion_conc_out), ("ion_conc_in", ion_conc_in)):
+        if isinstance(value, Real) and (not math.isfinite(value) or value <= 0):
+            raise ValueError(f"{name} must be finite and positive")
+    if isinstance(charge, Real) and (not math.isfinite(charge) or charge == 0):
+        raise ValueError("charge must be finite and non-zero")
+    if isinstance(T, Real) and (not math.isfinite(T) or T <= 0):
+        raise ValueError("T must be finite and positive")
+
     if constants is None:
         F = 96485.33289
         R = 8.3144598
