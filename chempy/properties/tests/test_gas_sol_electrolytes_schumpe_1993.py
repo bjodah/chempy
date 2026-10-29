@@ -9,3 +9,11 @@ def test_lg_solubility_ratio():
         {"Br-": 0.05 * u.molar, "Na+": 0.050 * u.molar}, "N2O", units=u
     )
     assert lgr != 0  # TODO: calculate by hand the reference value
+
+
+def test_lg_solubility_ratio_rejects_invalid_concentrations():
+    with pytest.raises(ValueError):
+        lg_solubility_ratio({"Na+": -1.0}, "CO2", warn=False)
+    with pytest.raises(ValueError):
+        lg_solubility_ratio({"Na+": float("nan")}, "CO2", warn=False)
+    assert lg_solubility_ratio({"Na+": 1.0}, "CO2", warn=False) == 0.0988
