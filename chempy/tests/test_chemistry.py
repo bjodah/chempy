@@ -134,6 +134,13 @@ def test_Reaction():
     assert r5.reac == lhs5 and r5.prod == rhs5
 
 
+def test_Reaction__check_all_positive_rejects_zero():
+    reaction = Reaction({"A": 0}, {"B": 1}, checks=())
+    assert reaction.check_all_positive() is False
+    with pytest.raises(ValueError, match="non-positive"):
+        reaction.check_all_positive(throw=True)
+
+
 def test_Reaction__copy():
     r1 = Reaction({"H2O"}, {"H2O"}, checks=())
     r2 = r1.copy()

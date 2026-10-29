@@ -569,10 +569,10 @@ class Reaction(object):
             for nam in "reac prod inact_reac inact_prod".split()
         ]:
             for k, v in cont.items():
-                if v < 0:
+                if v <= 0:
                     if throw:
                         raise ValueError(
-                            "Found a negative stoichiometry for %s in %s." % (k, nam)
+                            "Found a non-positive stoichiometry for %s in %s." % (k, nam)
                         )
                     else:
                         return False
