@@ -134,6 +134,17 @@ def test_Reaction():
     assert r5.reac == lhs5 and r5.prod == rhs5
 
 
+def test_Reaction__checks_reject_nonfinite_stoichiometry():
+    for value in (float("nan"), float("inf"), float("-inf")):
+        reaction = Reaction({"A": value}, {"B": 1}, checks=())
+        assert reaction.check_all_positive() is False
+        assert reaction.check_all_integral() is False
+        with pytest.raises(ValueError, match="non-finite"):
+            reaction.check_all_positive(throw=True)
+        with pytest.raises(ValueError, match="non-finite"):
+            reaction.check_all_integral(throw=True)
+
+
 def test_Reaction__copy():
     r1 = Reaction({"H2O"}, {"H2O"}, checks=())
     r2 = r1.copy()
