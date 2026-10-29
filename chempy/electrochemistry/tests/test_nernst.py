@@ -71,3 +71,14 @@ def test_nernst_potential__symbolic():
     assert math.isfinite(
         float(result.subs({outside: 145, inside: 15, temperature: 310}))
     )
+
+
+def test_nernst_potential_rejects_invalid_numeric_domain():
+    with pytest.raises(ValueError):
+        nernst_potential(0, 1, 1, 298.15)
+    with pytest.raises(ValueError):
+        nernst_potential(1, -1, 1, 298.15)
+    with pytest.raises(ValueError):
+        nernst_potential(1, 1, 0, 298.15)
+    with pytest.raises(ValueError):
+        nernst_potential(1, 1, 1, float("nan"))
