@@ -569,10 +569,14 @@ class Reaction(object):
             for nam in "reac prod inact_reac inact_prod".split()
         ]:
             for k, v in cont.items():
-                if v < 0:
+                try:
+                    finite = math.isfinite(v)
+                except (TypeError, ValueError):
+                    finite = True
+                if not finite or v < 0:
                     if throw:
                         raise ValueError(
-                            "Found a negative stoichiometry for %s in %s." % (k, nam)
+                            "Found a negative or non-finite stoichiometry for %s in %s." % (k, nam)
                         )
                     else:
                         return False
@@ -585,10 +589,18 @@ class Reaction(object):
             for nam in "reac prod inact_reac inact_prod".split()
         ]:
             for k, v in cont.items():
-                if v != int(v) and v != type(v)(int(v)):
+                try:
+                    finite = math.isfinite(v)
+                except (TypeError, ValueError):
+                    finite = True
+                try:
+                    non_integral = v != int(v) and v != type(v)(int(v))
+                except (OverflowError, ValueError):
+                    non_integral = True
+                if not finite or non_integral:
                     if throw:
                         raise ValueError(
-                            "Found a non-integer stoichiometric coefficient for %s in %s."
+                            "Found a non-integer or non-finite stoichiometric coefficient for %s in %s."
                             % (k, nam)
                         )
                     else:
