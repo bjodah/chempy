@@ -5,6 +5,8 @@ is affected by dissolved non-reactive salts, the expression and parameters are f
 """
 
 import warnings
+from numbers import Real
+import math
 
 Tref_K = 298.2  # Kelvin
 
@@ -86,6 +88,14 @@ def lg_solubility_ratio(electrolytes, gas, units=None, warn=True):
         Emit UserWarning when 'F-' among electrolytes.
 
     """
+    for electrolyte, concentration in electrolytes.items():
+        if isinstance(concentration, Real) and (
+            not math.isfinite(concentration) or concentration < 0
+        ):
+            raise ValueError(
+                f"electrolyte concentration for {electrolyte!r} must be finite and non-negative"
+            )
+
     if units is None:
         M = 1
     else:
